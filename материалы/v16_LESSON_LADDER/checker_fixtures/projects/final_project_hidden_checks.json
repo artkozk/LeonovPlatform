@@ -1,0 +1,108 @@
+{
+  "version": "v16",
+  "gates": [
+    "tz",
+    "user_stories",
+    "db_schema",
+    "api_contract",
+    "git_workflow",
+    "fastapi_structure",
+    "sqlalchemy_models",
+    "alembic_migrations",
+    "auth",
+    "crud",
+    "tests",
+    "docker",
+    "ci_cd",
+    "ai_integration",
+    "logging",
+    "readme",
+    "deploy",
+    "defense"
+  ],
+  "hidden_checks": [
+    {
+      "name": "no_secrets",
+      "type": "file_scan",
+      "patterns": [
+        "API_KEY=",
+        "SECRET_KEY=",
+        "OPENAI_API_KEY="
+      ]
+    },
+    {
+      "name": "env_example",
+      "type": "file_contains",
+      "file": ".env.example",
+      "must_contain": [
+        "DATABASE_URL",
+        "SECRET_KEY",
+        "APP_ENV"
+      ]
+    },
+    {
+      "name": "health_endpoint_object",
+      "type": "http_api",
+      "method": "GET",
+      "path": "/health",
+      "expected_status": 200,
+      "expected_json_subset": {
+        "status": "ok"
+      }
+    },
+    {
+      "name": "auth_negative_401",
+      "type": "http_api",
+      "method": "GET",
+      "path": "/me",
+      "expected_status": 401
+    },
+    {
+      "name": "task_not_found_404",
+      "type": "http_api",
+      "method": "GET",
+      "path": "/tasks/999999",
+      "expected_status": 404
+    },
+    {
+      "name": "validation_422",
+      "type": "http_api",
+      "method": "POST",
+      "path": "/tasks",
+      "json": {
+        "title": ""
+      },
+      "expected_status": 422
+    },
+    {
+      "name": "pytest",
+      "type": "command",
+      "cmd": "python -m pytest",
+      "expect_exit_code": 0
+    },
+    {
+      "name": "compose_config",
+      "type": "command",
+      "cmd": "docker compose config",
+      "expect_exit_code": 0
+    },
+    {
+      "name": "container_tests",
+      "type": "command",
+      "cmd": "docker compose exec -T app python -m pytest",
+      "expect_exit_code": 0
+    },
+    {
+      "name": "deploy_dry_run",
+      "type": "command",
+      "cmd": "bash deploy/deploy.sh --dry-run",
+      "expect_exit_code": 0
+    },
+    {
+      "name": "rollback_dry_run",
+      "type": "command",
+      "cmd": "bash deploy/deploy.sh --rollback --dry-run",
+      "expect_exit_code": 0
+    }
+  ]
+}
