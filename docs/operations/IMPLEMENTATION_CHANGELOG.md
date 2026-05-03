@@ -2641,3 +2641,40 @@
 3. `npm run build`.
 4. `go test ./...`.
 5. Production smoke после deploy: отсутствие Settings в UI, светлая тема, `GET /me.theme == "light"`.
+
+## 2026-05-03 — v2.81 (python-zero reseed from materials folder)
+
+### Добавлено/исправлено
+
+1. Добавлен генератор импорта курса из рабочей папки материалов:
+- `backend/tools/generate_python_v16_materials_migration.js`
+- источник: `материалы/course_import.json`.
+
+2. Сгенерирована новая миграция полного reseed:
+- `backend/migrations/025_reseed_python_zero_v16_materials.sql`.
+
+3. Добавлена структурная валидация миграции:
+- `backend/tools/validate_python_v16_materials_import.js`;
+- отчёт: `docs/operations/PYTHON_V16_MATERIALS_IMPORT_VALIDATION_2026_05_03.md`.
+
+4. Проверена runtime-совместимость checker-конфигов при импорте:
+- `python_pytest`: `test_code` преобразуется в `pytest_code`;
+- `http_api`: `public_tests/hidden_tests` преобразуются в `tests[]`;
+- `sql_query`: строится `init_sql` и нормализуются checks;
+- lesson step type `test` публикуется как `quiz` block с `quiz_payload.questions[]`.
+
+5. Подготовлен отдельный rollout-документ с пошаговым обоснованием:
+- `docs/operations/PYTHON_V16_MATERIALS_ROLLOUT_2026_05_03.md`.
+
+### Почему реализовано именно так
+
+1. Пользовательская цель была заменить текущий курс на новый пакет из папки `материалы`, а не точечно поправить несколько уроков.
+2. Полный reseed через миграцию даёт повторяемый deploy-путь и исключает смешивание старых/новых шагов в одной БД.
+3. Нормализация checker-форматов нужна, потому что исходный JSON и backend runtime используют разные ключи для части проверок; без адаптации часть задач не исполняется.
+4. Отдельный валидатор добавлен, чтобы ревьюер видел проверяемые критерии качества до выката на сервер.
+
+### Прогон проверок
+
+1. `node backend/tools/generate_python_v16_materials_migration.js` — успешно.
+2. `node backend/tools/validate_python_v16_materials_import.js` — PASS.
+3. `go test ./...` (backend) — PASS.

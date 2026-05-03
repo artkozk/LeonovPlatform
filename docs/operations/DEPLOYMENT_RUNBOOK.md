@@ -1064,3 +1064,100 @@ WHERE c.slug = 'python-zero'
 - деплой не подтверждать;
 - снять SQL-диагностику по конкретным task_id/lesson_id;
 - исправить генератор/миграцию/runtime и выпустить новый релиз.
+
+## 27. Дополнение от 2026-05-03 (reseed `python-zero` из папки `материалы`, migration `025`)
+
+1. Источник нового курса:
+- `материалы/course_import.json`.
+
+2. Генерация миграции выполняется локально:
+```bash
+node backend/tools/generate_python_v16_materials_migration.js
+```
+
+3. Обязательная структурная валидация перед деплоем:
+```bash
+node backend/tools/validate_python_v16_materials_import.js
+```
+
+4. Артефакты, которые должны быть в релизе:
+- `backend/migrations/025_reseed_python_zero_v16_materials.sql`;
+- `docs/operations/PYTHON_V16_MATERIALS_IMPORT_VALIDATION_2026_05_03.md`;
+- `docs/operations/PYTHON_V16_MATERIALS_ROLLOUT_2026_05_03.md`.
+
+5. Проверка применения миграции на сервере:
+```sql
+SELECT version, applied_at
+FROM schema_migrations
+WHERE version = '025_reseed_python_zero_v16_materials'
+ORDER BY applied_at DESC;
+```
+
+6. Проверка агрегатов после деплоя:
+```sql
+SELECT
+  COUNT(DISTINCT m.id) AS modules,
+  COUNT(DISTINCT l.id) FILTER (WHERE l.is_published) AS lessons_published
+FROM courses c
+JOIN modules m ON m.course_id = c.id
+LEFT JOIN lessons l ON l.module_id = m.id
+WHERE c.slug = 'python-zero';
+```
+Ожидание: `modules=5`, `lessons_published=150`.
+
+```sql
+SELECT lb.block_type, COUNT(*)
+FROM lesson_blocks lb
+JOIN lessons l ON l.id = lb.lesson_id
+JOIN modules m ON m.id = l.module_id
+JOIN courses c ON c.id = m.course_id
+WHERE c.slug = 'python-zero' AND lb.is_published = TRUE
+GROUP BY lb.block_type
+ORDER BY lb.block_type;
+```
+Ожидание:
+- `practice=750`
+- `project=300`
+- `quiz=300`
+- `summary=150`
+- `theory=300`
+
+```sql
+SELECT COUNT(*) AS tasks_published
+FROM tasks t
+JOIN lessons l ON l.id = t.lesson_id
+JOIN modules m ON m.id = l.module_id
+JOIN courses c ON c.id = m.course_id
+WHERE c.slug = 'python-zero' AND t.is_published = TRUE;
+```
+Ожидание: `tasks_published=1050`.
+
+7. Проверка checker-типов:
+```sql
+SELECT COALESCE(t.source_policy->>'checker_type','') AS checker_type, COUNT(*)
+FROM tasks t
+JOIN lessons l ON l.id = t.lesson_id
+JOIN modules m ON m.id = l.module_id
+JOIN courses c ON c.id = m.course_id
+WHERE c.slug = 'python-zero' AND t.is_published = TRUE
+GROUP BY checker_type
+ORDER BY checker_type;
+```
+Ожидание:
+- `http_api=95`
+- `ide_plugin=384`
+- `python_pytest=111`
+- `python_stdout=351`
+- `sql_query=109`
+
+8. Обязательный post-deploy smoke:
+1. Открыть lesson с практикой, выполнить `run` и `submit`.
+2. Проверить получение AI-подсказки на той же задаче.
+3. Открыть quiz-шаг и проверить ответ через backend-check endpoint.
+4. Проверить project-шаг с файлами из IDEA plugin (submit `files[]`).
+
+Почему это сделано именно так:
+
+1. Контентный reseed крупный (150 уроков / 1800 шагов), поэтому нужно явно проверять агрегаты.
+2. Этот курс использует mixed checker stack, и без проверок типов задач можно получить частично рабочий курс.
+3. Отдельная фиксация expected-чисел нужна, чтобы ревьюер быстро отлавливал “тихие” потери шагов при следующем обновлении материалов.
