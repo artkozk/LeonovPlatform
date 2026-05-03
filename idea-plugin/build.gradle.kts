@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.leonovcare.plugin"
-version = "0.1.0"
+version = "0.1.2"
 
 repositories {
     mavenCentral()
@@ -18,7 +18,7 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        pycharmCommunity("2025.1")
+        pycharmCommunity("2024.2.6")
         bundledPlugin("PythonCore")
         testFramework(TestFrameworkType.Platform)
     }
@@ -39,8 +39,8 @@ kotlin {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "251"
-            untilBuild = "251.*"
+            sinceBuild = "242"
+            untilBuild = "242.*"
         }
     }
 }

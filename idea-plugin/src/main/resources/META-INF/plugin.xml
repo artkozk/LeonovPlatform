@@ -1,8 +1,8 @@
 <idea-plugin>
     <id>com.leonovcare.plugin</id>
-    <name>%plugin.name%</name>
+    <name>Leonov Care Platform Plugin</name>
     <vendor email="support@leonovcare.local" url="https://leonovcare.local">Leonov Care</vendor>
-    <description>%plugin.description%</description>
+    <description>IDE client for Leonov Care Platform courses and tasks.</description>
     <resource-bundle>messages.PlatformBundle</resource-bundle>
 
     <depends>com.intellij.modules.platform</depends>
@@ -35,7 +35,7 @@
 
         <applicationConfigurable
                 id="com.leonovcare.plugin.settings"
-                displayName="%settings.displayName%"
+                displayName="Leonov Care Platform Plugin"
                 instance="com.leonovcare.plugin.settings.PlatformSettingsConfigurable"/>
 
         <notificationGroup id="Leonov Care Platform Authentication" displayType="BALLOON" isLogByDefault="true"/>

@@ -135,3 +135,20 @@ cd idea-plugin
 - plugin устанавливается и работает в PyCharm для учебного Python-сценария;
 - локальный run/debug через текущий plugin-контур не предоставляется и возвращает controlled unsupported message;
 - серверная проверка (`submit` + polling verdict), синхронизация и AI-подсказки продолжают работать.
+
+## Update 2026-05-03 — packaging for PyCharm 2024.2.6
+
+1. Обнаружено, что на пользовательском IDE стоит PyCharm `2024.2.6` (ветка build `242`), а прошлый zip был собран под `251.*`, из-за чего plugin не появлялся в `Settings -> Tools`.
+
+2. Для этого окружения выполнена отдельная совместимая упаковка:
+- `pycharmCommunity("2024.2.6")`;
+- `sinceBuild = "242"`;
+- `untilBuild = "242.*"`;
+- plugin version: `0.1.1`.
+
+3. Актуальный файл для установки:
+- `idea-plugin/build/distributions/leonovcare-idea-plugin-0.1.1.zip`.
+
+4. Почему так:
+- это устраняет install-time несовместимость без изменения функционального контракта API/login/submit/AI;
+- пользователь получает предсказуемую установку именно в своей версии IDE.
