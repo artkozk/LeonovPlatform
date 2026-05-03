@@ -1,0 +1,15 @@
+{
+  "version": "v18",
+  "checks": [
+    "required_files",
+    "commands",
+    "git_clean",
+    "pytest",
+    "sql",
+    "http_api",
+    "docker",
+    "ci_cd",
+    "deploy_dry_run",
+    "rollback_dry_run"
+  ]
+}
