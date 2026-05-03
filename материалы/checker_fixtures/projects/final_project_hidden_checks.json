@@ -1,0 +1,43 @@
+{
+  "checks": [
+    {
+      "name": "api_contract",
+      "type": "http_api",
+      "paths": [
+        "GET /health",
+        "POST /auth/login",
+        "GET /tasks",
+        "POST /tasks"
+      ]
+    },
+    {
+      "name": "db_migrations",
+      "type": "files",
+      "required_files": [
+        "migrations/env.py"
+      ]
+    },
+    {
+      "name": "docker_compose",
+      "type": "command",
+      "cmd": "docker compose config",
+      "expect_exit_code": 0
+    },
+    {
+      "name": "ci",
+      "type": "files",
+      "required_files": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "name": "no_secret_leak",
+      "type": "content_scan",
+      "forbidden_patterns": [
+        "prod_secret",
+        "real_token",
+        "BEGIN PRIVATE KEY"
+      ]
+    }
+  ]
+}

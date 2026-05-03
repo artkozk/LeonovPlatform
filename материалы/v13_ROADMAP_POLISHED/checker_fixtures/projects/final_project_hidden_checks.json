@@ -1,0 +1,52 @@
+{
+  "version": "v13",
+  "gates": [
+    "tz",
+    "user_stories",
+    "db_schema",
+    "api_contract",
+    "git_workflow",
+    "fastapi_structure",
+    "sqlalchemy_models",
+    "alembic_migrations",
+    "auth",
+    "crud",
+    "tests",
+    "docker",
+    "ci_cd",
+    "ai_integration",
+    "logging",
+    "readme",
+    "deploy",
+    "defense"
+  ],
+  "hidden_checks": [
+    {
+      "name": "no_secrets",
+      "type": "file_scan",
+      "patterns": [
+        "API_KEY=",
+        "SECRET_KEY="
+      ]
+    },
+    {
+      "name": "health_endpoint",
+      "type": "http_api",
+      "method": "GET",
+      "path": "/health",
+      "expected_status": 200
+    },
+    {
+      "name": "pytest",
+      "type": "command",
+      "cmd": "python -m pytest",
+      "expect_exit_code": 0
+    },
+    {
+      "name": "compose_config",
+      "type": "command",
+      "cmd": "docker compose config",
+      "expect_exit_code": 0
+    }
+  ]
+}

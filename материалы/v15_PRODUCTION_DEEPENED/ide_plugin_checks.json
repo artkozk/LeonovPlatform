@@ -1,0 +1,23 @@
+{
+  "version": "v15",
+  "quality_rules": {
+    "unique_scenario_id_required": true,
+    "max_signature_repeat": 20,
+    "project_solution_required": true,
+    "runtime_checks_required_for_devops": true,
+    "gate_checks_required_for_final": true
+  },
+  "checks": [
+    "files",
+    "git",
+    "pytest",
+    "sql",
+    "fastapi",
+    "docker",
+    "ci_cd",
+    "final_gates",
+    "rollback",
+    "healthcheck",
+    "env_example"
+  ]
+}

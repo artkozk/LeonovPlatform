@@ -1,0 +1,48 @@
+{
+  "version": "v13",
+  "checks": {
+    "files": [
+      "required_files",
+      "forbidden_files",
+      "file_content_rules"
+    ],
+    "git": [
+      "clean_worktree",
+      "branches",
+      "commits",
+      "merge_conflict_markers",
+      "remote_origin",
+      "tags",
+      "reflog"
+    ],
+    "python": [
+      "pytest",
+      "coverage"
+    ],
+    "sql": [
+      "fixtures",
+      "sqlite_temp_db",
+      "migrations"
+    ],
+    "fastapi": [
+      "http_api",
+      "openapi",
+      "healthcheck"
+    ],
+    "docker": [
+      "Dockerfile",
+      "docker compose",
+      "healthcheck",
+      "logs",
+      "exec",
+      "networks"
+    ],
+    "ci_cd": [
+      "github_actions",
+      "gitlab_ci",
+      "test_job",
+      "build_image_job",
+      "deploy_job"
+    ]
+  }
+}

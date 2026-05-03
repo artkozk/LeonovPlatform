@@ -1,0 +1,77 @@
+<idea-plugin>
+    <id>com.leonovcare.plugin</id>
+    <name>%plugin.name%</name>
+    <vendor email="support@leonovcare.local" url="https://leonovcare.local">Leonov Care</vendor>
+    <description>%plugin.description%</description>
+    <resource-bundle>messages.PlatformBundle</resource-bundle>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.java</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow
+                id="Leonov Care Platform"
+                anchor="right"
+                factoryClass="com.leonovcare.plugin.ui.PlatformToolWindowFactory"
+                canCloseContents="false"/>
+
+        <applicationService serviceImplementation="com.leonovcare.plugin.settings.PlatformSettings"/>
+        <applicationService serviceImplementation="com.leonovcare.plugin.cache.CourseCache"/>
+        <applicationService serviceImplementation="com.leonovcare.plugin.cache.TaskCache"/>
+        <applicationService serviceImplementation="com.leonovcare.plugin.auth.AuthService"/>
+        <applicationService serviceImplementation="com.leonovcare.plugin.auth.CurrentUserService"/>
+        <applicationService serviceImplementation="com.leonovcare.plugin.api.PlatformApiClientFactory"/>
+
+        <projectService serviceImplementation="com.leonovcare.plugin.task.TaskManager"/>
+        <projectService serviceImplementation="com.leonovcare.plugin.task.CurrentTaskService"/>
+        <projectService serviceImplementation="com.leonovcare.plugin.submission.SubmissionService"/>
+        <projectService serviceImplementation="com.leonovcare.plugin.run.TaskRunConfigurationService"/>
+        <projectService serviceImplementation="com.leonovcare.plugin.ai.AiHintService"/>
+        <projectService serviceImplementation="com.leonovcare.plugin.analysis.LocalInspectionRunner"/>
+        <projectService serviceImplementation="com.leonovcare.plugin.analysis.CodeStyleAnalysisService"/>
+        <projectService serviceImplementation="com.leonovcare.plugin.sync.SyncService"/>
+        <projectService serviceImplementation="com.leonovcare.plugin.project.ProjectStructureService"/>
+        <projectService serviceImplementation="com.leonovcare.plugin.project.ProjectRestoreService"/>
+
+        <applicationConfigurable
+                id="com.leonovcare.plugin.settings"
+                displayName="%settings.displayName%"
+                instance="com.leonovcare.plugin.settings.PlatformSettingsConfigurable"/>
+
+        <notificationGroup id="Leonov Care Platform Authentication" displayType="BALLOON" isLogByDefault="true"/>
+        <notificationGroup id="Leonov Care Platform Tasks" displayType="BALLOON" isLogByDefault="true"/>
+        <notificationGroup id="Leonov Care Platform Submission" displayType="BALLOON" isLogByDefault="true"/>
+        <notificationGroup id="Leonov Care Platform Sync" displayType="BALLOON" isLogByDefault="true"/>
+    </extensions>
+
+    <actions>
+        <action id="LeonovCare.Login" class="com.leonovcare.plugin.actions.LoginAction" text="%action.login%"/>
+        <action id="LeonovCare.Logout" class="com.leonovcare.plugin.actions.LogoutAction" text="%action.logout%"/>
+        <action id="LeonovCare.SyncTasks" class="com.leonovcare.plugin.actions.SyncTasksAction" text="%action.sync%"/>
+        <action id="LeonovCare.OpenCurrentTask" class="com.leonovcare.plugin.actions.OpenCurrentTaskAction" text="%action.openTask%"/>
+        <action id="LeonovCare.RunTask" class="com.leonovcare.plugin.actions.RunTaskAction" text="%action.runTask%"/>
+        <action id="LeonovCare.DebugTask" class="com.leonovcare.plugin.actions.DebugTaskAction" text="%action.debugTask%"/>
+        <action id="LeonovCare.SubmitTask" class="com.leonovcare.plugin.actions.SubmitTaskAction" text="%action.submitTask%"/>
+        <action id="LeonovCare.AnalyzeTask" class="com.leonovcare.plugin.actions.AnalyzeTaskAction" text="%action.analyzeTask%"/>
+        <action id="LeonovCare.AiHint" class="com.leonovcare.plugin.actions.AiHintAction" text="%action.aiHint%"/>
+        <action id="LeonovCare.ShowReferenceSolution" class="com.leonovcare.plugin.actions.ShowReferenceSolutionAction" text="%action.referenceSolution%"/>
+        <action id="LeonovCare.RestoreProjectStructure" class="com.leonovcare.plugin.actions.RestoreProjectStructureAction" text="%action.restoreProject%"/>
+        <action id="LeonovCare.OpenPluginSettings" class="com.leonovcare.plugin.actions.OpenPluginSettingsAction" text="%action.openSettings%"/>
+
+        <group id="LeonovCare.ActionGroup" text="Leonov Care Platform" popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <action id="LeonovCare.Login.Group" class="com.leonovcare.plugin.actions.LoginAction" text="%action.login%"/>
+            <action id="LeonovCare.Logout.Group" class="com.leonovcare.plugin.actions.LogoutAction" text="%action.logout%"/>
+            <action id="LeonovCare.Sync.Group" class="com.leonovcare.plugin.actions.SyncTasksAction" text="%action.sync%"/>
+            <action id="LeonovCare.OpenTask.Group" class="com.leonovcare.plugin.actions.OpenCurrentTaskAction" text="%action.openTask%"/>
+            <action id="LeonovCare.Run.Group" class="com.leonovcare.plugin.actions.RunTaskAction" text="%action.runTask%"/>
+            <action id="LeonovCare.Debug.Group" class="com.leonovcare.plugin.actions.DebugTaskAction" text="%action.debugTask%"/>
+            <action id="LeonovCare.Submit.Group" class="com.leonovcare.plugin.actions.SubmitTaskAction" text="%action.submitTask%"/>
+            <action id="LeonovCare.Analyze.Group" class="com.leonovcare.plugin.actions.AnalyzeTaskAction" text="%action.analyzeTask%"/>
+            <action id="LeonovCare.AiHint.Group" class="com.leonovcare.plugin.actions.AiHintAction" text="%action.aiHint%"/>
+            <action id="LeonovCare.Reference.Group" class="com.leonovcare.plugin.actions.ShowReferenceSolutionAction" text="%action.referenceSolution%"/>
+            <action id="LeonovCare.Restore.Group" class="com.leonovcare.plugin.actions.RestoreProjectStructureAction" text="%action.restoreProject%"/>
+            <action id="LeonovCare.Settings.Group" class="com.leonovcare.plugin.actions.OpenPluginSettingsAction" text="%action.openSettings%"/>
+        </group>
+    </actions>
+</idea-plugin>

@@ -1,0 +1,1801 @@
+﻿module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_type,checker_type,xp,difficulty,estimated_minutes
+1,"Модуль 1. Python Core, терминал, Git",1,Первый код,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",1,Первый код,2,Первый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",1,Первый код,3,Возраст,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",1,Первый код,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",1,Первый код,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",1,Первый код,6,Формат,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",1,Первый код,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",1,Первый код,8,Граница,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",1,Первый код,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",1,Первый код,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",1,Первый код,11,Чистый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",1,Первый код,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",2,Ввод и числа,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",2,Ввод и числа,2,Сумма,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",2,Ввод и числа,3,Возраст,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",2,Ввод и числа,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",2,Ввод и числа,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",2,Ввод и числа,6,Формат,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",2,Ввод и числа,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",2,Ввод и числа,8,Граница,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",2,Ввод и числа,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",2,Ввод и числа,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",2,Ввод и числа,11,Чистый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",2,Ввод и числа,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",3,Строки,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",3,Строки,2,Сумма,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",3,Строки,3,Возраст,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",3,Строки,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",3,Строки,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",3,Строки,6,Формат,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",3,Строки,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",3,Строки,8,Граница,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",3,Строки,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",3,Строки,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",3,Строки,11,Чистый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",3,Строки,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",4,bool и None,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",4,bool и None,2,Сумма,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",4,bool и None,3,Возраст,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",4,bool и None,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",4,bool и None,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",4,bool и None,6,Формат,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",4,bool и None,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",4,bool и None,8,Граница,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",4,bool и None,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",4,bool и None,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",4,bool и None,11,Чистый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",4,bool и None,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",5,Условия,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",5,Условия,2,Сумма,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",5,Условия,3,Возраст,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",5,Условия,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",5,Условия,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",5,Условия,6,Формат,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",5,Условия,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",5,Условия,8,Граница,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",5,Условия,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",5,Условия,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",5,Условия,11,Чистый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",5,Условия,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",6,Типы и память,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",6,Типы и память,2,Сумма,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",6,Типы и память,3,Возраст,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",6,Типы и память,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",6,Типы и память,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",6,Типы и память,6,Формат,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",6,Типы и память,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",6,Типы и память,8,Граница,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",6,Типы и память,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",6,Типы и память,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",6,Типы и память,11,Чистый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",6,Типы и память,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",7,Циклы,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",7,Циклы,2,Сумма,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",7,Циклы,3,Возраст,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",7,Циклы,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",7,Циклы,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",7,Циклы,6,Формат,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",7,Циклы,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",7,Циклы,8,Граница,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",7,Циклы,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",7,Циклы,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",7,Циклы,11,Чистый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",7,Циклы,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",8,Списки,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",8,Списки,2,Сумма,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",8,Списки,3,Возраст,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",8,Списки,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",8,Списки,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",8,Списки,6,Формат,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",8,Списки,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",8,Списки,8,Граница,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",8,Списки,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",8,Списки,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",8,Списки,11,Чистый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",8,Списки,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",9,Функции,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",9,Функции,2,Сумма,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",9,Функции,3,Возраст,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",9,Функции,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",9,Функции,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",9,Функции,6,Формат,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",9,Функции,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",9,Функции,8,Граница,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",9,Функции,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",9,Функции,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",9,Функции,11,Чистый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",9,Функции,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",10,"Кортежи, множества, словари",1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",10,"Кортежи, множества, словари",2,Сумма,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",10,"Кортежи, множества, словари",3,Возраст,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",10,"Кортежи, множества, словари",4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",10,"Кортежи, множества, словари",5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",10,"Кортежи, множества, словари",6,Формат,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",10,"Кортежи, множества, словари",7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",10,"Кортежи, множества, словари",8,Граница,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",10,"Кортежи, множества, словари",9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",10,"Кортежи, множества, словари",10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",10,"Кортежи, множества, словари",11,Чистый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",10,"Кортежи, множества, словари",12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",11,map/filter/lambda,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",11,map/filter/lambda,2,Сумма,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",11,map/filter/lambda,3,Возраст,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",11,map/filter/lambda,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",11,map/filter/lambda,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",11,map/filter/lambda,6,Формат,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",11,map/filter/lambda,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",11,map/filter/lambda,8,Граница,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",11,map/filter/lambda,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",11,map/filter/lambda,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",11,map/filter/lambda,11,Чистый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",11,map/filter/lambda,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",12,datetime,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",12,datetime,2,Сумма,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",12,datetime,3,Возраст,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",12,datetime,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",12,datetime,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",12,datetime,6,Формат,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",12,datetime,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",12,datetime,8,Граница,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",12,datetime,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",12,datetime,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",12,datetime,11,Чистый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",12,datetime,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",13,Итераторы,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",13,Итераторы,2,Сумма,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",13,Итераторы,3,Возраст,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",13,Итераторы,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",13,Итераторы,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",13,Итераторы,6,Формат,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",13,Итераторы,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",13,Итераторы,8,Граница,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",13,Итераторы,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",13,Итераторы,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",13,Итераторы,11,Чистый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",13,Итераторы,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",14,Генераторы,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",14,Генераторы,2,Сумма,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",14,Генераторы,3,Возраст,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",14,Генераторы,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",14,Генераторы,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",14,Генераторы,6,Формат,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",14,Генераторы,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",14,Генераторы,8,Граница,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",14,Генераторы,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",14,Генераторы,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",14,Генераторы,11,Чистый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",14,Генераторы,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",15,Декораторы,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",15,Декораторы,2,Сумма,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",15,Декораторы,3,Возраст,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",15,Декораторы,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",15,Декораторы,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",15,Декораторы,6,Формат,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",15,Декораторы,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",15,Декораторы,8,Граница,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",15,Декораторы,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",15,Декораторы,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",15,Декораторы,11,Чистый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",15,Декораторы,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",16,Контекстные менеджеры,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",16,Контекстные менеджеры,2,Сумма,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",16,Контекстные менеджеры,3,Возраст,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",16,Контекстные менеджеры,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",16,Контекстные менеджеры,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",16,Контекстные менеджеры,6,Формат,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",16,Контекстные менеджеры,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",16,Контекстные менеджеры,8,Граница,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",16,Контекстные менеджеры,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",16,Контекстные менеджеры,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",16,Контекстные менеджеры,11,Чистый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",16,Контекстные менеджеры,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",17,Исключения,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",17,Исключения,2,Сумма,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",17,Исключения,3,Возраст,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",17,Исключения,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",17,Исключения,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",17,Исключения,6,Формат,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",17,Исключения,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",17,Исключения,8,Граница,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",17,Исключения,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",17,Исключения,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",17,Исключения,11,Чистый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",17,Исключения,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",18,AI для учёбы,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",18,AI для учёбы,2,Разогрев,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",18,AI для учёбы,3,Команда,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",18,AI для учёбы,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",18,AI для учёбы,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",18,AI для учёбы,6,Ошибка,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",18,AI для учёбы,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",18,AI для учёбы,8,Кейс,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",18,AI для учёбы,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",18,AI для учёбы,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",18,AI для учёбы,11,Край,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",18,AI для учёбы,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",19,Как работает компьютер,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",19,Как работает компьютер,2,Разогрев,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",19,Как работает компьютер,3,Команда,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",19,Как работает компьютер,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",19,Как работает компьютер,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",19,Как работает компьютер,6,Ошибка,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",19,Как работает компьютер,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",19,Как работает компьютер,8,Кейс,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",19,Как работает компьютер,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",19,Как работает компьютер,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",19,Как работает компьютер,11,Край,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",19,Как работает компьютер,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",20,Терминал: база,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",20,Терминал: база,2,Разогрев,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",20,Терминал: база,3,Команда,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",20,Терминал: база,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",20,Терминал: база,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",20,Терминал: база,6,Ошибка,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",20,Терминал: база,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",20,Терминал: база,8,Кейс,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",20,Терминал: база,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",20,Терминал: база,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",20,Терминал: база,11,Край,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",20,Терминал: база,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",21,Терминал: процессы,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",21,Терминал: процессы,2,Разогрев,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",21,Терминал: процессы,3,Команда,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",21,Терминал: процессы,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",21,Терминал: процессы,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",21,Терминал: процессы,6,Ошибка,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",21,Терминал: процессы,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",21,Терминал: процессы,8,Кейс,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",21,Терминал: процессы,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",21,Терминал: процессы,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",21,Терминал: процессы,11,Край,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",21,Терминал: процессы,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",22,Git: первые коммиты,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",22,Git: первые коммиты,2,status,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",22,Git: первые коммиты,3,commit,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",22,Git: первые коммиты,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",22,Git: первые коммиты,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",22,Git: первые коммиты,6,diff,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",22,Git: первые коммиты,7,Ветка,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",22,Git: первые коммиты,8,Конфликт,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",22,Git: первые коммиты,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",22,Git: первые коммиты,10,remote,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",22,Git: первые коммиты,11,rebase,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",22,Git: первые коммиты,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",23,Git: индекс и история,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",23,Git: индекс и история,2,status,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",23,Git: индекс и история,3,commit,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",23,Git: индекс и история,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",23,Git: индекс и история,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",23,Git: индекс и история,6,diff,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",23,Git: индекс и история,7,Ветка,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",23,Git: индекс и история,8,Конфликт,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",23,Git: индекс и история,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",23,Git: индекс и история,10,remote,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",23,Git: индекс и история,11,rebase,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",23,Git: индекс и история,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",24,Git: ветки,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",24,Git: ветки,2,status,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",24,Git: ветки,3,commit,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",24,Git: ветки,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",24,Git: ветки,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",24,Git: ветки,6,diff,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",24,Git: ветки,7,Ветка,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",24,Git: ветки,8,Конфликт,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",24,Git: ветки,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",24,Git: ветки,10,remote,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",24,Git: ветки,11,rebase,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",24,Git: ветки,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",25,Git: отмена изменений,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",25,Git: отмена изменений,2,status,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",25,Git: отмена изменений,3,commit,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",25,Git: отмена изменений,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",25,Git: отмена изменений,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",25,Git: отмена изменений,6,diff,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",25,Git: отмена изменений,7,Ветка,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",25,Git: отмена изменений,8,Конфликт,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",25,Git: отмена изменений,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",25,Git: отмена изменений,10,remote,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",25,Git: отмена изменений,11,rebase,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",25,Git: отмена изменений,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",26,Git: merge и rebase,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",26,Git: merge и rebase,2,status,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",26,Git: merge и rebase,3,commit,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",26,Git: merge и rebase,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",26,Git: merge и rebase,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",26,Git: merge и rebase,6,diff,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",26,Git: merge и rebase,7,Ветка,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",26,Git: merge и rebase,8,Конфликт,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",26,Git: merge и rebase,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",26,Git: merge и rebase,10,remote,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",26,Git: merge и rebase,11,rebase,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",26,Git: merge и rebase,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",27,GitHub и remote,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",27,GitHub и remote,2,status,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",27,GitHub и remote,3,commit,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",27,GitHub и remote,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",27,GitHub и remote,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",27,GitHub и remote,6,diff,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",27,GitHub и remote,7,Ветка,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",27,GitHub и remote,8,Конфликт,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",27,GitHub и remote,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",27,GitHub и remote,10,remote,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",27,GitHub и remote,11,rebase,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",27,GitHub и remote,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",28,CLI-проект,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",28,CLI-проект,2,Разогрев,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",28,CLI-проект,3,Команда,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",28,CLI-проект,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",28,CLI-проект,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",28,CLI-проект,6,Ошибка,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",28,CLI-проект,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",28,CLI-проект,8,Кейс,practice,ide_plugin,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",28,CLI-проект,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",28,CLI-проект,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",28,CLI-проект,11,Край,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",28,CLI-проект,12,Итоги,summary,,25,1,10
+1,"Модуль 1. Python Core, терминал, Git",29,Экзамен 1,1,Смысл,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",29,Экзамен 1,2,Сумма,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",29,Экзамен 1,3,Возраст,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",29,Экзамен 1,4,Контроль,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",29,Экзамен 1,5,Правило,theory,,30,1,15
+1,"Модуль 1. Python Core, терминал, Git",29,Экзамен 1,6,Формат,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",29,Экзамен 1,7,Мини-лаб,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",29,Экзамен 1,8,Граница,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",29,Экзамен 1,9,Проверка,test,quiz_single,40,1,11
+1,"Модуль 1. Python Core, терминал, Git",29,Экзамен 1,10,Работа,project,ide_plugin,100,1,46
+1,"Модуль 1. Python Core, терминал, Git",29,Экзамен 1,11,Чистый вывод,practice,python_stdout,60,1,21
+1,"Модуль 1. Python Core, терминал, Git",29,Экзамен 1,12,Итоги,summary,,25,1,10
+2,Модуль 2. Python Hard,1,ООП: классы,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,1,ООП: классы,2,Разогрев,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,1,ООП: классы,3,Команда,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,1,ООП: классы,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,1,ООП: классы,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,1,ООП: классы,6,Ошибка,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,1,ООП: классы,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,1,ООП: классы,8,Кейс,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,1,ООП: классы,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,1,ООП: классы,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,1,ООП: классы,11,Край,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,1,ООП: классы,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,2,ООП: атрибуты и методы,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,2,ООП: атрибуты и методы,2,Разогрев,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,2,ООП: атрибуты и методы,3,Команда,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,2,ООП: атрибуты и методы,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,2,ООП: атрибуты и методы,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,2,ООП: атрибуты и методы,6,Ошибка,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,2,ООП: атрибуты и методы,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,2,ООП: атрибуты и методы,8,Кейс,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,2,ООП: атрибуты и методы,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,2,ООП: атрибуты и методы,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,2,ООП: атрибуты и методы,11,Край,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,2,ООП: атрибуты и методы,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,3,ООП: инкапсуляция,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,3,ООП: инкапсуляция,2,Разогрев,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,3,ООП: инкапсуляция,3,Команда,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,3,ООП: инкапсуляция,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,3,ООП: инкапсуляция,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,3,ООП: инкапсуляция,6,Ошибка,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,3,ООП: инкапсуляция,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,3,ООП: инкапсуляция,8,Кейс,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,3,ООП: инкапсуляция,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,3,ООП: инкапсуляция,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,3,ООП: инкапсуляция,11,Край,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,3,ООП: инкапсуляция,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,4,ООП: композиция,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,4,ООП: композиция,2,Разогрев,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,4,ООП: композиция,3,Команда,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,4,ООП: композиция,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,4,ООП: композиция,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,4,ООП: композиция,6,Ошибка,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,4,ООП: композиция,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,4,ООП: композиция,8,Кейс,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,4,ООП: композиция,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,4,ООП: композиция,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,4,ООП: композиция,11,Край,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,4,ООП: композиция,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,5,Магические методы,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,5,Магические методы,2,Разогрев,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,5,Магические методы,3,Команда,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,5,Магические методы,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,5,Магические методы,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,5,Магические методы,6,Ошибка,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,5,Магические методы,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,5,Магические методы,8,Кейс,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,5,Магические методы,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,5,Магические методы,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,5,Магические методы,11,Край,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,5,Магические методы,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,6,Протоколы Python,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,6,Протоколы Python,2,Разогрев,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,6,Протоколы Python,3,Команда,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,6,Протоколы Python,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,6,Протоколы Python,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,6,Протоколы Python,6,Ошибка,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,6,Протоколы Python,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,6,Протоколы Python,8,Кейс,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,6,Протоколы Python,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,6,Протоколы Python,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,6,Протоколы Python,11,Край,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,6,Протоколы Python,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,7,Наследование,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,7,Наследование,2,Разогрев,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,7,Наследование,3,Команда,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,7,Наследование,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,7,Наследование,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,7,Наследование,6,Ошибка,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,7,Наследование,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,7,Наследование,8,Кейс,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,7,Наследование,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,7,Наследование,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,7,Наследование,11,Край,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,7,Наследование,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,8,Полиморфизм,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,8,Полиморфизм,2,Разогрев,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,8,Полиморфизм,3,Команда,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,8,Полиморфизм,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,8,Полиморфизм,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,8,Полиморфизм,6,Ошибка,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,8,Полиморфизм,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,8,Полиморфизм,8,Кейс,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,8,Полиморфизм,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,8,Полиморфизм,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,8,Полиморфизм,11,Край,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,8,Полиморфизм,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,9,Абстракции,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,9,Абстракции,2,Разогрев,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,9,Абстракции,3,Команда,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,9,Абстракции,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,9,Абстракции,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,9,Абстракции,6,Ошибка,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,9,Абстракции,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,9,Абстракции,8,Кейс,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,9,Абстракции,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,9,Абстракции,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,9,Абстракции,11,Край,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,9,Абстракции,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,10,dataclasses,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,10,dataclasses,2,Разогрев,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,10,dataclasses,3,Команда,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,10,dataclasses,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,10,dataclasses,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,10,dataclasses,6,Ошибка,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,10,dataclasses,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,10,dataclasses,8,Кейс,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,10,dataclasses,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,10,dataclasses,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,10,dataclasses,11,Край,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,10,dataclasses,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,11,typing: база,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,11,typing: база,2,Сумма,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,11,typing: база,3,Возраст,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,11,typing: база,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,11,typing: база,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,11,typing: база,6,Формат,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,11,typing: база,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,11,typing: база,8,Граница,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,11,typing: база,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,11,typing: база,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,11,typing: база,11,Чистый вывод,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,11,typing: база,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,12,typing: generics,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,12,typing: generics,2,Сумма,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,12,typing: generics,3,Возраст,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,12,typing: generics,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,12,typing: generics,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,12,typing: generics,6,Формат,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,12,typing: generics,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,12,typing: generics,8,Граница,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,12,typing: generics,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,12,typing: generics,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,12,typing: generics,11,Чистый вывод,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,12,typing: generics,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,13,mypy и контракты,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,13,mypy и контракты,2,Сумма,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,13,mypy и контракты,3,Возраст,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,13,mypy и контракты,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,13,mypy и контракты,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,13,mypy и контракты,6,Формат,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,13,mypy и контракты,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,13,mypy и контракты,8,Граница,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,13,mypy и контракты,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,13,mypy и контракты,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,13,mypy и контракты,11,Чистый вывод,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,13,mypy и контракты,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,14,pathlib и файлы,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,14,pathlib и файлы,2,GET /tasks,practice,http_api,65,2,22
+2,Модуль 2. Python Hard,14,pathlib и файлы,3,POST /tasks,practice,http_api,65,2,22
+2,Модуль 2. Python Hard,14,pathlib и файлы,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,14,pathlib и файлы,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,14,pathlib и файлы,6,status code,practice,http_api,65,2,22
+2,Модуль 2. Python Hard,14,pathlib и файлы,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,14,pathlib и файлы,8,Depends,practice,http_api,65,2,22
+2,Модуль 2. Python Hard,14,pathlib и файлы,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,14,pathlib и файлы,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,14,pathlib и файлы,11,TestClient,practice,http_api,65,2,22
+2,Модуль 2. Python Hard,14,pathlib и файлы,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,15,JSON и CSV,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,15,JSON и CSV,2,Сумма,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,15,JSON и CSV,3,Возраст,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,15,JSON и CSV,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,15,JSON и CSV,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,15,JSON и CSV,6,Формат,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,15,JSON и CSV,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,15,JSON и CSV,8,Граница,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,15,JSON и CSV,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,15,JSON и CSV,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,15,JSON и CSV,11,Чистый вывод,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,15,JSON и CSV,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,16,логирование,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,16,логирование,2,Сумма,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,16,логирование,3,Возраст,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,16,логирование,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,16,логирование,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,16,логирование,6,Формат,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,16,логирование,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,16,логирование,8,Граница,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,16,логирование,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,16,логирование,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,16,логирование,11,Чистый вывод,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,16,логирование,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,17,пакетирование,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,17,пакетирование,2,Сумма,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,17,пакетирование,3,Возраст,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,17,пакетирование,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,17,пакетирование,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,17,пакетирование,6,Формат,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,17,пакетирование,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,17,пакетирование,8,Граница,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,17,пакетирование,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,17,пакетирование,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,17,пакетирование,11,Чистый вывод,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,17,пакетирование,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,18,Poetry,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,18,Poetry,2,Сумма,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,18,Poetry,3,Возраст,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,18,Poetry,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,18,Poetry,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,18,Poetry,6,Формат,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,18,Poetry,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,18,Poetry,8,Граница,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,18,Poetry,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,18,Poetry,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,18,Poetry,11,Чистый вывод,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,18,Poetry,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,19,pytest: функции,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,19,pytest: функции,2,Разогрев,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,19,pytest: функции,3,Команда,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,19,pytest: функции,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,19,pytest: функции,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,19,pytest: функции,6,Ошибка,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,19,pytest: функции,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,19,pytest: функции,8,Кейс,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,19,pytest: функции,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,19,pytest: функции,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,19,pytest: функции,11,Край,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,19,pytest: функции,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,20,pytest: fixtures,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,20,pytest: fixtures,2,Разогрев,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,20,pytest: fixtures,3,Команда,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,20,pytest: fixtures,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,20,pytest: fixtures,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,20,pytest: fixtures,6,Ошибка,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,20,pytest: fixtures,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,20,pytest: fixtures,8,Кейс,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,20,pytest: fixtures,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,20,pytest: fixtures,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,20,pytest: fixtures,11,Край,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,20,pytest: fixtures,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,21,pytest: parametrization,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,21,pytest: parametrization,2,Разогрев,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,21,pytest: parametrization,3,Команда,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,21,pytest: parametrization,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,21,pytest: parametrization,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,21,pytest: parametrization,6,Ошибка,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,21,pytest: parametrization,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,21,pytest: parametrization,8,Кейс,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,21,pytest: parametrization,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,21,pytest: parametrization,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,21,pytest: parametrization,11,Край,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,21,pytest: parametrization,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,22,pytest: mocking,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,22,pytest: mocking,2,Разогрев,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,22,pytest: mocking,3,Команда,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,22,pytest: mocking,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,22,pytest: mocking,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,22,pytest: mocking,6,Ошибка,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,22,pytest: mocking,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,22,pytest: mocking,8,Кейс,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,22,pytest: mocking,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,22,pytest: mocking,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,22,pytest: mocking,11,Край,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,22,pytest: mocking,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,23,алгоритмы: сложность,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,23,алгоритмы: сложность,2,Сумма,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,23,алгоритмы: сложность,3,Возраст,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,23,алгоритмы: сложность,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,23,алгоритмы: сложность,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,23,алгоритмы: сложность,6,Формат,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,23,алгоритмы: сложность,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,23,алгоритмы: сложность,8,Граница,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,23,алгоритмы: сложность,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,23,алгоритмы: сложность,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,23,алгоритмы: сложность,11,Чистый вывод,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,23,алгоритмы: сложность,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,24,структуры данных,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,24,структуры данных,2,Сумма,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,24,структуры данных,3,Возраст,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,24,структуры данных,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,24,структуры данных,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,24,структуры данных,6,Формат,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,24,структуры данных,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,24,структуры данных,8,Граница,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,24,структуры данных,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,24,структуры данных,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,24,структуры данных,11,Чистый вывод,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,24,структуры данных,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,25,сортировки и поиск,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,25,сортировки и поиск,2,Сумма,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,25,сортировки и поиск,3,Возраст,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,25,сортировки и поиск,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,25,сортировки и поиск,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,25,сортировки и поиск,6,Формат,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,25,сортировки и поиск,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,25,сортировки и поиск,8,Граница,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,25,сортировки и поиск,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,25,сортировки и поиск,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,25,сортировки и поиск,11,Чистый вывод,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,25,сортировки и поиск,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,26,threading,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,26,threading,2,Разогрев,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,26,threading,3,Команда,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,26,threading,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,26,threading,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,26,threading,6,Ошибка,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,26,threading,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,26,threading,8,Кейс,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,26,threading,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,26,threading,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,26,threading,11,Край,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,26,threading,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,27,multiprocessing,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,27,multiprocessing,2,Разогрев,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,27,multiprocessing,3,Команда,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,27,multiprocessing,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,27,multiprocessing,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,27,multiprocessing,6,Ошибка,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,27,multiprocessing,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,27,multiprocessing,8,Кейс,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,27,multiprocessing,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,27,multiprocessing,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,27,multiprocessing,11,Край,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,27,multiprocessing,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,28,asyncio: база,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,28,asyncio: база,2,Разогрев,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,28,asyncio: база,3,Команда,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,28,asyncio: база,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,28,asyncio: база,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,28,asyncio: база,6,Ошибка,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,28,asyncio: база,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,28,asyncio: база,8,Кейс,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,28,asyncio: база,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,28,asyncio: база,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,28,asyncio: база,11,Край,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,28,asyncio: база,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,29,asyncio: HTTP,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,29,asyncio: HTTP,2,Разогрев,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,29,asyncio: HTTP,3,Команда,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,29,asyncio: HTTP,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,29,asyncio: HTTP,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,29,asyncio: HTTP,6,Ошибка,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,29,asyncio: HTTP,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,29,asyncio: HTTP,8,Кейс,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,29,asyncio: HTTP,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,29,asyncio: HTTP,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,29,asyncio: HTTP,11,Край,practice,python_pytest,65,2,22
+2,Модуль 2. Python Hard,29,asyncio: HTTP,12,Итоги,summary,,30,2,11
+2,Модуль 2. Python Hard,30,Экзамен 2,1,Смысл,theory,,35,2,16
+2,Модуль 2. Python Hard,30,Экзамен 2,2,Сумма,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,30,Экзамен 2,3,Возраст,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,30,Экзамен 2,4,Контроль,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,30,Экзамен 2,5,Правило,theory,,35,2,16
+2,Модуль 2. Python Hard,30,Экзамен 2,6,Формат,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,30,Экзамен 2,7,Мини-лаб,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,30,Экзамен 2,8,Граница,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,30,Экзамен 2,9,Проверка,test,quiz_single,45,2,12
+2,Модуль 2. Python Hard,30,Экзамен 2,10,Работа,project,ide_plugin,105,2,47
+2,Модуль 2. Python Hard,30,Экзамен 2,11,Чистый вывод,practice,python_stdout,65,2,22
+2,Модуль 2. Python Hard,30,Экзамен 2,12,Итоги,summary,,30,2,11
+3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,2,SELECT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,3,WHERE,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,6,JOIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,8,GROUP BY,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,11,EXPLAIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,2,SELECT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,3,WHERE,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,6,JOIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,8,GROUP BY,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,11,EXPLAIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,2,SELECT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,3,WHERE,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,6,JOIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,8,GROUP BY,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,11,EXPLAIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",4,SQL: агрегаты,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",4,SQL: агрегаты,2,SELECT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",4,SQL: агрегаты,3,WHERE,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",4,SQL: агрегаты,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",4,SQL: агрегаты,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",4,SQL: агрегаты,6,JOIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",4,SQL: агрегаты,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",4,SQL: агрегаты,8,GROUP BY,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",4,SQL: агрегаты,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",4,SQL: агрегаты,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",4,SQL: агрегаты,11,EXPLAIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",4,SQL: агрегаты,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",5,SQL: GROUP BY,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",5,SQL: GROUP BY,2,SELECT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",5,SQL: GROUP BY,3,WHERE,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",5,SQL: GROUP BY,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",5,SQL: GROUP BY,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",5,SQL: GROUP BY,6,JOIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",5,SQL: GROUP BY,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",5,SQL: GROUP BY,8,GROUP BY,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",5,SQL: GROUP BY,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",5,SQL: GROUP BY,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",5,SQL: GROUP BY,11,EXPLAIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",5,SQL: GROUP BY,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",6,SQL: JOIN,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",6,SQL: JOIN,2,SELECT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",6,SQL: JOIN,3,WHERE,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",6,SQL: JOIN,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",6,SQL: JOIN,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",6,SQL: JOIN,6,JOIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",6,SQL: JOIN,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",6,SQL: JOIN,8,GROUP BY,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",6,SQL: JOIN,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",6,SQL: JOIN,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",6,SQL: JOIN,11,EXPLAIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",6,SQL: JOIN,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",7,SQL: LEFT JOIN,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",7,SQL: LEFT JOIN,2,SELECT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",7,SQL: LEFT JOIN,3,WHERE,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",7,SQL: LEFT JOIN,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",7,SQL: LEFT JOIN,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",7,SQL: LEFT JOIN,6,JOIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",7,SQL: LEFT JOIN,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",7,SQL: LEFT JOIN,8,GROUP BY,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",7,SQL: LEFT JOIN,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",7,SQL: LEFT JOIN,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",7,SQL: LEFT JOIN,11,EXPLAIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",7,SQL: LEFT JOIN,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",8,SQL: self join,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",8,SQL: self join,2,SELECT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",8,SQL: self join,3,WHERE,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",8,SQL: self join,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",8,SQL: self join,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",8,SQL: self join,6,JOIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",8,SQL: self join,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",8,SQL: self join,8,GROUP BY,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",8,SQL: self join,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",8,SQL: self join,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",8,SQL: self join,11,EXPLAIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",8,SQL: self join,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",9,SQL: подзапросы,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",9,SQL: подзапросы,2,SELECT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",9,SQL: подзапросы,3,WHERE,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",9,SQL: подзапросы,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",9,SQL: подзапросы,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",9,SQL: подзапросы,6,JOIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",9,SQL: подзапросы,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",9,SQL: подзапросы,8,GROUP BY,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",9,SQL: подзапросы,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",9,SQL: подзапросы,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",9,SQL: подзапросы,11,EXPLAIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",9,SQL: подзапросы,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",10,SQL: CTE,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",10,SQL: CTE,2,SELECT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",10,SQL: CTE,3,WHERE,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",10,SQL: CTE,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",10,SQL: CTE,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",10,SQL: CTE,6,JOIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",10,SQL: CTE,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",10,SQL: CTE,8,GROUP BY,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",10,SQL: CTE,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",10,SQL: CTE,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",10,SQL: CTE,11,EXPLAIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",10,SQL: CTE,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",11,SQL: оконные функции,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",11,SQL: оконные функции,2,SELECT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",11,SQL: оконные функции,3,WHERE,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",11,SQL: оконные функции,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",11,SQL: оконные функции,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",11,SQL: оконные функции,6,JOIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",11,SQL: оконные функции,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",11,SQL: оконные функции,8,GROUP BY,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",11,SQL: оконные функции,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",11,SQL: оконные функции,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",11,SQL: оконные функции,11,EXPLAIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",11,SQL: оконные функции,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",12,DDL и constraints,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",12,DDL и constraints,2,SELECT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",12,DDL и constraints,3,WHERE,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",12,DDL и constraints,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",12,DDL и constraints,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",12,DDL и constraints,6,JOIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",12,DDL и constraints,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",12,DDL и constraints,8,GROUP BY,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",12,DDL и constraints,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",12,DDL и constraints,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",12,DDL и constraints,11,EXPLAIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",12,DDL и constraints,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",13,"INSERT, UPDATE, DELETE",1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",13,"INSERT, UPDATE, DELETE",2,SELECT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",13,"INSERT, UPDATE, DELETE",3,WHERE,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",13,"INSERT, UPDATE, DELETE",4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",13,"INSERT, UPDATE, DELETE",5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",13,"INSERT, UPDATE, DELETE",6,JOIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",13,"INSERT, UPDATE, DELETE",7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",13,"INSERT, UPDATE, DELETE",8,GROUP BY,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",13,"INSERT, UPDATE, DELETE",9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",13,"INSERT, UPDATE, DELETE",10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",13,"INSERT, UPDATE, DELETE",11,EXPLAIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",13,"INSERT, UPDATE, DELETE",12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",14,Нормализация,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",14,Нормализация,2,SELECT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",14,Нормализация,3,WHERE,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",14,Нормализация,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",14,Нормализация,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",14,Нормализация,6,JOIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",14,Нормализация,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",14,Нормализация,8,GROUP BY,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",14,Нормализация,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",14,Нормализация,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",14,Нормализация,11,EXPLAIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",14,Нормализация,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",15,Транзакции и ACID,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",15,Транзакции и ACID,2,SELECT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",15,Транзакции и ACID,3,WHERE,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",15,Транзакции и ACID,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",15,Транзакции и ACID,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",15,Транзакции и ACID,6,JOIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",15,Транзакции и ACID,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",15,Транзакции и ACID,8,GROUP BY,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",15,Транзакции и ACID,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",15,Транзакции и ACID,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",15,Транзакции и ACID,11,EXPLAIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",15,Транзакции и ACID,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",16,Изоляция,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",16,Изоляция,2,SELECT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",16,Изоляция,3,WHERE,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",16,Изоляция,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",16,Изоляция,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",16,Изоляция,6,JOIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",16,Изоляция,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",16,Изоляция,8,GROUP BY,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",16,Изоляция,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",16,Изоляция,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",16,Изоляция,11,EXPLAIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",16,Изоляция,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",17,Блокировки,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",17,Блокировки,2,SELECT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",17,Блокировки,3,WHERE,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",17,Блокировки,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",17,Блокировки,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",17,Блокировки,6,JOIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",17,Блокировки,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",17,Блокировки,8,GROUP BY,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",17,Блокировки,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",17,Блокировки,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",17,Блокировки,11,EXPLAIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",17,Блокировки,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",18,Индексы и EXPLAIN,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",18,Индексы и EXPLAIN,2,SELECT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",18,Индексы и EXPLAIN,3,WHERE,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",18,Индексы и EXPLAIN,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",18,Индексы и EXPLAIN,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",18,Индексы и EXPLAIN,6,JOIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",18,Индексы и EXPLAIN,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",18,Индексы и EXPLAIN,8,GROUP BY,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",18,Индексы и EXPLAIN,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",18,Индексы и EXPLAIN,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",18,Индексы и EXPLAIN,11,EXPLAIN,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",18,Индексы и EXPLAIN,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,2,CREATE TABLE,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,3,INSERT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,6,rollback,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,8,sqlite3,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,11,repository,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",20,SQLite: таблицы,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",20,SQLite: таблицы,2,CREATE TABLE,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",20,SQLite: таблицы,3,INSERT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",20,SQLite: таблицы,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",20,SQLite: таблицы,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",20,SQLite: таблицы,6,rollback,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",20,SQLite: таблицы,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",20,SQLite: таблицы,8,sqlite3,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",20,SQLite: таблицы,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",20,SQLite: таблицы,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",20,SQLite: таблицы,11,repository,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",20,SQLite: таблицы,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",21,SQLite: запросы,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",21,SQLite: запросы,2,CREATE TABLE,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",21,SQLite: запросы,3,INSERT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",21,SQLite: запросы,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",21,SQLite: запросы,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",21,SQLite: запросы,6,rollback,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",21,SQLite: запросы,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",21,SQLite: запросы,8,sqlite3,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",21,SQLite: запросы,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",21,SQLite: запросы,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",21,SQLite: запросы,11,repository,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",21,SQLite: запросы,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",22,SQLite: транзакции,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",22,SQLite: транзакции,2,CREATE TABLE,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",22,SQLite: транзакции,3,INSERT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",22,SQLite: транзакции,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",22,SQLite: транзакции,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",22,SQLite: транзакции,6,rollback,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",22,SQLite: транзакции,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",22,SQLite: транзакции,8,sqlite3,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",22,SQLite: транзакции,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",22,SQLite: транзакции,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",22,SQLite: транзакции,11,repository,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",22,SQLite: транзакции,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",23,sqlite3 в Python,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",23,sqlite3 в Python,2,CREATE TABLE,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",23,sqlite3 в Python,3,INSERT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",23,sqlite3 в Python,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",23,sqlite3 в Python,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",23,sqlite3 в Python,6,rollback,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",23,sqlite3 в Python,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",23,sqlite3 в Python,8,sqlite3,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",23,sqlite3 в Python,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",23,sqlite3 в Python,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",23,sqlite3 в Python,11,repository,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",23,sqlite3 в Python,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",24,SQLite: repository,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",24,SQLite: repository,2,CREATE TABLE,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",24,SQLite: repository,3,INSERT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",24,SQLite: repository,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",24,SQLite: repository,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",24,SQLite: repository,6,rollback,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",24,SQLite: repository,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",24,SQLite: repository,8,sqlite3,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",24,SQLite: repository,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",24,SQLite: repository,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",24,SQLite: repository,11,repository,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",24,SQLite: repository,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",25,SQLite: миграции,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",25,SQLite: миграции,2,CREATE TABLE,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",25,SQLite: миграции,3,INSERT,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",25,SQLite: миграции,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",25,SQLite: миграции,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",25,SQLite: миграции,6,rollback,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",25,SQLite: миграции,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",25,SQLite: миграции,8,sqlite3,practice,python_pytest,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",25,SQLite: миграции,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",25,SQLite: миграции,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",25,SQLite: миграции,11,repository,practice,sql_query,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",25,SQLite: миграции,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",26,NoSQL,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",26,NoSQL,2,Сумма,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",26,NoSQL,3,Возраст,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",26,NoSQL,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",26,NoSQL,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",26,NoSQL,6,Формат,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",26,NoSQL,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",26,NoSQL,8,Граница,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",26,NoSQL,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",26,NoSQL,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",26,NoSQL,11,Чистый вывод,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",26,NoSQL,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",27,Redis,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",27,Redis,2,Сумма,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",27,Redis,3,Возраст,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",27,Redis,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",27,Redis,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",27,Redis,6,Формат,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",27,Redis,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",27,Redis,8,Граница,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",27,Redis,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",27,Redis,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",27,Redis,11,Чистый вывод,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",27,Redis,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,2,Сумма,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,3,Возраст,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,6,Формат,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,8,Граница,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,11,Чистый вывод,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,2,Сумма,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,3,Возраст,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,6,Формат,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,8,Граница,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,11,Чистый вывод,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,2,Сумма,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,3,Возраст,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,6,Формат,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,8,Граница,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,11,Чистый вывод,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,2,Сумма,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,3,Возраст,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,6,Формат,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,8,Граница,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,11,Чистый вывод,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",32,REST и авторизация,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",32,REST и авторизация,2,Сумма,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",32,REST и авторизация,3,Возраст,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",32,REST и авторизация,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",32,REST и авторизация,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",32,REST и авторизация,6,Формат,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",32,REST и авторизация,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",32,REST и авторизация,8,Граница,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",32,REST и авторизация,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",32,REST и авторизация,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",32,REST и авторизация,11,Чистый вывод,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",32,REST и авторизация,12,Итоги,summary,,35,3,12
+3,"Модуль 3. SQL, базы данных и сети",33,Экзамен 3,1,Смысл,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",33,Экзамен 3,2,Сумма,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",33,Экзамен 3,3,Возраст,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",33,Экзамен 3,4,Контроль,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",33,Экзамен 3,5,Правило,theory,,40,3,17
+3,"Модуль 3. SQL, базы данных и сети",33,Экзамен 3,6,Формат,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",33,Экзамен 3,7,Мини-лаб,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",33,Экзамен 3,8,Граница,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",33,Экзамен 3,9,Проверка,test,quiz_single,50,3,13
+3,"Модуль 3. SQL, базы данных и сети",33,Экзамен 3,10,Работа,project,ide_plugin,110,3,48
+3,"Модуль 3. SQL, базы данных и сети",33,Экзамен 3,11,Чистый вывод,practice,python_stdout,70,3,23
+3,"Модуль 3. SQL, базы данных и сети",33,Экзамен 3,12,Итоги,summary,,35,3,12
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: старт API,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: старт API,2,GET /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: старт API,3,POST /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: старт API,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: старт API,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: старт API,6,status code,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: старт API,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: старт API,8,Depends,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: старт API,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: старт API,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: старт API,11,TestClient,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: старт API,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: routes,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: routes,2,GET /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: routes,3,POST /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: routes,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: routes,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: routes,6,status code,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: routes,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: routes,8,Depends,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: routes,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: routes,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: routes,11,TestClient,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: routes,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,Path и query params,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,Path и query params,2,GET /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,Path и query params,3,POST /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,Path и query params,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,Path и query params,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,Path и query params,6,status code,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,Path и query params,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,Path и query params,8,Depends,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,Path и query params,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,Path и query params,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,Path и query params,11,TestClient,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,Path и query params,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,Request body,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,Request body,2,GET /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,Request body,3,POST /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,Request body,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,Request body,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,Request body,6,status code,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,Request body,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,Request body,8,Depends,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,Request body,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,Request body,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,Request body,11,TestClient,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,Request body,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,Pydantic models,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,Pydantic models,2,GET /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,Pydantic models,3,POST /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,Pydantic models,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,Pydantic models,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,Pydantic models,6,status code,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,Pydantic models,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,Pydantic models,8,Depends,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,Pydantic models,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,Pydantic models,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,Pydantic models,11,TestClient,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,Pydantic models,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,response_model,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,response_model,2,GET /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,response_model,3,POST /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,response_model,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,response_model,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,response_model,6,status code,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,response_model,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,response_model,8,Depends,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,response_model,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,response_model,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,response_model,11,TestClient,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,response_model,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,Status codes,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,Status codes,2,GET /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,Status codes,3,POST /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,Status codes,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,Status codes,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,Status codes,6,status code,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,Status codes,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,Status codes,8,Depends,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,Status codes,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,Status codes,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,Status codes,11,TestClient,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,Status codes,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,2,GET /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,3,POST /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,6,status code,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,8,Depends,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,11,TestClient,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,2,GET /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,3,POST /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,6,status code,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,8,Depends,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,11,TestClient,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends,2,GET /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends,3,POST /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends,6,status code,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends,8,Depends,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends,11,TestClient,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Settings,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Settings,2,GET /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Settings,3,POST /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Settings,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Settings,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Settings,6,status code,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Settings,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Settings,8,Depends,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Settings,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Settings,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Settings,11,TestClient,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Settings,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Middleware,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Middleware,2,SELECT,practice,sql_query,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Middleware,3,WHERE,practice,sql_query,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Middleware,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Middleware,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Middleware,6,JOIN,practice,sql_query,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Middleware,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Middleware,8,GROUP BY,practice,sql_query,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Middleware,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Middleware,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Middleware,11,EXPLAIN,practice,sql_query,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Middleware,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",13,Auth и JWT,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",13,Auth и JWT,2,GET /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",13,Auth и JWT,3,POST /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",13,Auth и JWT,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",13,Auth и JWT,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",13,Auth и JWT,6,status code,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",13,Auth и JWT,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",13,Auth и JWT,8,Depends,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",13,Auth и JWT,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",13,Auth и JWT,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",13,Auth и JWT,11,TestClient,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",13,Auth и JWT,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",14,Refresh tokens,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",14,Refresh tokens,2,GET /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",14,Refresh tokens,3,POST /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",14,Refresh tokens,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",14,Refresh tokens,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",14,Refresh tokens,6,status code,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",14,Refresh tokens,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",14,Refresh tokens,8,Depends,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",14,Refresh tokens,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",14,Refresh tokens,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",14,Refresh tokens,11,TestClient,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",14,Refresh tokens,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",15,SQLAlchemy engine,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",15,SQLAlchemy engine,2,Сумма,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",15,SQLAlchemy engine,3,Возраст,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",15,SQLAlchemy engine,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",15,SQLAlchemy engine,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",15,SQLAlchemy engine,6,Формат,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",15,SQLAlchemy engine,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",15,SQLAlchemy engine,8,Граница,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",15,SQLAlchemy engine,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",15,SQLAlchemy engine,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",15,SQLAlchemy engine,11,Чистый вывод,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",15,SQLAlchemy engine,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy models,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy models,2,Сумма,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy models,3,Возраст,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy models,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy models,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy models,6,Формат,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy models,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy models,8,Граница,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy models,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy models,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy models,11,Чистый вывод,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy models,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy relationships,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy relationships,2,Сумма,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy relationships,3,Возраст,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy relationships,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy relationships,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy relationships,6,Формат,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy relationships,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy relationships,8,Граница,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy relationships,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy relationships,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy relationships,11,Чистый вывод,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy relationships,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy transactions,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy transactions,2,Сумма,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy transactions,3,Возраст,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy transactions,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy transactions,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy transactions,6,Формат,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy transactions,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy transactions,8,Граница,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy transactions,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy transactions,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy transactions,11,Чистый вывод,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy transactions,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,Repository и Unit of Work,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,Repository и Unit of Work,2,Сумма,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,Repository и Unit of Work,3,Возраст,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,Repository и Unit of Work,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,Repository и Unit of Work,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,Repository и Unit of Work,6,Формат,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,Repository и Unit of Work,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,Repository и Unit of Work,8,Граница,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,Repository и Unit of Work,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,Repository и Unit of Work,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,Repository и Unit of Work,11,Чистый вывод,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,Repository и Unit of Work,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",20,Alembic,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",20,Alembic,2,Сумма,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",20,Alembic,3,Возраст,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",20,Alembic,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",20,Alembic,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",20,Alembic,6,Формат,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",20,Alembic,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",20,Alembic,8,Граница,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",20,Alembic,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",20,Alembic,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",20,Alembic,11,Чистый вывод,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",20,Alembic,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",21,CRUD-проект,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",21,CRUD-проект,2,GET /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",21,CRUD-проект,3,POST /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",21,CRUD-проект,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",21,CRUD-проект,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",21,CRUD-проект,6,status code,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",21,CRUD-проект,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",21,CRUD-проект,8,Depends,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",21,CRUD-проект,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",21,CRUD-проект,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",21,CRUD-проект,11,TestClient,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",21,CRUD-проект,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",22,Postman,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",22,Postman,2,GET /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",22,Postman,3,POST /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",22,Postman,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",22,Postman,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",22,Postman,6,status code,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",22,Postman,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",22,Postman,8,Depends,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",22,Postman,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",22,Postman,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",22,Postman,11,TestClient,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",22,Postman,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",23,TestClient,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",23,TestClient,2,GET /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",23,TestClient,3,POST /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",23,TestClient,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",23,TestClient,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",23,TestClient,6,status code,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",23,TestClient,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",23,TestClient,8,Depends,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",23,TestClient,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",23,TestClient,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",23,TestClient,11,TestClient,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",23,TestClient,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,2,GET /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,3,POST /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,6,status code,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,8,Depends,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,11,TestClient,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",25,Logging и healthcheck,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",25,Logging и healthcheck,2,GET /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",25,Logging и healthcheck,3,POST /tasks,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",25,Logging и healthcheck,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",25,Logging и healthcheck,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",25,Logging и healthcheck,6,status code,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",25,Logging и healthcheck,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",25,Logging и healthcheck,8,Depends,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",25,Logging и healthcheck,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",25,Logging и healthcheck,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",25,Logging и healthcheck,11,TestClient,practice,http_api,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",25,Logging и healthcheck,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",26,Dockerfile,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",26,Dockerfile,2,Dockerfile,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",26,Dockerfile,3,compose,practice,ide_plugin,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",26,Dockerfile,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",26,Dockerfile,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",26,Dockerfile,6,healthcheck,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",26,Dockerfile,7,CI,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",26,Dockerfile,8,logs,practice,ide_plugin,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",26,Dockerfile,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",26,Dockerfile,10,deploy,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",26,Dockerfile,11,rollback,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",26,Dockerfile,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",27,Docker Compose,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",27,Docker Compose,2,Dockerfile,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",27,Docker Compose,3,compose,practice,ide_plugin,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",27,Docker Compose,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",27,Docker Compose,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",27,Docker Compose,6,healthcheck,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",27,Docker Compose,7,CI,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",27,Docker Compose,8,logs,practice,ide_plugin,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",27,Docker Compose,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",27,Docker Compose,10,deploy,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",27,Docker Compose,11,rollback,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",27,Docker Compose,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",28,CI/CD GitHub Actions,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",28,CI/CD GitHub Actions,2,status,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",28,CI/CD GitHub Actions,3,commit,practice,ide_plugin,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",28,CI/CD GitHub Actions,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",28,CI/CD GitHub Actions,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",28,CI/CD GitHub Actions,6,diff,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",28,CI/CD GitHub Actions,7,Ветка,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",28,CI/CD GitHub Actions,8,Конфликт,practice,ide_plugin,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",28,CI/CD GitHub Actions,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",28,CI/CD GitHub Actions,10,remote,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",28,CI/CD GitHub Actions,11,rebase,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",28,CI/CD GitHub Actions,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",29,GitLab CI и multistage,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",29,GitLab CI и multistage,2,status,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",29,GitLab CI и multistage,3,commit,practice,ide_plugin,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",29,GitLab CI и multistage,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",29,GitLab CI и multistage,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",29,GitLab CI и multistage,6,diff,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",29,GitLab CI и multistage,7,Ветка,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",29,GitLab CI и multistage,8,Конфликт,practice,ide_plugin,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",29,GitLab CI и multistage,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",29,GitLab CI и multistage,10,remote,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",29,GitLab CI и multistage,11,rebase,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",29,GitLab CI и multistage,12,Итоги,summary,,40,4,13
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",30,Экзамен 4,1,Смысл,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",30,Экзамен 4,2,Сумма,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",30,Экзамен 4,3,Возраст,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",30,Экзамен 4,4,Контроль,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",30,Экзамен 4,5,Правило,theory,,45,4,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",30,Экзамен 4,6,Формат,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",30,Экзамен 4,7,Мини-лаб,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",30,Экзамен 4,8,Граница,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",30,Экзамен 4,9,Проверка,test,quiz_single,55,4,14
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",30,Экзамен 4,10,Работа,project,ide_plugin,115,4,49
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",30,Экзамен 4,11,Чистый вывод,practice,python_stdout,75,4,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",30,Экзамен 4,12,Итоги,summary,,40,4,13
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API: запрос,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API: запрос,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API: запрос,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API: запрос,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API: запрос,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API: запрос,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API: запрос,7,Мини-лаб,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API: запрос,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API: запрос,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API: запрос,10,Работа,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API: запрос,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API: запрос,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и сообщения,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и сообщения,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и сообщения,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и сообщения,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и сообщения,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и сообщения,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и сообщения,7,Мини-лаб,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и сообщения,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и сообщения,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и сообщения,10,Работа,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и сообщения,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и сообщения,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,7,Мини-лаб,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,10,Работа,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,7,Мини-лаб,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,10,Работа,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Retries и timeouts,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Retries и timeouts,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Retries и timeouts,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Retries и timeouts,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Retries и timeouts,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Retries и timeouts,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Retries и timeouts,7,Мини-лаб,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Retries и timeouts,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Retries и timeouts,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Retries и timeouts,10,Работа,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Retries и timeouts,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Retries и timeouts,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Rate limits и cost,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Rate limits и cost,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Rate limits и cost,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Rate limits и cost,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Rate limits и cost,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Rate limits и cost,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Rate limits и cost,7,Мини-лаб,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Rate limits и cost,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Rate limits и cost,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Rate limits и cost,10,Работа,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Rate limits и cost,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Rate limits и cost,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Mock provider,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Mock provider,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Mock provider,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Mock provider,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Mock provider,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Mock provider,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Mock provider,7,Мини-лаб,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Mock provider,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Mock provider,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Mock provider,10,Работа,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Mock provider,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Mock provider,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG: chunks,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG: chunks,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG: chunks,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG: chunks,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG: chunks,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG: chunks,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG: chunks,7,Мини-лаб,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG: chunks,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG: chunks,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG: chunks,10,Работа,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG: chunks,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG: chunks,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings concept,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings concept,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings concept,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings concept,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings concept,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings concept,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings concept,7,Мини-лаб,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings concept,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings concept,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings concept,10,Работа,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings concept,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings concept,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Vector DB concept,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Vector DB concept,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Vector DB concept,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Vector DB concept,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Vector DB concept,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Vector DB concept,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Vector DB concept,7,Мини-лаб,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Vector DB concept,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Vector DB concept,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Vector DB concept,10,Работа,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Vector DB concept,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Vector DB concept,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,Retrieval,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,Retrieval,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,Retrieval,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,Retrieval,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,Retrieval,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,Retrieval,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,Retrieval,7,Мини-лаб,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,Retrieval,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,Retrieval,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,Retrieval,10,Работа,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,Retrieval,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,Retrieval,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Evaluation,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Evaluation,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Evaluation,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Evaluation,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Evaluation,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Evaluation,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Evaluation,7,Мини-лаб,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Evaluation,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Evaluation,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Evaluation,10,Работа,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Evaluation,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Evaluation,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",13,Hallucination control,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",13,Hallucination control,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",13,Hallucination control,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",13,Hallucination control,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",13,Hallucination control,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",13,Hallucination control,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",13,Hallucination control,7,Мини-лаб,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",13,Hallucination control,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",13,Hallucination control,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",13,Hallucination control,10,Работа,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",13,Hallucination control,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",13,Hallucination control,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",14,Безопасный вайбкодинг,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",14,Безопасный вайбкодинг,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",14,Безопасный вайбкодинг,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",14,Безопасный вайбкодинг,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",14,Безопасный вайбкодинг,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",14,Безопасный вайбкодинг,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",14,Безопасный вайбкодинг,7,Мини-лаб,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",14,Безопасный вайбкодинг,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",14,Безопасный вайбкодинг,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",14,Безопасный вайбкодинг,10,Работа,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",14,Безопасный вайбкодинг,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",14,Безопасный вайбкодинг,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",15,VPS: доступ,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",15,VPS: доступ,2,Dockerfile,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",15,VPS: доступ,3,compose,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",15,VPS: доступ,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",15,VPS: доступ,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",15,VPS: доступ,6,healthcheck,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",15,VPS: доступ,7,CI,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",15,VPS: доступ,8,logs,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",15,VPS: доступ,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",15,VPS: доступ,10,deploy,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",15,VPS: доступ,11,rollback,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",15,VPS: доступ,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",16,Безопасность сервера,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",16,Безопасность сервера,2,Сумма,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",16,Безопасность сервера,3,Возраст,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",16,Безопасность сервера,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",16,Безопасность сервера,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",16,Безопасность сервера,6,Формат,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",16,Безопасность сервера,7,Мини-лаб,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",16,Безопасность сервера,8,Граница,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",16,Безопасность сервера,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",16,Безопасность сервера,10,Работа,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",16,Безопасность сервера,11,Чистый вывод,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",16,Безопасность сервера,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Домен и DNS,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Домен и DNS,2,Dockerfile,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Домен и DNS,3,compose,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Домен и DNS,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Домен и DNS,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Домен и DNS,6,healthcheck,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Домен и DNS,7,CI,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Домен и DNS,8,logs,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Домен и DNS,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Домен и DNS,10,deploy,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Домен и DNS,11,rollback,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Домен и DNS,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",18,Nginx и SSL,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",18,Nginx и SSL,2,Dockerfile,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",18,Nginx и SSL,3,compose,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",18,Nginx и SSL,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",18,Nginx и SSL,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",18,Nginx и SSL,6,healthcheck,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",18,Nginx и SSL,7,CI,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",18,Nginx и SSL,8,logs,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",18,Nginx и SSL,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",18,Nginx и SSL,10,deploy,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",18,Nginx и SSL,11,rollback,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",18,Nginx и SSL,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",19,Автодеплой,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",19,Автодеплой,2,Dockerfile,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",19,Автодеплой,3,compose,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",19,Автодеплой,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",19,Автодеплой,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",19,Автодеплой,6,healthcheck,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",19,Автодеплой,7,CI,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",19,Автодеплой,8,logs,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",19,Автодеплой,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",19,Автодеплой,10,deploy,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",19,Автодеплой,11,rollback,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",19,Автодеплой,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",20,Финальный проект: ТЗ,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",20,Финальный проект: ТЗ,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",20,Финальный проект: ТЗ,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",20,Финальный проект: ТЗ,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",20,Финальный проект: ТЗ,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",20,Финальный проект: ТЗ,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",20,Финальный проект: ТЗ,7,Gate,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",20,Финальный проект: ТЗ,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",20,Финальный проект: ТЗ,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",20,Финальный проект: ТЗ,10,Gate,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",20,Финальный проект: ТЗ,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",20,Финальный проект: ТЗ,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: схема БД,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: схема БД,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: схема БД,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: схема БД,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: схема БД,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: схема БД,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: схема БД,7,Gate,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: схема БД,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: схема БД,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: схема БД,10,Gate,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: схема БД,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: схема БД,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",22,Финальный проект: API contract,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",22,Финальный проект: API contract,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",22,Финальный проект: API contract,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",22,Финальный проект: API contract,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",22,Финальный проект: API contract,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",22,Финальный проект: API contract,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",22,Финальный проект: API contract,7,Gate,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",22,Финальный проект: API contract,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",22,Финальный проект: API contract,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",22,Финальный проект: API contract,10,Gate,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",22,Финальный проект: API contract,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",22,Финальный проект: API contract,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",23,Финальный проект: Git workflow,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",23,Финальный проект: Git workflow,2,status,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",23,Финальный проект: Git workflow,3,commit,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",23,Финальный проект: Git workflow,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",23,Финальный проект: Git workflow,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",23,Финальный проект: Git workflow,6,diff,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",23,Финальный проект: Git workflow,7,Ветка,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",23,Финальный проект: Git workflow,8,Конфликт,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",23,Финальный проект: Git workflow,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",23,Финальный проект: Git workflow,10,remote,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",23,Финальный проект: Git workflow,11,rebase,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",23,Финальный проект: Git workflow,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",24,Финальный проект: реализация,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",24,Финальный проект: реализация,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",24,Финальный проект: реализация,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",24,Финальный проект: реализация,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",24,Финальный проект: реализация,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",24,Финальный проект: реализация,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",24,Финальный проект: реализация,7,Gate,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",24,Финальный проект: реализация,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",24,Финальный проект: реализация,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",24,Финальный проект: реализация,10,Gate,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",24,Финальный проект: реализация,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",24,Финальный проект: реализация,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",25,Финальный проект: тесты и Docker,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",25,Финальный проект: тесты и Docker,2,Dockerfile,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",25,Финальный проект: тесты и Docker,3,compose,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",25,Финальный проект: тесты и Docker,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",25,Финальный проект: тесты и Docker,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",25,Финальный проект: тесты и Docker,6,healthcheck,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",25,Финальный проект: тесты и Docker,7,CI,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",25,Финальный проект: тесты и Docker,8,logs,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",25,Финальный проект: тесты и Docker,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",25,Финальный проект: тесты и Docker,10,deploy,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",25,Финальный проект: тесты и Docker,11,rollback,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",25,Финальный проект: тесты и Docker,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",26,Финальный проект: CI/CD и AI,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",26,Финальный проект: CI/CD и AI,2,Dockerfile,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",26,Финальный проект: CI/CD и AI,3,compose,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",26,Финальный проект: CI/CD и AI,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",26,Финальный проект: CI/CD и AI,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",26,Финальный проект: CI/CD и AI,6,healthcheck,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",26,Финальный проект: CI/CD и AI,7,CI,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",26,Финальный проект: CI/CD и AI,8,logs,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",26,Финальный проект: CI/CD и AI,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",26,Финальный проект: CI/CD и AI,10,deploy,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",26,Финальный проект: CI/CD и AI,11,rollback,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",26,Финальный проект: CI/CD и AI,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",27,Финальный проект: Deploy,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",27,Финальный проект: Deploy,2,Dockerfile,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",27,Финальный проект: Deploy,3,compose,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",27,Финальный проект: Deploy,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",27,Финальный проект: Deploy,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",27,Финальный проект: Deploy,6,healthcheck,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",27,Финальный проект: Deploy,7,CI,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",27,Финальный проект: Deploy,8,logs,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",27,Финальный проект: Deploy,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",27,Финальный проект: Deploy,10,deploy,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",27,Финальный проект: Deploy,11,rollback,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",27,Финальный проект: Deploy,12,Итоги,summary,,45,5,14
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",28,Финальная защита,1,Смысл,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",28,Финальная защита,2,Разогрев,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",28,Финальная защита,3,Команда,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",28,Финальная защита,4,Контроль,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",28,Финальная защита,5,Правило,theory,,50,5,19
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",28,Финальная защита,6,Ошибка,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",28,Финальная защита,7,Gate,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",28,Финальная защита,8,Кейс,practice,ide_plugin,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",28,Финальная защита,9,Проверка,test,quiz_single,60,5,15
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",28,Финальная защита,10,Gate,project,ide_plugin,120,5,50
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",28,Финальная защита,11,Край,practice,python_stdout,80,5,25
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",28,Финальная защита,12,Итоги,summary,,45,5,14

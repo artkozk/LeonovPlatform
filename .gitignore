@@ -1,0 +1,28 @@
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Backend
+backend/bin/
+backend/.env
+backend/coverage.out
+
+# General
+.env
+*.log
+.DS_Store
+.idea/
+.vscode/
+__pycache__/
+**/__pycache__/
+.pytest_cache/
+
+# Temporary local/remote operation scripts
+tmp_*
+
+# Local build and IDE caches
+idea-plugin/build/
+idea-plugin/.gradle/
+idea-plugin/.intellijPlatform/
+idea-plugin/.kotlin/
+idea-plugin/.idea/

@@ -1,0 +1,142 @@
+{
+  "version": "1.0",
+  "checks": {
+    "file_structure": {
+      "required_files": [
+        "README.md",
+        "src/main.py",
+        "tests/test_main.py"
+      ],
+      "forbidden_patterns": [
+        "*.tmp",
+        "*.log"
+      ]
+    },
+    "pytest": {
+      "command": "python -m pytest",
+      "timeout_sec": 20,
+      "expect_exit_code": 0
+    },
+    "sql_fixtures": {
+      "schema_files": [
+        "checker_fixtures/sql/ecommerce_schema.sql",
+        "checker_fixtures/sql/library_schema.sql"
+      ],
+      "seed_files": [
+        "checker_fixtures/sql/ecommerce_seed.sql",
+        "checker_fixtures/sql/library_seed.sql"
+      ]
+    },
+    "fastapi_endpoints": {
+      "app_import": "app.main:app",
+      "paths": [
+        "GET /health",
+        "GET /tasks",
+        "POST /tasks",
+        "PATCH /tasks/{id}"
+      ]
+    },
+    "dockerfile": {
+      "required_instructions": [
+        "FROM",
+        "WORKDIR",
+        "COPY",
+        "RUN",
+        "CMD"
+      ],
+      "forbidden": [
+        "latest"
+      ]
+    },
+    "docker_compose": {
+      "required_services": [
+        "app",
+        "db"
+      ],
+      "required_keys": [
+        "healthcheck",
+        "depends_on",
+        "environment"
+      ]
+    },
+    "git_workflow": {
+      "min_commits": 3,
+      "clean_worktree": true,
+      "required_branches": [
+        "main",
+        "feature/readme"
+      ]
+    },
+    "ci_cd": {
+      "required_files": [
+        ".github/workflows/ci.yml",
+        ".gitlab-ci.yml"
+      ],
+      "required_jobs": [
+        "lint",
+        "test",
+        "build"
+      ]
+    },
+    "readme": {
+      "required_headings": [
+        "Запуск",
+        "Проверка",
+        "Структура",
+        "Переменные окружения"
+      ]
+    },
+    "env_example": {
+      "required_keys": [
+        "DATABASE_URL",
+        "APP_ENV",
+        "SECRET_KEY"
+      ],
+      "forbidden_real_secrets": true
+    },
+    "migrations": {
+      "required_dir": "migrations",
+      "min_files": 1
+    },
+    "deploy_files": {
+      "required_files": [
+        "deploy/nginx.conf",
+        "deploy/deploy.sh",
+        "docker-compose.yml"
+      ]
+    }
+  },
+  "project_profiles": {
+    "git_lab": [
+      "file_structure",
+      "git_workflow",
+      "readme"
+    ],
+    "fastapi_api": [
+      "file_structure",
+      "pytest",
+      "fastapi_endpoints",
+      "readme"
+    ],
+    "docker_deploy": [
+      "dockerfile",
+      "docker_compose",
+      "ci_cd",
+      "env_example",
+      "deploy_files"
+    ],
+    "final_project": [
+      "file_structure",
+      "pytest",
+      "fastapi_endpoints",
+      "dockerfile",
+      "docker_compose",
+      "git_workflow",
+      "ci_cd",
+      "readme",
+      "env_example",
+      "migrations",
+      "deploy_files"
+    ]
+  }
+}

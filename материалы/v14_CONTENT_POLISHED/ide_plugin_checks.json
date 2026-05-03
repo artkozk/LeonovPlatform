@@ -1,0 +1,18 @@
+{
+  "version": "v14",
+  "quality_rules": {
+    "unique_scenario_id_required": true,
+    "max_signature_repeat": 20,
+    "project_solution_required": true
+  },
+  "checks": [
+    "files",
+    "git",
+    "pytest",
+    "sql",
+    "fastapi",
+    "docker",
+    "ci_cd",
+    "final_gates"
+  ]
+}

@@ -1,0 +1,53 @@
+﻿roadmap_topic,module,lesson,steps_count,practice_count,project_count,checker_types,status
+AI для учёбы,"Модуль 1. Python Core, терминал, Git",AI для учёбы,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+среда и терминал,"Модуль 1. Python Core, терминал, Git",Как работает компьютер; Терминал: база; Терминал: процессы,36,15,6,ide_plugin; python_stdout; quiz_single,covered
+Git и GitHub,"Модуль 1. Python Core, терминал, Git; Модуль 4. FastAPI, инфраструктура и тестирование; Модуль 5. AI-интеграция, деплой и финальный проект",CI/CD GitHub Actions; Git: merge и rebase; Git: ветки; Git: индекс и история; Git: отмена изменений; Git: первые коммиты,108,45,18,ide_plugin; python_stdout; quiz_single,covered
+Python Core,"Модуль 1. Python Core, терминал, Git; Модуль 2. Python Hard; Модуль 3. SQL, базы данных и сети; Модуль 4. FastAPI, инфраструктура и тестирование",JSON и CSV; bool и None; datetime; map/filter/lambda; Ввод и числа; Генераторы,288,120,48,ide_plugin; python_stdout; quiz_single,covered
+CLI-проект,"Модуль 1. Python Core, терминал, Git",CLI-проект,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+ООП,Модуль 2. Python Hard,dataclasses; Абстракции; Магические методы; Наследование; ООП: атрибуты и методы; ООП: инкапсуляция,120,50,20,ide_plugin; python_pytest; quiz_single,covered
+магические методы,Модуль 2. Python Hard,Магические методы,12,5,2,ide_plugin; python_pytest; quiz_single,covered
+протоколы,Модуль 2. Python Hard,Протоколы Python,12,5,2,ide_plugin; python_pytest; quiz_single,covered
+наследование и полиморфизм,Модуль 2. Python Hard,Наследование; Полиморфизм,24,10,4,ide_plugin; python_pytest; quiz_single,covered
+типизация,Модуль 2. Python Hard,mypy и контракты; typing: generics; typing: база,36,15,6,ide_plugin; python_stdout; quiz_single,covered
+threading,Модуль 2. Python Hard,threading,12,5,2,ide_plugin; python_pytest; quiz_single,covered
+multiprocessing,Модуль 2. Python Hard,multiprocessing,12,5,2,ide_plugin; python_pytest; quiz_single,covered
+asyncio,Модуль 2. Python Hard,asyncio: HTTP; asyncio: база; multiprocessing; threading,48,20,8,ide_plugin; python_pytest; quiz_single,covered
+алгоритмы и структуры данных,Модуль 2. Python Hard,алгоритмы: сложность; сортировки и поиск; структуры данных,36,15,6,ide_plugin; python_stdout; quiz_single,covered
+SQL,"Модуль 3. SQL, базы данных и сети; Модуль 4. FastAPI, инфраструктура и тестирование","DDL и constraints; INSERT, UPDATE, DELETE; Middleware; SQL: CTE; SQL: GROUP BY; SQL: JOIN",312,130,52,ide_plugin; python_pytest; quiz_single; sql_query,covered
+транзакции,"Модуль 3. SQL, базы данных и сети; Модуль 4. FastAPI, инфраструктура и тестирование",SQLAlchemy transactions; SQLite: транзакции; Транзакции и ACID,36,15,6,ide_plugin; python_pytest; python_stdout; quiz_single; sql_query,covered
+уровни изоляции,"Модуль 3. SQL, базы данных и сети",Изоляция,12,5,2,ide_plugin; quiz_single; sql_query,covered
+блокировки,"Модуль 3. SQL, базы данных и сети",Блокировки,12,5,2,ide_plugin; quiz_single; sql_query,covered
+индексы,"Модуль 3. SQL, базы данных и сети",Индексы и EXPLAIN,12,5,2,ide_plugin; quiz_single; sql_query,covered
+NoSQL,"Модуль 3. SQL, базы данных и сети",NoSQL,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+Redis,"Модуль 3. SQL, базы данных и сети",Redis,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+ClickHouse / OLAP,"Модуль 3. SQL, базы данных и сети",ClickHouse и OLAP,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+S3 / MinIO,"Модуль 3. SQL, базы данных и сети",S3 и MinIO,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+сети,"Модуль 3. SQL, базы данных и сети",Сети: TCP и UDP,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+HTTP / HTTPS,"Модуль 2. Python Hard; Модуль 3. SQL, базы данных и сети",HTTP и HTTPS; asyncio: HTTP,24,10,4,ide_plugin; python_pytest; python_stdout; quiz_single,covered
+TCP / UDP,"Модуль 3. SQL, базы данных и сети",Сети: TCP и UDP,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+REST,"Модуль 3. SQL, базы данных и сети",REST и авторизация,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+SOAP / GraphQL / gRPC / WebSockets обзорно,"Модуль 3. SQL, базы данных и сети",REST и авторизация,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+авторизация,"Модуль 3. SQL, базы данных и сети",REST и авторизация,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+Docker,"Модуль 4. FastAPI, инфраструктура и тестирование; Модуль 5. AI-интеграция, деплой и финальный проект",Docker Compose; Dockerfile; Nginx и SSL; VPS: доступ; Автодеплой; Домен и DNS,168,70,28,ide_plugin; python_stdout; quiz_single,covered
+Docker Compose,"Модуль 4. FastAPI, инфраструктура и тестирование",Docker Compose,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+Poetry,Модуль 2. Python Hard,Poetry,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+FastAPI,"Модуль 2. Python Hard; Модуль 4. FastAPI, инфраструктура и тестирование",Auth и JWT; CRUD-проект; Depends; FastAPI: routes; FastAPI: старт API; HTTPException,240,100,40,http_api; ide_plugin; quiz_single; sql_query,covered
+SQLAlchemy,"Модуль 3. SQL, базы данных и сети; Модуль 4. FastAPI, инфраструктура и тестирование",Alembic; Repository и Unit of Work; SQLAlchemy engine; SQLAlchemy models; SQLAlchemy relationships; SQLAlchemy transactions,84,35,14,ide_plugin; python_pytest; python_stdout; quiz_single; sql_query,covered
+CRUD-проект,"Модуль 4. FastAPI, инфраструктура и тестирование",CRUD-проект,12,5,2,http_api; ide_plugin; quiz_single,covered
+Postman,"Модуль 4. FastAPI, инфраструктура и тестирование",Postman,12,5,2,http_api; ide_plugin; quiz_single,covered
+pytest,"Модуль 2. Python Hard; Модуль 3. SQL, базы данных и сети; Модуль 4. FastAPI, инфраструктура и тестирование; Модуль 5. AI-интеграция, деплой и финальный проект",Integration tests; SQLite: repository; SQLite: запросы; SQLite: миграции; SQLite: таблицы; SQLite: транзакции,175,126,14,http_api; ide_plugin; python_pytest; python_stdout; quiz_single,covered
+CI/CD,"Модуль 4. FastAPI, инфраструктура и тестирование; Модуль 5. AI-интеграция, деплой и финальный проект",CI/CD GitHub Actions; Docker Compose; Dockerfile; GitLab CI и multistage; Nginx и SSL; VPS: доступ,192,80,32,ide_plugin; python_stdout; quiz_single,covered
+GitHub Actions,"Модуль 4. FastAPI, инфраструктура и тестирование",CI/CD GitHub Actions,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+GitLab CI/CD,"Модуль 4. FastAPI, инфраструктура и тестирование",GitLab CI и multistage,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+multistage build,"Модуль 4. FastAPI, инфраструктура и тестирование",GitLab CI и multistage,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+AI API,"Модуль 1. Python Core, терминал, Git; Модуль 5. AI-интеграция, деплой и финальный проект",AI API: запрос; AI для учёбы; Embeddings concept; Evaluation; Hallucination control; JSON schema,180,75,30,ide_plugin; python_stdout; quiz_single,covered
+RAG,"Модуль 5. AI-интеграция, деплой и финальный проект",Embeddings concept; Evaluation; Hallucination control; RAG: chunks; Retrieval,60,25,10,ide_plugin; python_stdout; quiz_single,covered
+vector databases,"Модуль 5. AI-интеграция, деплой и финальный проект",Embeddings concept; Retrieval; Vector DB concept,36,15,6,ide_plugin; python_stdout; quiz_single,covered
+LangChain / LangGraph концептуально,"Модуль 5. AI-интеграция, деплой и финальный проект",Retrieval,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+вайбкодинг,"Модуль 5. AI-интеграция, деплой и финальный проект",Безопасный вайбкодинг,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+финальный проект,"Модуль 5. AI-интеграция, деплой и финальный проект",Финальная защита; Финальный проект: API contract; Финальный проект: CI/CD и AI; Финальный проект: Deploy; Финальный проект: Git workflow; Финальный проект: ТЗ,108,45,18,ide_plugin; python_stdout; quiz_single,covered
+VPS,"Модуль 5. AI-интеграция, деплой и финальный проект",VPS: доступ,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+безопасность сервера,"Модуль 5. AI-интеграция, деплой и финальный проект",Nginx и SSL; Безопасность сервера,24,10,4,ide_plugin; python_stdout; quiz_single,covered
+домен,"Модуль 5. AI-интеграция, деплой и финальный проект",Домен и DNS,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+SSL,"Модуль 5. AI-интеграция, деплой и финальный проект",Nginx и SSL,12,5,2,ide_plugin; python_stdout; quiz_single,covered
+автодеплой,"Модуль 5. AI-интеграция, деплой и финальный проект",Автодеплой,12,5,2,ide_plugin; python_stdout; quiz_single,covered

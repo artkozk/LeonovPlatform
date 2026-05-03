@@ -1,0 +1,151 @@
+package config
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"time"
+)
+
+type Config struct {
+	AppName              string
+	Environment          string
+	HTTPPort             int
+	DBURL                string
+	RedisURL             string
+	JWTAccessSecret      string
+	JWTRefreshSecret     string
+	JWTAccessTTL         time.Duration
+	JWTRefreshTTL        time.Duration
+	FrontendURL          string
+	EnableAutoMigrate    bool
+	EnableAutoSeed       bool
+	SubmissionQueueName  string
+	SubmissionMaxAttempts int
+	JavaTimeoutSeconds   int
+	JudgeMode            string
+	DailyFreeSubmissions int
+	CardlinkBaseURL      string
+	CardlinkMerchantID   string
+	CardlinkShopID       string
+	CardlinkAPIToken     string
+	CardlinkSecret       string
+	CardlinkWebhookToken string
+	CardlinkRequireSignature bool
+	CardlinkCurrencyIn   string
+	CardlinkLocale       string
+	CardlinkBillTTLSeconds int
+	CardlinkReturnURL    string
+	CardlinkSuccessURL   string
+	CardlinkFailURL      string
+	SupportEmail         string
+	OpenAIAPIKey         string
+	OpenAIBaseURL        string
+	OpenAIModel          string
+	OpenAIHTTPProxy      string
+	OpenAIProxyHost      string
+	OpenAIProxyPort      string
+	OpenAIProxyUsername  string
+	OpenAIProxyPassword  string
+	GoogleClientID       string
+	ExposeDemoTokens     bool
+}
+
+func Load() (Config, error) {
+	cfg := Config{
+		AppName:               getOr("APP_NAME", "Leonov Care Platform"),
+		Environment:           getOr("APP_ENV", "development"),
+		HTTPPort:              getIntOr("HTTP_PORT", 8080),
+		DBURL:                 os.Getenv("DATABASE_URL"),
+		RedisURL:              getOr("REDIS_URL", "redis://localhost:6379/0"),
+		JWTAccessSecret:       os.Getenv("JWT_ACCESS_SECRET"),
+		JWTRefreshSecret:      os.Getenv("JWT_REFRESH_SECRET"),
+		JWTAccessTTL:          getDurationOr("JWT_ACCESS_TTL", 15*time.Minute),
+		JWTRefreshTTL:         getDurationOr("JWT_REFRESH_TTL", 24*time.Hour*30),
+		FrontendURL:           getOr("FRONTEND_URL", "http://localhost:5173"),
+		EnableAutoMigrate:     getBoolOr("AUTO_MIGRATE", true),
+		EnableAutoSeed:        getBoolOr("AUTO_SEED", false),
+		SubmissionQueueName:   getOr("SUBMISSION_QUEUE", "submission_jobs"),
+		SubmissionMaxAttempts: getIntOr("SUBMISSION_MAX_ATTEMPTS", 30),
+		JavaTimeoutSeconds:    getIntOr("JAVA_TIMEOUT_SECONDS", 4),
+		JudgeMode:             getOr("JUDGE_MODE", "local"),
+		DailyFreeSubmissions:  getIntOr("FREE_DAILY_SUBMISSIONS", 20),
+		CardlinkBaseURL:       getOr("CARDLINK_BASE_URL", "https://api.cardlink.example"),
+		CardlinkMerchantID:    os.Getenv("CARDLINK_MERCHANT_ID"),
+		CardlinkShopID:        getOr("CARDLINK_SHOP_ID", os.Getenv("CARDLINK_MERCHANT_ID")),
+		CardlinkAPIToken:      getOr("CARDLINK_API_TOKEN", os.Getenv("CARDLINK_SECRET")),
+		CardlinkSecret:        os.Getenv("CARDLINK_SECRET"),
+		CardlinkWebhookToken:  getOr("CARDLINK_WEBHOOK_TOKEN", "change-me"),
+		CardlinkRequireSignature: getBoolOr("CARDLINK_REQUIRE_SIGNATURE", true),
+		CardlinkCurrencyIn:    getOr("CARDLINK_CURRENCY_IN", "RUB"),
+		CardlinkLocale:        getOr("CARDLINK_LOCALE", "ru"),
+		CardlinkBillTTLSeconds: getIntOr("CARDLINK_BILL_TTL_SECONDS", 1800),
+		CardlinkReturnURL:     os.Getenv("CARDLINK_RETURN_URL"),
+		CardlinkSuccessURL:    os.Getenv("CARDLINK_SUCCESS_URL"),
+		CardlinkFailURL:       os.Getenv("CARDLINK_FAIL_URL"),
+		SupportEmail:          getOr("SUPPORT_EMAIL", "support@leonovcare.local"),
+		OpenAIAPIKey:          os.Getenv("OPENAI_API_KEY"),
+		OpenAIBaseURL:         getOr("OPENAI_BASE_URL", "https://api.openai.com"),
+		OpenAIModel:           getOr("OPENAI_MODEL", "gpt-5.4-mini"),
+		OpenAIHTTPProxy:       os.Getenv("OPENAI_HTTP_PROXY"),
+		OpenAIProxyHost:       os.Getenv("OPENAI_PROXY_HOST"),
+		OpenAIProxyPort:       os.Getenv("OPENAI_PROXY_PORT"),
+		OpenAIProxyUsername:   os.Getenv("OPENAI_PROXY_USERNAME"),
+		OpenAIProxyPassword:   os.Getenv("OPENAI_PROXY_PASSWORD"),
+		GoogleClientID:        os.Getenv("GOOGLE_CLIENT_ID"),
+		ExposeDemoTokens:      getBoolOr("EXPOSE_DEMO_TOKENS", false),
+	}
+
+	if cfg.DBURL == "" {
+		return cfg, fmt.Errorf("DATABASE_URL is required")
+	}
+	if cfg.JWTAccessSecret == "" || cfg.JWTRefreshSecret == "" {
+		return cfg, fmt.Errorf("JWT_ACCESS_SECRET and JWT_REFRESH_SECRET are required")
+	}
+
+	return cfg, nil
+}
+
+func getOr(k, v string) string {
+	val := os.Getenv(k)
+	if val == "" {
+		return v
+	}
+	return val
+}
+
+func getIntOr(k string, v int) int {
+	raw := os.Getenv(k)
+	if raw == "" {
+		return v
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil {
+		return v
+	}
+	return n
+}
+
+func getBoolOr(k string, v bool) bool {
+	raw := os.Getenv(k)
+	if raw == "" {
+		return v
+	}
+	parsed, err := strconv.ParseBool(raw)
+	if err != nil {
+		return v
+	}
+	return parsed
+}
+
+func getDurationOr(k string, v time.Duration) time.Duration {
+	raw := os.Getenv(k)
+	if raw == "" {
+		return v
+	}
+	d, err := time.ParseDuration(raw)
+	if err != nil {
+		return v
+	}
+	return d
+}

@@ -1,0 +1,156 @@
+# Leonov Care Platform — Test Plan (Launch)
+
+## 1. Цель
+
+Определить набор проверок для релиза платформы в production-профиле перед запуском когорты ~200 учеников.
+
+## 2. Контур тестирования
+
+1. Backend unit/integration (`go test ./...`).
+2. Frontend unit (`vitest`).
+3. Frontend production build (`vite build`).
+4. Smoke-сценарий API.
+5. Ручная E2E проверка ключевых пользовательских сценариев.
+
+## 3. Матрица проверок
+
+### 3.1 Auth
+
+1. Регистрация:
+- успешная регистрация с `firstName`, `lastName`, `nickname`, `email`, `password`.
+- ошибка при дублирующем `nickname`.
+- ошибка при дублирующем `email`.
+- успешная регистрация с кириллическим `nickname` (`Иван Петров` -> `иван_петров`), потому что текущий русскоязычный UI не должен требовать латинский алиас.
+- ошибка при `nickname`, который после нормализации короче 3 символов; это защищает БД от мусорных значений вроде `a..`.
+
+2. Логин:
+- успешный вход по email/password.
+- ошибка `401` при неверном пароле.
+
+3. Refresh:
+- успешная ротация access/refresh.
+- отказ при просроченном refresh.
+
+### 3.1.1 Auth hotfix regression (2026-05-02)
+
+1. Проверить backend unit:
+- `go test ./internal/app -run TestNormalizeNickname`
+- ожидаемый результат: кириллица сохраняется, Latin-flow не ломается, длина режется по rune, а не по byte.
+
+2. Проверить production smoke:
+- `POST /api/v1/auth/register` с `nickname="Иван Петров"`;
+- ожидаемый результат: `201 Created`, токены в `tokens.accessToken/tokens.refreshToken`;
+- далее `GET /api/v1/me` должен вернуть `nickname="иван_петров"` или уникальное значение, если такой ник уже занят.
+
+Почему это добавлено:
+
+1. До исправления backend удалял все не-latin символы из nickname, и обычный русский ник превращался в пустую строку.
+2. Для пользователя ошибка выглядела как неработающая регистрация, хотя email/password были корректны.
+3. Регресс-тест нужен именно на нормализацию, потому что регистрационный контракт зависит от неё до записи в `users`.
+
+### 3.2 Profile
+
+1. `GET /me` возвращает:
+- `publicId`;
+- `nickname`;
+- `firstName`;
+- `lastName`.
+
+2. `PATCH /me/settings` обновляет пользовательские настройки editor/theme.
+
+### 3.3 Learning + Queue
+
+1. Создание submission:
+- статус `queued`.
+
+2. Worker обработка:
+- переход в `processing`, затем в финальный статус.
+
+3. Retry logic:
+- искусственно вызвать ошибку judge;
+- убедиться, что `processing_attempts` увеличивается;
+- после лимита статус `failed`.
+
+### 3.4 Billing
+
+1. Checkout:
+- `pending_config` при неполном Cardlink конфиге.
+
+2. Webhook security:
+- `401` при неверном `X-Cardlink-Token`;
+- `401` при неверной `X-Cardlink-Signature` (если `CARDLINK_REQUIRE_SIGNATURE=true`).
+
+3. Webhook idempotency:
+- повторный `paid` не создает дублирующие активные подписки.
+
+### 3.5 Frontend UX
+
+1. Auth page:
+- отсутствуют Google/GitHub кнопки.
+- доступны только нужные пользователю поля.
+
+2. Settings:
+- отображается `publicId`.
+
+3. Courses:
+- нет искусственных locked/completed статусов без фактических данных.
+
+4. Dashboard:
+- нет фиксированной синтетической «общей статистики» достижений.
+
+### 3.6 Актуализация от 2026-05-02: Settings удалён, UI только светлый
+
+1. Frontend navigation:
+- в profile-menu нет пункта `Настройки`;
+- на `/profile` нет карточки перехода в настройки;
+- прямой переход на `/settings` попадает под wildcard router и возвращает пользователя на `/dashboard`.
+2. Theme:
+- `workspace-shell` не содержит `data-theme="dark"`;
+- в собранном CSS нет активного блока `[data-theme="dark"]`;
+- редактор Monaco на страницах урока и задачи получает только `theme="light"`.
+3. Backend compatibility:
+- `GET /me` возвращает `theme: "light"`;
+- `PATCH /me/settings` может остаться для legacy-клиентов, но любое значение `theme` должно сохраняться как `light`;
+- миграция `024_light_theme_only.sql` меняет default и существующие строки `user_settings.theme` на `light`.
+4. Почему это проверяется отдельно:
+- функциональность настроек удалена из UI намеренно, поэтому отсутствие ссылок является ожидаемым результатом, а не регрессией;
+- dark-mode был снят из продукта, поэтому любые новые зависимости от `user.theme === "dark"` должны считаться ошибкой.
+
+## 4. Минимальный набор команд
+
+1. Frontend:
+```bash
+cd frontend
+npm ci
+npm run test
+npm run build
+```
+
+2. Backend:
+```bash
+cd backend
+go mod tidy
+go test ./...
+go build -o bin/leonovcare-api ./cmd/server
+go build -o bin/leonovcare-worker ./cmd/worker
+```
+
+3. Smoke:
+```bash
+cd tests
+bash smoke.sh
+```
+
+## 5. Критерии приемки релиза
+
+1. Все автоматические тесты green.
+2. Нет утечки demo токенов в API при `EXPOSE_DEMO_TOKENS=false`.
+3. В production UI нет OAuth входа.
+4. Launch migration применена без ошибок.
+5. Health endpoints и PM2 процессы стабильны после деплоя.
+
+## 6. Риски
+
+1. Отсутствие docker в production при `JUDGE_MODE=docker`.
+2. Неправильно заданные runtime secrets.
+3. Миграции на уже заполненной БД без backup.

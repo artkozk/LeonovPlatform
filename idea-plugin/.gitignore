@@ -1,0 +1,6 @@
+/build/
+/.idea/
+/out/
+/.gradle/
+/.intellijPlatform/
+/.kotlin/

@@ -1,0 +1,614 @@
+openapi: 3.0.3
+info:
+  title: Leonov Care Platform API
+  version: 1.0.2-launch-2026-04-29
+  description: |
+    Production launch API contract.
+    OAuth login routes are intentionally excluded from launch scope.
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development
+  - url: http://85.198.82.221:8510/api/v1
+    description: Production (current)
+tags:
+  - name: Auth
+  - name: Profile
+  - name: Learning
+  - name: Billing
+  - name: Admin
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: User or nickname already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIError'
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login by email/password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Auth tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Rotate access/refresh tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Rotated tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/verify-email:
+    post:
+      tags: [Auth]
+      summary: Verify email token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        '200':
+          description: Email verified
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request password reset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Accepted
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password by token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: Password updated
+  /me:
+    get:
+      tags: [Profile]
+      security:
+        - bearerAuth: []
+      summary: Get current user profile
+      responses:
+        '200':
+          description: Profile data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /me/settings:
+    patch:
+      tags: [Profile]
+      security:
+        - bearerAuth: []
+      summary: Update user settings
+      deprecated: true
+      description: >
+        Backwards-compatible endpoint for legacy clients. From 2026-05-02 the web UI no longer exposes
+        a settings screen, and theme is normalized to light on the backend so dark mode cannot be enabled.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SettingsUpdate'
+      responses:
+        '200':
+          description: Updated
+  /courses:
+    get:
+      tags: [Learning]
+      security:
+        - bearerAuth: []
+      summary: List published courses
+      responses:
+        '200':
+          description: Courses
+  /courses/{courseID}:
+    get:
+      tags: [Learning]
+      security:
+        - bearerAuth: []
+      summary: Course details with lessons
+      parameters:
+        - in: path
+          name: courseID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Course details
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /lessons/{lessonID}:
+    get:
+      tags: [Learning]
+      security:
+        - bearerAuth: []
+      summary: Lesson details with tasks and structured lesson blocks
+      description: |
+        Response includes:
+        - `lesson.moduleTitle`
+        - `tasks[].language` (`java` | `python`)
+        - `blocks[]` with step type (`theory`/`practice`/`quiz`/`summary`)
+      parameters:
+        - in: path
+          name: lessonID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lesson details
+  /tasks/{taskID}:
+    get:
+      tags: [Learning]
+      security:
+        - bearerAuth: []
+      summary: Task details (language-aware)
+      description: Returns `task.language`, used by frontend editor and judge routing.
+      parameters:
+        - in: path
+          name: taskID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task details
+  /tasks/{taskID}/submissions:
+    post:
+      tags: [Learning]
+      security:
+        - bearerAuth: []
+      summary: Create submission
+      parameters:
+        - in: path
+          name: taskID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sourceCode]
+              properties:
+                sourceCode:
+                  type: string
+      responses:
+        '202':
+          description: Queued
+        '402':
+          description: Plan limit reached
+  /tasks/{taskID}/run:
+    post:
+      tags: [Learning]
+      security:
+        - bearerAuth: []
+      summary: Run code for immediate preview without creating submission record
+      parameters:
+        - in: path
+          name: taskID
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [sourceCode]
+              properties:
+                sourceCode:
+                  type: string
+      responses:
+        '200':
+          description: Judge result for current code
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /submissions/{submissionID}:
+    get:
+      tags: [Learning]
+      security:
+        - bearerAuth: []
+      summary: Get submission verdict
+      parameters:
+        - in: path
+          name: submissionID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Submission status
+  /leaderboard:
+    get:
+      tags: [Learning]
+      security:
+        - bearerAuth: []
+      summary: Leaderboard
+      responses:
+        '200':
+          description: Leaderboard rows
+  /plans:
+    get:
+      tags: [Billing]
+      security:
+        - bearerAuth: []
+      summary: Subscription plans
+      responses:
+        '200':
+          description: Plans
+  /subscription:
+    get:
+      tags: [Billing]
+      security:
+        - bearerAuth: []
+      summary: Current subscription
+      responses:
+        '200':
+          description: Current plan
+  /subscription/checkout:
+    post:
+      tags: [Billing]
+      security:
+        - bearerAuth: []
+      summary: Create checkout session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [planCode]
+              properties:
+                planCode:
+                  type: string
+        responses:
+          '200':
+            description: Checkout created
+          '502':
+            description: Cardlink checkout creation failed
+  /subscription/payments/{paymentID}:
+    get:
+      tags: [Billing]
+      security:
+        - bearerAuth: []
+      summary: Get subscription payment status (with optional Cardlink sync)
+      parameters:
+        - in: path
+          name: paymentID
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: sync
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Payment and subscription state
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /subscription/cancel:
+    post:
+      tags: [Billing]
+      security:
+        - bearerAuth: []
+      summary: Disable auto-renew (access remains until paid period end)
+      responses:
+        '200':
+          description: Subscription updated
+  /payments/cardlink/webhook:
+    post:
+      tags: [Billing]
+      summary: Cardlink webhook
+      parameters:
+        - in: header
+          name: X-Cardlink-Token
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: X-Cardlink-Signature
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [paymentId, status]
+              properties:
+                paymentId:
+                  type: string
+                billId:
+                  type: string
+                status:
+                  type: string
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [InvId, Status, OutSum, SignatureValue]
+              properties:
+                InvId:
+                  type: string
+                TrsId:
+                  type: string
+                Status:
+                  type: string
+                OutSum:
+                  type: string
+                SignatureValue:
+                  type: string
+        responses:
+          '200':
+            description: Processed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /admin/metrics/overview:
+    get:
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      summary: Admin KPI overview
+      responses:
+        '200':
+          description: Metrics
+  /admin/metrics/export:
+    get:
+      tags: [Admin]
+      security:
+        - bearerAuth: []
+      summary: Export KPI CSV
+      responses:
+        '200':
+          description: CSV file stream
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/APIError'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/APIError'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/APIError'
+  schemas:
+    APIError:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: string
+    RegisterRequest:
+      type: object
+      required: [email, firstName, lastName, nickname, password]
+      properties:
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        nickname:
+          type: string
+          minLength: 3
+          maxLength: 32
+          description: >
+            User-visible unique nickname. Current behavior after 2026-05-02 hotfix:
+            backend keeps Unicode letters and digits, lowercases them, converts spaces/dots
+            to underscore, allows underscore/hyphen, then requires at least 3 symbols after
+            normalization. Cyrillic nicknames such as `иван_петров` are valid because the
+            product UI is Russian-first and registration must not force Latin aliases.
+        password:
+          type: string
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+    TokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        accessTokenTtl:
+          type: string
+        refreshTokenTtl:
+          type: string
+        emailVerified:
+          type: boolean
+        currentPlan:
+          type: string
+    RefreshResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        accessTokenTtl:
+          type: string
+        refreshTokenTtl:
+          type: string
+    RegisterResponse:
+      type: object
+      properties:
+        tokens:
+          $ref: '#/components/schemas/TokenResponse'
+        verificationRequired:
+          type: boolean
+        emailVerificationTokenDemo:
+          type: string
+          nullable: true
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        publicId:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        nickname:
+          type: string
+        role:
+          type: string
+        level:
+          type: integer
+        xp:
+          type: integer
+        streak:
+          type: integer
+        emailVerified:
+          type: boolean
+        theme:
+          type: string
+          description: >
+            Compatibility field. Current web product is light-only, so GET /me returns "light" even if
+            historical rows stored another value.
+        language:
+          type: string
+        notificationsEmail:
+          type: boolean
+        codeFontSize:
+          type: integer
+        editorTabSize:
+          type: integer
+        editorWordWrap:
+          type: boolean
+        planCode:
+          type: string
+    SettingsUpdate:
+      type: object
+      properties:
+        theme:
+          type: string
+          description: >
+            Deprecated compatibility field. Any submitted value is normalized to "light" by the backend
+            because dark theme was removed from the product UI on 2026-05-02.
+        language:
+          type: string
+        notificationsEmail:
+          type: boolean
+        codeFontSize:
+          type: integer
+        editorTabSize:
+          type: integer
+        editorWordWrap:
+          type: boolean
