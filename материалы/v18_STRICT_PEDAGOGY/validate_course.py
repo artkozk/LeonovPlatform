@@ -9,10 +9,14 @@ COURSE_FILE = ROOT / "course_import.json"
 MANIFEST_FILE = ROOT / "manifest.csv"
 COVERAGE_FILE = ROOT / "coverage_matrix.csv"
 
-BODY_LEAKS = ["Шаблон", "Подсказки", "Эталон", "Автотесты", "hidden tests", "tests", "solution", "checker", "admin", "AI-инструкция", "Сценарий", "skill_focus", "lesson_stage", "qa_notes", "ключевая идея темы", "собери практическую работу по теме", "ученик учится", "ученик должен", "в рамках данного урока"]
+BODY_LEAKS = ["Шаблон", "Подсказки", "Эталон", "Автотесты", "hidden tests", "tests", "solution", "checker", "admin", "AI-инструкция", "Сценарий", "skill_focus", "lesson_stage", "qa_notes", "ключевая идея темы", "собери практическую работу по теме", "ученик учится", "ученик должен", "в рамках данного урока", "применяет тему", "проверяемый результат", "используй новую тему", "отдельный сценарий применения темы"]
 BANNED = ["Тест недоступен", "Для этого шага пока нет автопроверки"]
 CORRUPTION = ["?" * 3, "\ufffd", "\u00d0", "\u00d1", "\u0420\u045f", "\u0420\ufffd", "\u0421\ufffd"]
 BAD_COVERAGE = {"missing", "thin", "placeholder"}
+FIRST10_THEORY_MIN = 700
+FIRST10_LESSON_THEORY_MIN = 1400
+COURSE_PREVIEW_MIN_CHARS = 30000
+IDE_PLUGIN_SPEC_MIN_CHARS = 5000
 
 def load_course():
     return json.loads(COURSE_FILE.read_text(encoding="utf-8"))
@@ -67,24 +71,82 @@ def lesson_mode(lesson):
     return "other"
 
 FIRST30_FORBIDDEN = {
-    1: [r"\binput\s*\(", r"\bint\s*\(", r"\bdef\s+", r"\bclass\s+", r"\bfor\s+", r"\bwhile\s+", r"\bif\s+", r"\[", r"\{", "pytest", "fastapi", "sql", "git"],
-    2: [r"\bdef\s+", r"\bclass\s+", r"\bfor\s+", r"\bwhile\s+", r"\bif\s+", r"\[.*\]", r"\{", "pytest", "fastapi", "sql", "git"],
-    3: [r"\bdef\s+", r"\bclass\s+", r"\bfor\s+", r"\bwhile\s+", r"\bif\s+", r"\{", "pytest", "fastapi", "sql", "git"],
-    4: [r"\bdef\s+", r"\bclass\s+", r"\bfor\s+", r"\bwhile\s+", r"\bif\s+", r"\{", "pytest", "fastapi", "sql", "git"],
-    5: [r"\bdef\s+", r"\bclass\s+", r"\bfor\s+", r"\bwhile\s+", r"\{", "pytest", "fastapi", "sql", "git"],
-    6: [r"\bdef\s+", r"\bclass\s+", r"\bfor\s+", r"\bwhile\s+", r"\{", "pytest", "fastapi", "sql", "git"],
-    7: [r"\bdef\s+", r"\bclass\s+", r"\{", "pytest", "fastapi", "sql", "git"],
-    8: [r"\bdef\s+", r"\bclass\s+", r"\{", "pytest", "fastapi", "sql", "git"],
+    1: [r"\binput\s*\(", r"\bint\s*\(", r"\bfloat\s*\(", r"\bsplit\s*\(", r"\bdef\s+", r"\breturn\b", r"\bclass\s+", r"\bimport\s+", r"\bfor\s+", r"\bwhile\s+", r"\bif\s+", r"\[", r"\{", "pytest", "fastapi", "sql", "git"],
+    2: [r"\bdef\s+", r"\breturn\b", r"\bclass\s+", r"\bfor\s+", r"\bwhile\s+", r"\bif\s+", r"\[.*\]", r"\{", "pytest", "fastapi", "sql", "git"],
+    3: [r"\bdef\s+", r"\breturn\b", r"\bclass\s+", r"\bfor\s+", r"\bwhile\s+", r"\bif\s+", r"\{", "pytest", "fastapi", "sql", "git"],
+    4: [r"\bdef\s+", r"\breturn\b", r"\bclass\s+", r"\bfor\s+", r"\bwhile\s+", r"\bif\s+", r"\{", "pytest", "fastapi", "sql", "git"],
+    5: [r"\bdef\s+", r"\breturn\b", r"\bclass\s+", r"\bfor\s+", r"\bwhile\s+", r"\{", "pytest", "fastapi", "sql", "git"],
+    6: [r"\bdef\s+", r"\breturn\b", r"\bclass\s+", r"\bfor\s+", r"\bwhile\s+", r"\{", "pytest", "fastapi", "sql", "git"],
+    7: [r"\bdef\s+", r"\breturn\b", r"\bclass\s+", r"\{", "pytest", "fastapi", "sql", "git"],
+    8: [r"\bdef\s+", r"\breturn\b", r"\bclass\s+", r"\{", "pytest", "fastapi", "sql", "git"],
+    9: [r"\bclass\s+", r"\{", "fastapi", "sql", "git"],
+    10: [r"\bclass\s+", r"\{", "fastapi", "sql", "git"],
 }
 
 def future_violation(lesson, step):
-    if not lesson["id"].startswith("m01_l") or lesson["order"] > 8 or step["type"] not in {"practice", "project"}:
+    if not lesson["id"].startswith("m01_l") or lesson["order"] > 10:
         return False
     blob = (step.get("body_markdown", "") + "\n" + step.get("editor_initial_code", "") + "\n" + step.get("solution_code", "")).lower()
     for pattern in FIRST30_FORBIDDEN.get(lesson["order"], []):
         if re.search(pattern, blob):
             return True
     return False
+
+def first10_pedagogy_issues(lesson):
+    issues = []
+    if not lesson["id"].startswith("m01_l") or lesson["order"] > 10:
+        return issues
+    theory_steps = [s for s in lesson["steps"] if s["type"] == "theory"]
+    total_theory = sum(len(s.get("body_markdown", "")) for s in theory_steps)
+    if total_theory < FIRST10_LESSON_THEORY_MIN:
+        issues.append(f"first10 theory total too short: {lesson['id']}")
+    for step in theory_steps:
+        if len(step.get("body_markdown", "")) < FIRST10_THEORY_MIN:
+            issues.append(f"first10 theory step too short: {step['id']}")
+        body = step.get("body_markdown", "")
+        required_markers = ["```python", "Частая ошибка", "Самопроверка"]
+        for marker in required_markers:
+            if marker not in body:
+                issues.append(f"first10 theory missing {marker}: {step['id']}")
+    for step in lesson["steps"]:
+        if step["type"] == "practice":
+            body = step.get("body_markdown", "")
+            if "### Пример" not in body:
+                issues.append(f"first10 practice without example: {step['id']}")
+            if not step.get("editor_initial_code") and "напиши" not in body.lower():
+                issues.append(f"first10 empty starter without write instruction: {step['id']}")
+            if len(body) < 500 and lesson["order"] != 1:
+                issues.append(f"first10 practice body too short: {step['id']}")
+        if step["type"] == "project":
+            body = step.get("body_markdown", "")
+            if "Создай" not in body or "main.py" not in body or "README.md" not in body:
+                issues.append(f"first10 mini-project not concrete: {step['id']}")
+            checker = step.get("checker", {})
+            if checker.get("type") != "ide_plugin" or not checker.get("required_files") or not checker.get("commands"):
+                issues.append(f"first10 mini-project without concrete IDE check: {step['id']}")
+    return issues
+
+def docs_quality_issues():
+    issues = []
+    preview = ROOT / "course_preview.md"
+    spec = ROOT / "ide_plugin_spec.md"
+    if not preview.exists() or len(preview.read_text(encoding="utf-8")) < COURSE_PREVIEW_MIN_CHARS:
+        issues.append("course_preview.md too short for methodist review")
+    if not spec.exists() or len(spec.read_text(encoding="utf-8")) < IDE_PLUGIN_SPEC_MIN_CHARS:
+        issues.append("ide_plugin_spec.md too short for plugin implementation")
+    return issues
+
+def first_fastapi_progression_issue(course):
+    for module, lesson, step in iter_steps(course):
+        if step.get("checker", {}).get("type") == "http_api":
+            methods = {t.get("method") for t in step["checker"].get("public_tests", []) + step["checker"].get("hidden_tests", [])}
+            body = (step.get("body_markdown", "") + " " + step.get("title", "")).lower()
+            if methods and methods != {"GET"}:
+                return f"first FastAPI task is not simple GET: {step['id']}"
+            if any(token in body for token in ["patch", "delete", "auth", "jwt"]):
+                return f"first FastAPI task mentions advanced topic: {step['id']}"
+            return None
+    return "no FastAPI http_api task found"
 
 def manifest_rows(course):
     rows = []
@@ -106,6 +168,7 @@ def validate(write_reports=True):
     http_contracts = defaultdict(set)
     question_counts = Counter()
     first30_issues = []
+    first10_pedagogy = []
     for path, text in walk_strings(course):
         if has_bad_text(text):
             errors.append(f"encoding corruption: {path}")
@@ -177,6 +240,8 @@ def validate(write_reports=True):
                 errors.append(f"LangGraph practice without state/node: {step['id']}")
             if "вайб" in low and not any(x in low for x in ["secret", "diff", "review"]):
                 errors.append(f"safe vibe practice without security review: {step['id']}")
+    for _, lesson in iter_lessons(course):
+        first10_pedagogy.extend(first10_pedagogy_issues(lesson))
     duplicate_ids = [k for k, v in ids.items() if v > 1]
     if duplicate_ids:
         errors.append(f"duplicate ids: {len(duplicate_ids)}")
@@ -197,6 +262,14 @@ def validate(write_reports=True):
         errors.append(f"FastAPI duplicate contracts inside lessons: {len(duplicate_http)}")
     if first30_issues:
         errors.append(f"first 30 future knowledge violations: {len(first30_issues)}")
+    if first10_pedagogy:
+        errors.extend(first10_pedagogy[:30])
+        if len(first10_pedagogy) > 30:
+            errors.append(f"first10 additional pedagogy issues: {len(first10_pedagogy) - 30}")
+    errors.extend(docs_quality_issues())
+    fastapi_issue = first_fastapi_progression_issue(course)
+    if fastapi_issue:
+        errors.append(fastapi_issue)
     expected = manifest_rows(course)
     if MANIFEST_FILE.exists():
         with MANIFEST_FILE.open("r", encoding="utf-8-sig", newline="") as fh:
@@ -210,7 +283,7 @@ def validate(write_reports=True):
             bad = [r for r in csv.DictReader(fh) if r.get("status") in BAD_COVERAGE]
         if bad:
             errors.append(f"coverage bad status: {len(bad)}")
-    result = {"status": "PASS" if not errors else "FAIL", "errors": errors, "stats": stats, "first30_issues": first30_issues}
+    result = {"status": "PASS" if not errors else "FAIL", "errors": errors, "stats": stats, "first30_issues": first30_issues, "first10_pedagogy": first10_pedagogy}
     if write_reports:
         write_reports_fn(course, result)
     return result
@@ -220,14 +293,19 @@ def write_reports_fn(course, result):
     total_lessons = sum(1 for _ in iter_lessons(course))
     total_steps = stats["steps"]
     total_hours = round(sum(st["estimated_minutes"] for _, _, st in iter_steps(course)) / 60, 1)
-    lines = ["# Validation report v18_STRICT_PEDAGOGY", "", f"final status: {result['status']}", "", "## Totals", f"- total modules: {len(course['course']['modules'])}", f"- total lessons: {total_lessons}", f"- total steps: {total_steps}", f"- total hours: {total_hours}", f"- steps by type: {dict((k[5:], v) for k, v in stats.items() if k.startswith('type_'))}", f"- checkers by type: {dict((k[8:], v) for k, v in stats.items() if k.startswith('checker_'))}", "", "## Errors"]
+    first10_lessons = [lesson for _, lesson in iter_lessons(course) if lesson["id"].startswith("m01_l") and lesson["order"] <= 10]
+    first10_theory_lengths = {
+        lesson["title"]: sum(len(step.get("body_markdown", "")) for step in lesson["steps"] if step["type"] == "theory")
+        for lesson in first10_lessons
+    }
+    lines = ["# Validation report v18_STRICT_PEDAGOGY", "", f"final status: {result['status']}", "", "## Totals", f"- total modules: {len(course['course']['modules'])}", f"- total lessons: {total_lessons}", f"- total steps: {total_steps}", f"- total hours: {total_hours}", f"- steps by type: {dict((k[5:], v) for k, v in stats.items() if k.startswith('type_'))}", f"- checkers by type: {dict((k[8:], v) for k, v in stats.items() if k.startswith('checker_'))}", "", "## First 10 Pedagogy Gates", f"- theory chars by lesson: {first10_theory_lengths}", f"- future knowledge violations: {len(result.get('first30_issues', []))}", f"- pedagogy issues: {len(result.get('first10_pedagogy', []))}", f"- course_preview.md chars: {len((ROOT / 'course_preview.md').read_text(encoding='utf-8')) if (ROOT / 'course_preview.md').exists() else 0}", f"- ide_plugin_spec.md chars: {len((ROOT / 'ide_plugin_spec.md').read_text(encoding='utf-8')) if (ROOT / 'ide_plugin_spec.md').exists() else 0}", "", "## Errors"]
     lines += [f"- {e}" for e in result["errors"]] if result["errors"] else ["- none"]
     (ROOT / "validation_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     qa = ["# QA report v18_STRICT_PEDAGOGY", "", f"PASS/FAIL: {result['status']}", "", "## Critical blockers"]
     qa += [f"- {e}" for e in result["errors"]] if result["errors"] else ["- не найдено"]
-    qa += ["", "## Independent checks", "- first 30 lessons prerequisite gate is enforced;", "- body leaks and encoding corruption are hard fail;", "- manifest and coverage are checked independently;", "- SQL/FastAPI/AI/OOP topic gates are checked from JSON, not from validation_report.md.", "", "## 20 худших шагов"]
-    qa += [f"- blocker: {e}" for e in result["errors"][:20]] if result["errors"] else ["- автоматический аудит не нашёл критичных кандидатов; ручная выборка на staging обязательна."]
-    qa += ["", "## Итог", "PASS означает только автоматическую готовность пакета. Перед массовым запуском остаётся staging-regression: импорт, первые 10 уроков как студент и выборка 50-100 шагов."]
+    qa += ["", "## Independent checks", "- first 10 lessons theory length and examples are checked from JSON;", "- first 30 lessons prerequisite gate is enforced;", "- body leaks and encoding corruption are hard fail;", "- manifest and coverage are checked independently;", "- course_preview.md and ide_plugin_spec.md have minimum useful length gates;", "- SQL/FastAPI/AI/OOP topic gates are checked from JSON, not from validation_report.md.", "", "## 20 худших шагов"]
+    qa += [f"- blocker: {e}" for e in result["errors"][:20]] if result["errors"] else ["- автоматический аудит не нашёл критичных кандидатов в первых 10 уроках; ручная staging-проверка остаётся обязательной."]
+    qa += ["", "## Недоглубленные темы", "- если PASS: автоматический аудит не нашёл недоглубления по заданным hard gates;", "- если FAIL: см. critical blockers выше.", "", "## Итог", "PASS означает, что пакет прошёл автоматические педагогические и структурные ворота. Перед массовым запуском остаётся staging-regression: импорт, первые 10 уроков как студент и выборка 50-100 шагов."]
     (ROOT / "qa_report.md").write_text("\n".join(qa) + "\n", encoding="utf-8")
 
 def main():

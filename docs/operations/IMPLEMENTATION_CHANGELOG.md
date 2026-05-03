@@ -2715,3 +2715,26 @@
 2. `node backend/tools/generate_python_v18_materials_migration.js` — успешно.
 3. `node backend/tools/validate_python_v18_materials_import.js` — PASS.
 4. `go test ./...` в backend — PASS.
+## 2026-05-03 — Python v18 first 10 pedagogy reseed
+
+После внедрения v18 первые 10 уроков были усилены как материалы для ученика с нуля. Причина изменения: предыдущая версия проходила техническую валидацию, но первый урок был недостаточно подробным для самостоятельного старта без ментора.
+
+Что изменено:
+
+1. `материалы/v18_STRICT_PEDAGOGY/course_import.json` — переписаны первые 10 уроков.
+2. `материалы/v18_STRICT_PEDAGOGY/validate_course.py` — добавлены hard gates на длину теории, примеры в practice, future-knowledge violations, качество preview/spec и повторяющиеся решения.
+3. `материалы/v18_STRICT_PEDAGOGY/course_preview.md` — расширен для методиста: первые 10 уроков полностью.
+4. `материалы/v18_STRICT_PEDAGOGY/ide_plugin_spec.md` — расширен контракт IDE-проверок.
+5. `backend/migrations/027_reseed_python_zero_v18_first10_pedagogy.sql` — новая production-миграция поверх уже применённой `026`.
+
+Почему так:
+
+1. `026` нельзя редактировать после применения в production: `schema_migrations` не переисполнит старую версию.
+2. Новый `027` сохраняет воспроизводимый rollout и позволяет ревьюеру увидеть педагогическую правку отдельно от первичного v18 импорта.
+3. Изменение валидатора фиксирует критерий качества, чтобы будущие генерации не возвращались к коротким заглушкам первых уроков.
+
+Проверки:
+
+1. `python материалы/v18_STRICT_PEDAGOGY/validate_course.py` — PASS.
+2. независимый локальный QA первых 10 уроков — PASS.
+3. `node backend/tools/validate_python_v18_materials_import.js` — PASS.

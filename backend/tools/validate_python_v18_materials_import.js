@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const INPUT_PATH = path.resolve(__dirname, '../../материалы/v18_STRICT_PEDAGOGY/course_import.json');
-const MIGRATION_PATH = path.resolve(__dirname, '../migrations/026_reseed_python_zero_v18_strict_pedagogy.sql');
+const MIGRATION_PATH = path.resolve(__dirname, '../migrations/027_reseed_python_zero_v18_first10_pedagogy.sql');
 const REPORT_PATH = path.resolve(__dirname, '../../docs/operations/PYTHON_V18_STRICT_PEDAGOGY_IMPORT_VALIDATION_2026_05_03.md');
 
 function readJSON(filePath) {

@@ -688,3 +688,28 @@ REPORT_TASK_GAPS=1 node backend/tools/generate_full_course_v4_migration.js
 - удаление колонки увеличило бы риск для старых клиентов и исторических данных;
 - compatibility layer дешевле и безопаснее;
 - продуктовая цель достигнута на UI-слое: ученик больше не видит настройки и не может включить dark-mode.
+## Python v18 first 10 pedagogy reseed — 2026-05-03
+
+Backend теперь содержит новую миграцию курса:
+
+1. `migrations/027_reseed_python_zero_v18_first10_pedagogy.sql`
+
+Она создана после педагогической правки первых 10 уроков пакета `материалы/v18_STRICT_PEDAGOGY`. Миграция `026` остаётся в истории и не редактируется, потому что production уже мог записать её в `schema_migrations`.
+
+Что проверяет актуальный validator:
+
+1. количество blocks/tasks/testcases в SQL совпадает с `course_import.json`;
+2. `python_pytest.test_code` преобразуется в runtime key `pytest_code`;
+3. `http_api.public_tests/hidden_tests` преобразуются в runtime `tests[]`;
+4. quiz blocks содержат structured `questions[]`;
+5. первый урок курса остаётся `Первый код`;
+6. первые 10 уроков имеют подробную теорию, примеры и не используют будущие темы в student-facing полях.
+
+Команды:
+
+```bash
+node backend/tools/generate_python_v18_materials_migration.js
+node backend/tools/validate_python_v18_materials_import.js
+```
+
+Почему это нужно: backend import layer должен защищать production от ситуации, когда JSON формально валиден, но runtime-миграция не соответствует фактическому содержанию курса.

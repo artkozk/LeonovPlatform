@@ -5,29 +5,17 @@ final status: PASS
 ## Totals
 - total modules: 5
 - total lessons: 169
-- total steps: 1963
-- total hours: 678.9
-- total questions: 912
-- steps by type: {'theory': 337, 'test': 304, 'practice': 815, 'project': 338, 'summary': 169}
-- checkers by type: {'quiz_single': 304, 'python_stdout': 33, 'ide_plugin': 422, 'python_pytest': 357, 'sql_query': 221, 'http_api': 120}
+- total steps: 1960
+- total hours: 674.9
+- steps by type: {'theory': 338, 'test': 294, 'practice': 831, 'project': 328, 'summary': 169}
+- checkers by type: {'quiz_single': 294, 'python_stdout': 45, 'ide_plugin': 412, 'python_pytest': 361, 'sql_query': 221, 'http_api': 120}
 
-## Hard Gates
-- first lesson: PASS (`Первый код`)
-- first step: PASS (`Смысл`)
-- practice without checker: 0
-- project without check: 0
-- test without structured questions: 0
-- manifest mismatch: 0
-- coverage missing/thin/placeholder: 0
-- body leaks: 0
-- encoding corruption / mojibake: 0
-- first 30 future-knowledge violations: 0
-- FastAPI body/checker mismatch: 0
-- FastAPI duplicate contracts inside lessons: 0
-- SQL progression violations: 0
-- AI RAG/LangGraph/safe-vibe semantic issues: 0
-- OOP key-skill mismatch: 0
-- normalized solution duplicate hard gate: PASS by validator
+## First 10 Pedagogy Gates
+- theory chars by lesson: {'Первый код': 2530, 'Ввод и числа': 2374, 'Строки': 2154, 'bool и None': 2049, 'Условия': 2038, 'Типы и память': 2062, 'Циклы': 1938, 'Списки': 2019, 'Функции': 2062, 'Кортежи': 1874}
+- future knowledge violations: 0
+- pedagogy issues: 0
+- course_preview.md chars: 95408
+- ide_plugin_spec.md chars: 6240
 
-## Final
-PASS. Пакет можно импортировать на staging. Перед массовым запуском обязательна ручная выборка: первые 10 уроков как студент, 50-100 случайных шагов, IDE-плагин на реальном проекте и финальный проект end-to-end.
+## Errors
+- none

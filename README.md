@@ -1040,3 +1040,23 @@ cd idea-plugin
 - click по задаче открывает statement/теорию;
 - `Enter` на задаче открывает statement/теорию;
 - после открытия `AI-подсказка`/`Проверить` работают по текущей задаче без ошибки `Задача недоступна`.
+## Python v18 first 10 pedagogy reseed — 2026-05-03
+
+Курс `python-zero` получил дополнительный pedagogical reseed первых 10 уроков после первичного v18 rollout.
+
+Актуальная миграция для production:
+
+1. `backend/migrations/027_reseed_python_zero_v18_first10_pedagogy.sql`
+
+Почему это отдельная миграция:
+
+1. `026_reseed_python_zero_v18_strict_pedagogy.sql` уже была применена на сервере.
+2. Изменять применённую миграцию нельзя: PostgreSQL хранит её версию в `schema_migrations`.
+3. `027` переимпортирует обновлённый `материалы/v18_STRICT_PEDAGOGY/course_import.json`, где первые 10 уроков переписаны под ученика с нуля.
+
+Новые проверки:
+
+1. `python материалы/v18_STRICT_PEDAGOGY/validate_course.py`
+2. `node backend/tools/validate_python_v18_materials_import.js`
+
+Эти проверки теперь валидируют не только структуру, но и минимальную педагогическую полноту первых уроков: длину theory, наличие примеров, отсутствие будущих тем и конкретность mini-project шагов.
