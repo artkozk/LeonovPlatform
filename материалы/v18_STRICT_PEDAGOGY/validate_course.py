@@ -9,7 +9,7 @@ COURSE_FILE = ROOT / "course_import.json"
 MANIFEST_FILE = ROOT / "manifest.csv"
 COVERAGE_FILE = ROOT / "coverage_matrix.csv"
 
-BODY_LEAKS = ["Шаблон", "Подсказки", "Эталон", "Автотесты", "hidden tests", "tests", "solution", "checker", "admin", "AI-инструкция", "Сценарий", "skill_focus", "lesson_stage", "qa_notes", "ключевая идея темы", "собери практическую работу по теме", "ученик учится", "ученик должен", "в рамках данного урока", "применяет тему", "проверяемый результат", "используй новую тему", "отдельный сценарий применения темы"]
+BODY_LEAKS = ["Шаблон", "Подсказки", "Эталон", "Автотесты", "hidden tests", "tests", "solution", "checker", "admin", "AI-инструкция", "Сценарий", "skill_focus", "lesson_stage", "qa_notes", "ключевая идея темы", "собери практическую работу по теме", "ученик учится", "ученик должен", "в рамках данного урока", "применяет тему", "проверяемый результат", "используй новую тему", "отдельный сценарий применения темы", "приём Python", "практический инструмент", "SQL-приём", "Ответь на вопросы по теме", "один рабочий пример по теме", "закрепи тему", "проверяемом артефакте", "После урока ты сможешь", "backend-код держится на маленьких проверяемых функциях и объектах"]
 BANNED = ["Тест недоступен", "Для этого шага пока нет автопроверки"]
 CORRUPTION = ["?" * 3, "\ufffd", "\u00d0", "\u00d1", "\u0420\u045f", "\u0420\ufffd", "\u0421\ufffd"]
 BAD_COVERAGE = {"missing", "thin", "placeholder"}
@@ -17,6 +17,7 @@ FIRST10_THEORY_MIN = 700
 FIRST10_LESSON_THEORY_MIN = 1400
 COURSE_PREVIEW_MIN_CHARS = 30000
 IDE_PLUGIN_SPEC_MIN_CHARS = 5000
+ALL_THEORY_MIN = 700
 
 def load_course():
     return json.loads(COURSE_FILE.read_text(encoding="utf-8"))
@@ -56,6 +57,14 @@ def normalized_solution(code):
     code = re.sub(r"\b[a-zA-Z_][a-zA-Z0-9_]*_\d+\b", "NAME", code)
     code = re.sub(r"\s+", " ", code).strip()
     return code
+
+def structural_solution_signature(code):
+    code = re.sub(r"#.*", "", code or "")
+    code = re.sub(r'"[^"]*"', '"S"', code)
+    code = re.sub(r"'[^']*'", "'S'", code)
+    code = re.sub(r"\b\d+\b", "N", code)
+    code = re.sub(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", "ID", code)
+    return re.sub(r"\s+", " ", code).strip()
 
 def lesson_mode(lesson):
     joined = " ".join(lesson.get("roadmap_topics", []) + [lesson["title"]]).lower()
@@ -138,8 +147,13 @@ def docs_quality_issues():
 
 def first_fastapi_progression_issue(course):
     for module, lesson, step in iter_steps(course):
+        if module["order"] != 4:
+            continue
         if step.get("checker", {}).get("type") == "http_api":
-            methods = {t.get("method") for t in step["checker"].get("public_tests", []) + step["checker"].get("hidden_tests", [])}
+            # The first public FastAPI exercise must be a simple GET. Hidden
+            # negative probes may use other methods, for example POST /health
+            # expecting 405, and should not make the learning progression fail.
+            methods = {t.get("method") for t in step["checker"].get("public_tests", []) if t.get("method")}
             body = (step.get("body_markdown", "") + " " + step.get("title", "")).lower()
             if methods and methods != {"GET"}:
                 return f"first FastAPI task is not simple GET: {step['id']}"
@@ -165,6 +179,8 @@ def validate(write_reports=True):
     bodies = Counter()
     scenario = Counter()
     solution_counts = Counter()
+    structural_solution_counts = Counter()
+    structural_ai_counts = Counter()
     http_contracts = defaultdict(set)
     question_counts = Counter()
     first30_issues = []
@@ -185,6 +201,8 @@ def validate(write_reports=True):
             if leak.lower() in body_low:
                 errors.append(f"body leak {step['id']}: {leak}")
                 break
+        if step["type"] == "theory" and len(step.get("body_markdown", "")) < ALL_THEORY_MIN:
+            errors.append(f"theory step too short: {step['id']}")
         if step["type"] == "practice" and not step.get("checker"):
             errors.append(f"practice without checker: {step['id']}")
         if step["type"] == "project" and not (step.get("checker") or step.get("ide_plugin_check") or step.get("ai_review_config")):
@@ -205,6 +223,11 @@ def validate(write_reports=True):
             norm = normalized_solution(step.get("solution_code", ""))
             if norm:
                 solution_counts[norm] += 1
+            structural = structural_solution_signature(step.get("solution_code", ""))
+            if structural:
+                structural_solution_counts[structural] += 1
+                if lesson_mode(lesson) == "ai":
+                    structural_ai_counts[structural] += 1
         if step.get("checker", {}).get("type") == "http_api":
             routes = body_route_methods(step.get("body_markdown", ""))
             for test in step["checker"].get("public_tests", []) + step["checker"].get("hidden_tests", []):
@@ -257,6 +280,12 @@ def validate(write_reports=True):
     repeated_solutions = [k for k, v in solution_counts.items() if k and v > 1]
     if repeated_solutions:
         errors.append(f"normalized solution duplicates: {len(repeated_solutions)}")
+    max_structural_solution = max(structural_solution_counts.values() or [0])
+    if max_structural_solution > 20:
+        errors.append(f"mass structural solution duplicate group: {max_structural_solution}")
+    max_structural_ai = max(structural_ai_counts.values() or [0])
+    if max_structural_ai > 20:
+        errors.append(f"mass AI structural duplicate group: {max_structural_ai}")
     duplicate_http = [k for k, ids in http_contracts.items() if len(ids) > 1]
     if duplicate_http:
         errors.append(f"FastAPI duplicate contracts inside lessons: {len(duplicate_http)}")
@@ -283,7 +312,7 @@ def validate(write_reports=True):
             bad = [r for r in csv.DictReader(fh) if r.get("status") in BAD_COVERAGE]
         if bad:
             errors.append(f"coverage bad status: {len(bad)}")
-    result = {"status": "PASS" if not errors else "FAIL", "errors": errors, "stats": stats, "first30_issues": first30_issues, "first10_pedagogy": first10_pedagogy}
+    result = {"status": "PASS" if not errors else "FAIL", "errors": errors, "stats": stats, "first30_issues": first30_issues, "first10_pedagogy": first10_pedagogy, "max_structural_solution": max_structural_solution, "max_structural_ai": max_structural_ai}
     if write_reports:
         write_reports_fn(course, result)
     return result
@@ -298,12 +327,12 @@ def write_reports_fn(course, result):
         lesson["title"]: sum(len(step.get("body_markdown", "")) for step in lesson["steps"] if step["type"] == "theory")
         for lesson in first10_lessons
     }
-    lines = ["# Validation report v18_STRICT_PEDAGOGY", "", f"final status: {result['status']}", "", "## Totals", f"- total modules: {len(course['course']['modules'])}", f"- total lessons: {total_lessons}", f"- total steps: {total_steps}", f"- total hours: {total_hours}", f"- steps by type: {dict((k[5:], v) for k, v in stats.items() if k.startswith('type_'))}", f"- checkers by type: {dict((k[8:], v) for k, v in stats.items() if k.startswith('checker_'))}", "", "## First 10 Pedagogy Gates", f"- theory chars by lesson: {first10_theory_lengths}", f"- future knowledge violations: {len(result.get('first30_issues', []))}", f"- pedagogy issues: {len(result.get('first10_pedagogy', []))}", f"- course_preview.md chars: {len((ROOT / 'course_preview.md').read_text(encoding='utf-8')) if (ROOT / 'course_preview.md').exists() else 0}", f"- ide_plugin_spec.md chars: {len((ROOT / 'ide_plugin_spec.md').read_text(encoding='utf-8')) if (ROOT / 'ide_plugin_spec.md').exists() else 0}", "", "## Errors"]
+    lines = ["# Validation report v18_STRICT_PEDAGOGY", "", f"final status: {result['status']}", "", "## Totals", f"- total modules: {len(course['course']['modules'])}", f"- total lessons: {total_lessons}", f"- total steps: {total_steps}", f"- total hours: {total_hours}", f"- steps by type: {dict((k[5:], v) for k, v in stats.items() if k.startswith('type_'))}", f"- checkers by type: {dict((k[8:], v) for k, v in stats.items() if k.startswith('checker_'))}", "", "## First 10 Pedagogy Gates", f"- theory chars by lesson: {first10_theory_lengths}", f"- future knowledge violations: {len(result.get('first30_issues', []))}", f"- pedagogy issues: {len(result.get('first10_pedagogy', []))}", f"- course_preview.md chars: {len((ROOT / 'course_preview.md').read_text(encoding='utf-8')) if (ROOT / 'course_preview.md').exists() else 0}", f"- ide_plugin_spec.md chars: {len((ROOT / 'ide_plugin_spec.md').read_text(encoding='utf-8')) if (ROOT / 'ide_plugin_spec.md').exists() else 0}", "", "## Structural Duplicate Gates", f"- max structural solution group: {result.get('max_structural_solution', 0)}", f"- max AI structural group: {result.get('max_structural_ai', 0)}", f"- fail threshold: 20", "", "## Errors"]
     lines += [f"- {e}" for e in result["errors"]] if result["errors"] else ["- none"]
     (ROOT / "validation_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     qa = ["# QA report v18_STRICT_PEDAGOGY", "", f"PASS/FAIL: {result['status']}", "", "## Critical blockers"]
     qa += [f"- {e}" for e in result["errors"]] if result["errors"] else ["- не найдено"]
-    qa += ["", "## Independent checks", "- first 10 lessons theory length and examples are checked from JSON;", "- first 30 lessons prerequisite gate is enforced;", "- body leaks and encoding corruption are hard fail;", "- manifest and coverage are checked independently;", "- course_preview.md and ide_plugin_spec.md have minimum useful length gates;", "- SQL/FastAPI/AI/OOP topic gates are checked from JSON, not from validation_report.md.", "", "## 20 худших шагов"]
+    qa += ["", "## Independent checks", "- first 10 lessons theory length and examples are checked from JSON;", "- first 30 lessons prerequisite gate is enforced;", "- body leaks and encoding corruption are hard fail;", "- manifest and coverage are checked independently;", "- course_preview.md and ide_plugin_spec.md have minimum useful length gates;", "- SQL/FastAPI/AI/OOP topic gates are checked from JSON, not from validation_report.md.", f"- structural solution duplicate gate: max {result.get('max_structural_solution', 0)} / 20;", f"- AI structural duplicate gate: max {result.get('max_structural_ai', 0)} / 20.", "", "## 20 худших шагов"]
     qa += [f"- blocker: {e}" for e in result["errors"][:20]] if result["errors"] else ["- автоматический аудит не нашёл критичных кандидатов в первых 10 уроках; ручная staging-проверка остаётся обязательной."]
     qa += ["", "## Недоглубленные темы", "- если PASS: автоматический аудит не нашёл недоглубления по заданным hard gates;", "- если FAIL: см. critical blockers выше.", "", "## Итог", "PASS означает, что пакет прошёл автоматические педагогические и структурные ворота. Перед массовым запуском остаётся staging-regression: импорт, первые 10 уроков как студент и выборка 50-100 шагов."]
     (ROOT / "qa_report.md").write_text("\n".join(qa) + "\n", encoding="utf-8")

@@ -12,6 +12,8 @@ PASS/FAIL: PASS
 - manifest and coverage are checked independently;
 - course_preview.md and ide_plugin_spec.md have minimum useful length gates;
 - SQL/FastAPI/AI/OOP topic gates are checked from JSON, not from validation_report.md.
+- structural solution duplicate gate: max 18 / 20;
+- AI structural duplicate gate: max 15 / 20.
 
 ## 20 худших шагов
 - автоматический аудит не нашёл критичных кандидатов в первых 10 уроках; ручная staging-проверка остаётся обязательной.

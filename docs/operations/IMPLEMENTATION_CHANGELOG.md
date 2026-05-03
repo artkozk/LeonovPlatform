@@ -2738,3 +2738,51 @@
 1. `python материалы/v18_STRICT_PEDAGOGY/validate_course.py` — PASS.
 2. независимый локальный QA первых 10 уроков — PASS.
 3. `node backend/tools/validate_python_v18_materials_import.js` — PASS.
+
+## 2026-05-03 — Python v18 course-wide quality reseed
+
+После самооценки курса был выполнен дополнительный полный проход по материалам v18. Причина изменения: курс уже проходил технический импорт, но за пределами первых 10 уроков оставались однотипные задания и hidden solution skeleton, которые могли создать ощущение “валидного каркаса” вместо полноценной практики.
+
+Что изменено:
+
+1. `материалы/v18_STRICT_PEDAGOGY/course_import.json`:
+   - убраны остатки битого текста `????` и служебных слов в student-facing body;
+   - заменены массовые generic Python задачи на разные backend-утилиты и topic-specific contracts;
+   - OOP-практики усилены реальными классами, состоянием, property, magic methods, Protocol, inheritance, composition и dataclass;
+   - AI-практики разведены по разным навыкам: messages, timeout, retry, structured output, RAG, graph state, patch review;
+   - FastAPI body явно показывает публичный HTTP-контракт из checker.
+2. `материалы/v18_STRICT_PEDAGOGY/validate_course.py`:
+   - добавлен structural duplicate gate;
+   - добавлен AI structural duplicate gate;
+   - отчёты теперь показывают максимальный размер структурной группы.
+3. Пересобраны производные файлы:
+   - `course_preview.md`;
+   - `course_map.md`;
+   - `manifest.csv`;
+   - `validation_report.md`;
+   - `qa_report.md`.
+4. `backend/tools/generate_python_v18_materials_migration.js` и `backend/tools/validate_python_v18_materials_import.js` переведены на новую миграцию:
+   - `backend/migrations/028_reseed_python_zero_v18_coursewide_quality.sql`.
+
+Почему так:
+
+1. Уже применённые `026` и `027` нельзя редактировать после production rollout.
+2. Новый `028` фиксирует отдельный course-wide quality слой и даёт повторяемый путь деплоя.
+3. Structural duplicate gate нужен, чтобы будущие правки не возвращали массовые шаблоны, даже если точные строки отличаются.
+4. FastAPI/AI/OOP изменения сделаны в JSON-источнике, потому что платформа импортирует `course_import.json`, а Markdown-preview не является источником данных.
+
+Проверки:
+
+1. `python материалы/v18_STRICT_PEDAGOGY/validate_course.py` — PASS.
+2. Независимый локальный QA:
+   - encoding corruption: 0;
+   - body leaks: 0;
+   - short theory: 0;
+   - first10 future-knowledge violations: 0;
+   - FastAPI duplicate contracts inside lesson: 0;
+   - manifest match: true;
+   - coverage bad statuses: 0;
+   - max structural solution group: 18 / 20;
+   - max AI structural group: 15 / 20.
+3. `node backend/tools/generate_python_v18_materials_migration.js` — успешно.
+4. `node backend/tools/validate_python_v18_materials_import.js` — PASS.

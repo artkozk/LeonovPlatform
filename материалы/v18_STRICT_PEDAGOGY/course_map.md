@@ -114,7 +114,7 @@
 
 ## Модуль 4. FastAPI, инфраструктура и тестирование
 
-- 01. FastAPI: первый API — шагов: 13; типы: {'theory': 2, 'test': 2, 'practice': 6, 'project': 2, 'summary': 1}; проверки: {'quiz_single': 2, 'http_api': 6, 'ide_plugin': 2}; нагрузка: 4.9 ч.; навыки: FastAPI, HTTP / HTTPS, REST.
+- 01. FastAPI: первый API — шагов: 13; типы: {'theory': 2, 'test': 2, 'practice': 6, 'project': 2, 'summary': 1}; проверки: {'quiz_single': 2, 'http_api': 6, 'ide_plugin': 2}; нагрузка: 4.7 ч.; навыки: FastAPI, HTTP / HTTPS, REST.
 - 02. FastAPI: GET route — шагов: 13; типы: {'theory': 2, 'test': 2, 'practice': 6, 'project': 2, 'summary': 1}; проверки: {'quiz_single': 2, 'http_api': 6, 'ide_plugin': 2}; нагрузка: 4.9 ч.; навыки: FastAPI, REST.
 - 03. FastAPI: path params — шагов: 13; типы: {'theory': 2, 'test': 2, 'practice': 6, 'project': 2, 'summary': 1}; проверки: {'quiz_single': 2, 'http_api': 6, 'ide_plugin': 2}; нагрузка: 4.9 ч.; навыки: FastAPI, REST.
 - 04. FastAPI: query params — шагов: 13; типы: {'theory': 2, 'test': 2, 'practice': 6, 'project': 2, 'summary': 1}; проверки: {'quiz_single': 2, 'http_api': 6, 'ide_plugin': 2}; нагрузка: 4.9 ч.; навыки: FastAPI, REST.

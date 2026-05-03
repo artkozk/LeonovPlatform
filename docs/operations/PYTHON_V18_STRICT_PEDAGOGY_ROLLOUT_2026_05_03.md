@@ -181,3 +181,67 @@
 3. Проверить запись `027_reseed_python_zero_v18_first10_pedagogy` в `schema_migrations`.
 4. Проверить агрегаты курса: `5|169|1960|1159`.
 5. Открыть первый урок `Первый код` и проверить, что первый шаг подробно объясняет программу и `print`.
+
+## 8. Дополнение 2026-05-03: course-wide quality reseed
+
+После самооценки материалов стало видно, что первые 10 уроков уже соответствуют входу с нуля, но в остальном курсе ещё оставались массовые шаблонные решения: одинаковые `str(value).strip()`, повторяющиеся OOP-каркасы, одинаковые FastAPI endpoint skeleton и однотипные AI payload-задачи. Технический импорт при этом проходил, но для обучения потока это недостаточно.
+
+Что изменено сейчас:
+
+1. В `course_import.json` переписаны hot spots за пределами первых 10 уроков:
+   - generic Python practice заменены на задачи с разными контрактами входа/выхода;
+   - OOP-практики теперь требуют реальные классы, property, magic methods, Protocol, inheritance, composition и dataclass;
+   - AI-практики разведены на messages payload, timeout, retry, structured output, RAG citation, vector search, graph state и patch review;
+   - FastAPI hidden solutions и body приведены к явному HTTP-контракту из public checker;
+   - student-facing body очищен от `tests`, `admin`, `Сценарий` и битых `????`.
+2. Усилен `validate_course.py`:
+   - добавлен structural duplicate gate для решений;
+   - добавлен отдельный AI structural duplicate gate;
+   - gate падает при массовой группе больше `20`.
+3. Пересобраны производные файлы:
+   - `course_preview.md`;
+   - `course_map.md`;
+   - `manifest.csv`;
+   - `validation_report.md`;
+   - `qa_report.md`.
+4. Создана новая миграция:
+   - `028_reseed_python_zero_v18_coursewide_quality.sql`.
+
+Почему создана новая миграция:
+
+1. `026` и `027` уже являются отдельными слоями данных в migration-chain.
+2. Переписывать применённые миграции нельзя: production база хранит применённые версии в `schema_migrations`.
+3. `028` делает повторяемый полный reseed курса и позволяет ревьюеру отдельно проверить именно course-wide quality pass.
+
+Актуальные метрики после `028`:
+
+1. modules: 5;
+2. lessons: 169;
+3. lesson blocks: 1960;
+4. published tasks: 1159;
+5. quiz steps: 294;
+6. estimated hours: 674.8;
+7. max structural solution group: 18 / 20;
+8. max AI structural group: 15 / 20.
+
+Проверки после правки:
+
+1. `python материалы/v18_STRICT_PEDAGOGY/validate_course.py` — PASS.
+2. Независимый локальный QA:
+   - encoding corruption: 0;
+   - body leaks: 0;
+   - short theory: 0;
+   - FastAPI duplicate contracts inside lesson: 0;
+   - first10 future-knowledge violations: 0;
+   - manifest match: true;
+   - coverage bad statuses: 0.
+3. `node backend/tools/generate_python_v18_materials_migration.js` — создан `028`.
+4. `node backend/tools/validate_python_v18_materials_import.js` — PASS против `028`.
+
+Операционная инструкция теперь использует `028`:
+
+1. Запушить commit с миграцией `028`.
+2. Развернуть release на сервер.
+3. Проверить запись `028_reseed_python_zero_v18_coursewide_quality` в `schema_migrations`.
+4. Проверить агрегаты курса: `5|169|1960|1159`.
+5. Открыть первые 10 уроков как студент и выборочно проверить FastAPI, AI, OOP и SQL practice.

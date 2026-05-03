@@ -2,7 +2,7 @@
 
 ## Source Inputs
 - materials json: `C:\prog\Comercial\LeonovCarePlatform\материалы\v18_STRICT_PEDAGOGY\course_import.json`
-- generated migration: `C:\prog\Comercial\LeonovCarePlatform\backend\migrations\027_reseed_python_zero_v18_first10_pedagogy.sql`
+- generated migration: `C:\prog\Comercial\LeonovCarePlatform\backend\migrations\028_reseed_python_zero_v18_coursewide_quality.sql`
 
 ## Parsed Materials Stats
 - modules: 5
