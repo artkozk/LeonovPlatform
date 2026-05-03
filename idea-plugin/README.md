@@ -67,3 +67,71 @@ cd idea-plugin
 2. `AuthService.withAuthorizedToken` централизует refresh/retry на `401`.
 3. `TaskLanguage` предотвращает ошибки на разных alias языка (`python3`, `js`, `postgresql`).
 4. AI-подсказки идут через backend, чтобы соблюдать тарифные ограничения и аудит (premium gating, logging на стороне сервера).
+
+## Update 2026-05-03 — PyCharm compatibility for Python course
+
+1. Плагин переведен на целевой IDE runtime PyCharm (ветка 2025.1):
+- Gradle target: `pycharmCommunity("2025.1")`;
+- обязательный bundled plugin: `PythonCore`;
+- совместимость build-range сохранена: `sinceBuild=251`, `untilBuild=251.*`.
+
+2. Plugin descriptor обновлен под Python IDE:
+- обязательная модульная зависимость: `com.intellij.modules.python`;
+- Java plugin переведен в optional dependency:
+  - `<depends optional="true" config-file="leonovcare-with-java.xml">com.intellij.java</depends>`.
+
+3. Core run-service изолирован от hard dependency на Java runtime:
+- Java-specific provider (`JavaRunConfigurationProvider`) вынесен из базового `TaskRunConfigurationService`;
+- в `TaskRunConfigurationService` добавлена безопасная динамическая загрузка optional provider по class name;
+- если Java plugin/API недоступен, сервис не падает, а использует `UnsupportedLanguageRunConfigurationProvider`.
+
+4. Почему сделано именно так:
+- пользовательский сценарий сейчас ориентирован на Python-курс в PyCharm, поэтому plugin обязан стабильно загружаться без обязательного `com.intellij.java`;
+- Java-run контур не удален полностью, а переведен в optional режим, чтобы не терять функциональность в IDE, где Java plugin присутствует;
+- безопасная деградация в run/debug предотвращает class-loading падение plugin startup в PyCharm.
+
+5. Как протестировать плагин в PyCharm для Python-курса:
+1. Запустить сборку из корня `idea-plugin`:
+```bash
+./gradlew test
+./gradlew buildPlugin
+```
+2. Взять артефакт:
+- `idea-plugin/build/distributions/leonovcare-idea-plugin-0.1.0.zip`.
+3. Установить zip в PyCharm:
+- `Settings -> Plugins -> gear icon -> Install Plugin from Disk`.
+4. Настроить API:
+- `Settings -> Tools -> Leonov Care Platform Plugin`;
+- `API Base URL`: `http://85.198.82.221:8510/api/v1` (или ваш staging URL).
+5. Выполнить smoke flow Python-курса:
+- логин (email/password или token mode);
+- загрузка курсов и выбор Python-курса;
+- открытие задачи в `platform-tasks/...`;
+- редактирование решения;
+- `Проверить` (submit) + получение verdict;
+- `AI-подсказка` по текущей задаче.
+6. Ожидаемое поведение run/debug:
+- для Python-задач локальный run/debug в текущем контуре не обязателен и может возвращать сообщение о неподдерживаемом локальном раннере;
+- submit/check/sync/AI должны работать без ошибок.
+
+## Update 2026-05-03 — correction after dependency resolution check
+
+1. Фактический результат после реального прогона Gradle на PyCharm target:
+- `bundledPlugin("com.intellij.java")` не резолвится для PyCharm runtime;
+- ошибка сборки: `Could not find bundled plugin with ID: 'com.intellij.java'`.
+
+2. Итоговое техническое решение (актуальное состояние):
+- `com.intellij.java` dependency полностью убрана из `build.gradle.kts` и `plugin.xml`;
+- optional descriptor `leonovcare-with-java.xml` удален;
+- `TaskRunConfigurationService` оставлен только с `UnsupportedLanguageRunConfigurationProvider`, без dynamic Java-provider loading.
+- task `instrumentCode` отключен в Gradle-конфигурации, чтобы сборка не падала на ant-инструментации в текущем Windows/JDK окружении (`...\\jdk-17...\\Packages does not exist`).
+
+3. Почему именно так:
+- цель текущей итерации — рабочий PyCharm plugin для Python-курса;
+- попытка сохранить Java-run path через bundled Java dependency конфликтует с PyCharm target и блокирует сборку;
+- приоритизация production-flow для Python (open/edit/submit/AI/sync) важнее сохранения Java-run в этой сборке.
+
+4. Что это значит для пользователя сейчас:
+- plugin устанавливается и работает в PyCharm для учебного Python-сценария;
+- локальный run/debug через текущий plugin-контур не предоставляется и возвращает controlled unsupported message;
+- серверная проверка (`submit` + polling verdict), синхронизация и AI-подсказки продолжают работать.

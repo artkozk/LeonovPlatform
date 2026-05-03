@@ -18,8 +18,8 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        intellijIdeaCommunity("2025.1")
-        bundledPlugin("com.intellij.java")
+        pycharmCommunity("2025.1")
+        bundledPlugin("PythonCore")
         testFramework(TestFrameworkType.Platform)
     }
 
@@ -48,5 +48,9 @@ intellijPlatform {
 tasks {
     test {
         useJUnitPlatform()
+    }
+
+    named("instrumentCode") {
+        enabled = false
     }
 }

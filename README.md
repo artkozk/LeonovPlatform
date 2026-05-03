@@ -859,3 +859,70 @@ cd idea-plugin
 - `POST /api/v1/auth/register` с `nickname="Иван Петров <timestamp>"` вернул `201 Created`;
 - `GET /api/v1/me` вернул нормализованный `nickname="иван_петров_<timestamp>"`;
 - контрольный мусорный ник `a..` вернул `400`, потому что после нормализации остаётся меньше 3 символов.
+
+## IDEA plugin update: PyCharm target for Python course (2026-05-03, v2.80)
+
+1. Цель изменения:
+- обеспечить практический запуск плагина в PyCharm для сценария Python-курса без обязательного Java-модуля IDE.
+
+2. Что изменено в plugin build/runtime:
+- `idea-plugin/build.gradle.kts`:
+  - target IDE переключен на `pycharmCommunity("2025.1")`;
+  - добавлен `bundledPlugin("PythonCore")` как обязательный dependency для PyCharm API;
+  - сохранен `bundledPlugin("com.intellij.java")` для компиляции Java-specific optional runner.
+- `idea-plugin/src/main/resources/META-INF/plugin.xml`:
+  - обязательный модуль changed to `com.intellij.modules.python`;
+  - Java plugin dependency переведена в optional:
+    - `<depends optional="true" config-file="leonovcare-with-java.xml">com.intellij.java</depends>`.
+- добавлен `idea-plugin/src/main/resources/META-INF/leonovcare-with-java.xml` как optional config-file для Java-зависимого слоя.
+
+3. Что изменено в коде плагина:
+- `TaskRunConfigurationService` перестал иметь hard link на Java provider при инициализации;
+- `JavaRunConfigurationProvider` вынесен в отдельный класс и подключается динамически;
+- при отсутствии Java plugin/API сервис не падает на class loading и корректно деградирует через `UnsupportedLanguageRunConfigurationProvider`.
+
+4. Почему сделано именно так:
+- при прямой зависимости на `com.intellij.java` плагин не подходит для чистого PyCharm потока Python-курса;
+- полный вынос Java-кода из продукта не нужен: optional модель сохраняет Java-run путь в IDE, где Java plugin присутствует;
+- динамическая загрузка Java provider убирает startup-риск и делает поведение предсказуемым для PyCharm пользователей.
+
+5. Как теперь тестировать plugin в PyCharm для Python-курса:
+1. Сборка:
+```bash
+cd idea-plugin
+./gradlew test
+./gradlew buildPlugin
+```
+2. Установка:
+- `Settings -> Plugins -> Install Plugin from Disk` и выбрать zip из `idea-plugin/build/distributions`.
+3. Настройка:
+- `Settings -> Tools -> Leonov Care Platform Plugin`;
+- `API Base URL`: `http://85.198.82.221:8510/api/v1` (или другой environment).
+4. Smoke:
+- login;
+- выбор Python-курса;
+- открытие задачи;
+- редактирование локального файла;
+- `Проверить` (submit) и получение verdict;
+- проверка `AI-подсказка`.
+5. Ожидаемое run/debug поведение:
+- основной production-контур для Python в этом релизе: open/edit/submit/sync/AI;
+- локальный run/debug может быть unavailable для Python-задач и должен возвращать понятную ошибку без падения UI.
+
+## IDEA plugin update correction: PyCharm dependency resolution (2026-05-03, v2.80.1)
+
+1. Что подтвердилось в реальной сборке:
+- на PyCharm target зависимость `bundledPlugin("com.intellij.java")` не резолвится;
+- сборка падала с ошибкой `Could not find bundled plugin with ID: 'com.intellij.java'`.
+
+2. Финальная фиксация состояния после прогона:
+- Java bundled dependency удалена из `idea-plugin/build.gradle.kts`;
+- optional Java dependency удалена из `idea-plugin/src/main/resources/META-INF/plugin.xml`;
+- удален вспомогательный optional descriptor `META-INF/leonovcare-with-java.xml`;
+- run-service переведен в deterministic fallback (`UnsupportedLanguageRunConfigurationProvider`) без Java provider.
+- task `instrumentCode` отключен в `idea-plugin/build.gradle.kts`, потому что в текущем Windows/JDK окружении ant-instrumentation падала на пути `...\\jdk-17...\\Packages` и блокировала `buildPlugin`.
+
+3. Почему сохранено именно так:
+- приоритет текущего запроса: рабочий plugin в PyCharm для Python-курса;
+- сохранение Java-run path в этой сборке технически блокировало сборку под PyCharm;
+- open/edit/submit/AI/sync контур для Python остается рабочим и является главным учебным путём в этом релизе.

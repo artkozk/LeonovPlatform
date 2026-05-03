@@ -170,3 +170,55 @@
 1. Текущий backend платформы не поддерживает production-поток “вечного” static token, он построен на ротации JWT.
 2. Без централизованного refresh plugin быстро деградирует в “частые re-login” при активной учебной сессии.
 3. Сохранение локального кэша при re-login снижает риск потери контекста у ученика при сетевых/auth сбоях.
+
+## 13. Update 2026-05-03 — PyCharm target for Python course
+
+1. Целевой продукт для plugin-сборки переключен с IDEA Community на PyCharm Community (`2025.1`).
+2. В Gradle-dependencies добавлен обязательный `PythonCore`, чтобы plugin-контур соответствовал PyCharm API требованиям.
+3. В `plugin.xml` обязательная модульная зависимость переведена на `com.intellij.modules.python`.
+4. Java plugin dependency переведена в optional через `config-file`:
+- `<depends optional="true" config-file="leonovcare-with-java.xml">com.intellij.java</depends>`.
+
+Почему это нужно:
+
+1. Основной пользовательский поток в текущем запросе: Python-курс внутри PyCharm.
+2. Жесткая Java-dependency в main descriptor ограничивает plugin только Java-ориентированными IDE и делает PyCharm rollout недоступным.
+3. Optional dependency сохраняет обратную совместимость Java-path там, где Java plugin действительно присутствует.
+
+5. Изменение run-сервиса:
+- `TaskRunConfigurationService` больше не держит hard initialization `JavaRunConfigurationProvider()` в поле providers;
+- Java provider загружается через reflection по class name и добавляется только если класс успешно инстанцируется;
+- если Java API недоступно, сервис автоматически работает через fallback provider и выдает controlled user-facing ошибку вместо startup crash.
+
+Почему так:
+
+1. Это убирает class-loading риск в PyCharm при отсутствии Java plugin classloader parent.
+2. Плагин не теряет Java-run функциональность полностью: она остается доступной в IDE с Java plugin.
+3. Поведение в Python-потоке становится предсказуемым: open/edit/submit/sync/AI доступны независимо от Java runtime слоя.
+
+6. Что проверять в валидации PyCharm:
+
+1. Установка плагина из `build/distributions/*.zip` проходит без dependency error.
+2. Tool Window открывается, login работает.
+3. Загружаются курсы/задачи, Python-задача открывается в `platform-tasks/...`.
+4. `Submit` и polling verdict работают.
+5. `AI-подсказка` получает ответ через `POST /api/v1/ai/task-hint`.
+6. `Run/Debug` для unsupported language дает ожидаемую ошибку без падения UI.
+
+## 14. Update 2026-05-03 — correction after Gradle verification
+
+1. Во время фактического прогона build на PyCharm target выявлено:
+- `bundledPlugin("com.intellij.java")` не доступен как bundled dependency для выбранного PyCharm runtime.
+
+2. В результате финальная конфигурация скорректирована:
+- Java dependency убрана из Gradle/plugin.xml;
+- optional descriptor для Java слоя удален;
+- run-service оставлен в fallback-модели без Java provider.
+- `instrumentCode` task отключен в Gradle, чтобы обойти environment-specific падение ant instrumentation (`...\\jdk-17...\\Packages does not exist`) и не блокировать выпуск plugin zip.
+
+3. Причина коррекции:
+- сохранить реальную собираемость и устанавливаемость plugin в PyCharm для Python-курса важнее, чем частичная поддержка Java local runner в этой же сборке.
+
+4. Operational effect:
+- PyCharm installability и Python submit-flow сохраняются;
+- локальный run/debug через plugin недоступен и должен показывать controlled unsupported-path сообщение.
