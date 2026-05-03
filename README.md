@@ -4,6 +4,34 @@
 
 Проект собран как **отдельная площадка** в папке `C:/prog/Comercial/LeonovCarePlatform`.
 
+### Актуализация от 2026-05-03: внедрение курса Python v18 Strict Pedagogy
+
+1. В платформу внедряется новый production-ready пакет курса:
+- источник: `материалы/v18_STRICT_PEDAGOGY/course_import.json`;
+- runtime rollout: `backend/migrations/026_reseed_python_zero_v18_strict_pedagogy.sql`;
+- генератор: `backend/tools/generate_python_v18_materials_migration.js`;
+- валидация импорта: `backend/tools/validate_python_v18_materials_import.js`.
+2. Курс `python-zero` переиздаётся как `Python с нуля — Backend + AI`:
+- 5 модулей;
+- 169 уроков;
+- 1963 lesson blocks;
+- 1153 practice/project задач в runtime;
+- 912 structured quiz questions;
+- 678.9 часов расчётной нагрузки.
+3. Первый видимый урок сохранён строго по педагогическому gate:
+- Модуль 1;
+- Урок 1: `Первый код`;
+- Шаг 1: `Смысл`.
+4. Почему сделано отдельной миграцией:
+- платформа в production читает курс из PostgreSQL, а не напрямую из JSON;
+- миграция даёт воспроизводимый deploy и понятный rollback через backup;
+- старый контент снимается с публикации, но не удаляется физически;
+- reviewer видит точный источник, преобразование checker-конфигов и validation report.
+5. Перед deploy подтверждено:
+- `python материалы/v18_STRICT_PEDAGOGY/validate_course.py` — PASS;
+- `node backend/tools/validate_python_v18_materials_import.js` — PASS;
+- `go test ./...` в backend — PASS.
+
 ## База данных сейчас
 
 - Основная БД: `PostgreSQL`

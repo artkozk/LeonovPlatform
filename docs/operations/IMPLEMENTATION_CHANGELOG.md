@@ -2678,3 +2678,40 @@
 1. `node backend/tools/generate_python_v16_materials_migration.js` — успешно.
 2. `node backend/tools/validate_python_v16_materials_import.js` — PASS.
 3. `go test ./...` (backend) — PASS.
+
+## 2026-05-03 — v2.82 (python-zero v18 strict pedagogy rollout)
+
+### Добавлено/исправлено
+
+1. В платформу внедряется новая версия курса `Python с нуля — Backend + AI`:
+- источник: `материалы/v18_STRICT_PEDAGOGY/course_import.json`;
+- курс в runtime: `python-zero`;
+- первый урок: `Первый код`;
+- первый шаг: `Смысл`.
+
+2. Добавлен отдельный генератор migration для v18:
+- `backend/tools/generate_python_v18_materials_migration.js`.
+
+3. Добавлена новая migration полного reseed:
+- `backend/migrations/026_reseed_python_zero_v18_strict_pedagogy.sql`.
+
+4. Добавлена проверка соответствия JSON и SQL-migration:
+- `backend/tools/validate_python_v18_materials_import.js`;
+- `docs/operations/PYTHON_V18_STRICT_PEDAGOGY_IMPORT_VALIDATION_2026_05_03.md`.
+
+5. Добавлен rollout-runbook:
+- `docs/operations/PYTHON_V18_STRICT_PEDAGOGY_ROLLOUT_2026_05_03.md`.
+
+### Почему реализовано именно так
+
+1. Production backend хранит курсы в PostgreSQL, поэтому одного `course_import.json` недостаточно для пользовательского UI.
+2. Новая migration `026` не переписывает уже применённую `025`, а честно фиксирует следующий слой данных в migration-chain.
+3. Полный reseed отключает старые blocks/tasks через `is_published=false` и публикует новый согласованный набор, чтобы пользователь не видел смешанный курс.
+4. Генератор сохраняет runtime-совместимость checker-конфигов без изменения Go-runtime.
+
+### Прогон проверок
+
+1. `python материалы/v18_STRICT_PEDAGOGY/validate_course.py` — PASS.
+2. `node backend/tools/generate_python_v18_materials_migration.js` — успешно.
+3. `node backend/tools/validate_python_v18_materials_import.js` — PASS.
+4. `go test ./...` в backend — PASS.

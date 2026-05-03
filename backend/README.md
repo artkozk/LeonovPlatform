@@ -29,6 +29,43 @@ go run ./cmd/worker
 - Админ API: контент, блокировка пользователей, метрики, CSV экспорт.
 - Google OAuth через проверку `id_token` (при заданном `GOOGLE_CLIENT_ID`).
 
+## Python v18 Strict Pedagogy rollout (2026-05-03)
+
+1. Курс `python-zero` переводится на пакет:
+- `материалы/v18_STRICT_PEDAGOGY/course_import.json`.
+
+2. Добавлены backend-артефакты внедрения:
+- `backend/tools/generate_python_v18_materials_migration.js`;
+- `backend/tools/validate_python_v18_materials_import.js`;
+- `backend/migrations/026_reseed_python_zero_v18_strict_pedagogy.sql`;
+- `docs/operations/PYTHON_V18_STRICT_PEDAGOGY_ROLLOUT_2026_05_03.md`;
+- `docs/operations/PYTHON_V18_STRICT_PEDAGOGY_IMPORT_VALIDATION_2026_05_03.md`.
+
+3. Что попадает в runtime:
+- 5 модулей;
+- 169 уроков;
+- 1963 `lesson_blocks`;
+- 1153 practice/project tasks;
+- 304 quiz blocks;
+- 912 structured quiz questions.
+
+4. Почему это сделано как новая migration `026`, а не заменой старой `025`:
+- старые миграции уже являются частью production history, их нельзя переписывать без риска рассинхронизации `schema_migrations`;
+- отдельная `026` явно фиксирует переход от v16 к v18;
+- deploy остаётся стандартным: backend стартует, применяет неприменённые migrations, затем отдаёт уже обновлённый курс.
+
+5. Checker payload адаптируется генератором:
+- `python_pytest.test_code` сохраняется в runtime как `pytest_code`;
+- `http_api.public_tests/hidden_tests` преобразуются в runtime `tests[]`;
+- `sql_query.schema_sql + seed_sql` сохраняются в `source_policy.checker.init_sql`;
+- test steps публикуются как quiz blocks с `quiz_payload.questions[]`.
+
+6. Проверки перед deploy:
+- `python материалы/v18_STRICT_PEDAGOGY/validate_course.py` — PASS;
+- `node backend/tools/generate_python_v18_materials_migration.js` — PASS;
+- `node backend/tools/validate_python_v18_materials_import.js` — PASS;
+- `go test ./...` — PASS.
+
 ## OpenAI env
 
 - `OPENAI_API_KEY` — ключ API для генерации подсказок.
