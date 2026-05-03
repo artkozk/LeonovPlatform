@@ -1014,3 +1014,29 @@ cd idea-plugin
 - `idea-plugin/src/main/kotlin/com/leonovcare/plugin/task/TaskFileService.kt`;
 - `idea-plugin/src/main/kotlin/com/leonovcare/plugin/ui/TaskStatementPanel.kt`;
 - `idea-plugin/src/main/resources/META-INF/plugin.xml`.
+
+## IDEA plugin hotfix: task opening UX (2026-05-03, v2.82)
+
+1. Что зафиксировано по пользовательскому сценарию:
+- в текущем UI задачи в списке можно было только выделить, но не открыть одним кликом;
+- если пользователь после выделения нажимал `Run/Debug/AI/Ответ`, появлялось сообщение `Задача недоступна`, потому что `currentTask` ещё не был установлен.
+
+2. Что изменено:
+- в `TaskListPanel` добавлено открытие задачи по клику в списке (левая кнопка мыши);
+- добавлено открытие задачи по `Enter` на выделенной строке;
+- кнопка `Открыть` сохранена как явный fallback.
+
+3. Почему сделано именно так:
+- это убирает основной UX-разрыв "задача выделена, но фактически не открыта";
+- снижает количество ложных обращений в поддержку по сообщению `Задача недоступна`;
+- не меняет backend-контракт и не влияет на submit/checker, исправление полностью в IDE-клиенте.
+
+4. Файл изменения:
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/ui/TaskListPanel.kt`.
+
+5. Проверки:
+1. `./gradlew test buildPlugin`;
+2. ручной smoke в PyCharm:
+- click по задаче открывает statement/теорию;
+- `Enter` на задаче открывает statement/теорию;
+- после открытия `AI-подсказка`/`Проверить` работают по текущей задаче без ошибки `Задача недоступна`.

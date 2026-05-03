@@ -299,3 +299,22 @@
 - backend-контракт не ломается: используется уже существующий `GET /lessons/{lessonId}`;
 - добавление cache не требует миграций backend/data-plane;
 - rollback возможен без влияния на submit/auth контур.
+
+## 17. Update 2026-05-03 — task list interaction contract hotfix
+
+1. Выявленный UX-риск:
+- состояние "задача выделена" и "задача открыта" в UI было разведено;
+- часть пользователей переходила к run/submit/ai сразу после выделения строки и получала `errors.taskUnavailable`.
+
+2. Реализованный interaction contract:
+- список задач (`TaskListPanel`) теперь инициирует `onTaskOpen(task)` при клике пользователя по строке;
+- дополнительно поддержан keyboard path: `Enter` на выбранной задаче;
+- legacy path через кнопку `Открыть` сохранен.
+
+3. Почему это архитектурно корректно:
+- изменен только слой UI interaction, без изменений domain-model и HTTP contracts;
+- поведение стало детерминированным: явный user action на task-row всегда переводит систему к установленному `CurrentTaskContext`;
+- существенно снижается вероятность ложных task-level ошибок в action-панели (`run/debug/submit/ai/reference`).
+
+4. Затронутый файл:
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/ui/TaskListPanel.kt`.

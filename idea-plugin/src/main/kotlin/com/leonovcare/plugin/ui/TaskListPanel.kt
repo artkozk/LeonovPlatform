@@ -7,11 +7,16 @@ import com.leonovcare.plugin.api.Task
 import com.leonovcare.plugin.task.TaskStatus
 import java.awt.BorderLayout
 import java.awt.FlowLayout
+import java.awt.event.KeyEvent
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
+import javax.swing.AbstractAction
 import javax.swing.DefaultListModel
 import javax.swing.JButton
 import javax.swing.JComboBox
 import javax.swing.JList
 import javax.swing.JPanel
+import javax.swing.KeyStroke
 import javax.swing.ListSelectionModel
 
 enum class TaskFilter {
@@ -38,6 +43,24 @@ class TaskListPanel(
     init {
         list.selectionMode = ListSelectionModel.SINGLE_SELECTION
         list.cellRenderer = TaskListRenderer()
+        list.addMouseListener(
+            object : MouseAdapter() {
+                override fun mouseClicked(e: MouseEvent) {
+                    if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 1 && !e.isPopupTrigger) {
+                        openSelectedTask()
+                    }
+                }
+            }
+        )
+        list.inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "open-task")
+        list.actionMap.put(
+            "open-task",
+            object : AbstractAction() {
+                override fun actionPerformed(e: java.awt.event.ActionEvent?) {
+                    openSelectedTask()
+                }
+            }
+        )
 
         val top = JPanel(FlowLayout(FlowLayout.LEFT, 8, 0))
         top.add(JBLabel("Фильтр"))
@@ -48,7 +71,7 @@ class TaskListPanel(
 
         val openButton = JButton("Открыть")
         openButton.addActionListener {
-            list.selectedValue?.let { onTaskOpen(it) }
+            openSelectedTask()
         }
         top.add(openButton)
 
@@ -82,5 +105,9 @@ class TaskListPanel(
 
         model.clear()
         filtered.forEach { model.addElement(it) }
+    }
+
+    private fun openSelectedTask() {
+        list.selectedValue?.let { onTaskOpen(it) }
     }
 }
