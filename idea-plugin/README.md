@@ -152,3 +152,58 @@ cd idea-plugin
 4. Почему так:
 - это устраняет install-time несовместимость без изменения функционального контракта API/login/submit/AI;
 - пользователь получает предсказуемую установку именно в своей версии IDE.
+
+## Update 2026-05-03 — full lesson theory in plugin + local lesson cache
+
+1. Цель изменения:
+- пользователь должен получать в PyCharm не только условие текущей задачи, но и материалы урока (теория, шаги, связка шагов с задачами), чтобы учебный поток был возможен внутри IDE без постоянного переключения на web-платформу.
+
+2. Что добавлено в plugin domain/API:
+- `Task` расширен lesson-метаданными (`lessonId`, `lessonTitle`) для надежной связи задачи с уроком;
+- в API-модели добавлен `LessonMaterial`, который включает:
+  - данные урока (`id`, `title`, `description`);
+  - список задач урока;
+  - список блоков урока (`blocks`) с типом, порядком и привязками;
+- в `PlatformApiClient` добавлен контракт `getLessonMaterial(token, lessonId)`;
+- `HttpPlatformApiClient` реализует загрузку `GET /lessons/{lessonId}` и маппит lesson/tasks/blocks в типизированную модель.
+
+3. Локальное кэширование:
+- добавлен `LessonCache` как application service;
+- cache хранится в `PlatformSettings` (`lessonsCacheJson`) и очищается через `Очистить локальный кэш`;
+- в `TaskManager` используется TTL `8h` для lesson-материалов:
+  - если материал свежий, берется локально;
+  - если отсутствует или устарел, запрашивается у backend и обновляется в cache.
+
+4. Изменение поведения плагина для пользователя:
+- после `refreshAll()` плагин запускает background prefetch материалов уроков по задачам курса;
+- при `openTask()` в контекст задачи подмешивается `lessonMaterial`;
+- `TaskStatementPanel` отображает:
+  - заголовок/описание урока;
+  - теорию урока;
+  - последовательность шагов (`blocks`) с типами;
+  - и затем контент выбранной задачи;
+- в локальную структуру задачи дополнительно сохраняется `lesson-material.md` рядом со `statement.md`, чтобы материалы были доступны как физический файл на диске.
+
+5. Почему сделано именно так:
+- это закрывает основной пользовательский запрос "вся теория в IDE";
+- prefetch + TTL существенно сокращают повторные запросы и нагрузку на сервер при переходах между задачами;
+- хранение lesson-материалов в settings не требует внедрения отдельной локальной БД, но сохраняет быстрый офлайн-доступ к уже загруженным материалам;
+- файл `lesson-material.md` упрощает проверку содержимого и делает учебный контент прозрачным для ревью/поддержки.
+
+6. Технические точки изменений:
+- `src/main/kotlin/com/leonovcare/plugin/api/ApiModels.kt`;
+- `src/main/kotlin/com/leonovcare/plugin/api/PlatformApiClient.kt`;
+- `src/main/kotlin/com/leonovcare/plugin/api/HttpPlatformApiClient.kt`;
+- `src/main/kotlin/com/leonovcare/plugin/cache/LessonCache.kt`;
+- `src/main/kotlin/com/leonovcare/plugin/settings/PlatformSettings.kt`;
+- `src/main/kotlin/com/leonovcare/plugin/task/TaskManager.kt`;
+- `src/main/kotlin/com/leonovcare/plugin/task/LessonMaterialFormatter.kt`;
+- `src/main/kotlin/com/leonovcare/plugin/task/TaskFileService.kt`;
+- `src/main/kotlin/com/leonovcare/plugin/ui/TaskStatementPanel.kt`;
+- `src/main/kotlin/com/leonovcare/plugin/ui/PlatformToolWindowPanel.kt`.
+
+7. Regression/validation checks:
+1. `./gradlew test`;
+2. `./gradlew buildPlugin`;
+3. проверка, что в `platform-tasks/...` создается `lesson-material.md`;
+4. повторное открытие задачи не вызывает обязательный сетевой запрос при свежем cache.

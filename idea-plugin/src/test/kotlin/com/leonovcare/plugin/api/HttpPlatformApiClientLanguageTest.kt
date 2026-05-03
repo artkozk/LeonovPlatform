@@ -31,6 +31,18 @@ class HttpPlatformApiClientLanguageTest {
         assertEquals("src/main/sql/query.sql", template.files.single().path)
     }
 
+    @Test
+    fun `maps task lesson metadata from course flow`() {
+        startServerForCourseFlow()
+        val client = HttpPlatformApiClient(baseUrl())
+
+        val tasks = runBlocking { client.getCourseTasks("token", "course-1") }
+        val task = tasks.single()
+
+        assertEquals("lesson-1", task.lessonId)
+        assertEquals("Lesson One", task.lessonTitle)
+    }
+
     private fun startServer() {
         server = HttpServer.create(InetSocketAddress(0), 0)
         server?.createContext("/") { exchange ->
@@ -44,6 +56,32 @@ class HttpPlatformApiClientLanguageTest {
                 }
                 exchange.requestURI.path == "/tasks/task-sql/template" -> {
                     respond(exchange, 404, """{"error":"not found"}""")
+                }
+                else -> {
+                    respond(exchange, 404, """{"error":"unknown path"}""")
+                }
+            }
+        }
+        server?.start()
+    }
+
+    private fun startServerForCourseFlow() {
+        server = HttpServer.create(InetSocketAddress(0), 0)
+        server?.createContext("/") { exchange ->
+            when {
+                exchange.requestURI.path == "/courses/course-1" -> {
+                    respond(
+                        exchange,
+                        200,
+                        """{"course":{"id":"course-1"},"lessons":[{"id":"lesson-1","title":"Lesson One","moduleTitle":"Module A","position":1}]}""",
+                    )
+                }
+                exchange.requestURI.path == "/lessons/lesson-1" -> {
+                    respond(
+                        exchange,
+                        200,
+                        """{"lesson":{"id":"lesson-1","title":"Lesson One","moduleTitle":"Module A","position":1},"tasks":[{"id":"task-1","title":"Task One","language":"python","type":"console"}],"blocks":[]}""",
+                    )
                 }
                 else -> {
                     respond(exchange, 404, """{"error":"unknown path"}""")

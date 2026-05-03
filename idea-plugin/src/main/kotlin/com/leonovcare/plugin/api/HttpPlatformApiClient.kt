@@ -80,6 +80,8 @@ class HttpPlatformApiClient(
                     id = taskNode.path("id").asText(),
                     courseId = courseId,
                     moduleId = moduleId.ifBlank { null },
+                    lessonId = lessonId,
+                    lessonTitle = lesson.path("title").asText("").ifBlank { lessonNode.path("lesson").path("title").asText("") },
                     title = taskNode.path("title").asText(),
                     order = order++,
                     status = TaskStatus.NEW,
@@ -92,6 +94,44 @@ class HttpPlatformApiClient(
         }
 
         return tasks
+    }
+
+    override suspend fun getLessonMaterial(token: String, lessonId: String): LessonMaterial {
+        val lessonPath = endpoint(endpoints.lessonDetails, "lessonId" to lessonId)
+        val node = requestNode("GET", lessonPath, token, retrySafe = true)
+        val lesson = node.path("lesson")
+
+        val tasks = node.path("tasks").map { taskNode ->
+            LessonTaskSummary(
+                id = taskNode.path("id").asText(),
+                title = taskNode.path("title").asText(""),
+                type = TaskType.fromApi(taskNode.path("type").asText("CONSOLE")),
+                language = TaskLanguage.fromApi(taskNode.path("language").asText("JAVA")).apiName,
+            )
+        }
+
+        val blocks = node.path("blocks").map { blockNode ->
+            LessonBlock(
+                id = blockNode.path("id").asText(),
+                type = blockNode.path("type").asText("unknown"),
+                title = blockNode.path("title").asText(""),
+                contentMd = blockNode.path("contentMd").asText(""),
+                position = blockNode.path("position").asInt(0),
+                taskId = blockNode.path("taskId").takeUnless { it.isMissingNode || it.isNull }?.asText(),
+                taskTitle = blockNode.path("taskTitle").takeUnless { it.isMissingNode || it.isNull }?.asText(),
+            )
+        }
+
+        return LessonMaterial(
+            id = lesson.path("id").asText(lessonId),
+            title = lesson.path("title").asText(""),
+            moduleTitle = lesson.path("moduleTitle").asText(""),
+            position = lesson.path("position").asInt(0),
+            contentMd = lesson.path("contentMd").asText(""),
+            tasks = tasks,
+            blocks = blocks,
+            fetchedAtEpochMillis = System.currentTimeMillis(),
+        )
     }
 
     override suspend fun getTaskDetails(token: String, taskId: String): TaskDetails {

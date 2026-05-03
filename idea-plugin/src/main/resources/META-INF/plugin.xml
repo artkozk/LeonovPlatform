@@ -18,6 +18,7 @@
         <applicationService serviceImplementation="com.leonovcare.plugin.settings.PlatformSettings"/>
         <applicationService serviceImplementation="com.leonovcare.plugin.cache.CourseCache"/>
         <applicationService serviceImplementation="com.leonovcare.plugin.cache.TaskCache"/>
+        <applicationService serviceImplementation="com.leonovcare.plugin.cache.LessonCache"/>
         <applicationService serviceImplementation="com.leonovcare.plugin.auth.AuthService"/>
         <applicationService serviceImplementation="com.leonovcare.plugin.auth.CurrentUserService"/>
         <applicationService serviceImplementation="com.leonovcare.plugin.api.PlatformApiClientFactory"/>

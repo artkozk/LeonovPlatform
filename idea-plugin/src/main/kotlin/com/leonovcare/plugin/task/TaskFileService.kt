@@ -3,6 +3,7 @@ package com.leonovcare.plugin.task
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
+import com.leonovcare.plugin.api.LessonMaterial
 import com.leonovcare.plugin.api.TaskDetails
 import com.leonovcare.plugin.api.TaskTemplate
 import com.leonovcare.plugin.api.TaskTemplateFile
@@ -32,6 +33,7 @@ class TaskFileService {
         details: TaskDetails,
         template: TaskTemplate,
         overwriteExistingEditableFiles: Boolean,
+        lessonMaterial: LessonMaterial? = null,
     ): Result {
         val projectBase = project.basePath ?: error("Project has no base path")
         val projectRoot = Path.of(projectBase)
@@ -41,6 +43,7 @@ class TaskFileService {
             details = details,
             template = template,
             overwriteExistingEditableFiles = overwriteExistingEditableFiles,
+            lessonMaterial = lessonMaterial,
         )
     }
 
@@ -50,6 +53,7 @@ class TaskFileService {
         details: TaskDetails,
         template: TaskTemplate,
         overwriteExistingEditableFiles: Boolean,
+        lessonMaterial: LessonMaterial? = null,
     ): Result {
         val taskDir = projectRoot
             .resolve("platform-tasks")
@@ -80,8 +84,13 @@ class TaskFileService {
         }
 
         val statementPath = resolveSafe(taskDir, "statement.md")
-        if (!Files.exists(statementPath)) {
-            Files.writeString(statementPath, details.statement.body)
+        if (!Files.exists(statementPath) || overwriteExistingEditableFiles) {
+            Files.writeString(statementPath, details.statement.body.trim() + "\n")
+        }
+
+        if (lessonMaterial != null) {
+            val lessonMaterialPath = resolveSafe(taskDir, "lesson-material.md")
+            Files.writeString(lessonMaterialPath, LessonMaterialFormatter.buildLessonMarkdown(lessonMaterial))
         }
 
         val metadataPath = resolveSafe(taskDir, ".platform-task.json")

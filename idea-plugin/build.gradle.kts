@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.leonovcare.plugin"
-version = "0.1.2"
+version = "0.2.0"
 
 repositories {
     mavenCentral()
@@ -51,6 +51,10 @@ tasks {
     }
 
     named("instrumentCode") {
+        enabled = false
+    }
+
+    named("instrumentTestCode") {
         enabled = false
     }
 }

@@ -2,6 +2,7 @@ package com.leonovcare.plugin.task
 
 import com.leonovcare.plugin.api.Task
 import com.leonovcare.plugin.api.TaskDetails
+import com.leonovcare.plugin.api.LessonMaterial
 import com.leonovcare.plugin.api.TaskTemplate
 import java.nio.file.Path
 
@@ -10,5 +11,6 @@ data class CurrentTaskContext(
     val task: Task,
     val details: TaskDetails,
     val template: TaskTemplate,
+    val lessonMaterial: LessonMaterial? = null,
     val taskDir: Path,
 )

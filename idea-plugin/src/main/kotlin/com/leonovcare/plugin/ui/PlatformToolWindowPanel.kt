@@ -71,7 +71,7 @@ class PlatformToolWindowPanel(private val project: Project) {
             overwriteExistingEditableFiles = false,
             onOpened = { context ->
                 SwingUtilities.invokeLater {
-                    statementPanel.setTaskDetails(context.details)
+                    statementPanel.setTaskDetails(context.details, context.lessonMaterial)
                 }
             },
             onError = { ex -> PlatformNotifications.taskError(project, ex.message ?: "Ошибка открытия задачи") },

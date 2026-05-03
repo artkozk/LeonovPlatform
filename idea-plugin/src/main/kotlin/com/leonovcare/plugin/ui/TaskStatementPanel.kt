@@ -2,8 +2,10 @@ package com.leonovcare.plugin.ui
 
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
+import com.leonovcare.plugin.api.LessonMaterial
 import com.leonovcare.plugin.api.TaskDetails
 import com.leonovcare.plugin.i18n.PlatformBundle
+import com.leonovcare.plugin.task.LessonMaterialFormatter
 import java.awt.BorderLayout
 import java.awt.FlowLayout
 import javax.swing.JButton
@@ -66,8 +68,8 @@ class TaskStatementPanel(
         root.add(JBScrollPane(statementArea), BorderLayout.CENTER)
     }
 
-    fun setTaskDetails(details: TaskDetails?) {
-        statementArea.text = details?.statement?.body ?: ""
+    fun setTaskDetails(details: TaskDetails?, lessonMaterial: LessonMaterial? = null) {
+        statementArea.text = LessonMaterialFormatter.buildTaskAndLessonText(details, lessonMaterial)
         statementArea.caretPosition = 0
     }
 }

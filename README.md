@@ -944,3 +944,45 @@ cd idea-plugin
 4. Почему сделано именно так:
 - это минимальное изменение, которое устраняет блокер установки на конкретной версии IDE пользователя без изменения бизнес-логики плагина;
 - отдельный artifact под `242.*` исключает ложное ожидание, что пакет `251.*` должен работать в `2024.2.x`.
+
+## IDEA plugin update: full lesson theory in IDE + local material cache (2026-05-03, v2.81)
+
+1. Цель:
+- сделать plugin точкой полного учебного цикла в IDE (задачи + теория урока + шаги), чтобы пользователь мог не открывать веб-платформу в обычном потоке обучения.
+
+2. Что реализовано в плагине:
+- добавлена модель lesson-материалов (`lesson + tasks + blocks`) в API-клиенте;
+- `Task` расширен lesson-метаданными (`lessonId`, `lessonTitle`) для устойчивой связки “задача -> урок”;
+- добавлен `LessonCache` (локальный JSON-cache в plugin settings), где сохраняются полные материалы уроков;
+- в `TaskManager.refreshAll()` после синхронизации курсов/задач запускается background prefetch lesson-материалов;
+- в `TaskManager.openTask()` для выбранной задачи подгружается материал урока из кеша (или с сервера при отсутствии/протухании) и передается в UI;
+- в `TaskStatementPanel` теперь показывается не только `statement`, но и:
+  - заголовок урока/модуля;
+  - теоретический контент урока;
+  - шаги урока (`blocks`) с типами и привязками к задачам;
+  - затем блок текущей задачи;
+- при открытии задачи сохраняется локальный файл `lesson-material.md` в `platform-tasks/...`, чтобы теория и структура урока физически были доступны локально.
+
+3. Кеширование и снижение нагрузки:
+- введен TTL lesson-кеша (`8h`), чтобы не запрашивать те же материалы на каждом открытии задачи;
+- повторные открытия задач используют локальный кеш и не бьют сервер без необходимости;
+- manual/local continuity сохраняется: даже при временной недоступности API уже загруженные материалы остаются в IDE.
+
+4. Почему сделано именно так:
+- пользовательский запрос требовал “всё в IDE” и минимизацию постоянных выгрузок с сервера;
+- lesson-кеш в settings даёт быстрый доступ и не требует отдельной локальной БД;
+- сохранение `lesson-material.md` рядом с `statement.md` даёт прозрачный локальный артефакт для оффлайн-чтения и ревью;
+- TTL-баланс нужен, чтобы одновременно:
+  - не перегружать backend постоянными запросами;
+  - и не держать материалы бесконечно stale.
+
+5. Технические файлы реализации:
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/api/ApiModels.kt`;
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/api/PlatformApiClient.kt`;
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/api/HttpPlatformApiClient.kt`;
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/cache/LessonCache.kt`;
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/task/TaskManager.kt`;
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/task/LessonMaterialFormatter.kt`;
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/task/TaskFileService.kt`;
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/ui/TaskStatementPanel.kt`;
+- `idea-plugin/src/main/resources/META-INF/plugin.xml`.

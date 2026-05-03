@@ -6,10 +6,12 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.leonovcare.plugin.api.Course
+import com.leonovcare.plugin.api.LessonMaterial
 import com.leonovcare.plugin.api.PlatformApiClientFactory
 import com.leonovcare.plugin.api.Task
 import com.leonovcare.plugin.auth.AuthService
 import com.leonovcare.plugin.cache.CourseCache
+import com.leonovcare.plugin.cache.LessonCache
 import com.leonovcare.plugin.cache.TaskCache
 import com.leonovcare.plugin.settings.PlatformSettings
 import com.leonovcare.plugin.sync.SyncStatusMerger
@@ -20,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 
 data class TaskManagerState(
     val loading: Boolean = false,
@@ -41,6 +44,9 @@ class TaskManager(private val project: Project) {
     private val currentTaskService = CurrentTaskService.getInstance(project)
     private val courseCache = CourseCache.getInstance()
     private val taskCache = TaskCache.getInstance()
+    private val lessonCache = LessonCache.getInstance()
+
+    private val lessonCacheTtlMillis = TimeUnit.HOURS.toMillis(8)
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val stateFlow = MutableStateFlow(TaskManagerState())
@@ -96,6 +102,8 @@ class TaskManager(private val project: Project) {
                         tasks = selectedCourseId?.let { tasksByCourse[it] }.orEmpty(),
                         offlineMode = false,
                     )
+
+                    prefetchLessonMaterialsInBackground(tasksByCourse.values.flatten())
                 }
             }.onFailure { ex ->
                 logger.warn("Failed to refresh courses/tasks: ${ex.message}")
@@ -130,6 +138,7 @@ class TaskManager(private val project: Project) {
                     val client = apiFactory.client()
                     val details = client.getTaskDetails(token, task.id)
                     val template = client.getTaskTemplate(token, task.id)
+                    val lessonMaterial = getOrLoadLessonMaterial(client = client, token = token, task = task)
 
                     val result = fileService.createOrUpdateTaskFiles(
                         project = project,
@@ -137,6 +146,7 @@ class TaskManager(private val project: Project) {
                         details = details,
                         template = template,
                         overwriteExistingEditableFiles = overwriteExistingEditableFiles,
+                        lessonMaterial = lessonMaterial,
                     )
 
                     val previousContext = currentTaskService.getCurrentTask()
@@ -157,6 +167,7 @@ class TaskManager(private val project: Project) {
                         task = task,
                         details = details,
                         template = template,
+                        lessonMaterial = lessonMaterial,
                         taskDir = result.taskDirectory,
                     )
                     currentTaskService.setCurrentTask(context)
@@ -167,6 +178,69 @@ class TaskManager(private val project: Project) {
                 }
             }.onFailure { onError(it) }
         }
+    }
+
+    private fun prefetchLessonMaterialsInBackground(tasks: List<Task>) {
+        scope.launch {
+            runCatching {
+                authService.withAuthorizedToken { token ->
+                    val client = apiFactory.client()
+                    val existingLessons = lessonCache.getLessonsById().toMutableMap()
+
+                    val lessonIds = tasks.mapNotNull { it.lessonId }.toSet()
+                    var updated = 0
+
+                    for (lessonId in lessonIds) {
+                        val cached = existingLessons[lessonId]
+                        if (!shouldRefreshLesson(cached)) {
+                            continue
+                        }
+
+                        val fetched = client.getLessonMaterial(token, lessonId)
+                        existingLessons[lessonId] = fetched
+                        updated++
+                    }
+
+                    if (updated > 0) {
+                        lessonCache.saveLessonsById(existingLessons)
+                        logger.info("Lesson materials cache updated: $updated lessons")
+                    }
+                }
+            }.onFailure { ex ->
+                logger.warn("Lesson materials prefetch failed: ${ex.message}")
+            }
+        }
+    }
+
+    private suspend fun getOrLoadLessonMaterial(
+        client: com.leonovcare.plugin.api.PlatformApiClient,
+        token: String,
+        task: Task,
+    ): LessonMaterial? {
+        val lessonId = task.lessonId ?: return lessonCache.findByTaskId(task.id)
+        val cachedLessons = lessonCache.getLessonsById().toMutableMap()
+        val cached = cachedLessons[lessonId]
+        if (!shouldRefreshLesson(cached)) {
+            return cached
+        }
+
+        return runCatching {
+            val fetched = client.getLessonMaterial(token, lessonId)
+            cachedLessons[lessonId] = fetched
+            lessonCache.saveLessonsById(cachedLessons)
+            fetched
+        }.onFailure { ex ->
+            logger.warn("Unable to fetch lesson material for lessonId=$lessonId: ${ex.message}")
+        }.getOrElse {
+            cached
+        }
+    }
+
+    private fun shouldRefreshLesson(lesson: LessonMaterial?): Boolean {
+        if (lesson == null) return true
+        if (lesson.fetchedAtEpochMillis <= 0L) return true
+        val age = System.currentTimeMillis() - lesson.fetchedAtEpochMillis
+        return age > lessonCacheTtlMillis
     }
 
     private fun closeEditorsUnder(taskDir: java.nio.file.Path) {

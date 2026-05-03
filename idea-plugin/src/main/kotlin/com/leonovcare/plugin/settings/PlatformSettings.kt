@@ -30,6 +30,7 @@ class PlatformSettings : PersistentStateComponent<PlatformSettings.State> {
         var lastSyncEpochMillis: Long = 0L,
         var tasksCacheJson: String = "",
         var coursesCacheJson: String = "",
+        var lessonsCacheJson: String = "",
     )
 
     private var state: State = State()
@@ -45,6 +46,7 @@ class PlatformSettings : PersistentStateComponent<PlatformSettings.State> {
     fun clearLocalCache() {
         state.tasksCacheJson = ""
         state.coursesCacheJson = ""
+        state.lessonsCacheJson = ""
         state.currentTaskId = null
         state.lastSyncEpochMillis = 0L
     }

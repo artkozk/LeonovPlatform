@@ -4,6 +4,7 @@ interface PlatformApiClient {
     suspend fun getCurrentUser(token: String): UserProfile
     suspend fun getCourses(token: String): List<Course>
     suspend fun getCourseTasks(token: String, courseId: String): List<Task>
+    suspend fun getLessonMaterial(token: String, lessonId: String): LessonMaterial
     suspend fun getTaskDetails(token: String, taskId: String): TaskDetails
     suspend fun getTaskTemplate(token: String, taskId: String): TaskTemplate
     suspend fun submitSolution(token: String, taskId: String, request: SubmissionRequest): SubmissionResult

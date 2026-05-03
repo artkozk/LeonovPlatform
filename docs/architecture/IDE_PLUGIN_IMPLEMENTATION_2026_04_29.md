@@ -237,3 +237,65 @@
 4. Почему это важно:
 - без этого пользовательский поток ломается на этапе установки, до проверки API/login/submit;
 - отдельный совместимый artifact уменьшает операционные ошибки поддержки и исключает ложную диагностику “плагин установлен, но не работает”.
+
+## 16. Update 2026-05-03 — lesson materials in IDE and local cache architecture
+
+1. Продуктовая цель:
+- обеспечить сценарий "ученик работает только в IDE" за счет вывода полного материала урока (теория + структура блоков + задачи) внутри plugin UI.
+
+2. Архитектурное изменение моделей:
+- `Task` расширен полями `lessonId`, `lessonTitle`;
+- добавлена агрегированная модель `LessonMaterial`:
+  - `id`, `title`, `description`;
+  - `tasks: List<LessonTaskSummary>`;
+  - `blocks: List<LessonBlock>`;
+  - `fetchedAtEpochMillis` для контроля актуальности cache.
+
+3. API adapter layer:
+- `PlatformApiClient` получил новый контракт:
+  - `suspend fun getLessonMaterial(token: String, lessonId: String): LessonMaterial`;
+- `HttpPlatformApiClient` маппит `GET /lessons/{lessonId}` в `LessonMaterial`;
+- `MockPlatformApiClient` обновлен для тестового/fallback контура, чтобы UI и TaskManager работали в том же контракте.
+
+4. Storage/cache layer:
+- введен `LessonCache` как `applicationService`;
+- состояние cache сериализуется в `PlatformSettings.lessonsCacheJson`;
+- очищается единым действием `clearLocalCache()`;
+- выбран JSON в settings (а не отдельная БД), чтобы:
+  - минимизировать операционную сложность;
+  - не вводить дополнительные миграции storage-схемы;
+  - сохранить portability на уровне plugin settings.
+
+5. Cache invalidation strategy:
+- `TaskManager` применяет TTL `8h`:
+  - свежий материал читается локально;
+  - устаревший/отсутствующий материал перезапрашивается;
+- после `refreshAll()` запускается background prefetch материалов уроков для задач курса.
+
+6. UI composition:
+- `CurrentTaskContext` расширен полем `lessonMaterial`;
+- `TaskStatementPanel` теперь строит итоговый markdown через `LessonMaterialFormatter`:
+  - раздел урока;
+  - теоретический контент;
+  - список блоков урока;
+  - раздел текущей задачи;
+- это устраняет архитектурный разрыв, где UI ранее показывал только task-level statement.
+
+7. Local filesystem projection:
+- `TaskFileService` сохраняет:
+  - `statement.md` (задача);
+  - `lesson-material.md` (урок);
+- решение принято для прозрачности и offline continuity:
+  - user/mentor может открыть материалы напрямую на диске;
+  - повторное чтение не зависит от доступности backend в момент просмотра.
+
+8. Нагрузочный и операционный эффект:
+- prefetch + TTL сокращают дублирующие `GET /lessons/{id}` вызовы;
+- при навигации между задачами того же урока основной сценарий работает из локального cache;
+- backend получает меньше burst-нагрузки от повторных открытий одних и тех же lesson views.
+
+9. Почему архитектурно это допустимо в текущем релизе:
+- изменение инкапсулировано внутри plugin-модуля;
+- backend-контракт не ломается: используется уже существующий `GET /lessons/{lessonId}`;
+- добавление cache не требует миграций backend/data-plane;
+- rollback возможен без влияния на submit/auth контур.

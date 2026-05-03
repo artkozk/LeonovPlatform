@@ -30,6 +30,8 @@ data class Task(
     val id: String,
     val courseId: String,
     val moduleId: String? = null,
+    val lessonId: String? = null,
+    val lessonTitle: String? = null,
     val title: String,
     val order: Int,
     val status: TaskStatus,
@@ -64,6 +66,34 @@ data class TaskDetails(
     val templateVersion: String,
     val entryPoint: String,
     val mainFilePath: String,
+)
+
+data class LessonTaskSummary(
+    val id: String,
+    val title: String,
+    val type: TaskType,
+    val language: String,
+)
+
+data class LessonBlock(
+    val id: String,
+    val type: String,
+    val title: String,
+    val contentMd: String,
+    val position: Int,
+    val taskId: String? = null,
+    val taskTitle: String? = null,
+)
+
+data class LessonMaterial(
+    val id: String,
+    val title: String,
+    val moduleTitle: String,
+    val position: Int,
+    val contentMd: String,
+    val tasks: List<LessonTaskSummary>,
+    val blocks: List<LessonBlock>,
+    val fetchedAtEpochMillis: Long = System.currentTimeMillis(),
 )
 
 data class TaskTemplateFile(

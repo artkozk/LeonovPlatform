@@ -37,6 +37,8 @@ class MockPlatformApiClient : PlatformApiClient {
                 id = mockTaskId,
                 courseId = courseId,
                 moduleId = "module-1",
+                lessonId = "lesson-1",
+                lessonTitle = "Первый урок",
                 title = "Hello, World",
                 order = 1,
                 status = TaskStatus.NEW,
@@ -44,6 +46,42 @@ class MockPlatformApiClient : PlatformApiClient {
                 language = "JAVA",
                 locked = false,
             )
+        )
+    }
+
+    override suspend fun getLessonMaterial(token: String, lessonId: String): LessonMaterial {
+        return LessonMaterial(
+            id = lessonId,
+            title = "Первый урок",
+            moduleTitle = "Введение",
+            position = 1,
+            contentMd = "Это mock-теория урока. Здесь будет объяснение темы.",
+            tasks = listOf(
+                LessonTaskSummary(
+                    id = mockTaskId,
+                    title = "Hello, World",
+                    type = TaskType.CONSOLE,
+                    language = "JAVA",
+                ),
+            ),
+            blocks = listOf(
+                LessonBlock(
+                    id = "block-1",
+                    type = "theory",
+                    title = "Теория",
+                    contentMd = "Текст теории для локального просмотра в IDE.",
+                    position = 1,
+                ),
+                LessonBlock(
+                    id = "block-2",
+                    type = "practice",
+                    title = "Практика",
+                    contentMd = "Сделайте задачу Hello, World.",
+                    position = 2,
+                    taskId = mockTaskId,
+                    taskTitle = "Hello, World",
+                ),
+            ),
         )
     }
 

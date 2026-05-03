@@ -97,6 +97,36 @@ class HttpPlatformApiClientTest {
         assertNull(hint)
     }
 
+    @Test
+    fun `maps lesson material with blocks and tasks`() {
+        startServer { exchange ->
+            assertEquals("/lessons/lesson-1", exchange.requestURI.path)
+            respond(
+                exchange,
+                200,
+                """
+                {
+                  "lesson":{"id":"lesson-1","title":"Intro","contentMd":"Theory","position":1,"moduleTitle":"Basics"},
+                  "tasks":[{"id":"task-1","title":"T1","language":"python","type":"console"}],
+                  "blocks":[{"id":"block-1","type":"theory","title":"Part 1","contentMd":"Body","position":1,"taskId":"task-1","taskTitle":"T1"}]
+                }
+                """.trimIndent(),
+            )
+        }
+
+        val client = HttpPlatformApiClient(baseUrl())
+        val lesson = runBlocking { client.getLessonMaterial("token", "lesson-1") }
+
+        assertEquals("lesson-1", lesson.id)
+        assertEquals("Intro", lesson.title)
+        assertEquals("Basics", lesson.moduleTitle)
+        assertEquals(1, lesson.tasks.size)
+        assertEquals("task-1", lesson.tasks.first().id)
+        assertEquals(1, lesson.blocks.size)
+        assertEquals("block-1", lesson.blocks.first().id)
+        assertEquals("task-1", lesson.blocks.first().taskId)
+    }
+
     private fun startServer(handler: (HttpExchange) -> Unit) {
         server = HttpServer.create(InetSocketAddress(0), 0)
         server?.createContext("/") { exchange -> handler(exchange) }
