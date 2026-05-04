@@ -2882,3 +2882,37 @@
 - FastAPI duplicate business contracts: 0.
 3. `node backend/tools/generate_python_v18_materials_migration.js` — создан `029`.
 4. `node backend/tools/validate_python_v18_materials_import.js` — PASS против `029`.
+
+## 2026-05-05 — Автоматическая уборка диска на production (retention policy)
+
+### Что изменено
+
+1. На production-сервере `85.198.82.221` создан скрипт:
+- `/usr/local/sbin/lcp-disk-retention.sh`.
+
+2. Подключён ежедневный запуск через `systemd`:
+- `/etc/systemd/system/lcp-disk-retention.service`;
+- `/etc/systemd/system/lcp-disk-retention.timer`.
+
+3. Включена и проверена политика retention:
+- в `/opt/leonovcare-platform` хранить только последние 6 backup/new/prelink директорий и последние 10 `*.tgz`;
+- в `/opt/mentor-bot/data/owner_tools/parser_runs` удалять файлы старше 7 дней;
+- в `/opt/hh-autoresponder/pw-dumps` удалять данные старше 2 дней;
+- в `/tmp` удалять файлы старше 2 дней;
+- обрезать аномально крупные логи (`pm2` и `service.out` > 200MB);
+- ограничивать системный journal до `500M`.
+
+4. Добавлена подробная документация:
+- `docs/operations/DISK_RETENTION_AUTOCLEANUP_2026_05_05.md`.
+
+### Почему реализовано именно так
+
+1. Нужен баланс между безопасным откатом и контролем роста диска: сохраняются ближайшие артефакты rollback, удаляется только устаревшая диагностика и временные данные.
+2. Пороговая обрезка логов (а не полное удаление) оставляет рабочий контекст для расследований.
+3. `Persistent=true` у таймера закрывает риск пропуска очистки при перезагрузке/простое сервера.
+
+### Результат проверки
+
+1. `systemctl start lcp-disk-retention.service` — `status=0/SUCCESS`.
+2. `systemctl list-timers --all` — таймер активен, следующий запуск по расписанию.
+3. `df -h /` после очистки: занято около 25%, свободно ~73G.
