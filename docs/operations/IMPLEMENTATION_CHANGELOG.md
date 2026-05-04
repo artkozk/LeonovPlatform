@@ -2829,3 +2829,56 @@
 - открыть `TaskPage` и ввести `print("")`, `print("()")`;
 - убедиться, что каретка встает строго между символами кавычек/скобок;
 - убедиться, что подсветка парных скобок не смещена и не накладывается на соседние символы.
+
+## 2026-05-05 — v2.84 (Python v18 FastAPI ladder and QA hardening)
+
+### Добавлено/исправлено
+
+1. Переписан старт FastAPI-трека в `материалы/v18_STRICT_PEDAGOGY/course_import.json`:
+- урок `FastAPI: первый API` теперь начинается с простых `GET` endpoint: `/health`, `/hello`, `/version`, `/ready`, `/about`, `/ping`;
+- уроки 2-8 выстроены по лестнице: GET route → path params → query params → request body → Pydantic → response_model/status codes → HTTPException;
+- ранние FastAPI-уроки больше не смешивают PATCH, DELETE, auth, database session и deploy до объяснения базового endpoint.
+
+2. Усилен `материалы/v18_STRICT_PEDAGOGY/validate_course.py`:
+- добавлены gates для первых FastAPI-уроков;
+- валидатор проверяет наличие `pedagogical_audit_report.md` и `duplication_report.md`;
+- валидатор сканирует пакет на признаки битой кодировки не только в JSON, но и в Markdown/CSV/Python/SQL файлах.
+
+3. Пересобраны производные материалы:
+- `course_preview.md`;
+- `course_map.md`;
+- `manifest.csv`;
+- `coverage_matrix.csv`;
+- `validation_report.md`;
+- `qa_report.md`;
+- `pedagogical_audit_report.md`;
+- `duplication_report.md`.
+
+4. Создана новая миграция полного reseed:
+- `backend/migrations/029_reseed_python_zero_v18_fastapi_ladder_quality.sql`.
+
+5. Обновлены операционные инструкции курса:
+- `import_instructions.md`;
+- `mentor_handbook.md`;
+- `student_faq.md`;
+- `release_checklist.md`;
+- `docs/operations/PYTHON_V18_STRICT_PEDAGOGY_IMPORT_VALIDATION_2026_05_05.md`.
+
+### Почему реализовано именно так
+
+1. Прежний курс мог технически проходить импорт, но старт FastAPI был слишком резким для студента с нуля: сложные HTTP-сценарии появлялись до простого GET endpoint.
+2. Новая лестница ограничивает каждый ранний урок одним новым навыком, чтобы автопроверка проверяла ровно то, что объяснено в теории.
+3. Миграции `026`, `027` и `028` уже являются применёнными слоями данных; поэтому правка курса оформлена отдельной миграцией `029`, а не переписыванием истории.
+4. Отдельные `pedagogical_audit_report.md` и `duplication_report.md` нужны ревьюеру, чтобы видеть не только технический PASS, но и методические риски перед массовым запуском.
+
+### Прогон проверок
+
+1. `python материалы/v18_STRICT_PEDAGOGY/validate_course.py` — PASS.
+2. Независимый педагогический QA — PASS:
+- lessons checked: 169;
+- first 30 lessons gates passed: 30/30;
+- max structural solution group: 18;
+- max AI structural group: 15;
+- FastAPI duplicate business contracts: 0.
+3. `node backend/tools/generate_python_v18_materials_migration.js` — создан `029`.
+4. `node backend/tools/validate_python_v18_materials_import.js` — PASS против `029`.

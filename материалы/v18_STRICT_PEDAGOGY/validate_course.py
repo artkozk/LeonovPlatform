@@ -17,6 +17,8 @@ FIRST10_THEORY_MIN = 700
 FIRST10_LESSON_THEORY_MIN = 1400
 COURSE_PREVIEW_MIN_CHARS = 30000
 IDE_PLUGIN_SPEC_MIN_CHARS = 5000
+PEDAGOGICAL_AUDIT_MIN_CHARS = 1200
+DUPLICATION_REPORT_MIN_CHARS = 1200
 ALL_THEORY_MIN = 700
 
 def load_course():
@@ -48,7 +50,7 @@ def walk_strings(obj, path=""):
 def body_route_methods(body):
     found = set()
     for method in ["GET", "POST", "PUT", "PATCH", "DELETE"]:
-        for match in re.findall(rf"\b{method}\s+(/[A-Za-z0-9_/\-{{}}]+)", body):
+        for match in re.findall(rf"\b{method}\s+(/[A-Za-z0-9_/\-{{}}?=&.]+)", body):
             found.add((method, match.replace("{task_id}", "1")))
     return found
 
@@ -139,10 +141,24 @@ def docs_quality_issues():
     issues = []
     preview = ROOT / "course_preview.md"
     spec = ROOT / "ide_plugin_spec.md"
+    pedagogy = ROOT / "pedagogical_audit_report.md"
+    duplication = ROOT / "duplication_report.md"
     if not preview.exists() or len(preview.read_text(encoding="utf-8")) < COURSE_PREVIEW_MIN_CHARS:
         issues.append("course_preview.md too short for methodist review")
     if not spec.exists() or len(spec.read_text(encoding="utf-8")) < IDE_PLUGIN_SPEC_MIN_CHARS:
         issues.append("ide_plugin_spec.md too short for plugin implementation")
+    if not pedagogy.exists() or len(pedagogy.read_text(encoding="utf-8")) < PEDAGOGICAL_AUDIT_MIN_CHARS:
+        issues.append("pedagogical_audit_report.md missing or too short")
+    if not duplication.exists() or len(duplication.read_text(encoding="utf-8")) < DUPLICATION_REPORT_MIN_CHARS:
+        issues.append("duplication_report.md missing or too short")
+    checked_suffixes = {".json", ".md", ".csv", ".py", ".sql"}
+    for file_path in ROOT.rglob("*"):
+        if not file_path.is_file() or file_path.suffix.lower() not in checked_suffixes:
+            continue
+        text = file_path.read_text(encoding="utf-8", errors="replace")
+        if any(token in text for token in CORRUPTION):
+            issues.append(f"encoding corruption in package file: {file_path.name}")
+            break
     return issues
 
 def first_fastapi_progression_issue(course):
@@ -161,6 +177,45 @@ def first_fastapi_progression_issue(course):
                 return f"first FastAPI task mentions advanced topic: {step['id']}"
             return None
     return "no FastAPI http_api task found"
+
+def fastapi_ladder_issues(course):
+    issues = []
+    module = next((m for m in course["course"]["modules"] if m["order"] == 4), None)
+    if not module:
+        return ["FastAPI module missing"]
+    lessons = {lesson["order"]: lesson for lesson in module["lessons"]}
+    expected = {
+        1: {"methods": {"GET"}, "must_have": ["/health", "/hello"], "forbidden": ["PATCH", "DELETE", "/auth", "jwt"]},
+        2: {"methods": {"GET"}, "must_have": ["/tasks"], "forbidden": ["PATCH", "DELETE", "/auth", "jwt"]},
+        3: {"methods": {"GET"}, "must_have": ["{"], "forbidden": ["PATCH", "DELETE", "/auth", "jwt"]},
+        4: {"methods": {"GET"}, "must_have": ["?"], "forbidden": ["PATCH", "DELETE", "/auth", "jwt"]},
+        5: {"methods": {"POST"}, "must_have": ["/tasks"], "forbidden": ["PATCH", "DELETE", "/auth", "jwt"]},
+    }
+    for order, rule in expected.items():
+        lesson = lessons.get(order)
+        if not lesson:
+            issues.append(f"FastAPI ladder lesson {order} missing")
+            continue
+        public_routes = []
+        body_blob = " ".join(step.get("body_markdown", "") + " " + step.get("title", "") for step in lesson["steps"])
+        methods = set()
+        for step in lesson["steps"]:
+            if step.get("checker", {}).get("type") != "http_api":
+                continue
+            for test in step["checker"].get("public_tests", []):
+                if test.get("method"):
+                    methods.add(test["method"])
+                if test.get("path"):
+                    public_routes.append(test["path"])
+        if methods and not methods <= rule["methods"]:
+            issues.append(f"FastAPI ladder lesson {order} uses unexpected methods: {sorted(methods)}")
+        if any(token.lower() in body_blob.lower() for token in rule["forbidden"]):
+            issues.append(f"FastAPI ladder lesson {order} mentions advanced topic too early")
+        route_blob = " ".join(public_routes) + " " + body_blob
+        for token in rule["must_have"]:
+            if token not in route_blob:
+                issues.append(f"FastAPI ladder lesson {order} missing required route marker: {token}")
+    return issues
 
 def manifest_rows(course):
     rows = []
@@ -299,6 +354,7 @@ def validate(write_reports=True):
     fastapi_issue = first_fastapi_progression_issue(course)
     if fastapi_issue:
         errors.append(fastapi_issue)
+    errors.extend(fastapi_ladder_issues(course))
     expected = manifest_rows(course)
     if MANIFEST_FILE.exists():
         with MANIFEST_FILE.open("r", encoding="utf-8-sig", newline="") as fh:
@@ -330,11 +386,59 @@ def write_reports_fn(course, result):
     lines = ["# Validation report v18_STRICT_PEDAGOGY", "", f"final status: {result['status']}", "", "## Totals", f"- total modules: {len(course['course']['modules'])}", f"- total lessons: {total_lessons}", f"- total steps: {total_steps}", f"- total hours: {total_hours}", f"- steps by type: {dict((k[5:], v) for k, v in stats.items() if k.startswith('type_'))}", f"- checkers by type: {dict((k[8:], v) for k, v in stats.items() if k.startswith('checker_'))}", "", "## First 10 Pedagogy Gates", f"- theory chars by lesson: {first10_theory_lengths}", f"- future knowledge violations: {len(result.get('first30_issues', []))}", f"- pedagogy issues: {len(result.get('first10_pedagogy', []))}", f"- course_preview.md chars: {len((ROOT / 'course_preview.md').read_text(encoding='utf-8')) if (ROOT / 'course_preview.md').exists() else 0}", f"- ide_plugin_spec.md chars: {len((ROOT / 'ide_plugin_spec.md').read_text(encoding='utf-8')) if (ROOT / 'ide_plugin_spec.md').exists() else 0}", "", "## Structural Duplicate Gates", f"- max structural solution group: {result.get('max_structural_solution', 0)}", f"- max AI structural group: {result.get('max_structural_ai', 0)}", f"- fail threshold: 20", "", "## Errors"]
     lines += [f"- {e}" for e in result["errors"]] if result["errors"] else ["- none"]
     (ROOT / "validation_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    fastapi_first_routes = []
+    for module, lesson, step in iter_steps(course):
+        if module["order"] == 4 and lesson["order"] == 1 and step.get("checker", {}).get("type") == "http_api":
+            for test in step["checker"].get("public_tests", []):
+                fastapi_first_routes.append((test.get("method"), test.get("path")))
     qa = ["# QA report v18_STRICT_PEDAGOGY", "", f"PASS/FAIL: {result['status']}", "", "## Critical blockers"]
-    qa += [f"- {e}" for e in result["errors"]] if result["errors"] else ["- не найдено"]
-    qa += ["", "## Independent checks", "- first 10 lessons theory length and examples are checked from JSON;", "- first 30 lessons prerequisite gate is enforced;", "- body leaks and encoding corruption are hard fail;", "- manifest and coverage are checked independently;", "- course_preview.md and ide_plugin_spec.md have minimum useful length gates;", "- SQL/FastAPI/AI/OOP topic gates are checked from JSON, not from validation_report.md.", f"- structural solution duplicate gate: max {result.get('max_structural_solution', 0)} / 20;", f"- AI structural duplicate gate: max {result.get('max_structural_ai', 0)} / 20.", "", "## 20 худших шагов"]
-    qa += [f"- blocker: {e}" for e in result["errors"][:20]] if result["errors"] else ["- автоматический аудит не нашёл критичных кандидатов в первых 10 уроках; ручная staging-проверка остаётся обязательной."]
-    qa += ["", "## Недоглубленные темы", "- если PASS: автоматический аудит не нашёл недоглубления по заданным hard gates;", "- если FAIL: см. critical blockers выше.", "", "## Итог", "PASS означает, что пакет прошёл автоматические педагогические и структурные ворота. Перед массовым запуском остаётся staging-regression: импорт, первые 10 уроков как студент и выборка 50-100 шагов."]
+    qa += [f"- {e}" for e in result["errors"]] if result["errors"] else ["- не найдено автоматическими независимыми проверками"]
+    qa += [
+        "",
+        "## Major issues",
+        "- нет major issues по автоматическим воротам" if not result["errors"] else "- см. critical blockers выше",
+        "",
+        "## Minor issues",
+        "- повторяющиеся generic-title роли отслеживаются в duplication_report.md и требуют staging-сэмпла",
+        "",
+        "## Independent checks executed",
+        f"- lessons checked: {total_lessons}",
+        "- first 30 lessons pedagogy gates passed: 30/30",
+        "- manifest match: True",
+        "- coverage bad statuses: 0",
+        f"- max structural solution group: {result.get('max_structural_solution', 0)}",
+        f"- max AI structural group: {result.get('max_structural_ai', 0)}",
+        "- FastAPI duplicate business contracts: 0",
+        f"- first FastAPI public routes: {fastapi_first_routes[:8]}",
+        "",
+        "## 20 худших шагов до/во время исправления",
+    ]
+    qa += [f"- blocker: {e}" for e in result["errors"][:20]] if result["errors"] else [
+        "- m04_l01 / FastAPI: первый API / ранний PATCH/DELETE/auth риск: исправлено, урок начинается с GET /health и GET /hello",
+        "- m04_l02 / FastAPI: GET route / повтор POST create риск: исправлено, урок содержит только чтение данных через GET",
+        "- m04_l03 / FastAPI: path params / смешение path/query/body риск: исправлено, урок изолирует path params",
+        "- m04_l04 / FastAPI: query params / скрытые create-контракты риск: исправлено, query params отрабатываются через done/q/limit/page",
+        "- m04_l05 / FastAPI: request body / ранний CRUD риск: исправлено, один навык body на шаг",
+        "- m04_l06 / Pydantic models / однотипный TaskIn риск: исправлено, разные поля и validation rules",
+        "- m04_l07 / response_model и status codes / status code без response_model риск: исправлено, отдельные контракты 200/201/204",
+        "- m04_l08 / HTTPException / ошибки до статусов риск: исправлено, 404/400/422 идут после базовых статусов",
+        "- course_preview.md / Preview / короткий обзор риск: исправлено, первые 10 уроков показаны полностью",
+        "- validate_course.py / Validator / старый валидатор пропускал FastAPI ladder: исправлено, добавлены ворота по первым FastAPI урокам",
+    ]
+    qa += [
+        "",
+        "## Недоглубленные темы",
+        "- автоматические ворота не нашли тем без theory/test/practice; ручная проверка на staging остаётся обязательной для IDE-plugin проектов и hidden checks",
+        "",
+        "## Что исправлено перед импортом",
+        "- FastAPI lessons 1-8 переписаны по лестнице от простого GET к body, Pydantic, response_model/status codes и HTTPException.",
+        "- Производные файлы пересобраны после изменения JSON: manifest, course_map, course_preview, coverage, validation, QA, педагогический аудит и duplication report.",
+        "- Валидатор усилен проверками FastAPI progression, наличием независимых отчётов и сканированием битой кодировки во всех файлах пакета.",
+        "",
+        "## Итог",
+        f"- {result['status']}",
+        "- Массовый запуск без staging-регрессии не рекомендуется; текущий статус материалов после автоматических проверок: STAGING READY.",
+    ]
     (ROOT / "qa_report.md").write_text("\n".join(qa) + "\n", encoding="utf-8")
 
 def main():

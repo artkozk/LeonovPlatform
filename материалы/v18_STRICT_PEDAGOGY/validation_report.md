@@ -14,7 +14,7 @@ final status: PASS
 - theory chars by lesson: {'Первый код': 2530, 'Ввод и числа': 2374, 'Строки': 2154, 'bool и None': 2049, 'Условия': 2038, 'Типы и память': 2062, 'Циклы': 1938, 'Списки': 2019, 'Функции': 2062, 'Кортежи': 1874}
 - future knowledge violations: 0
 - pedagogy issues: 0
-- course_preview.md chars: 92050
+- course_preview.md chars: 177219
 - ide_plugin_spec.md chars: 6240
 
 ## Structural Duplicate Gates

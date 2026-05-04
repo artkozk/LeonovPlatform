@@ -245,3 +245,70 @@
 3. Проверить запись `028_reseed_python_zero_v18_coursewide_quality` в `schema_migrations`.
 4. Проверить агрегаты курса: `5|169|1960|1159`.
 5. Открыть первые 10 уроков как студент и выборочно проверить FastAPI, AI, OOP и SQL practice.
+
+## 9. Дополнение 2026-05-05: FastAPI ladder quality reseed
+
+После дополнительного аудита стало видно, что общий курс уже проходит строгие структурные проверки, но начало FastAPI-трека всё ещё могло выглядеть слишком резким для новичка. В ранних уроках были endpoint-контракты, которые методически относятся к более поздним темам: изменение состояния, сложные статусы, обработка ошибок и инфраструктурные сценарии до простого GET.
+
+Что изменено сейчас:
+
+1. Переписаны первые 8 FastAPI-уроков в `course_import.json`:
+   - `FastAPI: первый API` — только простые GET endpoint и точный JSON-ответ;
+   - `FastAPI: GET route` — чтение списков и статусов без path/query/body;
+   - `FastAPI: path params` — только переменные в пути;
+   - `FastAPI: query params` — фильтрация, поиск, limit и page/size;
+   - `FastAPI: request body` — первые POST body без auth, базы и Docker;
+   - `Pydantic models` — валидация полей и defaults;
+   - `response_model и status codes` — отдельные контракты 200/201/204;
+   - `HTTPException` — 404/400/422 после объяснения базовых статусов.
+2. Добавлены отчёты:
+   - `pedagogical_audit_report.md` — проверка всех 169 уроков и первых 30 уроков отдельно;
+   - `duplication_report.md` — контроль повторяющихся ролей, структурных групп и оставшихся рисков.
+3. Усилен валидатор:
+   - FastAPI не может начинаться с PATCH/DELETE/auth/JWT;
+   - первые FastAPI-уроки обязаны идти по лестнице GET → path → query → body;
+   - пакет сканируется на битую кодировку во всех производных файлах.
+4. Создана новая миграция:
+   - `029_reseed_python_zero_v18_fastapi_ladder_quality.sql`.
+
+Почему это отдельная миграция:
+
+1. `028` уже фиксирует course-wide quality layer и может быть применён на сервере.
+2. `029` нужен как повторяемый data-layer для новой методической правки без изменения уже применённых миграций.
+3. Ревьюер сможет отдельно проверить, что проблема именно FastAPI progression закрыта и не смешана с предыдущими изменениями.
+
+Актуальные метрики после `029`:
+
+1. modules: 5;
+2. lessons: 169;
+3. lesson blocks: 1960;
+4. published tasks: 1159;
+5. practice steps: 831;
+6. project steps: 328;
+7. quiz steps: 294;
+8. questions: 882;
+9. estimated hours: 674.8;
+10. max structural solution group: 18 / 20;
+11. max AI structural group: 15 / 20;
+12. FastAPI duplicate business contracts: 0.
+
+Проверки после правки:
+
+1. `python материалы/v18_STRICT_PEDAGOGY/validate_course.py` — PASS.
+2. Независимый педагогический QA — PASS:
+   - lessons checked: 169;
+   - first 30 lessons pedagogy gates passed: 30/30;
+   - manifest match: true;
+   - coverage bad statuses: 0;
+   - FastAPI duplicate business contracts: 0.
+3. `node backend/tools/generate_python_v18_materials_migration.js` — создан `029`.
+4. `node backend/tools/validate_python_v18_materials_import.js` — PASS против `029`.
+
+Операционная инструкция теперь использует `029`:
+
+1. Запушить commit с миграцией `029`.
+2. Развернуть release на сервер.
+3. Проверить запись `029_reseed_python_zero_v18_fastapi_ladder_quality` в `schema_migrations`.
+4. Проверить агрегаты курса: `5|169|1960|1159`.
+5. Открыть `FastAPI: первый API` и убедиться, что первые практики идут через простые GET endpoint: `/health`, `/hello`, `/version`, `/ready`, `/about`, `/ping`.
+6. Перед массовым запуском выполнить staging-регрессию: первые 10 уроков как студент и выборка 50-100 later-шагов.

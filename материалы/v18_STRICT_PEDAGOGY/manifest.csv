@@ -1197,110 +1197,110 @@
 3,"Модуль 3. SQL, базы данных и сети",36,Экзамен 3,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",36,Экзамен 3,10,Контрольный артефакт,project,ide_plugin,110,2,30
 3,"Модуль 3. SQL, базы данных и сети",36,Экзамен 3,11,Итог,summary,,40,2,8
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,1,Что это,theory,,40,2,18
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,2,Минимальный пример,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,1,Что такое API,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,2,Endpoint и ответ,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,3,Понимание,test,quiz_single,40,2,12
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,4,GET /health,practice,http_api,70,2,16
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,5,DELETE /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,6,GET /users/me,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,7,POST /auth/login,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,8,GET /reports,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,9,GET /metrics,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,10,API-минипроект,project,ide_plugin,140,2,50
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,11,Закрепление,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,12,Контрольный артефакт,project,ide_plugin,110,2,30
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,13,Итог,summary,,40,2,8
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,1,Что это,theory,,40,2,18
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,2,Минимальный пример,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,5,GET /hello,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,6,GET /version,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,7,GET /ready,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,8,GET /about,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,9,GET /ping,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,10,Мини-проект,project,ide_plugin,140,2,50
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,11,Понимание,test,quiz_single,40,2,12
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,12,Мини-проект,project,ide_plugin,110,2,30
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",1,FastAPI: первый API,13,Короткий итог,summary,,40,2,8
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,1,GET route,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,2,JSON-массив,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,3,Понимание,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,4,GET /health,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,5,GET /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,6,GET /tasks,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,7,POST /tasks,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,8,PATCH /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,9,DELETE /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,10,API-минипроект,project,ide_plugin,140,2,50
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,11,Закрепление,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,12,Контрольный артефакт,project,ide_plugin,110,2,30
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,13,Итог,summary,,40,2,8
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,1,Что это,theory,,40,2,18
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,2,Минимальный пример,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,4,GET /tasks,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,5,GET /status,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,6,GET /tasks/empty,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,7,GET /profile,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,8,GET /config,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,9,GET /features,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,10,Мини-проект,project,ide_plugin,140,2,50
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,11,Понимание,test,quiz_single,40,2,12
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,12,Мини-проект,project,ide_plugin,110,2,30
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",2,FastAPI: GET route,13,Короткий итог,summary,,40,2,8
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,1,Path params,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,2,Граница path params,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,3,Понимание,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,4,GET /users/me,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,5,POST /auth/login,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,6,GET /reports,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,7,GET /metrics,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,8,GET /health,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,9,GET /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,10,API-минипроект,project,ide_plugin,140,2,50
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,11,Закрепление,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,12,Контрольный артефакт,project,ide_plugin,110,2,30
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,13,Итог,summary,,40,2,8
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,1,Что это,theory,,40,2,18
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,2,Минимальный пример,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,4,GET /tasks/{task_id},practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,5,GET /users/{username},practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,6,GET /projects/{project_id}/tasks,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,7,GET /orders/{order_id},practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,8,GET /teams/{team}/members,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,9,GET /files/{file_id},practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,10,Мини-проект,project,ide_plugin,140,2,50
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,11,Понимание,test,quiz_single,40,2,12
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,12,Мини-проект,project,ide_plugin,110,2,30
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",3,FastAPI: path params,13,Короткий итог,summary,,40,2,8
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,1,Query params,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,2,Фильтрация и limit,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,3,Понимание,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,4,GET /tasks,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,5,POST /tasks,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,6,PATCH /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,7,DELETE /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,8,GET /users/me,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,9,POST /auth/login,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,10,API-минипроект,project,ide_plugin,140,2,50
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,11,Закрепление,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,12,Контрольный артефакт,project,ide_plugin,110,2,30
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,13,Итог,summary,,40,2,8
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,1,Что это,theory,,40,2,18
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,2,Минимальный пример,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,4,GET /tasks?done,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,5,GET /search?q,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,6,GET /items?limit,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,7,GET /reports?kind,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,8,GET /users?active,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,9,GET /page,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,10,Мини-проект,project,ide_plugin,140,2,50
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,11,Понимание,test,quiz_single,40,2,12
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,12,Мини-проект,project,ide_plugin,110,2,30
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",4,FastAPI: query params,13,Короткий итог,summary,,40,2,8
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,1,Request body,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,2,Создание объекта,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,3,Понимание,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,4,GET /tasks,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,5,POST /tasks,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,6,PATCH /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,7,DELETE /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,8,GET /users/me,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,9,POST /auth/login,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,10,API-минипроект,project,ide_plugin,140,2,50
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,11,Закрепление,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,12,Контрольный артефакт,project,ide_plugin,110,2,30
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,13,Итог,summary,,40,2,8
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,1,Что это,theory,,40,2,18
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,2,Минимальный пример,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,4,POST /tasks,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,5,POST /notes,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,6,POST /feedback,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,7,POST /tasks/debug,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,8,POST /contacts,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,9,POST /events,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,10,Мини-проект,project,ide_plugin,140,2,50
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,11,Понимание,test,quiz_single,40,2,12
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,12,Мини-проект,project,ide_plugin,110,2,30
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",5,FastAPI: request body,13,Короткий итог,summary,,40,2,8
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,1,Модель данных,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,2,Вложенные поля,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,3,Понимание,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,4,DELETE /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,5,GET /users/me,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,6,POST /auth/login,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,7,GET /reports,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,8,GET /metrics,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,9,GET /health,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,10,API-минипроект,project,ide_plugin,140,2,50
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,11,Закрепление,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,12,Контрольный артефакт,project,ide_plugin,110,2,30
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,13,Итог,summary,,40,2,8
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,1,Что это,theory,,40,2,18
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,2,Минимальный пример,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,4,POST /tasks/validated,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,5,POST /priorities,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,6,POST /tags,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,7,POST /settings,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,8,POST /users/validate,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,9,POST /interval,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,10,Мини-проект,project,ide_plugin,140,2,50
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,11,Понимание,test,quiz_single,40,2,12
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,12,Мини-проект,project,ide_plugin,110,2,30
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",6,Pydantic models,13,Короткий итог,summary,,40,2,8
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,1,response_model,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,2,Статусы,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,3,Понимание,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,4,GET /health,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,5,GET /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,6,GET /tasks,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,7,POST /tasks,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,8,PATCH /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,9,DELETE /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,10,API-минипроект,project,ide_plugin,140,2,50
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,11,Закрепление,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,12,Контрольный артефакт,project,ide_plugin,110,2,30
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,13,Итог,summary,,40,2,8
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,1,Что это,theory,,40,2,18
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,2,Минимальный пример,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,4,GET /tasks/{task_id},practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,5,POST /tasks,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,6,DELETE /tasks/{task_id},practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,7,GET /reports,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,8,GET /created-preview,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,9,POST /comments,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,10,Мини-проект,project,ide_plugin,140,2,50
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,11,Понимание,test,quiz_single,40,2,12
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,12,Мини-проект,project,ide_plugin,110,2,30
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",7,response_model и status codes,13,Короткий итог,summary,,40,2,8
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,1,Ошибки API,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,2,"400, 404, 422",theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,3,Понимание,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,4,GET /metrics,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,5,GET /health,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,6,GET /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,7,GET /tasks,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,8,POST /tasks,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,9,PATCH /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,10,API-минипроект,project,ide_plugin,140,2,50
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,11,Закрепление,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,12,Контрольный артефакт,project,ide_plugin,110,2,30
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,13,Итог,summary,,40,2,8
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,4,GET /tasks/{task_id},practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,5,GET /items,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,6,GET /users/{username},practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,7,POST /tasks/strict,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,8,GET /files/{file_id},practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,9,GET /quota,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,10,Мини-проект,project,ide_plugin,140,2,50
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,11,Понимание,test,quiz_single,40,2,12
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,12,Мини-проект,project,ide_plugin,110,2,30
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,13,Короткий итог,summary,,40,2,8
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,1,Что это,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,2,Минимальный пример,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,3,Понимание,test,quiz_single,40,2,12
