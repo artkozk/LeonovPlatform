@@ -291,3 +291,32 @@ curl -fsS -X POST -H "Authorization: Bearer <token>" http://127.0.0.1:8510/api/v
 1. Payload limits:
 - `MAX_REQUEST_BODY_BYTES=16777216`
 - `MAX_SUBMISSION_SOURCE_BYTES=8388608`
+
+## 12. Runtime Node Baseline Update (append-only, 2026-05-05)
+
+### 12.1 Что было
+
+1. На production-сервере использовался `Node v18.19.1`.
+2. Часть frontend-зависимостей (например `react-router` и `eslint-visitor-keys`) уже требует Node `>=20` и в логах деплоя появлялись `EBADENGINE` предупреждения.
+
+### 12.2 Что сделано
+
+1. Для деплой-контура зафиксирован baseline `Node >=20.19.0`.
+2. В `deploy/server/deploy.sh` добавлена preflight-проверка версии Node перед `npm ci`.
+3. Во frontend `package.json` добавлены `engines`:
+- `node: >=20.19.0`
+- `npm: >=10.0.0`
+
+### 12.3 Почему так
+
+1. Это устраняет риск внезапного падения сборки после обновления зависимостей.
+2. Preflight в deploy-скрипте завершает релиз сразу с понятной причиной, а не в середине `npm ci`.
+
+### 12.4 Практический шаг на сервере
+
+1. Обновить Node до LTS 20+ (или выше) системно и проверить:
+```bash
+node -v
+npm -v
+```
+2. После обновления перезапустить стандартный deploy-проход.

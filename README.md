@@ -1082,3 +1082,9 @@ cd idea-plugin
 4. Локальная верификация после изменений:
 1. `cd backend && go test ./...` — PASS.
 2. Gradle-wrapper/`gradle` в текущем окружении отсутствует, поэтому автоматическую компиляцию `idea-plugin` в этом окружении выполнить нельзя.
+
+## Node runtime baseline update (2026-05-05)
+
+1. Для frontend build-chain теперь принят baseline `Node >=20.19.0` и `npm >=10`.
+2. Это зафиксировано в `frontend/package.json` через `engines`, а в `deploy/server/deploy.sh` добавлен preflight-check версии Node.
+3. Причина: часть зависимостей уже требует Node 20+, и на Node 18 появляются `EBADENGINE` предупреждения, которые могут перейти в hard-fail при следующих обновлениях пакетов.
