@@ -2,8 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 const INPUT_PATH = path.resolve(__dirname, '../../материалы/v18_STRICT_PEDAGOGY/course_import.json');
-const MIGRATION_PATH = path.resolve(__dirname, '../migrations/030_reseed_python_zero_v18_semantic_alignment.sql');
-const REPORT_PATH = path.resolve(__dirname, '../../docs/operations/PYTHON_V18_STRICT_PEDAGOGY_IMPORT_VALIDATION_2026_05_05_SEMANTIC_ALIGNMENT.md');
+const MIGRATION_PATH = path.resolve(__dirname, '../migrations/031_reseed_python_zero_v18_no_duplicate_tasks.sql');
+const REPORT_PATH = path.resolve(__dirname, '../../docs/operations/PYTHON_V18_STRICT_PEDAGOGY_IMPORT_VALIDATION_2026_05_05_NO_DUPLICATE_TASKS.md');
 
 function readJSON(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -97,7 +97,7 @@ function main() {
     .map(([name]) => name);
 
   const reportLines = [
-    '# Python v18 Strict Pedagogy Import Validation — 2026-05-05 Semantic Alignment',
+    '# Python v18 Strict Pedagogy Import Validation — 2026-05-05 No Duplicate Tasks',
     '',
     '## Source Inputs',
     `- materials json: \`${INPUT_PATH}\``,

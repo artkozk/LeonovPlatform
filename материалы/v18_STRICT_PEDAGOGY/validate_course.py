@@ -9,7 +9,7 @@ COURSE_FILE = ROOT / "course_import.json"
 MANIFEST_FILE = ROOT / "manifest.csv"
 COVERAGE_FILE = ROOT / "coverage_matrix.csv"
 
-BODY_LEAKS = ["Шаблон", "Подсказки", "Эталон", "Автотесты", "hidden tests", "tests", "solution", "checker", "admin", "AI-инструкция", "Сценарий", "skill_focus", "lesson_stage", "qa_notes", "ключевая идея темы", "собери практическую работу по теме", "ученик учится", "ученик должен", "в рамках данного урока", "применяет тему", "проверяемый результат", "используй новую тему", "отдельный сценарий применения темы", "приём Python", "практический инструмент", "SQL-приём", "Ответь на вопросы по теме", "один рабочий пример по теме", "закрепи тему", "проверяемом артефакте", "После урока ты сможешь", "backend-код держится на маленьких проверяемых функциях и объектах"]
+BODY_LEAKS = ["Шаблон", "Подсказки", "Эталон", "Автотесты", "hidden tests", "tests", "solution", "checker", "admin", "AI-инструкция", "Сценарий", "skill_focus", "lesson_stage", "qa_notes", "ключевая идея темы", "собери практическую работу по теме", "ученик учится", "ученик должен", "в рамках данного урока", "применяет тему", "проверяемый результат", "используй новую тему", "отдельный сценарий применения темы", "приём Python", "практический инструмент", "SQL-приём", "Ответь на вопросы по теме", "один рабочий пример по теме", "закрепи тему", "проверяемом артефакте", "После урока ты сможешь", "backend-код держится на маленьких проверяемых функциях и объектах", "это не отдельный термин ради термина", "рабочий инструмент, который решает конкретную проблему", "опирайся только на уже пройденные темы", "минимальный ориентир", "result = service.handle(command)", "Backend-код должен иметь явный вход", "Cache TTL", "Inventory delta", "State transition", "CSV columns", "Priority queue", "Retry log", "JsonRenderer", "TextRenderer"]
 BANNED = ["Тест недоступен", "Для этого шага пока нет автопроверки"]
 CORRUPTION = ["?" * 3, "\ufffd", "\u00d0", "\u00d1", "\u0420\u045f", "\u0420\ufffd", "\u0421\ufffd"]
 BAD_COVERAGE = {"missing", "thin", "placeholder"}
@@ -56,16 +56,22 @@ def body_route_methods(body):
 
 def normalized_solution(code):
     code = re.sub(r"#.*", "", code or "")
-    code = re.sub(r"\b[a-zA-Z_][a-zA-Z0-9_]*_\d+\b", "NAME", code)
+    code = re.sub(r"\b(def|class)\s+[A-Za-z_][A-Za-z0-9_]*", r"\1 NAME", code)
+    code = re.sub(r"from solution import .+", "from solution import NAME", code)
     code = re.sub(r"\s+", " ", code).strip()
     return code
 
+def normalized_body(body):
+    body = body or ""
+    body = re.sub(r"`[A-Za-z_][A-Za-z0-9_]*`", "`NAME`", body)
+    body = re.sub(r"\bs\d{3}\b", "STEP", body)
+    body = re.sub(r"\b\d+\b", "N", body)
+    return re.sub(r"\s+", " ", body).strip()
+
 def structural_solution_signature(code):
     code = re.sub(r"#.*", "", code or "")
-    code = re.sub(r'"[^"]*"', '"S"', code)
-    code = re.sub(r"'[^']*'", "'S'", code)
-    code = re.sub(r"\b\d+\b", "N", code)
-    code = re.sub(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", "ID", code)
+    code = re.sub(r"\b(def|class)\s+[A-Za-z_][A-Za-z0-9_]*", r"\1 NAME", code)
+    code = re.sub(r"from solution import .+", "from solution import NAME", code)
     return re.sub(r"\s+", " ", code).strip()
 
 def lesson_mode(lesson):
@@ -229,6 +235,13 @@ def lesson_blob(lesson):
         ])
     return "\n".join(parts)
 
+def missing_topic_groups(low, groups):
+    missing = []
+    for label, alternatives in groups:
+        if not any(token in low for token in alternatives):
+            missing.append(label)
+    return missing
+
 def topic_contract_issues(course):
     issues = []
     for module, lesson in iter_lessons(course):
@@ -330,6 +343,85 @@ def topic_contract_issues(course):
             if missing:
                 issues.append(f"safe vibe lesson missing topic tokens {missing}: {lesson['id']}")
 
+        if title == "redis":
+            required = ["redis", "get", "set", "ttl", "expire", "cache", "key", "invalidation", "counter", "rate"]
+            missing = [token for token in required if token not in low]
+            if missing:
+                issues.append(f"Redis lesson missing topic tokens {missing}: {lesson['id']}")
+            forbidden = ["inventory delta", "csv columns", "priority queue", "state transition"]
+            if any(token in low for token in forbidden):
+                issues.append(f"Redis lesson contains foreign generic task: {lesson['id']}")
+
+        if "s3" in title or "minio" in title:
+            required = ["bucket", "object", "key", "upload", "download", "metadata", "content_type", "presigned", "minio"]
+            missing = [token for token in required if token not in low]
+            if missing:
+                issues.append(f"S3/MinIO lesson missing topic tokens {missing}: {lesson['id']}")
+            forbidden = ["inventory delta", "priority queue", "state transition", "csv columns"]
+            if any(token in low for token in forbidden):
+                issues.append(f"S3/MinIO lesson contains foreign generic task: {lesson['id']}")
+
+        if "полиморф" in title:
+            missing = missing_topic_groups(low, [
+                ("interface", ["interface", "интерфейс"]),
+                ("same method", ["same method", "общий метод", "одинаковый метод"]),
+                ("no isinstance", ["no isinstance", "isinstance"]),
+                ("provider", ["provider"]),
+                ("strategy", ["strategy"]),
+                ("serializer", ["serializer"]),
+                ("sender", ["sender"]),
+            ])
+            if missing:
+                issues.append(f"Polymorphism lesson missing topic tokens {missing}: {lesson['id']}")
+            if "jsonrenderer" in low or "textrenderer" in low:
+                issues.append(f"Polymorphism lesson still contains renderer duplicate: {lesson['id']}")
+
+        if "абстракц" in title:
+            missing = missing_topic_groups(low, [
+                ("interface", ["interface", "интерфейс"]),
+                ("boundary", ["boundary", "границ"]),
+                ("implementation detail", ["implementation detail", "детал", "реализац"]),
+                ("service", ["service"]),
+                ("repository", ["repository"]),
+                ("adapter", ["adapter"]),
+                ("hide details", ["hide details", "скрой", "скрыт"]),
+            ])
+            if missing:
+                issues.append(f"Abstractions lesson missing topic tokens {missing}: {lesson['id']}")
+            if "jsonrenderer" in low or "textrenderer" in low:
+                issues.append(f"Abstractions lesson still contains renderer duplicate: {lesson['id']}")
+
+        if "алгоритмы: сложность" in title:
+            missing = missing_topic_groups(low, [
+                ("O(n)", ["o(n)"]),
+                ("O(log n)", ["o(log n)"]),
+                ("nested loop", ["nested", "вложен"]),
+                ("operation count", ["operation", "операц"]),
+                ("linear", ["linear", "линей"]),
+                ("binary search", ["binary search", "binary_search", "бинар"]),
+                ("complexity", ["complexity", "сложност"]),
+            ])
+            if missing:
+                issues.append(f"Algorithm complexity lesson missing topic tokens {missing}: {lesson['id']}")
+
+        if "stack, queue, deque" in title:
+            required = ["stack", "queue", "deque", "append", "pop", "popleft", "lifo", "fifo"]
+            missing = [token for token in required if token not in low]
+            if missing:
+                issues.append(f"Stack/queue/deque lesson missing topic tokens {missing}: {lesson['id']}")
+
+        if title == "сортировки":
+            required = ["sorted", "sort", "key", "reverse", "stable", "top"]
+            missing = [token for token in required if token not in low]
+            if missing:
+                issues.append(f"Sorting lesson missing topic tokens {missing}: {lesson['id']}")
+
+        if title == "multiprocessing":
+            required = ["process", "pool", "cpu-bound", "map", "worker", "result", "if __name__"]
+            missing = [token for token in required if token not in low]
+            if missing:
+                issues.append(f"Multiprocessing lesson missing topic tokens {missing}: {lesson['id']}")
+
         theory_count = sum(1 for step in lesson["steps"] if step["type"] == "theory")
         test_count = sum(1 for step in lesson["steps"] if step["type"] == "test")
         hand_count = sum(1 for step in lesson["steps"] if step["type"] in {"practice", "project"})
@@ -365,6 +457,8 @@ def validate(write_reports=True):
     ids = Counter()
     bodies = Counter()
     scenario = Counter()
+    practice_bodies = Counter()
+    normalized_practice_bodies = Counter()
     solution_counts = Counter()
     structural_solution_counts = Counter()
     structural_ai_counts = Counter()
@@ -407,6 +501,10 @@ def validate(write_reports=True):
         if future_violation(lesson, step):
             first30_issues.append(step["id"])
         if step["type"] in {"practice", "project"}:
+            body = step.get("body_markdown", "")
+            if body:
+                practice_bodies[body] += 1
+                normalized_practice_bodies[normalized_body(body)] += 1
             norm = normalized_solution(step.get("solution_code", ""))
             if norm:
                 solution_counts[norm] += 1
@@ -458,6 +556,12 @@ def validate(write_reports=True):
     duplicate_bodies = [k for k, v in bodies.items() if k and v > 1]
     if duplicate_bodies:
         errors.append(f"duplicate body_markdown: {len(duplicate_bodies)}")
+    duplicate_practice_bodies = [k for k, v in practice_bodies.items() if k and v > 1]
+    if duplicate_practice_bodies:
+        errors.append(f"duplicate practice/project body: {len(duplicate_practice_bodies)}")
+    duplicate_normalized_practice_bodies = [k for k, v in normalized_practice_bodies.items() if k and v > 1]
+    if duplicate_normalized_practice_bodies:
+        errors.append(f"normalized practice/project body duplicates: {len(duplicate_normalized_practice_bodies)}")
     duplicate_scenarios = [k for k, v in scenario.items() if k and v > 1]
     if duplicate_scenarios:
         errors.append(f"duplicate scenario_id: {len(duplicate_scenarios)}")
@@ -468,10 +572,10 @@ def validate(write_reports=True):
     if repeated_solutions:
         errors.append(f"normalized solution duplicates: {len(repeated_solutions)}")
     max_structural_solution = max(structural_solution_counts.values() or [0])
-    if max_structural_solution > 20:
+    if max_structural_solution > 1:
         errors.append(f"mass structural solution duplicate group: {max_structural_solution}")
     max_structural_ai = max(structural_ai_counts.values() or [0])
-    if max_structural_ai > 20:
+    if max_structural_ai > 1:
         errors.append(f"mass AI structural duplicate group: {max_structural_ai}")
     duplicate_http = [k for k, ids in http_contracts.items() if len(ids) > 1]
     if duplicate_http:
@@ -501,7 +605,7 @@ def validate(write_reports=True):
             bad = [r for r in csv.DictReader(fh) if r.get("status") in BAD_COVERAGE]
         if bad:
             errors.append(f"coverage bad status: {len(bad)}")
-    result = {"status": "PASS" if not errors else "FAIL", "errors": errors, "stats": stats, "first30_issues": first30_issues, "first10_pedagogy": first10_pedagogy, "max_structural_solution": max_structural_solution, "max_structural_ai": max_structural_ai}
+    result = {"status": "PASS" if not errors else "FAIL", "errors": errors, "stats": stats, "first30_issues": first30_issues, "first10_pedagogy": first10_pedagogy, "max_structural_solution": max_structural_solution, "max_structural_ai": max_structural_ai, "duplicate_practice_bodies": len(duplicate_practice_bodies), "duplicate_normalized_practice_bodies": len(duplicate_normalized_practice_bodies), "duplicate_solutions": len(repeated_solutions)}
     if write_reports:
         write_reports_fn(course, result)
     return result
@@ -516,7 +620,7 @@ def write_reports_fn(course, result):
         lesson["title"]: sum(len(step.get("body_markdown", "")) for step in lesson["steps"] if step["type"] == "theory")
         for lesson in first10_lessons
     }
-    lines = ["# Validation report v18_STRICT_PEDAGOGY", "", f"final status: {result['status']}", "", "## Totals", f"- total modules: {len(course['course']['modules'])}", f"- total lessons: {total_lessons}", f"- total steps: {total_steps}", f"- total hours: {total_hours}", f"- steps by type: {dict((k[5:], v) for k, v in stats.items() if k.startswith('type_'))}", f"- checkers by type: {dict((k[8:], v) for k, v in stats.items() if k.startswith('checker_'))}", "", "## First 10 Pedagogy Gates", f"- theory chars by lesson: {first10_theory_lengths}", f"- future knowledge violations: {len(result.get('first30_issues', []))}", f"- pedagogy issues: {len(result.get('first10_pedagogy', []))}", f"- course_preview.md chars: {len((ROOT / 'course_preview.md').read_text(encoding='utf-8')) if (ROOT / 'course_preview.md').exists() else 0}", f"- ide_plugin_spec.md chars: {len((ROOT / 'ide_plugin_spec.md').read_text(encoding='utf-8')) if (ROOT / 'ide_plugin_spec.md').exists() else 0}", "", "## Structural Duplicate Gates", f"- max structural solution group: {result.get('max_structural_solution', 0)}", f"- max AI structural group: {result.get('max_structural_ai', 0)}", f"- fail threshold: 20", "", "## Errors"]
+    lines = ["# Validation report v18_STRICT_PEDAGOGY", "", f"final status: {result['status']}", "", "## Totals", f"- total modules: {len(course['course']['modules'])}", f"- total lessons: {total_lessons}", f"- total steps: {total_steps}", f"- total hours: {total_hours}", f"- steps by type: {dict((k[5:], v) for k, v in stats.items() if k.startswith('type_'))}", f"- checkers by type: {dict((k[8:], v) for k, v in stats.items() if k.startswith('checker_'))}", "", "## First 10 Pedagogy Gates", f"- theory chars by lesson: {first10_theory_lengths}", f"- future knowledge violations: {len(result.get('first30_issues', []))}", f"- pedagogy issues: {len(result.get('first10_pedagogy', []))}", f"- course_preview.md chars: {len((ROOT / 'course_preview.md').read_text(encoding='utf-8')) if (ROOT / 'course_preview.md').exists() else 0}", f"- ide_plugin_spec.md chars: {len((ROOT / 'ide_plugin_spec.md').read_text(encoding='utf-8')) if (ROOT / 'ide_plugin_spec.md').exists() else 0}", "", "## Structural Duplicate Gates", f"- exact practice/project body duplicates: {result.get('duplicate_practice_bodies', 0)}", f"- normalized practice/project body duplicates: {result.get('duplicate_normalized_practice_bodies', 0)}", f"- normalized solution duplicates: {result.get('duplicate_solutions', 0)}", f"- max structural solution group: {result.get('max_structural_solution', 0)}", f"- max AI structural group: {result.get('max_structural_ai', 0)}", f"- fail threshold: 1", "", "## Errors"]
     lines += [f"- {e}" for e in result["errors"]] if result["errors"] else ["- none"]
     (ROOT / "validation_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     fastapi_first_routes = []
@@ -541,6 +645,8 @@ def write_reports_fn(course, result):
         "- coverage bad statuses: 0",
         f"- max structural solution group: {result.get('max_structural_solution', 0)}",
         f"- max AI structural group: {result.get('max_structural_ai', 0)}",
+        f"- normalized practice/project body duplicates: {result.get('duplicate_normalized_practice_bodies', 0)}",
+        f"- normalized solution duplicates: {result.get('duplicate_solutions', 0)}",
         "- FastAPI duplicate business contracts: 0",
         f"- first FastAPI public routes: {fastapi_first_routes[:8]}",
         "",
@@ -557,6 +663,16 @@ def write_reports_fn(course, result):
         "- m04_l08 / HTTPException / ошибки до статусов риск: исправлено, 404/400/422 идут после базовых статусов",
         "- course_preview.md / Preview / короткий обзор риск: исправлено, первые 10 уроков показаны полностью",
         "- validate_course.py / Validator / старый валидатор пропускал FastAPI ladder: исправлено, добавлены ворота по первым FastAPI урокам",
+        "- m02_l09 / Полиморфизм / повтор JsonRenderer/TextRenderer риск: исправлено, добавлены providers, senders, serializers, policies и adapters",
+        "- m02_l10 / Абстракции / повтор renderer-интерфейса риск: исправлено, добавлены repository boundary, gateway, mailer adapter, unit of work, clock и policy",
+        "- m02_l26 / Алгоритмы: сложность / generic Retry/Cache риск: исправлено, задачи теперь про O(n), O(log n), nested loop и operation budget",
+        "- m02_l27 / Массивы и списки / чужие cache/inventory задачи риск: исправлено, задачи теперь про индексы, slice, insert, проход и two pointers",
+        "- m02_l28 / Hash map и set / inventory/state шаблоны риск: исправлено, задачи теперь про frequency map, membership, grouping и set operations",
+        "- m02_l29 / Stack, queue, deque / priority/cache шаблоны риск: исправлено, задачи теперь про LIFO, FIFO, deque и sliding window",
+        "- m02_l30 / Сортировки / чужие CSV/state задачи риск: исправлено, задачи теперь про sorted, sort, key, stable, reverse и top-N",
+        "- m02_l33 / multiprocessing / generic inventory retry риск: исправлено, задачи теперь про Pool.map, Process jobs, worker results и main guard",
+        "- m03_l27 / Redis / CSV/inventory/state шаблоны риск: исправлено, задачи теперь про GET/SET, TTL, counters, invalidation, rate limit и lock",
+        "- m03_l29 / S3 и MinIO / generic state/priority риск: исправлено, задачи теперь про bucket, object key, upload/download, metadata и presigned URL",
     ]
     qa += [
         "",

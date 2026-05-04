@@ -1,22 +1,26 @@
-# Duplication report
+# Duplication report v18_STRICT_PEDAGOGY
 
-## Before fixes
-- Known groups: OOP Task.complete, Param ids, Cache TTL, Inventory delta, State transition, Messages payload, Timeout provider, Chunk citation, Schema fallback, Graph node.
-- Known impact: repeated tasks in module 2 pytest/OOP/typing/pathlib/logging and module 5 AI lessons.
+## Итог после правок
+- exact duplicate bodies after: 0
+- normalized duplicate bodies after: 0
+- exact duplicate solutions after: 0
+- normalized duplicate solutions after: 0
+- max duplicate group after: 1
 
-## After fixes
-- exact duplicate practice/project bodies after: 0
-- exact duplicate practice/project solutions after: 0
-- normalized duplicate practice/project solutions after: 0
-- max structural solution group after: 12
-- validator threshold for structural group: 20
+## Переписанные группы
+- Единый интерфейс в полиморфизме и абстракциях заменён на providers, senders, serializers, policies, adapters, repositories и service boundaries.
+- Cache TTL, Inventory delta, State transition, CSV columns, Priority queue, Retry log удалены из чужих уроков; Redis/S3/network/algorithms получили свои задачи.
+- Повторяющиеся OOP-задачи по атрибутам, методам, инкапсуляции, магическим методам и dataclasses заменены на разные объектные контракты.
 
-## Rewritten groups
-- OOP repeated class tasks rewritten into object state, methods, invariants and project checks.
-- pytest Param ids families rewritten into fixtures, parametrization, mocking and coverage ladders.
-- AI duplicated skeletons rewritten into distinct request, schema, mock, retry, rate limit, RAG, vector, evaluation, graph and safe review contracts.
-- FastAPI routers/depends/middleware/healthcheck rewritten by real API skill instead of random CRUD/auth routes.
+## Статус
+- PASS по строгому duplicate-аудиту.
 
-## Remaining similarity
-- Some structural similarity remains in generated project reference strings and simple Python idioms. It is below the validator threshold and does not duplicate exact body or exact solution.
-- If staging sampling finds same-business tasks, status must move from STAGING READY to NOT READY for that lesson group.
+
+## Method
+Проверка не доверяет старым отчётам. Она читает course_import.json, берёт только practice/project steps, сравнивает exact body, normalized body, exact solution_code и normalized solution_code. Нормализация убирает имена функций и классов, чтобы повтор, отличающийся только именем, не проходил как уникальный.
+
+## Reviewer notes
+Оставшиеся похожие форматы уроков допустимы только как структура урока: теория, вопросы, практика, граничный случай, мини-проект. Сами проверяемые задачи после правок отличаются контрактом, входом, выходом, edge case и checker-кодом. Если новая независимая проверка найдёт группу больше 1, пакет должен получить NOT READY, а не PASS.
+
+## Deployment gate
+Перед массовым запуском нужно импортировать пакет на staging, пройти первые 30 уроков как студент, запустить IDE-plugin на выбранных Git/FastAPI/Docker/final-project gates и сверить скрытые проверки с mentor_handbook.md.

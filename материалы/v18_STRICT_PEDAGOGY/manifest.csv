@@ -1,4 +1,4 @@
-module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_type,checker_type,xp,difficulty,estimated_minutes
+﻿module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_type,checker_type,xp,difficulty,estimated_minutes
 1,"Модуль 1. Python Core, терминал, Git",1,Первый код,1,Смысл,theory,,20,1,18
 1,"Модуль 1. Python Core, терминал, Git",1,Первый код,2,print,theory,,20,1,18
 1,"Модуль 1. Python Core, терминал, Git",1,Первый код,3,print и вывод,test,quiz_single,25,1,10
@@ -111,8 +111,8 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 1,"Модуль 1. Python Core, терминал, Git",11,Множества,3,Понимание,test,quiz_single,40,2,12
 1,"Модуль 1. Python Core, терминал, Git",11,Множества,4,Уникальные теги,practice,python_pytest,70,2,18
 1,"Модуль 1. Python Core, терминал, Git",11,Множества,5,Общие роли,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",11,Множества,6,Уникальные теги,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",11,Множества,7,Общие роли,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",11,Множества,6,Недостающие права,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",11,Множества,7,Есть дубликаты,practice,python_pytest,70,2,18
 1,"Модуль 1. Python Core, терминал, Git",11,Множества,8,Мини-проект,project,ide_plugin,120,2,45
 1,"Модуль 1. Python Core, терминал, Git",11,Множества,9,Закрепление,test,quiz_single,40,2,12
 1,"Модуль 1. Python Core, терминал, Git",11,Множества,10,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -121,9 +121,9 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 1,"Модуль 1. Python Core, терминал, Git",12,Словари,2,Минимальный пример,theory,,40,2,18
 1,"Модуль 1. Python Core, терминал, Git",12,Словари,3,Понимание,test,quiz_single,40,2,12
 1,"Модуль 1. Python Core, терминал, Git",12,Словари,4,Счётчик статусов,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",12,Словари,5,Безопасное значение,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",12,Словари,6,Счётчик статусов,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",12,Словари,7,Безопасное значение,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",12,Словари,5,Настройка по умолчанию,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",12,Словари,6,Индекс по id,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",12,Словари,7,Слияние настроек,practice,python_pytest,70,2,18
 1,"Модуль 1. Python Core, терминал, Git",12,Словари,8,Мини-проект,project,ide_plugin,120,2,45
 1,"Модуль 1. Python Core, терминал, Git",12,Словари,9,Закрепление,test,quiz_single,40,2,12
 1,"Модуль 1. Python Core, терминал, Git",12,Словари,10,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -131,10 +131,10 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,1,Что это,theory,,40,2,18
 1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,2,Минимальный пример,theory,,40,2,18
 1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,4,Активные имена,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,5,Активные имена,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,6,Активные имена,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,7,Активные имена,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,4,Имена активных,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,5,Скидки к ценам,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,6,Коды ошибок,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,7,Нормальные email,practice,python_pytest,70,2,18
 1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,8,Мини-проект,project,ide_plugin,120,2,45
 1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,9,Закрепление,test,quiz_single,40,2,12
 1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,10,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -142,10 +142,10 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 1,"Модуль 1. Python Core, терминал, Git",14,datetime,1,Что это,theory,,40,2,18
 1,"Модуль 1. Python Core, терминал, Git",14,datetime,2,Минимальный пример,theory,,40,2,18
 1,"Модуль 1. Python Core, терминал, Git",14,datetime,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",14,datetime,4,Дней до дедлайна,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",14,datetime,5,Дней до дедлайна,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",14,datetime,6,Дней до дедлайна,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",14,datetime,7,Дней до дедлайна,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",14,datetime,4,Разбор даты,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",14,datetime,5,Дни между датами,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",14,datetime,6,Статус дедлайна,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",14,datetime,7,Плюс дни,practice,python_pytest,70,2,18
 1,"Модуль 1. Python Core, терминал, Git",14,datetime,8,Мини-проект,project,ide_plugin,120,2,45
 1,"Модуль 1. Python Core, терминал, Git",14,datetime,9,Закрепление,test,quiz_single,40,2,12
 1,"Модуль 1. Python Core, терминал, Git",14,datetime,10,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -153,10 +153,10 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,1,Что это,theory,,40,2,18
 1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,2,Минимальный пример,theory,,40,2,18
 1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,4,До стоп-слова,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,4,Первые два,practice,python_pytest,70,2,18
 1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,5,До стоп-слова,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,6,До стоп-слова,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,7,До стоп-слова,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,6,Нумерация строк,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,7,Расход iterator,practice,python_pytest,70,2,18
 1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,8,Мини-проект,project,ide_plugin,120,2,45
 1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,9,Закрепление,test,quiz_single,40,2,12
 1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,10,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -164,10 +164,10 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,1,Что это,theory,,40,2,18
 1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,2,Минимальный пример,theory,,40,2,18
 1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,4,Квадраты до n,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,5,Квадраты до n,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,6,Квадраты до n,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,7,Квадраты до n,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,4,Квадраты,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,5,Chunks слов,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,6,Накопительная сумма,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,7,Непустые строки,practice,python_pytest,70,2,18
 1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,8,Мини-проект,project,ide_plugin,120,2,45
 1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,9,Закрепление,test,quiz_single,40,2,12
 1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,10,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -175,10 +175,10 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,1,Что это,theory,,40,2,18
 1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,2,Минимальный пример,theory,,40,2,18
 1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,4,Лог вызова,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,5,Лог вызова,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,6,Лог вызова,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,7,Лог вызова,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,4,Счётчик вызовов,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,5,Только positive,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,6,Верхний регистр,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,7,Лог аргументов,practice,python_pytest,70,2,18
 1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,8,Мини-проект,project,ide_plugin,120,2,45
 1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,9,Закрепление,test,quiz_single,40,2,12
 1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,10,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -186,10 +186,10 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,1,Что это,theory,,40,2,18
 1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,2,Минимальный пример,theory,,40,2,18
 1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,4,Временный флаг,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,4,Порядок входа,practice,python_pytest,70,2,18
 1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,5,Временный флаг,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,6,Временный флаг,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,7,Временный флаг,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,6,Только ValueError,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,7,Закрытие ресурса,practice,python_pytest,70,2,18
 1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,8,Мини-проект,project,ide_plugin,120,2,45
 1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,9,Закрепление,test,quiz_single,40,2,12
 1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,10,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -198,9 +198,9 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 1,"Модуль 1. Python Core, терминал, Git",19,Исключения,2,Минимальный пример,theory,,40,2,18
 1,"Модуль 1. Python Core, терминал, Git",19,Исключения,3,Понимание,test,quiz_single,40,2,12
 1,"Модуль 1. Python Core, терминал, Git",19,Исключения,4,Порт сервера,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",19,Исключения,5,Порт сервера,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",19,Исключения,6,Порт сервера,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",19,Исключения,7,Порт сервера,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",19,Исключения,5,Деление безопасно,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",19,Исключения,6,Обязательный ключ,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",19,Исключения,7,Положительная сумма,practice,python_pytest,70,2,18
 1,"Модуль 1. Python Core, терминал, Git",19,Исключения,8,Мини-проект,project,ide_plugin,120,2,45
 1,"Модуль 1. Python Core, терминал, Git",19,Исключения,9,Закрепление,test,quiz_single,40,2,12
 1,"Модуль 1. Python Core, терминал, Git",19,Исключения,10,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -343,12 +343,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,2,ООП: атрибуты,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,2,ООП: атрибуты,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,2,ООП: атрибуты,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,2,ООП: атрибуты,4,Задача,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,2,ООП: атрибуты,5,Задача,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,2,ООП: атрибуты,6,Задача,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,2,ООП: атрибуты,7,Задача,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,2,ООП: атрибуты,8,Задача,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,2,ООП: атрибуты,9,Задача,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,2,ООП: атрибуты,4,Profile attributes,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,2,ООП: атрибуты,5,Class default,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,2,ООП: атрибуты,6,Mutable counter,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,2,ООП: атрибуты,7,Own list,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,2,ООП: атрибуты,8,Computed attribute,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,2,ООП: атрибуты,9,Last error,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,2,ООП: атрибуты,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,2,ООП: атрибуты,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,2,ООП: атрибуты,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -356,12 +356,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,3,ООП: методы,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,3,ООП: методы,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,3,ООП: методы,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,3,ООП: методы,4,Задача,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,3,ООП: методы,5,Задача,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,3,ООП: методы,6,Задача,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,3,ООП: методы,7,Задача,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,3,ООП: методы,8,Задача,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,3,ООП: методы,9,Задача,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,3,ООП: методы,4,Subtotal method,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,3,ООП: методы,5,Can pay,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,3,ООП: методы,6,From tag,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,3,ООП: методы,7,Slug static,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,3,ООП: методы,8,Rate window,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,3,ООП: методы,9,Toggle switch,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,3,ООП: методы,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,3,ООП: методы,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,3,ООП: методы,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -369,12 +369,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,4,Инкапсуляция,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,4,Инкапсуляция,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,4,Инкапсуляция,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,4,Инкапсуляция,4,Температура,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,4,Инкапсуляция,5,Температура,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,4,Инкапсуляция,6,Температура,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,4,Инкапсуляция,7,Температура,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,4,Инкапсуляция,8,Температура,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,4,Инкапсуляция,9,Температура,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,4,Инкапсуляция,4,Temperature property,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,4,Инкапсуляция,5,Masked token,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,4,Инкапсуляция,6,Account invariant,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,4,Инкапсуляция,7,Read-only id,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,4,Инкапсуляция,8,Email value object,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,4,Инкапсуляция,9,Controlled status,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,4,Инкапсуляция,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,4,Инкапсуляция,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,4,Инкапсуляция,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -382,12 +382,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,5,Композиция,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,5,Композиция,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,5,Композиция,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,5,Композиция,4,Заказ и позиция,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,5,Композиция,5,Заказ и позиция,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,5,Композиция,6,Заказ и позиция,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,5,Композиция,7,Заказ и позиция,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,5,Композиция,8,Заказ и позиция,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,5,Композиция,9,Заказ и позиция,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,5,Композиция,4,Заказ с позициями,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,5,Композиция,5,Профиль и адрес,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,5,Композиция,6,Корзина и скидка,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,5,Композиция,7,Сервис и репозиторий,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,5,Композиция,8,Файл и writer,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,5,Композиция,9,Валидатор внутри формы,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,5,Композиция,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,5,Композиция,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,5,Композиция,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -395,12 +395,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,6,Магические методы,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,6,Магические методы,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,6,Магические методы,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,6,Магические методы,4,Деньги,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,6,Магические методы,5,Деньги,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,6,Магические методы,6,Деньги,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,6,Магические методы,7,Деньги,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,6,Магические методы,8,Деньги,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,6,Магические методы,9,Деньги,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,6,Магические методы,4,Money repr eq,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,6,Магические методы,5,Version order,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,6,Магические методы,6,Bag len contains,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,6,Магические методы,7,Vector add,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,6,Магические методы,8,Path str,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,6,Магические методы,9,Call policy,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,6,Магические методы,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,6,Магические методы,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,6,Магические методы,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -408,12 +408,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,7,Протоколы Python,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,7,Протоколы Python,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,7,Протоколы Python,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,7,Протоколы Python,4,Закрываемый ресурс,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,7,Протоколы Python,5,Закрываемый ресурс,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,7,Протоколы Python,6,Закрываемый ресурс,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,7,Протоколы Python,7,Закрываемый ресурс,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,7,Протоколы Python,8,Закрываемый ресурс,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,7,Протоколы Python,9,Закрываемый ресурс,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,7,Протоколы Python,4,Закрываемые ресурсы,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,7,Протоколы Python,5,Отправитель сообщений,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,7,Протоколы Python,6,Читаемый источник,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,7,Протоколы Python,7,Счётчик как Protocol,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,7,Протоколы Python,8,Serializer Protocol,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,7,Протоколы Python,9,Cache Protocol,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,7,Протоколы Python,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,7,Протоколы Python,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,7,Протоколы Python,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -421,12 +421,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,8,Наследование,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,8,Наследование,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,8,Наследование,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,8,Наследование,4,Уведомления,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,8,Наследование,5,Уведомления,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,8,Наследование,6,Уведомления,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,8,Наследование,7,Уведомления,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,8,Наследование,8,Уведомления,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,8,Наследование,9,Уведомления,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,8,Наследование,4,Email notification,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,8,Наследование,5,SMS через super,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,8,Наследование,6,Base validator,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,8,Наследование,7,Платный пользователь,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,8,Наследование,8,Ошибочный subclass,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,8,Наследование,9,Скидка subclass,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,8,Наследование,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,8,Наследование,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,8,Наследование,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -434,12 +434,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,9,Полиморфизм,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,9,Полиморфизм,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,9,Полиморфизм,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,9,Полиморфизм,4,Единый интерфейс,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,9,Полиморфизм,5,Единый интерфейс,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,9,Полиморфизм,6,Единый интерфейс,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,9,Полиморфизм,7,Единый интерфейс,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,9,Полиморфизм,8,Единый интерфейс,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,9,Полиморфизм,9,Единый интерфейс,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,9,Полиморфизм,4,Payment providers,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,9,Полиморфизм,5,Notification senders,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,9,Полиморфизм,6,Serializer strategy,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,9,Полиморфизм,7,Discount policies,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,9,Полиморфизм,8,Storage adapters,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,9,Полиморфизм,9,No isinstance,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,9,Полиморфизм,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,9,Полиморфизм,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,9,Полиморфизм,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -447,12 +447,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,10,Абстракции,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,10,Абстракции,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,10,Абстракции,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,10,Абстракции,4,Единый интерфейс,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,10,Абстракции,5,Единый интерфейс,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,10,Абстракции,6,Единый интерфейс,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,10,Абстракции,7,Единый интерфейс,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,10,Абстракции,8,Единый интерфейс,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,10,Абстракции,9,Единый интерфейс,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,10,Абстракции,4,Repository boundary,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,10,Абстракции,5,Payment gateway interface,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,10,Абстракции,6,Mailer adapter,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,10,Абстракции,7,Unit of Work boundary,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,10,Абстракции,8,Clock interface,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,10,Абстракции,9,Policy abstraction,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,10,Абстракции,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,10,Абстракции,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,10,Абстракции,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -460,12 +460,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,11,dataclasses,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,11,dataclasses,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,11,dataclasses,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,11,dataclasses,4,Карточка задачи,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,11,dataclasses,5,Карточка задачи,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,11,dataclasses,6,Карточка задачи,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,11,dataclasses,7,Карточка задачи,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,11,dataclasses,8,Карточка задачи,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,11,dataclasses,9,Карточка задачи,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,11,dataclasses,4,Issue dataclass,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,11,dataclasses,5,Frozen token,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,11,dataclasses,6,Ordered priority,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,11,dataclasses,7,Post init slug,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,11,dataclasses,8,Keyword only config,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,11,dataclasses,9,Asdict export,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,11,dataclasses,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,11,dataclasses,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,11,dataclasses,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -473,12 +473,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,12,typing: база,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,12,typing: база,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,12,typing: база,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,12,typing: база,4,Optional email,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,12,typing: база,5,Typed page,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,12,typing: база,6,Optional email,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,12,typing: база,7,Typed page,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,12,typing: база,8,Optional email,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,12,typing: база,9,Typed page,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,12,typing: база,4,Аннотированный профиль,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,12,typing: база,5,Список строк,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,12,typing: база,6,Сумма словаря,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,12,typing: база,7,Tuple координат,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,12,typing: база,8,Bool-флаг,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,12,typing: база,9,Явный return,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,12,typing: база,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,12,typing: база,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,12,typing: база,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -486,12 +486,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,13,typing: Optional и Union,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,13,typing: Optional и Union,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,13,typing: Optional и Union,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,13,typing: Optional и Union,4,Typed page,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,13,typing: Optional и Union,5,Optional email,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,13,typing: Optional и Union,6,Typed page,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,13,typing: Optional и Union,7,Optional email,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,13,typing: Optional и Union,8,Typed page,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,13,typing: Optional и Union,9,Optional email,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,13,typing: Optional и Union,4,Optional email,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,13,typing: Optional и Union,5,Union id,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,13,typing: Optional и Union,6,Optional limit,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,13,typing: Optional и Union,7,Union payload,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,13,typing: Optional и Union,8,None не пустая строка,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,13,typing: Optional и Union,9,Union status,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,13,typing: Optional и Union,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,13,typing: Optional и Union,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,13,typing: Optional и Union,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -499,12 +499,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,14,typing: generics,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,14,typing: generics,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,14,typing: generics,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,14,typing: generics,4,Optional email,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,14,typing: generics,5,Typed page,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,14,typing: generics,6,Optional email,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,14,typing: generics,7,Typed page,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,14,typing: generics,8,Optional email,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,14,typing: generics,9,Typed page,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,14,typing: generics,4,Generic Box,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,14,typing: generics,5,First generic,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,14,typing: generics,6,Repository Generic,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,14,typing: generics,7,Map values,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,14,typing: generics,8,Result Generic,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,14,typing: generics,9,Pair generic,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,14,typing: generics,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,14,typing: generics,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,14,typing: generics,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -652,12 +652,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,26,Алгоритмы: сложность,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,26,Алгоритмы: сложность,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,26,Алгоритмы: сложность,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,26,Алгоритмы: сложность,4,Retry log,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,26,Алгоритмы: сложность,5,Cache TTL,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,26,Алгоритмы: сложность,6,Inventory delta,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,26,Алгоритмы: сложность,7,State transition,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,26,Алгоритмы: сложность,8,CSV columns,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,26,Алгоритмы: сложность,9,Priority queue,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,26,Алгоритмы: сложность,4,Linear count,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,26,Алгоритмы: сложность,5,Nested pairs,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,26,Алгоритмы: сложность,6,Binary steps,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,26,Алгоритмы: сложность,7,Choose structure,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,26,Алгоритмы: сложность,8,Compare loops,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,26,Алгоритмы: сложность,9,Operation budget,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,26,Алгоритмы: сложность,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,26,Алгоритмы: сложность,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,26,Алгоритмы: сложность,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -665,12 +665,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,27,Массивы и списки,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,27,Массивы и списки,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,27,Массивы и списки,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,27,Массивы и списки,4,Cache TTL,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,27,Массивы и списки,5,Inventory delta,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,27,Массивы и списки,6,State transition,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,27,Массивы и списки,7,CSV columns,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,27,Массивы и списки,8,Priority queue,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,27,Массивы и списки,9,Retry log,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,27,Массивы и списки,4,Индекс элемента,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,27,Массивы и списки,5,Срез страницы,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,27,Массивы и списки,6,Вставка по позиции,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,27,Массивы и списки,7,Удалить пустые,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,27,Массивы и списки,8,Two pointers sum,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,27,Массивы и списки,9,Накопление списка,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,27,Массивы и списки,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,27,Массивы и списки,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,27,Массивы и списки,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -678,12 +678,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,28,Hash map и set,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,28,Hash map и set,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,28,Hash map и set,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,28,Hash map и set,4,Inventory delta,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,28,Hash map и set,5,State transition,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,28,Hash map и set,6,CSV columns,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,28,Hash map и set,7,Priority queue,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,28,Hash map и set,8,Retry log,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,28,Hash map и set,9,Cache TTL,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,28,Hash map и set,4,Frequency map,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,28,Hash map и set,5,First duplicate,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,28,Hash map и set,6,Group by owner,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,28,Hash map и set,7,Set intersection ids,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,28,Hash map и set,8,Unique by email,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,28,Hash map и set,9,Membership flags,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,28,Hash map и set,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,28,Hash map и set,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,28,Hash map и set,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -691,12 +691,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,29,"Stack, queue, deque",1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,29,"Stack, queue, deque",2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,29,"Stack, queue, deque",3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,29,"Stack, queue, deque",4,State transition,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,29,"Stack, queue, deque",5,CSV columns,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,29,"Stack, queue, deque",6,Priority queue,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,29,"Stack, queue, deque",7,Retry log,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,29,"Stack, queue, deque",8,Cache TTL,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,29,"Stack, queue, deque",9,Inventory delta,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,29,"Stack, queue, deque",4,Стек скобок,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,29,"Stack, queue, deque",5,Очередь задач,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,29,"Stack, queue, deque",6,Undo stack,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,29,"Stack, queue, deque",7,Sliding window,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,29,"Stack, queue, deque",8,Очередь с приоритетом вручную,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,29,"Stack, queue, deque",9,LIFO или FIFO,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,29,"Stack, queue, deque",10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,29,"Stack, queue, deque",11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,29,"Stack, queue, deque",12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -704,12 +704,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,30,Сортировки,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,30,Сортировки,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,30,Сортировки,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,30,Сортировки,4,CSV columns,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,30,Сортировки,5,Priority queue,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,30,Сортировки,6,Retry log,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,30,Сортировки,7,Cache TTL,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,30,Сортировки,8,Inventory delta,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,30,Сортировки,9,State transition,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,30,Сортировки,4,Sort by key,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,30,Сортировки,5,Stable sort,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,30,Сортировки,6,Top N,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,30,Сортировки,7,In-place sort copy,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,30,Сортировки,8,Reverse date,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,30,Сортировки,9,Tie breaker,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,30,Сортировки,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,30,Сортировки,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,30,Сортировки,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -717,12 +717,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,31,Binary search,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,31,Binary search,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,31,Binary search,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,31,Binary search,4,Граница поиска,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,31,Binary search,5,Граница поиска,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,31,Binary search,6,Граница поиска,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,31,Binary search,7,Граница поиска,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,31,Binary search,8,Граница поиска,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,31,Binary search,9,Граница поиска,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,31,Binary search,4,Exact binary search,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,31,Binary search,5,Lower bound,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,31,Binary search,6,Upper bound,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,31,Binary search,7,Insert position,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,31,Binary search,8,First true,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,31,Binary search,9,Search range,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,31,Binary search,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,31,Binary search,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,31,Binary search,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -730,12 +730,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,32,threading,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,32,threading,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,32,threading,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,32,threading,4,Защищённый счётчик,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,32,threading,5,Защищённый счётчик,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,32,threading,6,Защищённый счётчик,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,32,threading,7,Защищённый счётчик,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,32,threading,8,Защищённый счётчик,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,32,threading,9,Защищённый счётчик,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,32,threading,4,Lock counter,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,32,threading,5,Thread worker plan,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,32,threading,6,Event flag,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,32,threading,7,Queue producer,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,32,threading,8,Timeout join plan,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,32,threading,9,Thread result collector,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,32,threading,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,32,threading,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,32,threading,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -743,12 +743,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,33,multiprocessing,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,33,multiprocessing,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,33,multiprocessing,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,33,multiprocessing,4,Cache TTL,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,33,multiprocessing,5,Inventory delta,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,33,multiprocessing,6,State transition,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,33,multiprocessing,7,CSV columns,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,33,multiprocessing,8,Priority queue,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,33,multiprocessing,9,Retry log,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,33,multiprocessing,4,Pool map squares,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,33,multiprocessing,5,Chunk jobs,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,33,multiprocessing,6,Collect process results,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,33,multiprocessing,7,Process target args,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,33,multiprocessing,8,Cpu bound label,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,33,multiprocessing,9,Main guard text,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,33,multiprocessing,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,33,multiprocessing,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,33,multiprocessing,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -756,12 +756,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,34,asyncio: база,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,34,asyncio: база,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,34,asyncio: база,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,34,asyncio: база,4,Async timeout map,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,34,asyncio: база,5,Async first ok,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,34,asyncio: база,6,Async timeout map,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,34,asyncio: база,7,Async first ok,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,34,asyncio: база,8,Async timeout map,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,34,asyncio: база,9,Async first ok,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,34,asyncio: база,4,Await one task,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,34,asyncio: база,5,Gather tasks,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,34,asyncio: база,6,Sleep delay,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,34,asyncio: база,7,Timeout,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,34,asyncio: база,8,Create tasks,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,34,asyncio: база,9,Cancel task,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,34,asyncio: база,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,34,asyncio: база,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,34,asyncio: база,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -769,12 +769,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,35,asyncio: задачи и очереди,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,35,asyncio: задачи и очереди,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,35,asyncio: задачи и очереди,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,35,asyncio: задачи и очереди,4,Async first ok,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,35,asyncio: задачи и очереди,5,Async timeout map,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,35,asyncio: задачи и очереди,6,Async first ok,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,35,asyncio: задачи и очереди,7,Async timeout map,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,35,asyncio: задачи и очереди,8,Async first ok,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,35,asyncio: задачи и очереди,9,Async timeout map,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,35,asyncio: задачи и очереди,4,Async queue producer,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,35,asyncio: задачи и очереди,5,Async consumer,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,35,asyncio: задачи и очереди,6,Concurrent workers,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,35,asyncio: задачи и очереди,7,Semaphore limit,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,35,asyncio: задачи и очереди,8,Task errors,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,35,asyncio: задачи и очереди,9,Queue done,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,35,asyncio: задачи и очереди,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,35,asyncio: задачи и очереди,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,35,asyncio: задачи и очереди,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -782,12 +782,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 2,Модуль 2. Python Hard,36,asyncio: HTTP,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,36,asyncio: HTTP,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,36,asyncio: HTTP,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,36,asyncio: HTTP,4,Async timeout map,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,36,asyncio: HTTP,5,Async first ok,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,36,asyncio: HTTP,6,Async timeout map,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,36,asyncio: HTTP,7,Async first ok,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,36,asyncio: HTTP,8,Async timeout map,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,36,asyncio: HTTP,9,Async first ok,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,36,asyncio: HTTP,4,Fetch JSON,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,36,asyncio: HTTP,5,HTTP timeout,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,36,asyncio: HTTP,6,Concurrent URLs,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,36,asyncio: HTTP,7,Retry async request,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,36,asyncio: HTTP,8,Status filter,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,36,asyncio: HTTP,9,Limit HTTP concurrency,practice,python_pytest,70,2,18
 2,Модуль 2. Python Hard,36,asyncio: HTTP,10,Мини-проект,project,ide_plugin,120,2,45
 2,Модуль 2. Python Hard,36,asyncio: HTTP,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,36,asyncio: HTTP,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -1078,12 +1078,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 3,"Модуль 3. SQL, базы данных и сети",27,Redis,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",27,Redis,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",27,Redis,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",27,Redis,4,Cache TTL,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",27,Redis,5,Inventory delta,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",27,Redis,6,State transition,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",27,Redis,7,CSV columns,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",27,Redis,8,Priority queue,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",27,Redis,9,Retry log,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",27,Redis,4,Redis GET SET,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",27,Redis,5,Redis TTL,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",27,Redis,6,Redis counter,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",27,Redis,7,Redis invalidation,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",27,Redis,8,Redis rate limit,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",27,Redis,9,Redis lock key,practice,python_pytest,70,2,18
 3,"Модуль 3. SQL, базы данных и сети",27,Redis,10,Мини-проект,project,ide_plugin,120,2,45
 3,"Модуль 3. SQL, базы данных и сети",27,Redis,11,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",27,Redis,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -1102,12 +1102,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,4,State transition,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,5,CSV columns,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,6,Priority queue,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,7,Retry log,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,8,Cache TTL,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,9,Inventory delta,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,4,Upload object,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,5,Download object,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,6,Object key,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,7,Metadata,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,8,Presigned URL,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,9,File size limit,practice,python_pytest,70,2,18
 3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,10,Мини-проект,project,ide_plugin,120,2,45
 3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,11,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",29,S3 и MinIO,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -1115,12 +1115,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,4,CSV columns,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,5,Priority queue,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,6,Retry log,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,7,Cache TTL,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,8,Inventory delta,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,9,State transition,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,4,TCP frame length,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,5,UDP duplicates,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,6,Port range,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,7,Protocol label,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,8,Packet timeout,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,9,TCP order check,practice,python_pytest,70,2,18
 3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,10,Мини-проект,project,ide_plugin,120,2,45
 3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,11,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",30,Сети: TCP и UDP,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -1128,12 +1128,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,4,Priority queue,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,5,Retry log,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,6,Cache TTL,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,7,Inventory delta,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,8,State transition,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,9,CSV columns,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,4,HTTP status class,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,5,Query string,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,6,HTTPS required,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,7,Header lookup,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,8,Method idempotent,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,9,Retry after,practice,python_pytest,70,2,18
 3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,10,Мини-проект,project,ide_plugin,120,2,45
 3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,11,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",31,HTTP и HTTPS,12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -1154,12 +1154,12 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 3,"Модуль 3. SQL, базы данных и сети",33,"SOAP, GraphQL, gRPC, WebSockets",1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",33,"SOAP, GraphQL, gRPC, WebSockets",2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",33,"SOAP, GraphQL, gRPC, WebSockets",3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",33,"SOAP, GraphQL, gRPC, WebSockets",4,Cache TTL,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",33,"SOAP, GraphQL, gRPC, WebSockets",5,Inventory delta,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",33,"SOAP, GraphQL, gRPC, WebSockets",6,State transition,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",33,"SOAP, GraphQL, gRPC, WebSockets",7,CSV columns,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",33,"SOAP, GraphQL, gRPC, WebSockets",8,Priority queue,practice,python_pytest,70,2,18
-3,"Модуль 3. SQL, базы данных и сети",33,"SOAP, GraphQL, gRPC, WebSockets",9,Retry log,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",33,"SOAP, GraphQL, gRPC, WebSockets",4,GraphQL fields,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",33,"SOAP, GraphQL, gRPC, WebSockets",5,SOAP envelope,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",33,"SOAP, GraphQL, gRPC, WebSockets",6,gRPC method,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",33,"SOAP, GraphQL, gRPC, WebSockets",7,WebSocket event,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",33,"SOAP, GraphQL, gRPC, WebSockets",8,Protocol choice,practice,python_pytest,70,2,18
+3,"Модуль 3. SQL, базы данных и сети",33,"SOAP, GraphQL, gRPC, WebSockets",9,Subscription message,practice,python_pytest,70,2,18
 3,"Модуль 3. SQL, базы данных и сети",33,"SOAP, GraphQL, gRPC, WebSockets",10,Мини-проект,project,ide_plugin,120,2,45
 3,"Модуль 3. SQL, базы данных и сети",33,"SOAP, GraphQL, gRPC, WebSockets",11,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",33,"SOAP, GraphQL, gRPC, WebSockets",12,Контрольный артефакт,project,ide_plugin,110,2,30
@@ -1667,7 +1667,7 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,5,Retry decision,practice,python_pytest,70,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,6,Timeout status,practice,python_pytest,70,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,7,Backoff,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,8,Retry log,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,8,Retry budget,practice,python_pytest,70,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,9,AI-минипроект,project,ide_plugin,110,3,35
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,10,Закрепление,test,quiz_single,40,2,10
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,11,Контрольный AI-модуль,project,ide_plugin,110,3,35

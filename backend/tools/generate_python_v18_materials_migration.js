@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const INPUT_PATH = path.resolve(__dirname, '../../материалы/v18_STRICT_PEDAGOGY/course_import.json');
-const OUT_PATH = path.resolve(__dirname, '../migrations/030_reseed_python_zero_v18_semantic_alignment.sql');
+const OUT_PATH = path.resolve(__dirname, '../migrations/031_reseed_python_zero_v18_no_duplicate_tasks.sql');
 const COURSE_SLUG = 'python-zero';
 
 const SUPPORTED_CHECKERS = new Set([
