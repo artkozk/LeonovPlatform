@@ -61,6 +61,51 @@ class HttpPlatformApiClient(
     }
 
     override suspend fun getCourseTasks(token: String, courseId: String): List<Task> {
+        try {
+            return getCourseTasksFromCatalog(token, courseId)
+        } catch (ex: ApiException) {
+            if (ex.statusCode == 401 || ex.statusCode == 403) {
+                throw ex
+            }
+            logger.warn("Catalog endpoint failed for course=$courseId, fallback to lesson fanout: ${ex.statusCode} ${ex.message}")
+        } catch (ex: Exception) {
+            logger.warn("Catalog endpoint failed for course=$courseId, fallback to lesson fanout: ${ex.message}")
+        }
+        return getCourseTasksFromLessonFanout(token, courseId)
+    }
+
+    private suspend fun getCourseTasksFromCatalog(token: String, courseId: String): List<Task> {
+        val catalogPath = endpoint(endpoints.courseTasksCatalog, "courseId" to courseId)
+        val catalogNode = requestNode("GET", catalogPath, token, retrySafe = true)
+        val items = catalogNode.path("items")
+        if (!items.isArray) {
+            throw ApiException(500, "Invalid tasks-catalog response")
+        }
+        val tasks = mutableListOf<Task>()
+        var order = 1
+        items.forEach { taskNode ->
+            val lessonId = taskNode.path("lessonId").asText("")
+            val moduleTitle = taskNode.path("moduleTitle").asText("").trim()
+            val taskLanguage = TaskLanguage.fromApi(taskNode.path("language").asText("JAVA"))
+            tasks += Task(
+                id = taskNode.path("taskId").asText(),
+                courseId = courseId,
+                moduleId = moduleTitle.ifBlank { null },
+                lessonId = lessonId.ifBlank { null },
+                lessonTitle = taskNode.path("lessonTitle").asText(""),
+                title = taskNode.path("title").asText(),
+                order = order++,
+                status = TaskStatus.NEW,
+                type = TaskType.fromApi(taskNode.path("type").asText("CONSOLE")),
+                language = taskLanguage.apiName,
+                locked = taskNode.path("locked").asBoolean(false),
+                unavailable = taskNode.path("unavailable").asBoolean(false),
+            )
+        }
+        return tasks
+    }
+
+    private suspend fun getCourseTasksFromLessonFanout(token: String, courseId: String): List<Task> {
         val coursePath = endpoint(endpoints.courseDetails, "courseId" to courseId)
         val courseNode = requestNode("GET", coursePath, token, retrySafe = true)
         val lessons = courseNode.path("lessons")

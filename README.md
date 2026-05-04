@@ -1060,3 +1060,25 @@ cd idea-plugin
 2. `node backend/tools/validate_python_v18_materials_import.js`
 
 Эти проверки теперь валидируют не только структуру, но и минимальную педагогическую полноту первых уроков: длину theory, наличие примеров, отсутствие будущих тем и конкретность mini-project шагов.
+
+## Backend + IDEA plugin stabilization update (2026-05-05)
+
+1. Что исправлено в backend-контуре для IDE:
+- добавлены endpoint’ы `template/style-check/reference-solution/progress-reset/sync`;
+- `GET /api/v1/submissions/:id` теперь отдает только sanitized feedback без hidden test payload;
+- `referenceCode` отключен как канал доставки эталона;
+- добавлены лимиты `MAX_REQUEST_BODY_BYTES` и `MAX_SUBMISSION_SOURCE_BYTES`;
+- при Redis push ошибке submit возвращает `202` + `deferredDispatch=true`, запись добирает worker reconciler.
+
+2. Что исправлено в plugin-клиенте:
+- `getCourseTasks` сначала использует быстрый `tasks-catalog` endpoint;
+- fallback на legacy lesson-fanout сохранен, чтобы не ломать старые server окружения.
+
+3. Почему сделано именно так:
+- это устраняет утечки и нестабильность polling/submit flow;
+- снижает сетевую и серверную нагрузку для курсов с очень большим каталогом задач;
+- оставляет обратную совместимость для уже развернутых контуров.
+
+4. Локальная верификация после изменений:
+1. `cd backend && go test ./...` — PASS.
+2. Gradle-wrapper/`gradle` в текущем окружении отсутствует, поэтому автоматическую компиляцию `idea-plugin` в этом окружении выполнить нельзя.

@@ -11,6 +11,8 @@ type Config struct {
 	AppName                       string
 	Environment                   string
 	HTTPPort                      int
+	MaxRequestBodyBytes           int
+	MaxSubmissionSourceBytes      int
 	DBURL                         string
 	RedisURL                      string
 	JWTAccessSecret               string
@@ -63,6 +65,8 @@ func Load() (Config, error) {
 		AppName:                       getOr("APP_NAME", "Leonov Care Platform"),
 		Environment:                   getOr("APP_ENV", "development"),
 		HTTPPort:                      getIntOr("HTTP_PORT", 8080),
+		MaxRequestBodyBytes:           getIntOr("MAX_REQUEST_BODY_BYTES", 16777216),
+		MaxSubmissionSourceBytes:      getIntOr("MAX_SUBMISSION_SOURCE_BYTES", 8388608),
 		DBURL:                         os.Getenv("DATABASE_URL"),
 		RedisURL:                      getOr("REDIS_URL", "redis://localhost:6379/0"),
 		JWTAccessSecret:               os.Getenv("JWT_ACCESS_SECRET"),

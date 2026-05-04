@@ -187,3 +187,35 @@
 
 1. Пользовательский запрос требовал связать plugin с реальным курсом и AI-подсказками, поэтому зафиксирована проверка контента и фактические supported paths.
 2. Поддержка SQL/других языков сделана как расширяемая основа: без fake-рантайма, но с корректной маршрутизацией файлов/шаблонов/submit.
+
+## 13. Update 2026-05-05 — backend contract closure + large-course performance stabilization
+
+1. Закрыты backend endpoint gaps для IDE-контракта:
+- `GET /api/v1/tasks/{taskID}/template`;
+- `POST /api/v1/tasks/{taskID}/style-check`;
+- `GET /api/v1/tasks/{taskID}/reference-solution`;
+- `POST /api/v1/tasks/{taskID}/progress/reset`;
+- `POST /api/v1/sync`.
+
+2. Ускорен массовый sync задач для больших курсов:
+- `HttpPlatformApiClient.getCourseTasks(...)` теперь сначала использует `GET /api/v1/courses/{courseID}/tasks-catalog`;
+- fallback на старый lesson-fanout сохранен для обратной совместимости и аварийного режима.
+
+3. Устранены основные backend data-leaks в plugin-сценариях:
+- `GET /api/v1/submissions/{submissionID}` возвращает sanitized `feedback` без `input/expected`;
+- `referenceCode` больше не используется как канал выдачи эталонного решения;
+- эталон отдается только через `GET /tasks/{taskID}/reference-solution` после `accepted` (или admin).
+
+4. Усилена надежность submit при деградации Redis:
+- при ошибке `RPush` backend не ломает UX `500`, а возвращает `202 Accepted` с `deferredDispatch=true`;
+- queued submission гарантированно подхватывается reconciler-циклом worker.
+
+5. Добавлены эксплуатационные лимиты для больших решений:
+- `MAX_REQUEST_BODY_BYTES`;
+- `MAX_SUBMISSION_SOURCE_BYTES`.
+
+Почему это зафиксировано именно так:
+
+1. Плагину нужна предсказуемая серверная спецификация, иначе на нагрузке и нестабильной сети проявляются race/fallback баги.
+2. `tasks-catalog` как первичный путь — ключ к скорости на курсах с большим числом уроков и задач.
+3. Разделение “вердикт сабмита” и “доступ к эталону” исключает утечки hidden-check логики.

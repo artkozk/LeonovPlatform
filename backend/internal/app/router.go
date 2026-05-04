@@ -10,7 +10,7 @@ import (
 
 func (a *App) Router() *gin.Engine {
 	r := gin.New()
-	r.Use(gin.Recovery(), gin.Logger(), requestIDMiddleware(), gzipMiddleware(), func(c *gin.Context) {
+	r.Use(gin.Recovery(), gin.Logger(), requestIDMiddleware(), maxRequestBodyMiddleware(int64(a.Cfg.MaxRequestBodyBytes)), gzipMiddleware(), func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", a.Cfg.FrontendURL)
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
@@ -77,9 +77,14 @@ func (a *App) Router() *gin.Engine {
 			authed.GET("/lessons/:lessonID", a.GetLesson)
 			authed.POST("/lessons/:lessonID/quiz-check", a.CheckLessonQuiz)
 			authed.GET("/tasks/:taskID", a.GetTask)
+			authed.GET("/tasks/:taskID/template", a.GetTaskTemplate)
 			authed.POST("/tasks/:taskID/run", a.RunTask)
 			authed.POST("/tasks/:taskID/submissions", a.CreateSubmission)
+			authed.POST("/tasks/:taskID/style-check", a.TaskStyleCheck)
+			authed.GET("/tasks/:taskID/reference-solution", a.GetTaskReferenceSolution)
+			authed.POST("/tasks/:taskID/progress/reset", a.ResetTaskProgress)
 			authed.GET("/submissions/:submissionID", a.GetSubmission)
+			authed.POST("/sync", a.SyncTasksState)
 			authed.POST("/ai/task-hint", a.rateLimitMiddleware("ai_hint", a.Cfg.AIHintRateLimitPerMinute), a.TaskHint)
 			authed.GET("/leaderboard", a.Leaderboard)
 

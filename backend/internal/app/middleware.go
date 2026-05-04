@@ -67,6 +67,15 @@ func gzipMiddleware() gin.HandlerFunc {
 	}
 }
 
+func maxRequestBodyMiddleware(maxBytes int64) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if maxBytes > 0 && c.Request != nil && c.Request.Body != nil {
+			c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxBytes)
+		}
+		c.Next()
+	}
+}
+
 func clientKeyForRateLimit(c *gin.Context) string {
 	if uctx, ok := userFromContext(c); ok && strings.TrimSpace(uctx.ID) != "" {
 		return "user:" + uctx.ID

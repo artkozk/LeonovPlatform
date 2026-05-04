@@ -537,6 +537,10 @@ func (a *App) RunTask(c *gin.Context) {
 		badRequest(c, errors.New("sourceCode is required"))
 		return
 	}
+	if tooLargeErr := validateSubmissionPayloadSize(a.Cfg.MaxSubmissionSourceBytes, source, nil); tooLargeErr != nil {
+		c.JSON(http.StatusRequestEntityTooLarge, APIError{Error: tooLargeErr.Error()})
+		return
+	}
 
 	taskID := c.Param("taskID")
 	var language string
@@ -558,9 +562,9 @@ func (a *App) RunTask(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":        result.Status,
 			"score":         result.Score,
-			"compileOutput": result.CompileOutput,
-			"runLog":        result.RunLog,
-			"tests":         result.Tests,
+			"compileOutput": trimTextForClient(result.CompileOutput, 4000),
+			"runLog":        trimTextForClient(result.RunLog, 4000),
+			"tests":         buildRunPreviewTestsPayload(result.Tests),
 		})
 		return
 	}
@@ -596,9 +600,9 @@ func (a *App) RunTask(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":        result.Status,
 		"score":         result.Score,
-		"compileOutput": result.CompileOutput,
-		"runLog":        result.RunLog,
-		"tests":         result.Tests,
+		"compileOutput": trimTextForClient(result.CompileOutput, 4000),
+		"runLog":        trimTextForClient(result.RunLog, 4000),
+		"tests":         buildRunPreviewTestsPayload(result.Tests),
 	})
 }
 
@@ -623,6 +627,10 @@ func (a *App) CreateSubmission(c *gin.Context) {
 	}
 	if strings.TrimSpace(sourceCode) == "" && len(req.Files) == 0 {
 		badRequest(c, errors.New("sourceCode is required"))
+		return
+	}
+	if tooLargeErr := validateSubmissionPayloadSize(a.Cfg.MaxSubmissionSourceBytes, sourceCode, req.Files); tooLargeErr != nil {
+		c.JSON(http.StatusRequestEntityTooLarge, APIError{Error: tooLargeErr.Error()})
 		return
 	}
 
@@ -713,7 +721,18 @@ func (a *App) CreateSubmission(c *gin.Context) {
 	job := QueueJob{SubmissionID: submissionID}
 	payload := jsonMarshal(job)
 	if err := a.Redis.RPush(c.Request.Context(), a.Cfg.SubmissionQueueName, payload).Err(); err != nil {
-		internalServerError(c, err)
+		a.Log.Warn("submission queue push failed, submission will be picked by reconciler", "submissionId", submissionID, "error", err)
+		_, _ = a.DB.Exec(c.Request.Context(), `
+			UPDATE submissions
+			SET run_log = TRIM(BOTH E'\n' FROM CONCAT(COALESCE(run_log, ''), E'\n', $2::text)),
+			    updated_at = NOW()
+			WHERE id = $1
+		`, submissionID, "queue dispatch deferred: redis push failed, waiting for reconciler")
+		c.JSON(http.StatusAccepted, gin.H{
+			"submissionId":     submissionID,
+			"status":           "queued",
+			"deferredDispatch": true,
+		})
 		return
 	}
 
@@ -729,14 +748,13 @@ func (a *App) GetSubmission(c *gin.Context) {
 	subID := c.Param("submissionID")
 
 	var ownerID, status, createdAt string
-	var compileOutput, runLog, feedback, sourceCode, solutionCode sql.NullString
+	var compileOutput, runLog, feedback sql.NullString
 	var score int
 	err := a.DB.QueryRow(c.Request.Context(), `
-		SELECT s.user_id::text, s.status, s.score, s.compile_output, s.run_log, s.feedback::text, s.created_at::text, s.source_code, t.solution_code
+		SELECT s.user_id::text, s.status, s.score, s.compile_output, s.run_log, s.feedback::text, s.created_at::text
 		FROM submissions s
-		JOIN tasks t ON t.id = s.task_id
 		WHERE s.id = $1
-	`, subID).Scan(&ownerID, &status, &score, &compileOutput, &runLog, &feedback, &createdAt, &sourceCode, &solutionCode)
+	`, subID).Scan(&ownerID, &status, &score, &compileOutput, &runLog, &feedback, &createdAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			notFound(c, "submission not found")
@@ -750,21 +768,16 @@ func (a *App) GetSubmission(c *gin.Context) {
 		return
 	}
 
-	submittedSource, _ := decodeSubmissionSourceBundle(sourceCode.String)
-	referenceCode := ""
-	if strings.EqualFold(strings.TrimSpace(status), "accepted") &&
-		normalizeCodeForReferenceCompare(submittedSource) != normalizeCodeForReferenceCompare(solutionCode.String) {
-		referenceCode = strings.TrimSpace(solutionCode.String)
-	}
+	feedbackSafe := sanitizeSubmissionFeedbackForClient(feedback.String)
 
 	c.JSON(http.StatusOK, gin.H{
 		"id":            subID,
 		"status":        status,
 		"score":         score,
-		"compileOutput": compileOutput.String,
-		"runLog":        runLog.String,
-		"feedback":      feedback.String,
-		"referenceCode": referenceCode,
+		"compileOutput": trimTextForClient(compileOutput.String, 16000),
+		"runLog":        trimTextForClient(runLog.String, 16000),
+		"feedback":      feedbackSafe,
+		"referenceCode": "",
 		"createdAt":     createdAt,
 	})
 }
@@ -1011,4 +1024,73 @@ func normalizeRunPreviewResult(result judge.Result) judge.Result {
 	preview.Status = "ran"
 	preview.RunLog = ""
 	return preview
+}
+
+func validateSubmissionPayloadSize(limitBytes int, sourceCode string, files []submissionFilePayload) error {
+	if limitBytes <= 0 {
+		return nil
+	}
+	total := len(sourceCode)
+	for _, file := range files {
+		total += len(file.Path)
+		total += len(file.Content)
+	}
+	if total <= limitBytes {
+		return nil
+	}
+	return errors.New("submission payload is too large")
+}
+
+func trimTextForClient(raw string, maxRunes int) string {
+	text := strings.TrimSpace(raw)
+	if maxRunes <= 0 || text == "" {
+		return text
+	}
+	runes := []rune(text)
+	if len(runes) <= maxRunes {
+		return text
+	}
+	return string(runes[:maxRunes]) + "\n... output truncated ..."
+}
+
+func sanitizeSubmissionFeedbackForClient(raw string) string {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" || trimmed == "null" {
+		return "[]"
+	}
+	var tests []judge.TestResult
+	if err := json.Unmarshal([]byte(trimmed), &tests); err != nil {
+		return "[]"
+	}
+	type safeTest struct {
+		Index  int    `json:"index"`
+		Passed bool   `json:"passed"`
+		Error  string `json:"error,omitempty"`
+	}
+	out := make([]safeTest, 0, len(tests))
+	for _, test := range tests {
+		out = append(out, safeTest{
+			Index:  test.Index,
+			Passed: test.Passed,
+			Error:  trimTextForClient(test.Error, 2000),
+		})
+	}
+	payload, err := json.Marshal(out)
+	if err != nil {
+		return "[]"
+	}
+	return string(payload)
+}
+
+func buildRunPreviewTestsPayload(tests []judge.TestResult) []gin.H {
+	out := make([]gin.H, 0, len(tests))
+	for _, test := range tests {
+		out = append(out, gin.H{
+			"index":  test.Index,
+			"passed": test.Passed,
+			"error":  trimTextForClient(test.Error, 1000),
+			"actual": trimTextForClient(test.Actual, 1000),
+		})
+	}
+	return out
 }

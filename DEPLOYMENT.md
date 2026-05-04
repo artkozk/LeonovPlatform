@@ -235,3 +235,59 @@ curl -fsS http://127.0.0.1:8510/readyz
 
 4. Runtime migrations:
 - `AUTO_MIGRATE=false` (для production-профиля; миграции идут через `leonovcare-migrator`)
+
+## 11. Plugin Backend Stabilization Update (append-only, 2026-05-05)
+
+### 11.1 Что было проблемой до фикса
+
+1. IDE-клиенту не хватало полного backend-контракта (`/template`, `/style-check`, `/reference-solution`, `/progress/reset`, `/sync`), поэтому часть сценариев работала через fallback и была нестабильной.
+2. Для больших курсов plugin получал задачи через fanout (`course -> lessons -> lesson details`) и создавал N+1 нагрузку.
+3. В `GET /submissions/{id}` возвращался raw `feedback` из judge, что могло раскрывать внутренние детали hidden-проверок.
+4. При ошибке Redis push в submit API пользователь получал `500`, хотя запись сабмита уже была создана в БД и могла быть обработана позже.
+5. Не было явных runtime-limitов на размер payload для run/submit запросов, что при очень больших решениях увеличивало риск деградации API.
+
+### 11.2 Как работает сейчас
+
+1. В backend добавлены endpoint’ы для plugin-контракта:
+- `GET /api/v1/tasks/:taskID/template`
+- `POST /api/v1/tasks/:taskID/style-check`
+- `GET /api/v1/tasks/:taskID/reference-solution`
+- `POST /api/v1/tasks/:taskID/progress/reset`
+- `POST /api/v1/sync`
+2. Плагин в `HttpPlatformApiClient` сначала использует `GET /api/v1/courses/:courseID/tasks-catalog`, а при ошибке автоматически падает в старый lesson-fanout путь.
+3. Ответ `GET /api/v1/submissions/:submissionID` отдает только sanitized feedback (без `input/expected` из тестов), поле `referenceCode` больше не используется для передачи эталона.
+4. При ошибке Redis в `POST /tasks/:taskID/submissions` backend сохраняет `queued` и возвращает `202` с `deferredDispatch=true`; дальше запись подхватывается reconciler-процессом worker.
+5. Добавлены ограничения payload:
+- `MAX_REQUEST_BODY_BYTES` (общий HTTP body лимит);
+- `MAX_SUBMISSION_SOURCE_BYTES` (лимит содержимого submit/run payload).
+
+### 11.3 Почему так сделано
+
+1. Полный контракт endpoint’ов убирает хрупкие клиентские обходы и снижает количество “плавающих” ошибок в IDE.
+2. `tasks-catalog` как первый путь критичен для производительности на курсах с очень большим числом уроков/задач.
+3. Санитизация feedback исключает утечку hidden-тестовой логики в пользовательский API.
+4. `deferredDispatch` при Redis-failure убирает ложный “submit failed” UX и предотвращает лишние повторные отправки.
+5. Размерные лимиты нужны как эксплуатационный предохранитель под реальные большие решения и высокий параллелизм.
+
+### 11.4 Что проверить после деплоя (обязательно)
+
+1. API контракт:
+```bash
+curl -fsS -H "Authorization: Bearer <token>" http://127.0.0.1:8510/api/v1/tasks/<task_id>/template
+curl -fsS -X POST -H "Authorization: Bearer <token>" http://127.0.0.1:8510/api/v1/sync
+```
+2. Submit reliability:
+- временно остановить Redis или симулировать push-failure;
+- проверить, что `POST /tasks/:taskID/submissions` возвращает `202` и `deferredDispatch=true`;
+- после восстановления Redis убедиться, что worker доводит submission до финального статуса.
+3. Security regression:
+- проверить, что `GET /submissions/:id` не содержит `expected`/`input` hidden-тестов;
+- проверить, что `GET /tasks/:taskID/reference-solution` до `accepted` возвращает запрет/недоступность.
+4. Performance regression:
+- на большом курсе убедиться, что plugin sync не вызывает fanout на каждый lesson при доступном `tasks-catalog`.
+
+### 11.5 Новые env-параметры (добавлены, старые секции не удаляются)
+
+1. Payload limits:
+- `MAX_REQUEST_BODY_BYTES=16777216`
+- `MAX_SUBMISSION_SOURCE_BYTES=8388608`

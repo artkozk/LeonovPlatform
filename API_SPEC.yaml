@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Leonov Care Platform API
-  version: 1.0.3-launch-2026-05-05
+  version: 1.0.4-launch-2026-05-05
   description: |
     Production launch API contract.
     OAuth login routes are intentionally excluded from launch scope.
@@ -247,6 +247,26 @@ paths:
       responses:
         '200':
           description: Task details
+  /tasks/{taskID}/template:
+    get:
+      tags: [Learning]
+      security:
+        - bearerAuth: []
+      summary: Task template files for IDE/plugin clients
+      description: >
+        Returns starter template mapped to `task.mainFilePath`.
+        This endpoint exists to remove client-side template inference and keep plugin behavior deterministic.
+      parameters:
+        - in: path
+          name: taskID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Template files
+        '404':
+          $ref: '#/components/responses/NotFound'
   /tasks/{taskID}/submissions:
     post:
       tags: [Learning]
@@ -272,8 +292,68 @@ paths:
       responses:
         '202':
           description: Queued (or immediate source-policy rejection with wrong_answer status)
+        '413':
+          description: Submission payload too large
         '402':
           description: Plan limit reached
+  /tasks/{taskID}/style-check:
+    post:
+      tags: [Learning]
+      security:
+        - bearerAuth: []
+      summary: Server-side style analysis result for IDE/plugin clients
+      description: >
+        Current backend implementation returns an empty `items` array when style rules are not configured.
+      parameters:
+        - in: path
+          name: taskID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Style check result
+  /tasks/{taskID}/reference-solution:
+    get:
+      tags: [Learning]
+      security:
+        - bearerAuth: []
+      summary: Reference solution for solved tasks
+      description: >
+        Access is allowed after accepted submission for the task (or admin role).
+        Endpoint exists so canonical solution is no longer leaked via submission polling response.
+      parameters:
+        - in: path
+          name: taskID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Reference solution availability and files
+        '403':
+          description: Task is not solved yet
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /tasks/{taskID}/progress/reset:
+    post:
+      tags: [Learning]
+      security:
+        - bearerAuth: []
+      summary: Reset user progress for the selected task
+      description: >
+        Removes user submissions and XP events for the selected task and recalculates user XP/level baseline.
+      parameters:
+        - in: path
+          name: taskID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Progress reset
+        '404':
+          $ref: '#/components/responses/NotFound'
   /tasks/{taskID}/run:
     post:
       tags: [Learning]
@@ -299,6 +379,8 @@ paths:
       responses:
         '200':
           description: Judge result for current code
+        '413':
+          description: Source payload too large
         '404':
           $ref: '#/components/responses/NotFound'
   /submissions/{submissionID}:
@@ -307,6 +389,9 @@ paths:
       security:
         - bearerAuth: []
       summary: Get submission verdict
+      description: >
+        `feedback` is sanitized before response (no hidden test input/expected payloads).
+        `referenceCode` is intentionally empty; use `/tasks/{taskID}/reference-solution` instead.
       parameters:
         - in: path
           name: submissionID
@@ -316,6 +401,18 @@ paths:
       responses:
         '200':
           description: Submission status
+  /sync:
+    post:
+      tags: [Learning]
+      security:
+        - bearerAuth: []
+      summary: Sync endpoint for IDE/plugin clients
+      description: >
+        Lightweight sync status endpoint used by plugin UX; canonical task/status refresh still happens through
+        course/task endpoints after this call.
+      responses:
+        '200':
+          description: Sync result counters and serverTime
   /leaderboard:
     get:
       tags: [Learning]
