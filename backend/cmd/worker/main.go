@@ -6,12 +6,10 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 
 	"leonovcare/backend/internal/app"
 	"leonovcare/backend/internal/config"
-	"leonovcare/backend/internal/db"
 	"leonovcare/backend/internal/seed"
 )
 
@@ -29,15 +27,6 @@ func main() {
 	}
 	defer application.Close()
 
-	if cfg.EnableAutoMigrate {
-		migrationsDir := "migrations"
-		if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
-			migrationsDir = filepath.Join("backend", "migrations")
-		}
-		if err := db.ApplyMigrations(ctx, application.DB, migrationsDir); err != nil {
-			log.Fatalf("apply migrations: %v", err)
-		}
-	}
 	if cfg.EnableAutoSeed {
 		if err := seed.EnsureDemoCourse(ctx, application.DB); err != nil {
 			log.Fatalf("seed demo course: %v", err)

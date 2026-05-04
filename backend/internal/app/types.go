@@ -33,8 +33,9 @@ type QueueJob struct {
 }
 
 type APIError struct {
-	Error   string `json:"error"`
-	Details string `json:"details,omitempty"`
+	Error     string `json:"error"`
+	Details   string `json:"details,omitempty"`
+	RequestID string `json:"requestId,omitempty"`
 }
 
 func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, error) {

@@ -1,7 +1,7 @@
 import { Check, ChevronDown, ChevronRight, FileCode2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { getCourse, getLesson, listCourses, submissionHistory } from "../api/client";
+import { getCourse, getCourseTasksCatalog, listCourses, submissionHistory } from "../api/client";
 
 type CourseOption = {
   id: string;
@@ -119,35 +119,28 @@ export function TasksPage() {
       setLoadingTasks(true);
       setError("");
       try {
-        const course = await getCourse(selectedCourseId);
-        const lessons = Array.isArray(course?.lessons) ? course.lessons : [];
+        const [courseData, catalogData] = await Promise.all([
+          getCourse(selectedCourseId),
+          getCourseTasksCatalog(selectedCourseId),
+        ]);
+        if (!courseData?.course?.id) {
+          throw new Error("course not found");
+        }
 
-        const lessonResults = await Promise.allSettled(
-          lessons.map((lesson: any) => getLesson(String(lesson.id)))
-        );
-
-        const nextTasks: TaskCatalogItem[] = [];
-
-        lessonResults.forEach((result) => {
-          if (result.status !== "fulfilled") return;
-          const lessonData = result.value;
-          const lessonInfo = lessonData?.lesson;
-          const lessonTasks = Array.isArray(lessonData?.tasks) ? lessonData.tasks : [];
-
-          lessonTasks.forEach((task: any) => {
-            nextTasks.push({
-              id: String(task.id),
-              title: String(task.title ?? "Без названия"),
-              difficulty: Number(task.difficulty ?? 1),
-              xpReward: Number(task.xpReward ?? 0),
-              topic: String(task.topic ?? "General"),
-              language: String(task.language ?? "python"),
-              lessonId: String(lessonInfo?.id ?? ""),
-              lessonTitle: String(lessonInfo?.title ?? "Урок"),
-              moduleTitle: String(lessonInfo?.moduleTitle ?? "Модуль"),
-            });
-          });
-        });
+        const catalogItems = Array.isArray(catalogData?.items) ? catalogData.items : [];
+        const nextTasks: TaskCatalogItem[] = catalogItems
+          .map((task: any) => ({
+            id: String(task.taskId ?? task.id ?? ""),
+            title: String(task.title ?? "Без названия"),
+            difficulty: Number(task.difficulty ?? 1),
+            xpReward: Number(task.xp ?? task.xpReward ?? 0),
+            topic: String(task.topic ?? "General"),
+            language: String(task.language ?? "python"),
+            lessonId: String(task.lessonId ?? ""),
+            lessonTitle: String(task.lessonTitle ?? "Урок"),
+            moduleTitle: String(task.moduleTitle ?? "Модуль"),
+          }))
+          .filter((task) => task.id);
 
         setTasks(nextTasks);
       } catch (e: any) {

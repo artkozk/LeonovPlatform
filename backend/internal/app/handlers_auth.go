@@ -232,22 +232,62 @@ func (a *App) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	var exists bool
-	err = a.DB.QueryRow(c.Request.Context(), `
-		SELECT EXISTS(
-			SELECT 1 FROM refresh_tokens WHERE token = $1 AND user_id = $2 AND expires_at > NOW()
-		)
-	`, req.RefreshToken, claims.UserID).Scan(&exists)
-	if err != nil || !exists {
-		unauthorized(c, "refresh session expired")
-		return
-	}
-
-	accessToken, refreshToken, err := a.issueTokens(c, claims.UserID, claims.Role)
+	tx, err := a.DB.Begin(c.Request.Context())
 	if err != nil {
 		internalServerError(c, err)
 		return
 	}
+	defer tx.Rollback(c.Request.Context())
+
+	var (
+		role      string
+		isBlocked bool
+	)
+	if err := tx.QueryRow(c.Request.Context(), `
+		SELECT role, is_blocked
+		FROM users
+		WHERE id = $1
+		FOR UPDATE
+	`, claims.UserID).Scan(&role, &isBlocked); err != nil {
+		unauthorized(c, "refresh session expired")
+		return
+	}
+	if isBlocked {
+		c.JSON(http.StatusForbidden, APIError{Error: "account blocked"})
+		return
+	}
+
+	if err := tx.QueryRow(c.Request.Context(), `
+		DELETE FROM refresh_tokens
+		WHERE token = $1 AND user_id = $2 AND expires_at > NOW()
+		RETURNING token
+	`, req.RefreshToken, claims.UserID).Scan(new(string)); err != nil {
+		unauthorized(c, "refresh session expired")
+		return
+	}
+
+	accessToken, err := security.CreateToken(claims.UserID, role, "access", a.Cfg.JWTAccessSecret, a.Cfg.JWTAccessTTL)
+	if err != nil {
+		internalServerError(c, err)
+		return
+	}
+	refreshToken, err := security.CreateToken(claims.UserID, role, "refresh", a.Cfg.JWTRefreshSecret, a.Cfg.JWTRefreshTTL)
+	if err != nil {
+		internalServerError(c, err)
+		return
+	}
+	if _, err := tx.Exec(c.Request.Context(), `
+		INSERT INTO refresh_tokens(token, user_id, expires_at)
+		VALUES($1, $2, NOW() + ($3::int * interval '1 second'))
+	`, refreshToken, claims.UserID, int(a.Cfg.JWTRefreshTTL.Seconds())); err != nil {
+		internalServerError(c, err)
+		return
+	}
+	if err := tx.Commit(c.Request.Context()); err != nil {
+		internalServerError(c, err)
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"accessToken":     accessToken,
 		"refreshToken":    refreshToken,
@@ -370,6 +410,10 @@ func (a *App) ResetPassword(c *gin.Context) {
 		return
 	}
 	if _, err := tx.Exec(c.Request.Context(), `DELETE FROM password_resets WHERE user_id=$1`, userID); err != nil {
+		internalServerError(c, err)
+		return
+	}
+	if _, err := tx.Exec(c.Request.Context(), `DELETE FROM refresh_tokens WHERE user_id=$1`, userID); err != nil {
 		internalServerError(c, err)
 		return
 	}

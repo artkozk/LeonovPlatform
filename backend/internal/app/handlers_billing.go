@@ -3,8 +3,8 @@ package app
 import (
 	"bytes"
 	"context"
-	"crypto/md5"
 	"crypto/hmac"
+	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -83,7 +83,7 @@ func (a *App) ListPlans(c *gin.Context) {
 		items = append(items, gin.H{
 			"code": code, "title": title, "description": description, "priceRub": price,
 			"dailySubmissionLimit": daily,
-			"features": gin.H{"priorityQueue": priority, "personalHints": hints, "extendedAnalytics": analytics},
+			"features":             gin.H{"priorityQueue": priority, "personalHints": hints, "extendedAnalytics": analytics},
 		})
 	}
 	c.JSON(http.StatusOK, gin.H{"items": items})
@@ -226,8 +226,8 @@ func (a *App) CreateCheckout(c *gin.Context) {
 		providerStatus := "provider_error"
 		responseStatus := http.StatusBadGateway
 		responseBody := any(APIError{
-			Error:   "failed to create cardlink checkout",
-			Details: createErr.Error(),
+			Error:     "internal server error",
+			RequestID: requestIDFromContext(c),
 		})
 		providerMode := "provider_error"
 		providerDetails := strings.TrimSpace(createErr.Error())
@@ -241,10 +241,10 @@ func (a *App) CreateCheckout(c *gin.Context) {
 			providerMissing = missing
 			responseStatus = http.StatusServiceUnavailable
 			responseBody = gin.H{
-				"error":   "payment provider is not configured",
-				"details": blockedDetails,
-				"missing": missing,
-				"status":  "pending_config",
+				"error":     "payment provider is not configured",
+				"details":   blockedDetails,
+				"missing":   missing,
+				"status":    "pending_config",
 				"paymentId": paymentID,
 				"provider":  "cardlink",
 			}
@@ -482,7 +482,7 @@ func (a *App) CardlinkWebhook(c *gin.Context) {
 
 	paymentOrderID, providerBillID, normalizedStatus, payloadJSON, err := a.parseCardlinkWebhook(c, raw)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, APIError{Error: "invalid webhook payload", Details: err.Error()})
+		c.JSON(http.StatusUnauthorized, APIError{Error: "invalid webhook payload"})
 		return
 	}
 
@@ -564,7 +564,7 @@ func (a *App) handleCardlinkReturn(c *gin.Context, fallbackStatus string) {
 		return
 	}
 	if verifyErr := a.verifyCardlinkFormSignature(outSum, paymentOrderID, signature); verifyErr != nil {
-		c.JSON(http.StatusUnauthorized, APIError{Error: "invalid return payload", Details: verifyErr.Error()})
+		c.JSON(http.StatusUnauthorized, APIError{Error: "invalid return payload"})
 		return
 	}
 

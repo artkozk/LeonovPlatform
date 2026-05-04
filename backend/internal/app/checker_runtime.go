@@ -19,6 +19,11 @@ import (
 
 const submissionBundlePrefix = "__LC_BUNDLE_V1__\n"
 
+const (
+	checkerDockerImage  = "python:3.12-alpine"
+	checkerDockerRunLog = "docker sandbox is required for checker execution"
+)
+
 type submissionFilePayload struct {
 	Path    string `json:"path"`
 	Content string `json:"content"`
@@ -248,6 +253,90 @@ func runShellCommand(ctx context.Context, workdir, command string) (string, erro
 	return runCommandWithTimeout(ctx, "bash", []string{"-lc", command}, workdir, "")
 }
 
+func checkerDockerUnavailableResult(runLog string) judge.Result {
+	if strings.TrimSpace(runLog) == "" {
+		runLog = checkerDockerRunLog
+	}
+	return judge.Result{
+		Status:        "failed",
+		CompileOutput: "docker is not available",
+		RunLog:        runLog,
+		Tests:         []judge.TestResult{},
+	}
+}
+
+func runDockerCommandWithTimeout(ctx context.Context, workspace, image string, command []string, env map[string]string) (string, error, bool) {
+	workspaceMount := filepath.ToSlash(workspace) + ":/workspace"
+	args := []string{
+		"run",
+		"--rm",
+		"--network", "none",
+		"--memory", "256m",
+		"--cpus", "1.0",
+		"--pids-limit", "128",
+		"--read-only",
+		"--tmpfs", "/tmp:size=64m",
+		"-v", workspaceMount,
+		"-w", "/workspace",
+	}
+	for key, val := range env {
+		args = append(args, "-e", key+"="+val)
+	}
+	args = append(args, image)
+	args = append(args, command...)
+
+	cmd := exec.CommandContext(ctx, "docker", args...)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+		return strings.TrimSpace(stdout.String() + "\n" + stderr.String()), err, true
+	}
+	output := strings.TrimSpace(stdout.String())
+	errOutput := strings.TrimSpace(stderr.String())
+	if errOutput != "" {
+		if output == "" {
+			output = errOutput
+		} else {
+			output = output + "\n" + errOutput
+		}
+	}
+	return output, err, false
+}
+
+func normalizeCommandForAllowlist(raw string) string {
+	parts := strings.Fields(strings.ToLower(strings.TrimSpace(raw)))
+	return strings.Join(parts, " ")
+}
+
+func (a *App) ideCheckerCommandAllowedInProduction(command string) bool {
+	normalized := normalizeCommandForAllowlist(command)
+	if normalized == "" {
+		return false
+	}
+
+	allowlistRaw := strings.TrimSpace(a.Cfg.IDECheckerAllowedCommands)
+	allowed := make(map[string]struct{})
+	if allowlistRaw != "" {
+		for _, chunk := range strings.FieldsFunc(allowlistRaw, func(r rune) bool {
+			return r == ',' || r == '\n' || r == ';'
+		}) {
+			entry := normalizeCommandForAllowlist(chunk)
+			if entry != "" {
+				allowed[entry] = struct{}{}
+			}
+		}
+	} else {
+		for _, entry := range []string{"python -m pytest", "pytest"} {
+			allowed[normalizeCommandForAllowlist(entry)] = struct{}{}
+		}
+	}
+	_, ok := allowed[normalized]
+	return ok
+}
+
 func parseTaskSourcePolicy(sourcePolicyRaw string) taskSourcePolicyEnvelope {
 	trimmed := strings.TrimSpace(sourcePolicyRaw)
 	if trimmed == "" {
@@ -435,10 +524,8 @@ func (a *App) evaluatePythonPytestChecker(sourceCode string, files []submissionF
 	if strings.TrimSpace(checker.PytestCode) == "" {
 		return judge.Result{Status: "failed", CompileOutput: "pytest_code is empty", RunLog: "checker is not configured"}
 	}
-
-	pythonBin, err := detectPythonBinaryForChecker()
-	if err != nil {
-		return judge.Result{Status: "failed", CompileOutput: err.Error(), RunLog: "python runtime is not available"}
+	if _, err := exec.LookPath("docker"); err != nil {
+		return checkerDockerUnavailableResult(checkerDockerRunLog)
 	}
 
 	workspace, err := os.MkdirTemp("", "lc-pytest-check-*")
@@ -545,7 +632,7 @@ print(json.dumps(result, ensure_ascii=False))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSec)*time.Second)
 	defer cancel()
 
-	output, runErr, timedOut := runCommandWithTimeout(ctx, pythonBin, []string{"__lc_runner.py"}, workspace, "")
+	output, runErr, timedOut := runDockerCommandWithTimeout(ctx, workspace, checkerDockerImage, []string{"python3", "__lc_runner.py"}, nil)
 	if timedOut {
 		return judge.Result{Status: "time_limit", CompileOutput: "Execution timeout", RunLog: "pytest checker timeout"}
 	}
@@ -568,10 +655,8 @@ func (a *App) evaluateHTTPAPIChecker(sourceCode string, files []submissionFilePa
 	if len(checker.Tests) == 0 {
 		return judge.Result{Status: "failed", CompileOutput: "http_api tests are empty", RunLog: "checker is not configured"}
 	}
-
-	pythonBin, err := detectPythonBinaryForChecker()
-	if err != nil {
-		return judge.Result{Status: "failed", CompileOutput: err.Error(), RunLog: "python runtime is not available"}
+	if _, err := exec.LookPath("docker"); err != nil {
+		return checkerDockerUnavailableResult(checkerDockerRunLog)
 	}
 
 	workspace, err := os.MkdirTemp("", "lc-http-check-*")
@@ -596,6 +681,13 @@ func (a *App) evaluateHTTPAPIChecker(sourceCode string, files []submissionFilePa
 	}
 	if err := os.WriteFile(filepath.Join(workspace, "__lc_http_tests.json"), testsBytes, 0o644); err != nil {
 		return judge.Result{Status: "failed", CompileOutput: err.Error(), RunLog: "unable to write tests"}
+	}
+	entryConfigBytes, err := json.Marshal(map[string]string{"entryFile": entryFile})
+	if err != nil {
+		return judge.Result{Status: "failed", CompileOutput: err.Error(), RunLog: "unable to serialize entry file"}
+	}
+	if err := os.WriteFile(filepath.Join(workspace, "__lc_http_entry.json"), entryConfigBytes, 0o644); err != nil {
+		return judge.Result{Status: "failed", CompileOutput: err.Error(), RunLog: "unable to write entry metadata"}
 	}
 
 	runnerScript := `import asyncio
@@ -659,7 +751,9 @@ sys.modules["fastapi"] = fastapi_mod
 
 result = {"status": "accepted", "compile_output": "", "run_log": "", "tests": []}
 
-entry_file = pathlib.Path("` + entryFile + `")
+with open("__lc_http_entry.json", "r", encoding="utf-8") as f:
+    entry_cfg = json.load(f)
+entry_file = pathlib.Path(str(entry_cfg.get("entryFile", "main.py")))
 if not entry_file.exists():
     result["status"] = "failed"
     result["run_log"] = f"entry file not found: {entry_file}"
@@ -782,7 +876,7 @@ print(json.dumps(result, ensure_ascii=False))
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSec)*time.Second)
 	defer cancel()
 
-	output, runErr, timedOut := runCommandWithTimeout(ctx, pythonBin, []string{"__lc_http_runner.py"}, workspace, "")
+	output, runErr, timedOut := runDockerCommandWithTimeout(ctx, workspace, checkerDockerImage, []string{"python3", "__lc_http_runner.py"}, nil)
 	if timedOut {
 		return judge.Result{Status: "time_limit", CompileOutput: "Execution timeout", RunLog: "http_api checker timeout"}
 	}
@@ -960,6 +1054,18 @@ func (a *App) evaluateIDEPluginChecker(sourceCode string, files []submissionFile
 		if cmdText == "" {
 			continue
 		}
+		if strings.EqualFold(strings.TrimSpace(a.Cfg.Environment), "production") && !a.ideCheckerCommandAllowedInProduction(cmdText) {
+			tr := judge.TestResult{
+				Index:    len(tests) + 1,
+				Input:    cmdText,
+				Expected: "allowlisted command",
+				Actual:   "",
+				Passed:   false,
+				Error:    "command is blocked in production (not in IDE checker allowlist)",
+			}
+			tests = append(tests, tr)
+			continue
+		}
 		timeoutSec := command.TimeoutSec
 		if timeoutSec <= 0 {
 			timeoutSec = 8
@@ -1018,6 +1124,16 @@ func (a *App) evaluateTaskByPolicy(taskLanguage, sourceCode string, files []subm
 	source := sourceCode
 	if strings.TrimSpace(source) == "" {
 		source = firstNonEmptySourceFromFiles(files)
+	}
+	if violation, err := evaluateTaskSourcePolicy(sourcePolicyRaw, taskLanguage, source); err != nil {
+		return judge.Result{
+			Status:        "failed",
+			CompileOutput: err.Error(),
+			RunLog:        "source policy evaluation failed",
+			Tests:         []judge.TestResult{},
+		}
+	} else if violation != "" {
+		return sourcePolicyViolationResult(violation)
 	}
 
 	switch checkerType {

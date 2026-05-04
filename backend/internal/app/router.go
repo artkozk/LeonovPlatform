@@ -1,14 +1,16 @@
 package app
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 func (a *App) Router() *gin.Engine {
 	r := gin.New()
-	r.Use(gin.Recovery(), gin.Logger(), func(c *gin.Context) {
+	r.Use(gin.Recovery(), gin.Logger(), requestIDMiddleware(), gzipMiddleware(), func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", a.Cfg.FrontendURL)
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
@@ -23,17 +25,39 @@ func (a *App) Router() *gin.Engine {
 	r.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok", "service": a.Cfg.AppName})
 	})
+	r.GET("/readyz", func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+		defer cancel()
+
+		dbErr := a.DB.Ping(ctx)
+		redisErr := a.Redis.Ping(ctx).Err()
+		if dbErr != nil || redisErr != nil {
+			if dbErr != nil {
+				_ = c.Error(dbErr)
+			}
+			if redisErr != nil {
+				_ = c.Error(redisErr)
+			}
+			c.JSON(http.StatusServiceUnavailable, APIError{Error: "internal server error", RequestID: requestIDFromContext(c)})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "ready", "service": a.Cfg.AppName})
+	})
 
 	api := r.Group("/api/v1")
 	{
-		api.POST("/auth/register", a.Register)
-		api.POST("/auth/login", a.Login)
-		api.POST("/auth/refresh", a.RefreshToken)
-		api.POST("/auth/verify-email", a.VerifyEmail)
-		api.POST("/auth/forgot-password", a.ForgotPassword)
-		api.POST("/auth/reset-password", a.ResetPassword)
+		auth := api.Group("/auth")
+		auth.Use(a.rateLimitMiddleware("auth", a.Cfg.AuthRateLimitPerMinute))
+		{
+			auth.POST("/register", a.Register)
+			auth.POST("/login", a.Login)
+			auth.POST("/refresh", a.RefreshToken)
+			auth.POST("/verify-email", a.VerifyEmail)
+			auth.POST("/forgot-password", a.ForgotPassword)
+			auth.POST("/reset-password", a.ResetPassword)
+		}
 
-		api.POST("/payments/cardlink/webhook", a.CardlinkWebhook)
+		api.POST("/payments/cardlink/webhook", a.rateLimitMiddleware("webhook", a.Cfg.WebhookRateLimitPerMinute), a.CardlinkWebhook)
 		api.POST("/payments/cardlink/return/success", a.CardlinkReturnSuccess)
 		api.POST("/payments/cardlink/return/fail", a.CardlinkReturnFail)
 		api.GET("/payments/cardlink/return/success", a.CardlinkReturnSuccess)
@@ -49,13 +73,14 @@ func (a *App) Router() *gin.Engine {
 
 			authed.GET("/courses", a.ListCourses)
 			authed.GET("/courses/:courseID", a.GetCourse)
+			authed.GET("/courses/:courseID/tasks-catalog", a.GetCourseTasksCatalog)
 			authed.GET("/lessons/:lessonID", a.GetLesson)
 			authed.POST("/lessons/:lessonID/quiz-check", a.CheckLessonQuiz)
 			authed.GET("/tasks/:taskID", a.GetTask)
 			authed.POST("/tasks/:taskID/run", a.RunTask)
 			authed.POST("/tasks/:taskID/submissions", a.CreateSubmission)
 			authed.GET("/submissions/:submissionID", a.GetSubmission)
-			authed.POST("/ai/task-hint", a.TaskHint)
+			authed.POST("/ai/task-hint", a.rateLimitMiddleware("ai_hint", a.Cfg.AIHintRateLimitPerMinute), a.TaskHint)
 			authed.GET("/leaderboard", a.Leaderboard)
 
 			authed.GET("/plans", a.ListPlans)

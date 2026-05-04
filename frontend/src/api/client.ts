@@ -142,6 +142,11 @@ export async function getCourse(courseId: string) {
   return data;
 }
 
+export async function getCourseTasksCatalog(courseId: string) {
+  const { data } = await http.get(`/courses/${courseId}/tasks-catalog`);
+  return data;
+}
+
 export async function getLesson(lessonId: string) {
   const { data } = await http.get(`/lessons/${lessonId}`);
   return data;

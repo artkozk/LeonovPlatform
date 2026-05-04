@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Leonov Care Platform API
-  version: 1.0.2-launch-2026-04-29
+  version: 1.0.3-launch-2026-05-05
   description: |
     Production launch API contract.
     OAuth login routes are intentionally excluded from launch scope.
@@ -182,7 +182,7 @@ paths:
       tags: [Learning]
       security:
         - bearerAuth: []
-      summary: Course details with lessons
+      summary: Course details with lessons (includes blockCount per lesson)
       parameters:
         - in: path
           name: courseID
@@ -192,6 +192,23 @@ paths:
       responses:
         '200':
           description: Course details
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /courses/{courseID}/tasks-catalog:
+    get:
+      tags: [Learning]
+      security:
+        - bearerAuth: []
+      summary: Flat tasks catalog for selected course (no lesson fanout required)
+      parameters:
+        - in: path
+          name: courseID
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Course tasks catalog
         '404':
           $ref: '#/components/responses/NotFound'
   /lessons/{lessonID}:
@@ -254,7 +271,7 @@ paths:
                   type: string
       responses:
         '202':
-          description: Queued
+          description: Queued (or immediate source-policy rejection with wrong_answer status)
         '402':
           description: Plan limit reached
   /tasks/{taskID}/run:
@@ -342,11 +359,25 @@ paths:
               properties:
                 planCode:
                   type: string
-        responses:
-          '200':
-            description: Checkout created
-          '502':
-            description: Cardlink checkout creation failed
+      responses:
+        '200':
+          description: Checkout created
+        '502':
+          description: Internal upstream error (safe envelope)
+  /readyz:
+    get:
+      tags: [Admin]
+      summary: Readiness probe (DB + Redis)
+      servers:
+        - url: http://localhost:8080
+          description: Local readiness endpoint
+        - url: http://85.198.82.221:8510
+          description: Production readiness endpoint
+      responses:
+        '200':
+          description: Ready
+        '503':
+          description: Not ready
   /subscription/payments/{paymentID}:
     get:
       tags: [Billing]
@@ -422,9 +453,9 @@ paths:
                   type: string
                 SignatureValue:
                   type: string
-        responses:
-          '200':
-            description: Processed
+      responses:
+        '200':
+          description: Processed
         '401':
           $ref: '#/components/responses/Unauthorized'
   /admin/metrics/overview:
@@ -477,6 +508,8 @@ components:
         error:
           type: string
         details:
+          type: string
+        requestId:
           type: string
     RegisterRequest:
       type: object

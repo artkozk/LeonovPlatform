@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -98,9 +99,16 @@ func TestIsEquivalentOutputKeepsTokenOrderMeaningful(t *testing.T) {
 
 func TestSQLEngineEvaluateAccepted(t *testing.T) {
 	engine := NewJavaEngine(3, "local")
+	initSQL := `
+CREATE TABLE users(id INTEGER, name TEXT, active INTEGER);
+INSERT INTO users(id, name, active) VALUES
+  (1, 'Anna', 1),
+  (2, 'Bob', 0),
+  (3, 'Cleo', 1);
+`
 	source := "SELECT id, name FROM users WHERE active = 1 ORDER BY id;"
-	reference := "select id, name from users where active = 1 order by id"
-	res := engine.EvaluateSQL(source, []TestCase{{Expected: reference}})
+	reference := "SELECT id, name FROM users WHERE active = 1 ORDER BY id;"
+	res := engine.EvaluateSQL(source, []TestCase{{Input: initSQL, Expected: reference}})
 	if res.Status != "accepted" {
 		t.Fatalf("expected accepted, got %s; run=%s", res.Status, res.RunLog)
 	}
@@ -108,12 +116,36 @@ func TestSQLEngineEvaluateAccepted(t *testing.T) {
 
 func TestSQLEngineEvaluateWrongAnswer(t *testing.T) {
 	engine := NewJavaEngine(3, "local")
+	initSQL := `
+CREATE TABLE users(id INTEGER, name TEXT, active INTEGER);
+INSERT INTO users(id, name, active) VALUES
+  (1, 'Anna', 1),
+  (2, 'Bob', 0),
+  (3, 'Cleo', 1);
+`
 	source := "SELECT id, name FROM users ORDER BY id;"
-	reference := "select id, name from users where active = 1 order by id"
-	res := engine.EvaluateSQL(source, []TestCase{{Expected: reference}})
+	reference := "SELECT id, name FROM users WHERE active = 1 ORDER BY id;"
+	res := engine.EvaluateSQL(source, []TestCase{{Input: initSQL, Expected: reference}})
 	if res.Status != "wrong_answer" {
 		t.Fatalf("expected wrong_answer, got %s; run=%s", res.Status, res.RunLog)
 	}
+}
+
+func TestDockerModeFailsClosedWhenDockerUnavailable(t *testing.T) {
+	originalPath := os.Getenv("PATH")
+	t.Setenv("PATH", "")
+
+	engine := NewJavaEngine(3, "docker")
+	res := engine.EvaluatePython("print('ok')\n", []TestCase{{Input: "", Expected: "ok"}})
+	if res.Status != "failed" {
+		t.Fatalf("expected failed status, got %s", res.Status)
+	}
+	if !strings.Contains(strings.ToLower(res.CompileOutput), "docker") {
+		t.Fatalf("expected docker-related compile output, got %q", res.CompileOutput)
+	}
+
+	// Restore PATH early for test runners that spawn nested checks.
+	_ = os.Setenv("PATH", originalPath)
 }
 
 func TestDetectPythonBinaryFromCandidatesSkipsBrokenAlias(t *testing.T) {

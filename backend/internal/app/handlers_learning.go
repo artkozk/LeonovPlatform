@@ -169,9 +169,20 @@ func (a *App) GetCourse(c *gin.Context) {
 	}
 
 	rows, err := a.DB.Query(c.Request.Context(), `
-		SELECT l.id, l.title, l.position, m.title AS module_title
+		SELECT
+			l.id,
+			l.title,
+			l.position,
+			m.title AS module_title,
+			COALESCE(lb.block_count, 0) AS block_count
 		FROM lessons l
 		JOIN modules m ON m.id = l.module_id
+		LEFT JOIN (
+			SELECT lesson_id, COUNT(*)::int AS block_count
+			FROM lesson_blocks
+			WHERE is_published = TRUE
+			GROUP BY lesson_id
+		) lb ON lb.lesson_id = l.id
 		WHERE m.course_id = $1 AND l.is_published = TRUE
 		ORDER BY m.position, l.position
 	`, courseID)
@@ -186,18 +197,102 @@ func (a *App) GetCourse(c *gin.Context) {
 		Title       string `json:"title"`
 		Position    int    `json:"position"`
 		ModuleTitle string `json:"moduleTitle"`
+		BlockCount  int    `json:"blockCount"`
 	}
 	lessons := []lessonBrief{}
 	for rows.Next() {
 		var l lessonBrief
-		if err := rows.Scan(&l.ID, &l.Title, &l.Position, &l.ModuleTitle); err != nil {
+		if err := rows.Scan(&l.ID, &l.Title, &l.Position, &l.ModuleTitle, &l.BlockCount); err != nil {
 			internalServerError(c, err)
 			return
 		}
 		lessons = append(lessons, l)
 	}
+	if err := rows.Err(); err != nil {
+		internalServerError(c, err)
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"course": course, "lessons": lessons})
+}
+
+func (a *App) GetCourseTasksCatalog(c *gin.Context) {
+	courseID := c.Param("courseID")
+
+	var exists bool
+	if err := a.DB.QueryRow(c.Request.Context(), `
+		SELECT EXISTS(SELECT 1 FROM courses WHERE id = $1 AND is_published = TRUE)
+	`, courseID).Scan(&exists); err != nil {
+		internalServerError(c, err)
+		return
+	}
+	if !exists {
+		notFound(c, "course not found")
+		return
+	}
+
+	rows, err := a.DB.Query(c.Request.Context(), `
+		SELECT
+			t.id,
+			t.title,
+			t.difficulty,
+			t.xp_reward,
+			t.topic,
+			COALESCE(t.language, 'java') AS language,
+			l.id AS lesson_id,
+			l.title AS lesson_title,
+			m.title AS module_title
+		FROM tasks t
+		JOIN lessons l ON l.id = t.lesson_id
+		JOIN modules m ON m.id = l.module_id
+		WHERE m.course_id = $1
+		  AND l.is_published = TRUE
+		  AND t.is_published = TRUE
+		ORDER BY m.position, l.position, t.difficulty ASC, t.title ASC
+	`, courseID)
+	if err != nil {
+		internalServerError(c, err)
+		return
+	}
+	defer rows.Close()
+
+	type taskCatalogItem struct {
+		TaskID      string `json:"taskId"`
+		Title       string `json:"title"`
+		Difficulty  int    `json:"difficulty"`
+		XP          int    `json:"xp"`
+		Topic       string `json:"topic"`
+		Language    string `json:"language"`
+		LessonID    string `json:"lessonId"`
+		LessonTitle string `json:"lessonTitle"`
+		ModuleTitle string `json:"moduleTitle"`
+	}
+
+	items := make([]taskCatalogItem, 0)
+	for rows.Next() {
+		var item taskCatalogItem
+		if err := rows.Scan(
+			&item.TaskID,
+			&item.Title,
+			&item.Difficulty,
+			&item.XP,
+			&item.Topic,
+			&item.Language,
+			&item.LessonID,
+			&item.LessonTitle,
+			&item.ModuleTitle,
+		); err != nil {
+			internalServerError(c, err)
+			return
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		internalServerError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"items": items})
 }
 
 func (a *App) GetLesson(c *gin.Context) {
@@ -455,6 +550,20 @@ func (a *App) RunTask(c *gin.Context) {
 		notFound(c, "task not found")
 		return
 	}
+	if violation, err := evaluateTaskSourcePolicy(sourcePolicyRaw, language, source); err != nil {
+		internalServerError(c, err)
+		return
+	} else if violation != "" {
+		result := normalizeRunPreviewResult(sourcePolicyViolationResult(violation))
+		c.JSON(http.StatusOK, gin.H{
+			"status":        result.Status,
+			"score":         result.Score,
+			"compileOutput": result.CompileOutput,
+			"runLog":        result.RunLog,
+			"tests":         result.Tests,
+		})
+		return
+	}
 
 	rows, err := a.DB.Query(c.Request.Context(), `
 		SELECT input_data, expected_output
@@ -520,11 +629,12 @@ func (a *App) CreateSubmission(c *gin.Context) {
 	taskID := c.Param("taskID")
 	var maxAttempts int
 	var taskLanguage string
+	var sourcePolicyRaw string
 	if err := a.DB.QueryRow(c.Request.Context(), `
-		SELECT max_attempts, COALESCE(language, 'java')
+		SELECT max_attempts, COALESCE(language, 'java'), COALESCE(source_policy::text, '{}'::text)
 		FROM tasks
 		WHERE id = $1 AND is_published = TRUE
-	`, taskID).Scan(&maxAttempts, &taskLanguage); err != nil {
+	`, taskID).Scan(&maxAttempts, &taskLanguage, &sourcePolicyRaw); err != nil {
 		notFound(c, "task not found")
 		return
 	}
@@ -564,6 +674,28 @@ func (a *App) CreateSubmission(c *gin.Context) {
 	}
 	if maxAttempts > 0 && taskAttempts >= maxAttempts {
 		c.JSON(http.StatusTooManyRequests, APIError{Error: "max attempts exceeded for this task"})
+		return
+	}
+
+	if violation, err := evaluateTaskSourcePolicy(sourcePolicyRaw, taskLanguage, sourceCode); err != nil {
+		internalServerError(c, err)
+		return
+	} else if violation != "" {
+		submissionID := uuid.NewString()
+		encodedSource := encodeSubmissionSourceBundle(sourceCode, req.Files)
+		_, err = a.DB.Exec(c.Request.Context(), `
+			INSERT INTO submissions(id, user_id, task_id, source_code, status, score, attempts_used, compile_output, run_log, feedback)
+			VALUES($1, $2, $3, $4, 'wrong_answer', 0, $5, $6, $7, '[]'::jsonb)
+		`, submissionID, uctx.ID, taskID, encodedSource, taskAttempts+1, violation, "source policy check failed")
+		if err != nil {
+			internalServerError(c, err)
+			return
+		}
+		c.JSON(http.StatusAccepted, gin.H{
+			"submissionId":          submissionID,
+			"status":                "wrong_answer",
+			"sourcePolicyViolation": true,
+		})
 		return
 	}
 

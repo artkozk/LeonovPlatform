@@ -10,10 +10,32 @@ import (
 	"leonovcare/backend/internal/judge"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/redis/go-redis/v9"
 )
 
+type claimedSubmission struct {
+	SubmissionID    string
+	UserID          string
+	TaskID          string
+	SourceCodeRaw   string
+	TaskLanguage    string
+	SourcePolicyRaw string
+	SolutionCode    string
+}
+
 func (a *App) RunSubmissionWorker(ctx context.Context) error {
-	a.Log.Info("submission worker started", "queue", a.Cfg.SubmissionQueueName)
+	mainQueue := strings.TrimSpace(a.Cfg.SubmissionQueueName)
+	processingQueue := strings.TrimSpace(a.Cfg.SubmissionProcessingQueueName)
+	if mainQueue == "" {
+		mainQueue = "submission_jobs"
+	}
+	if processingQueue == "" {
+		processingQueue = mainQueue + "_processing"
+	}
+
+	a.Log.Info("submission worker started", "queue", mainQueue, "processingQueue", processingQueue)
+	go a.runSubmissionQueueReconciler(ctx, mainQueue)
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -21,50 +43,176 @@ func (a *App) RunSubmissionWorker(ctx context.Context) error {
 		default:
 		}
 
-		result, err := a.Redis.BLPop(ctx, 5*time.Second, a.Cfg.SubmissionQueueName).Result()
+		payload, err := a.Redis.BRPopLPush(ctx, mainQueue, processingQueue, 5*time.Second).Result()
 		if err != nil {
+			if err == redis.Nil {
+				continue
+			}
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			a.Log.Warn("failed to pop submission job", "error", err)
 			continue
 		}
-		if len(result) < 2 {
+		payload = strings.TrimSpace(payload)
+		if payload == "" {
 			continue
 		}
+
 		var job QueueJob
-		if err := json.Unmarshal([]byte(result[1]), &job); err != nil {
-			a.Log.Warn("invalid queue job", "error", err)
+		if err := json.Unmarshal([]byte(payload), &job); err != nil {
+			a.Log.Warn("invalid queue job", "payload", payload, "error", err)
+			if ackErr := a.ackSubmissionProcessingPayload(ctx, processingQueue, payload); ackErr != nil {
+				a.Log.Error("failed to ack broken queue payload", "error", ackErr)
+			}
 			continue
 		}
-		if err := a.processSubmissionByID(ctx, job.SubmissionID); err != nil {
-			a.Log.Error("failed to process submission", "submissionId", job.SubmissionID, "error", err)
-			if retryErr := a.handleSubmissionProcessingError(ctx, job.SubmissionID, err); retryErr != nil {
+
+		processErr := a.processSubmissionByID(ctx, job.SubmissionID)
+		if processErr != nil {
+			a.Log.Error("failed to process submission", "submissionId", job.SubmissionID, "error", processErr)
+			if retryErr := a.handleSubmissionProcessingError(ctx, job.SubmissionID, processErr); retryErr != nil {
 				a.Log.Error("failed to retry submission", "submissionId", job.SubmissionID, "error", retryErr)
+			}
+		}
+
+		if ackErr := a.ackSubmissionProcessingPayload(ctx, processingQueue, payload); ackErr != nil {
+			a.Log.Error("failed to ack processed queue job", "submissionId", job.SubmissionID, "error", ackErr)
+		}
+	}
+}
+
+func (a *App) ackSubmissionProcessingPayload(ctx context.Context, processingQueue, payload string) error {
+	removed, err := a.Redis.LRem(ctx, processingQueue, 1, payload).Result()
+	if err != nil {
+		return err
+	}
+	if removed == 0 {
+		a.Log.Warn("processing payload was not found during ack", "queue", processingQueue)
+	}
+	return nil
+}
+
+func (a *App) runSubmissionQueueReconciler(ctx context.Context, queue string) {
+	interval := a.Cfg.SubmissionReconcileInterval
+	if interval <= 0 {
+		interval = 30 * time.Second
+	}
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if err := a.reconcileQueuedSubmissions(ctx, queue); err != nil && ctx.Err() == nil {
+				a.Log.Warn("submission queue reconciler failed", "error", err)
 			}
 		}
 	}
 }
 
+func (a *App) reconcileQueuedSubmissions(ctx context.Context, queue string) error {
+	limit := a.Cfg.SubmissionReconcileBatch
+	if limit <= 0 {
+		limit = 200
+	}
+
+	rows, err := a.DB.Query(ctx, `
+		SELECT id
+		FROM submissions
+		WHERE status = 'queued'
+		ORDER BY updated_at ASC, created_at ASC
+		LIMIT $1
+	`, limit)
+	if err != nil {
+		return fmt.Errorf("load queued submissions for reconcile: %w", err)
+	}
+	defer rows.Close()
+
+	jobs := make([]string, 0, limit)
+	for rows.Next() {
+		var submissionID string
+		if err := rows.Scan(&submissionID); err != nil {
+			return err
+		}
+		jobs = append(jobs, jsonMarshal(QueueJob{SubmissionID: submissionID}))
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	if len(jobs) == 0 {
+		return nil
+	}
+
+	values := make([]interface{}, 0, len(jobs))
+	for _, payload := range jobs {
+		values = append(values, payload)
+	}
+	if err := a.Redis.RPush(ctx, queue, values...).Err(); err != nil {
+		return fmt.Errorf("requeue queued submissions: %w", err)
+	}
+	return nil
+}
+
 func (a *App) processSubmissionByID(ctx context.Context, submissionID string) error {
+	claimed, err := a.claimSubmissionForProcessing(ctx, submissionID)
+	if err != nil {
+		return err
+	}
+	if claimed == nil {
+		return nil
+	}
+
+	tests, err := a.loadTaskTestCases(ctx, claimed.TaskID)
+	if err != nil {
+		return err
+	}
+
+	sourceCode, files := decodeSubmissionSourceBundle(claimed.SourceCodeRaw)
+	result := a.evaluateTaskByPolicy(claimed.TaskLanguage, sourceCode, files, tests, claimed.SourcePolicyRaw, claimed.SolutionCode)
+
+	if err := a.finalizeSubmissionResult(ctx, claimed, result); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) claimSubmissionForProcessing(ctx context.Context, submissionID string) (*claimedSubmission, error) {
 	tx, err := a.DB.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("begin tx: %w", err)
+		return nil, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	var userID, taskID, sourceCodeRaw, status, taskLanguage, sourcePolicyRaw, solutionCode string
+	var claimed claimedSubmission
+	var status string
 	err = tx.QueryRow(ctx, `
-		SELECT s.user_id, s.task_id, s.source_code, s.status, COALESCE(t.language, 'java'), COALESCE(t.source_policy::text, '{}'::text), COALESCE(t.solution_code, '')
+		SELECT s.id, s.user_id, s.task_id, s.source_code, s.status,
+		       COALESCE(t.language, 'java'), COALESCE(t.source_policy::text, '{}'::text), COALESCE(t.solution_code, '')
 		FROM submissions s
 		JOIN tasks t ON t.id = s.task_id
 		WHERE s.id = $1
 		FOR UPDATE
-	`, submissionID).Scan(&userID, &taskID, &sourceCodeRaw, &status, &taskLanguage, &sourcePolicyRaw, &solutionCode)
+	`, submissionID).Scan(
+		&claimed.SubmissionID,
+		&claimed.UserID,
+		&claimed.TaskID,
+		&claimed.SourceCodeRaw,
+		&status,
+		&claimed.TaskLanguage,
+		&claimed.SourcePolicyRaw,
+		&claimed.SolutionCode,
+	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil
+			return nil, nil
 		}
-		return err
+		return nil, err
 	}
 	if status != "queued" {
-		return nil
+		return nil, nil
 	}
 
 	if _, err := tx.Exec(ctx, `
@@ -74,43 +222,68 @@ func (a *App) processSubmissionByID(ctx context.Context, submissionID string) er
 		    updated_at = NOW()
 		WHERE id = $1
 	`, submissionID); err != nil {
-		return fmt.Errorf("mark submission processing: %w", err)
+		return nil, fmt.Errorf("mark submission processing: %w", err)
 	}
 
-	rows, err := tx.Query(ctx, `
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+	return &claimed, nil
+}
+
+func (a *App) loadTaskTestCases(ctx context.Context, taskID string) ([]judge.TestCase, error) {
+	rows, err := a.DB.Query(ctx, `
 		SELECT input_data, expected_output
 		FROM task_test_cases
 		WHERE task_id = $1
 		ORDER BY position ASC
 	`, taskID)
 	if err != nil {
-		return fmt.Errorf("load test cases: %w", err)
+		return nil, fmt.Errorf("load test cases: %w", err)
 	}
+	defer rows.Close()
+
 	tests := make([]judge.TestCase, 0)
 	for rows.Next() {
 		var input, expected string
 		if err := rows.Scan(&input, &expected); err != nil {
-			rows.Close()
-			return err
+			return nil, err
 		}
 		tests = append(tests, judge.TestCase{Input: input, Expected: expected})
 	}
-	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return tests, nil
+}
 
-	sourceCode, files := decodeSubmissionSourceBundle(sourceCodeRaw)
-	result := a.evaluateTaskByPolicy(taskLanguage, sourceCode, files, tests, sourcePolicyRaw, solutionCode)
+func (a *App) finalizeSubmissionResult(ctx context.Context, claimed *claimedSubmission, result judge.Result) error {
+	tx, err := a.DB.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin finalize tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
 
-	if _, err := tx.Exec(ctx, `
+	commandTag, err := tx.Exec(ctx, `
 		UPDATE submissions
-		SET status = $1, score = $2, compile_output = $3, run_log = $4, feedback = $5::jsonb, updated_at = NOW()
-		WHERE id = $6
-	`, result.Status, result.Score, result.CompileOutput, result.RunLog, jsonMarshal(result.Tests), submissionID); err != nil {
+		SET status = $1,
+		    score = $2,
+		    compile_output = $3,
+		    run_log = $4,
+		    feedback = $5::jsonb,
+		    updated_at = NOW()
+		WHERE id = $6 AND status = 'processing'
+	`, result.Status, result.Score, result.CompileOutput, result.RunLog, jsonMarshal(result.Tests), claimed.SubmissionID)
+	if err != nil {
 		return fmt.Errorf("update submission: %w", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return nil
 	}
 
 	if result.Status == "accepted" {
 		var xpReward int
-		if err := tx.QueryRow(ctx, `SELECT xp_reward FROM tasks WHERE id=$1`, taskID).Scan(&xpReward); err != nil {
+		if err := tx.QueryRow(ctx, `SELECT xp_reward FROM tasks WHERE id=$1`, claimed.TaskID).Scan(&xpReward); err != nil {
 			return err
 		}
 
@@ -118,7 +291,7 @@ func (a *App) processSubmissionByID(ctx context.Context, submissionID string) er
 			INSERT INTO xp_events(user_id, submission_id, points, reason)
 			VALUES($1, $2, $3, 'task_accepted')
 			ON CONFLICT(user_id, submission_id, reason) DO NOTHING
-		`, userID, submissionID, xpReward); err != nil {
+		`, claimed.UserID, claimed.SubmissionID, xpReward); err != nil {
 			return err
 		}
 
@@ -129,16 +302,16 @@ func (a *App) processSubmissionByID(ctx context.Context, submissionID string) er
 			    level = GREATEST(1, FLOOR(SQRT((xp + $1) / 120.0))::int + 1),
 			    updated_at = NOW()
 			WHERE id = $2
-		`, xpReward, userID); err != nil {
+		`, xpReward, claimed.UserID); err != nil {
 			return err
 		}
 	} else {
-		if _, err := tx.Exec(ctx, `UPDATE users SET streak = 0, updated_at = NOW() WHERE id = $1`, userID); err != nil {
+		if _, err := tx.Exec(ctx, `UPDATE users SET streak = 0, updated_at = NOW() WHERE id = $1`, claimed.UserID); err != nil {
 			return err
 		}
 	}
 
-	if err := a.applyAchievements(ctx, tx, userID); err != nil {
+	if err := a.applyAchievements(ctx, tx, claimed.UserID); err != nil {
 		return err
 	}
 
@@ -156,17 +329,21 @@ func (a *App) handleSubmissionProcessingError(ctx context.Context, submissionID 
 	defer tx.Rollback(ctx)
 
 	var processingAttempts int
+	var status string
 	err = tx.QueryRow(ctx, `
-		SELECT processing_attempts
+		SELECT processing_attempts, status
 		FROM submissions
 		WHERE id = $1
 		FOR UPDATE
-	`, submissionID).Scan(&processingAttempts)
+	`, submissionID).Scan(&processingAttempts, &status)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil
 		}
 		return err
+	}
+	if status != "processing" && status != "queued" {
+		return nil
 	}
 
 	retryLimit := a.Cfg.SubmissionMaxAttempts

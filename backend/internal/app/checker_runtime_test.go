@@ -44,3 +44,38 @@ func TestInferMainFilePathFromSourcePolicy(t *testing.T) {
 		t.Fatalf("expected query.sql fallback, got %q", got)
 	}
 }
+
+func TestNormalizeCommandForAllowlist(t *testing.T) {
+	got := normalizeCommandForAllowlist("  PyTest   -q  ")
+	if got != "pytest -q" {
+		t.Fatalf("unexpected normalized command: %q", got)
+	}
+}
+
+func TestIDECheckerCommandAllowedInProduction(t *testing.T) {
+	a := &App{}
+	a.Cfg.IDECheckerAllowedCommands = "python -m pytest,pytest"
+
+	if !a.ideCheckerCommandAllowedInProduction("pytest") {
+		t.Fatalf("expected pytest to be allowlisted")
+	}
+	if a.ideCheckerCommandAllowedInProduction("bash -lc whoami") {
+		t.Fatalf("unexpected non-allowlisted command")
+	}
+}
+
+func TestEvaluateTaskByPolicyRejectsSourcePolicyViolation(t *testing.T) {
+	a := &App{}
+	policy := `{
+		"language": "python",
+		"forbidAny": [{"pattern": "(?m)^\\s*print\\s*\\(\\s*20\\s*\\)\\s*$", "message": "Нельзя печатать 20 напрямую."}]
+	}`
+
+	result := a.evaluateTaskByPolicy("python", "print(20)\n", nil, nil, policy, "")
+	if result.Status != "wrong_answer" {
+		t.Fatalf("expected wrong_answer, got %s", result.Status)
+	}
+	if result.CompileOutput != "Нельзя печатать 20 напрямую." {
+		t.Fatalf("unexpected violation message: %q", result.CompileOutput)
+	}
+}

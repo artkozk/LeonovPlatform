@@ -163,7 +163,7 @@ func (a *App) TaskHint(c *gin.Context) {
 			return
 		}
 		_ = a.logAIHint(c, uctx.ID, req.TaskID, uctx.PlanCode, "failed", a.Cfg.OpenAIModel, len(sourceForPrompt), 0, 0, 0, "", err.Error())
-		c.JSON(http.StatusBadGateway, APIError{Error: "ai hint failed", Details: err.Error()})
+		badGatewayError(c, err)
 		return
 	}
 

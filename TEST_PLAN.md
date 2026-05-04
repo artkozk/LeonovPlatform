@@ -199,3 +199,65 @@ bash smoke.sh
 
 1. Дефект не ломает backend, но напрямую ломает базовый UX ввода кода и восприятие результата пользователем.
 2. Регресс может возвращаться после «безобидных» UI-правок (шрифты/рендеринг/spacing), поэтому проверка должна быть системной и повторяемой.
+
+## 8. P0/P1/P2 hardening gate (append-only, 2026-05-05)
+
+### 8.1 Как было
+
+1. Нагрузочный путь материалов включал N+1-запросы (`getLesson` fanout на страницы курсов/задач).
+2. Не было обязательного runtime-gate по `readyz`.
+3. Refresh-токен мог использоваться повторно после refresh (без one-time rotation).
+
+### 8.2 Как стало
+
+1. `CoursesPage` использует `GET /courses/:courseID` с `lessons[].blockCount` без массового `getLesson`.
+2. `TasksPage` использует `GET /courses/:courseID/tasks-catalog` вместо `Promise.allSettled(getLesson[])`.
+3. Добавлен `GET /readyz` как обязательная проверка перед traffic switch.
+4. Refresh-токен: one-time rotation + revoke старого токена.
+5. `reset-password` и `block_user` делают массовый revoke refresh-токенов пользователя.
+6. 5xx-ответы возвращают безопасный envelope с `requestId`, без внутреннего stack/db текста.
+
+### 8.3 Почему это важно
+
+1. Это напрямую закрывает главную жалобу по «долгой работе с материалами» за счет сокращения количества запросов и объема данных.
+2. One-time refresh и revoke закрывают класс атак повторного использования refresh-токенов.
+3. Без `readyz` orchestrator может отправлять трафик на инстанс без готовых зависимостей.
+
+### 8.4 Обязательные проверки перед релизом
+
+1. Backend unit:
+```bash
+cd backend
+go test ./internal/judge -run "TestSQLEngineEvaluate|TestDockerModeFailsClosedWhenDockerUnavailable"
+go test ./internal/app -run "TestEvaluateTaskByPolicyRejectsSourcePolicyViolation|TestIDECheckerCommandAllowedInProduction"
+```
+
+2. Backend full test + build:
+```bash
+cd backend
+go test ./...
+go build -o bin/leonovcare-api ./cmd/server
+go build -o bin/leonovcare-worker ./cmd/worker
+go build -o bin/leonovcare-migrator ./cmd/migrator
+```
+
+3. Frontend regression (ключевая проверка на отсутствие N+1):
+- `CoursesPage`: только `listCourses + getCourse`, без массовых `getLesson`.
+- `TasksPage`: `getCourse + tasks-catalog`, без `Promise.allSettled(getLesson[])`.
+
+4. API smoke:
+```bash
+curl -fsS http://127.0.0.1:8510/readyz
+curl -fsS -H "Authorization: Bearer <token>" http://127.0.0.1:8510/api/v1/courses/<course-id>
+curl -fsS -H "Authorization: Bearer <token>" http://127.0.0.1:8510/api/v1/courses/<course-id>/tasks-catalog
+```
+
+5. Performance gate (обязательный):
+- SLA: `P95 < 2s` для открытия `CoursesPage`, `TasksPage`, `LessonPage` на актуальном объеме контента и нормальной сети.
+- Релиз блокируется при нарушении SLA.
+
+### 8.5 Дополнение по очереди сабмитов
+
+1. Проверить, что после рестарта worker незавершенные payload остаются в `processing` и не теряются.
+2. Проверить, что requeue происходит при recoverable error и ограничивается `SUBMISSION_MAX_ATTEMPTS`.
+3. Проверить, что reconciler поднимает зависшие `queued` записи обратно в Redis main queue.

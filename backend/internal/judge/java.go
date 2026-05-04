@@ -3,6 +3,7 @@ package judge
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -61,7 +62,7 @@ func NewJavaEngine(timeoutSeconds int, mode string) Engine {
 func (j *javaEngine) EvaluateJava(source string, testCases []TestCase) Result {
 	if j.mode == "docker" {
 		if _, err := exec.LookPath("docker"); err != nil {
-			return j.evaluateLocal(source, testCases)
+			return dockerUnavailableResult("docker sandbox is required for judge mode=docker")
 		}
 		return j.evaluateDocker(source, testCases)
 	}
@@ -76,7 +77,7 @@ func (j *javaEngine) EvaluateJava(source string, testCases []TestCase) Result {
 func (j *javaEngine) EvaluatePython(source string, testCases []TestCase) Result {
 	if j.mode == "docker" {
 		if _, err := exec.LookPath("docker"); err != nil {
-			return j.evaluatePythonLocal(source, testCases)
+			return dockerUnavailableResult("docker sandbox is required for judge mode=docker")
 		}
 		return j.evaluatePythonDocker(source, testCases)
 	}
@@ -132,25 +133,60 @@ func (j *javaEngine) EvaluateSQL(source string, testCases []TestCase) Result {
 			Tests:         []TestResult{},
 		}
 	}
+	studentQuery := strings.TrimSpace(source)
+	if studentQuery == "" {
+		return Result{
+			Status:        "failed",
+			CompileOutput: "empty sql query",
+			RunLog:        "student SQL source is empty",
+			Tests:         []TestResult{},
+		}
+	}
 
-	actualNorm := normalizeComparableSQL(source)
 	results := make([]TestResult, 0, len(testCases))
 	passed := 0
 	runLogs := make([]string, 0, len(testCases))
 
 	for i, tc := range testCases {
-		expectedNorm := normalizeComparableSQL(tc.Expected)
+		expectedQuery := strings.TrimSpace(tc.Expected)
 		tr := TestResult{
 			Index:    i + 1,
 			Input:    tc.Input,
-			Expected: strings.TrimSpace(tc.Expected),
-			Actual:   strings.TrimSpace(source),
+			Expected: expectedQuery,
 		}
-		tr.Passed = actualNorm == expectedNorm && expectedNorm != ""
-		if tr.Passed {
-			passed++
+
+		if expectedQuery == "" {
+			tr.Passed = false
+			tr.Error = "reference SQL query is empty"
+			runLogs = append(runLogs, fmt.Sprintf("test %d: reference SQL query is empty", i+1))
+			results = append(results, tr)
+			continue
+		}
+
+		expectedSnapshot, err := runSQLQuerySnapshot(tc.Input, expectedQuery)
+		if err != nil {
+			tr.Passed = false
+			tr.Error = "invalid reference SQL: " + err.Error()
+			runLogs = append(runLogs, fmt.Sprintf("test %d: reference SQL failed: %v", i+1, err))
+			results = append(results, tr)
+			continue
+		}
+
+		actualSnapshot, err := runSQLQuerySnapshot(tc.Input, studentQuery)
+		if err != nil {
+			tr.Passed = false
+			tr.Error = "student SQL failed: " + err.Error()
+			runLogs = append(runLogs, fmt.Sprintf("test %d: student SQL failed: %v", i+1, err))
+			results = append(results, tr)
+			continue
+		}
+
+		tr.Actual = actualSnapshot
+		tr.Passed = actualSnapshot == expectedSnapshot
+		if !tr.Passed {
+			runLogs = append(runLogs, fmt.Sprintf("test %d: SQL result mismatch", i+1))
 		} else {
-			runLogs = append(runLogs, fmt.Sprintf("test %d: SQL query does not match reference", i+1))
+			passed++
 		}
 		results = append(results, tr)
 	}
@@ -165,6 +201,96 @@ func (j *javaEngine) EvaluateSQL(source string, testCases []TestCase) Result {
 		RunLog:        strings.Join(runLogs, "\n"),
 		Tests:         results,
 	}
+}
+
+func dockerUnavailableResult(runLog string) Result {
+	return Result{
+		Status:        "failed",
+		Score:         0,
+		CompileOutput: "docker is not available",
+		RunLog:        runLog,
+		Tests:         []TestResult{},
+	}
+}
+
+func runSQLQuerySnapshot(initSQL, query string) (string, error) {
+	pythonBin, err := detectPythonBinary()
+	if err != nil {
+		return "", fmt.Errorf("python runtime is not available for sql checker: %w", err)
+	}
+
+	payload, err := json.Marshal(map[string]string{
+		"init_sql": initSQL,
+		"query":    query,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	script := `
+import json
+import sqlite3
+import sys
+
+def normalize_value(value):
+    if isinstance(value, (bytes, bytearray)):
+        return value.decode("utf-8", errors="replace")
+    return value
+
+def main():
+    payload = json.load(sys.stdin)
+    init_sql = str(payload.get("init_sql", ""))
+    query = str(payload.get("query", "")).strip()
+    if not query:
+        raise RuntimeError("query is empty")
+
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = None
+    cur = conn.cursor()
+
+    if init_sql.strip():
+        cur.executescript(init_sql)
+
+    cur.execute(query)
+    cols = []
+    if cur.description:
+        cols = [item[0] for item in cur.description]
+    rows = []
+    for row in cur.fetchall():
+        rows.append([normalize_value(v) for v in row])
+
+    print(json.dumps({"columns": cols, "rows": rows}, ensure_ascii=False, default=str, separators=(",", ":")))
+
+if __name__ == "__main__":
+    main()
+`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, pythonBin, "-c", script)
+	cmd.Stdin = bytes.NewReader(payload)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return "", fmt.Errorf("sql checker timeout")
+		}
+		errText := strings.TrimSpace(stderr.String())
+		if errText == "" {
+			errText = err.Error()
+		}
+		return "", errors.New(errText)
+	}
+
+	out := strings.TrimSpace(stdout.String())
+	if out == "" {
+		return "", fmt.Errorf("empty sql snapshot")
+	}
+	return out, nil
 }
 
 func (j *javaEngine) evaluateLocal(source string, testCases []TestCase) Result {

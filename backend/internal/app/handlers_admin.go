@@ -174,14 +174,29 @@ func (a *App) AdminCreateTask(c *gin.Context) {
 func (a *App) AdminBlockUser(c *gin.Context) {
 	uctx, _ := userFromContext(c)
 	userID := c.Param("userID")
-	if _, err := a.DB.Exec(c.Request.Context(), `UPDATE users SET is_blocked = TRUE, updated_at = NOW() WHERE id = $1`, userID); err != nil {
+	tx, err := a.DB.Begin(c.Request.Context())
+	if err != nil {
 		internalServerError(c, err)
 		return
 	}
-	_, _ = a.DB.Exec(c.Request.Context(), `
+	defer tx.Rollback(c.Request.Context())
+
+	if _, err := tx.Exec(c.Request.Context(), `UPDATE users SET is_blocked = TRUE, updated_at = NOW() WHERE id = $1`, userID); err != nil {
+		internalServerError(c, err)
+		return
+	}
+	if _, err := tx.Exec(c.Request.Context(), `DELETE FROM refresh_tokens WHERE user_id = $1`, userID); err != nil {
+		internalServerError(c, err)
+		return
+	}
+	_, _ = tx.Exec(c.Request.Context(), `
 		INSERT INTO admin_audit_log(admin_user_id, action, entity_type, entity_id)
 		VALUES($1, 'block_user', 'user', $2)
 	`, uctx.ID, userID)
+	if err := tx.Commit(c.Request.Context()); err != nil {
+		internalServerError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"status": "blocked"})
 }
 

@@ -1,7 +1,7 @@
 ﻿import { Check, ChevronRight, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { getCourse, getLesson, listCourses } from "../api/client";
+import { getCourse, listCourses } from "../api/client";
 import { CourseTrackIcon } from "../components/icons/CourseTrackIcon";
 import { resolveCourseIconKey } from "../lib/courseIconKey";
 import { getCourseDisplayTitle, getCourseShortDescription, getCourseShortTitle } from "../lib/coursePresentation";
@@ -50,7 +50,7 @@ type CoursesScreenCache = {
 
 const COURSES_SCREEN_CACHE_KEY = "lc_courses_screen_cache_v2_python_v10_hotfix";
 
-function readLessonProgress(lessonId: string, blockIds: string[]) {
+function readLessonProgress(lessonId: string, totalBlocksHint: number) {
   const key = `lc_lesson_progress_${lessonId}`;
   let stored: Record<string, boolean> = {};
 
@@ -66,8 +66,9 @@ function readLessonProgress(lessonId: string, blockIds: string[]) {
     stored = {};
   }
 
-  const totalBlocks = blockIds.length;
-  const completedBlocks = blockIds.reduce((count, blockId) => count + (stored[blockId] ? 1 : 0), 0);
+  const totalBlocks = Number.isFinite(totalBlocksHint) && totalBlocksHint > 0 ? totalBlocksHint : 0;
+  const completedFromStorage = Object.values(stored).reduce((count, done) => count + (done ? 1 : 0), 0);
+  const completedBlocks = Math.min(completedFromStorage, totalBlocks || completedFromStorage);
   const progressPercent = totalBlocks > 0 ? Math.round((completedBlocks / totalBlocks) * 100) : 0;
 
   return {
@@ -266,27 +267,17 @@ export function CoursesPage() {
               id: String(lesson.id),
               title: String(lesson.title ?? "Урок"),
               moduleTitle: String(lesson.moduleTitle ?? "Модуль"),
-              totalBlocks: 0,
+              totalBlocks: Number(lesson.blockCount ?? 0),
               completedBlocks: 0,
               progressPercent: 0,
             }))
           : [],
       };
 
-      const lessonsWithProgress = await Promise.all(
-        normalized.lessons.map(async (lesson) => {
-          try {
-            const lessonData = await getLesson(lesson.id);
-            const blockIds = Array.isArray(lessonData?.blocks)
-              ? lessonData.blocks.map((block: any) => String(block.id ?? "")).filter(Boolean)
-              : [];
-            const progress = readLessonProgress(lesson.id, blockIds);
-            return { ...lesson, ...progress };
-          } catch {
-            return lesson;
-          }
-        })
-      );
+      const lessonsWithProgress = normalized.lessons.map((lesson) => ({
+        ...lesson,
+        ...readLessonProgress(lesson.id, lesson.totalBlocks),
+      }));
 
       const detail = { ...normalized, lessons: lessonsWithProgress };
       setSelectedCourse(detail);

@@ -138,3 +138,100 @@ git checkout <previous_commit>
 Примечание:
 
 Миграции данных в этой версии изменяют профиль пользователей и очищают demo-метрики. Полноценный rollback данных требует отдельного DB backup.
+
+## 10. Backend hardening update (append-only, 2026-05-05)
+
+### 10.1 Как было
+
+1. Runtime-процессы (`server`/`worker`) могли полагаться на `AUTO_MIGRATE=true`.
+2. Очередь сабмитов была без `processing`-очереди и без явного ack-подтверждения через Redis.
+3. При работе с материалами frontend делал fanout-запросы к урокам (`getLesson` для каждого lesson), что давало N+1 и высокую латентность.
+4. Не было отдельного readiness probe, который проверяет и DB, и Redis одновременно.
+
+### 10.2 Как стало
+
+1. Миграции вынесены в отдельный deployment-шаг через новый бинарь `backend/cmd/migrator`.
+2. `db.ApplyMigrations(...)` теперь берет PostgreSQL advisory lock, чтобы исключить параллельное применение миграций.
+3. `worker` использует надежный цикл обработки очереди:
+- `BRPOPLPUSH main -> processing`;
+- `LREM processing` после финала (ack);
+- requeue при recoverable error;
+- фоновый reconciler для `queued` записей.
+4. `worker` и `server` больше не должны использовать runtime-миграции как основной путь релиза; в PM2 дефолт `AUTO_MIGRATE=false`.
+5. Добавлен `GET /readyz` (проверяет `DB.Ping` и `Redis.Ping`).
+6. Добавлен `GET /api/v1/courses/:courseID/tasks-catalog` и расширен `GET /api/v1/courses/:courseID` полем `lessons[].blockCount`.
+7. Включено gzip-сжатие API-ответов.
+
+### 10.3 Почему сделано именно так
+
+1. Отдельный шаг миграций с advisory lock нужен, чтобы исключить race между несколькими процессами/инстансами при старте.
+2. `main -> processing` + ack в Redis нужен для предсказуемого at-least-once поведения после рестартов и сетевых сбоев.
+3. `tasks-catalog` и `blockCount` нужны, чтобы убрать N+1 на страницах материалов и сократить число запросов до фиксированного набора.
+4. `readyz` нужен для корректного orchestration health-gate: `healthz` показывает liveliness, `readyz` — реальную готовность зависимостей.
+
+### 10.4 Новый обязательный порядок деплоя
+
+1. Обновить код:
+```bash
+cd /opt/leonovcare-platform/current
+git fetch --all
+git pull
+```
+
+2. Сборка backend (включая migrator):
+```bash
+cd /opt/leonovcare-platform/current/backend
+go mod tidy
+go test ./...
+go build -o bin/leonovcare-api ./cmd/server
+go build -o bin/leonovcare-worker ./cmd/worker
+go build -o bin/leonovcare-migrator ./cmd/migrator
+```
+
+3. Применить миграции отдельным шагом ДО запуска runtime:
+```bash
+cd /opt/leonovcare-platform/current/backend
+./bin/leonovcare-migrator
+```
+
+4. Сборка frontend:
+```bash
+cd /opt/leonovcare-platform/current/frontend
+npm ci
+npm run test
+export VITE_API_URL="${VITE_API_URL:-http://85.198.82.221:8510/api/v1}"
+npm run build
+```
+
+5. Перезапуск PM2:
+```bash
+cd /opt/leonovcare-platform/current
+pm2 delete leonovcare-api leonovcare-worker leonovcare-frontend || true
+pm2 start deploy/server/ecosystem.config.cjs
+pm2 save
+pm2 status
+```
+
+6. Проверки после запуска:
+```bash
+curl -fsS http://127.0.0.1:8510/healthz
+curl -fsS http://127.0.0.1:8510/readyz
+```
+
+### 10.5 Новые env-параметры (добавлены, старые секции выше не удаляются)
+
+1. Queue reliability:
+- `SUBMISSION_PROCESSING_QUEUE=submission_jobs_processing`
+- `SUBMISSION_RECONCILE_INTERVAL=30s`
+- `SUBMISSION_RECONCILE_BATCH=200`
+
+2. Security / checker guard:
+- `IDE_CHECKER_ALLOWED_COMMANDS=python -m pytest,pytest`
+
+3. Rate limiting:
+- `AUTH_RATE_LIMIT_PER_MINUTE=60`
+- `AI_HINT_RATE_LIMIT_PER_MINUTE=20`
+- `WEBHOOK_RATE_LIMIT_PER_MINUTE=120`
+
+4. Runtime migrations:
+- `AUTO_MIGRATE=false` (для production-профиля; миграции идут через `leonovcare-migrator`)

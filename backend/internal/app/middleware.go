@@ -1,15 +1,107 @@
 package app
 
 import (
+	"compress/gzip"
+	"fmt"
+	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"leonovcare/backend/internal/security"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 const userContextKey = "user_ctx"
+
+func requestIDMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		requestID := strings.TrimSpace(c.GetHeader("X-Request-Id"))
+		if requestID == "" {
+			requestID = uuid.NewString()
+		}
+		c.Set(requestIDContextKey, requestID)
+		c.Writer.Header().Set("X-Request-Id", requestID)
+		c.Next()
+	}
+}
+
+type gzipResponseWriter struct {
+	gin.ResponseWriter
+	writer io.Writer
+}
+
+func (g *gzipResponseWriter) Write(data []byte) (int, error) {
+	return g.writer.Write(data)
+}
+
+func (g *gzipResponseWriter) WriteString(s string) (int, error) {
+	return g.writer.Write([]byte(s))
+}
+
+func gzipMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if strings.Contains(strings.ToLower(c.GetHeader("Connection")), "upgrade") {
+			c.Next()
+			return
+		}
+		if !strings.Contains(strings.ToLower(c.GetHeader("Accept-Encoding")), "gzip") {
+			c.Next()
+			return
+		}
+
+		gz := gzip.NewWriter(c.Writer)
+		defer gz.Close()
+
+		c.Header("Content-Encoding", "gzip")
+		c.Header("Vary", "Accept-Encoding")
+		c.Header("Content-Length", "")
+
+		c.Writer = &gzipResponseWriter{
+			ResponseWriter: c.Writer,
+			writer:         gz,
+		}
+		c.Next()
+	}
+}
+
+func clientKeyForRateLimit(c *gin.Context) string {
+	if uctx, ok := userFromContext(c); ok && strings.TrimSpace(uctx.ID) != "" {
+		return "user:" + uctx.ID
+	}
+	clientIP := strings.TrimSpace(c.ClientIP())
+	if clientIP == "" {
+		clientIP = "unknown"
+	}
+	return "ip:" + clientIP
+}
+
+func (a *App) rateLimitMiddleware(scope string, limitPerMinute int) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if limitPerMinute <= 0 {
+			c.Next()
+			return
+		}
+		minuteBucket := time.Now().UTC().Format("200601021504")
+		key := fmt.Sprintf("rate_limit:%s:%s:%s", strings.TrimSpace(scope), clientKeyForRateLimit(c), minuteBucket)
+		count, err := a.Redis.Incr(c.Request.Context(), key).Result()
+		if err != nil {
+			_ = c.Error(fmt.Errorf("rate limit redis failure: %w", err))
+			c.Next()
+			return
+		}
+		if count == 1 {
+			_ = a.Redis.Expire(c.Request.Context(), key, 2*time.Minute).Err()
+		}
+		if count > int64(limitPerMinute) {
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, APIError{Error: "rate limit exceeded"})
+			return
+		}
+		c.Next()
+	}
+}
 
 func (a *App) authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -36,14 +128,19 @@ func (a *App) authMiddleware() gin.HandlerFunc {
 		}
 
 		ctx := UserContext{ID: claims.UserID, Role: claims.Role}
+		var isBlocked bool
 		if err := a.DB.QueryRow(c.Request.Context(), `
-			SELECT COALESCE(p.code, 'free')
+			SELECT u.is_blocked, COALESCE(p.code, 'free')
 			FROM users u
 			LEFT JOIN subscriptions s ON s.user_id = u.id AND s.status = 'active' AND (s.ends_at IS NULL OR s.ends_at > NOW())
 			LEFT JOIN plans p ON p.id = s.plan_id
 			WHERE u.id = $1
-		`, claims.UserID).Scan(&ctx.PlanCode); err != nil {
+		`, claims.UserID).Scan(&isBlocked, &ctx.PlanCode); err != nil {
 			ctx.PlanCode = "free"
+		}
+		if isBlocked {
+			c.AbortWithStatusJSON(http.StatusForbidden, APIError{Error: "account blocked"})
+			return
 		}
 
 		c.Set(userContextKey, ctx)
