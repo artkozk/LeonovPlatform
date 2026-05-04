@@ -619,9 +619,9 @@ function buildBlockSeedValues(modulePosition, lessonPosition, lesson) {
 
 function buildMigrationSql(course) {
   let sql = '';
-  sql += '-- 026_reseed_python_zero_v18_strict_pedagogy.sql\n';
+  sql += '-- 031_reseed_python_zero_v18_no_duplicate_tasks.sql\n';
   sql += '-- Generated from materials/v18_STRICT_PEDAGOGY/course_import.json\n';
-  sql += '-- Purpose: fully reseed python-zero from v18 strict pedagogy package with runtime-compatible checker configs.\n';
+  sql += '-- Purpose: reseed python-zero from the v18 strict pedagogy package after semantic duplicate cleanup.\n';
   sql += `-- Generated at: ${new Date().toISOString()}\n\n`;
 
   sql += "ALTER TABLE tasks DROP CONSTRAINT IF EXISTS chk_tasks_language;\n";

@@ -1,7 +1,7 @@
--- 026_reseed_python_zero_v18_strict_pedagogy.sql
+-- 031_reseed_python_zero_v18_no_duplicate_tasks.sql
 -- Generated from materials/v18_STRICT_PEDAGOGY/course_import.json
--- Purpose: fully reseed python-zero from v18 strict pedagogy package with runtime-compatible checker configs.
--- Generated at: 2026-05-04T23:29:01.594Z
+-- Purpose: reseed python-zero from the v18 strict pedagogy package after semantic duplicate cleanup.
+-- Generated at: 2026-05-04T23:38:56.288Z
 
 ALTER TABLE tasks DROP CONSTRAINT IF EXISTS chk_tasks_language;
 ALTER TABLE tasks ADD CONSTRAINT chk_tasks_language CHECK (language IN ('java', 'python', 'python3', 'py', 'sql'));
