@@ -1,4 +1,4 @@
-﻿module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_type,checker_type,xp,difficulty,estimated_minutes
+module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_type,checker_type,xp,difficulty,estimated_minutes
 1,"Модуль 1. Python Core, терминал, Git",1,Первый код,1,Смысл,theory,,20,1,18
 1,"Модуль 1. Python Core, терминал, Git",1,Первый код,2,print,theory,,20,1,18
 1,"Модуль 1. Python Core, терминал, Git",1,Первый код,3,print и вывод,test,quiz_single,25,1,10
@@ -207,16 +207,16 @@
 1,"Модуль 1. Python Core, терминал, Git",19,Исключения,11,Итог,summary,,40,2,8
 1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,1,Что это,theory,,40,2,18
 1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,2,Минимальный пример,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,4,Messages payload,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,5,Messages payload,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,6,Timeout provider,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,7,Schema fallback,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,8,Chunk citation,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,9,Graph node,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,10,AI-минипроект,project,ide_plugin,140,2,50
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,11,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,12,Итог,summary,,40,2,8
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,3,Понимание,test,quiz_single,40,2,10
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,4,Hint request,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,5,No secrets,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,6,Verify answer,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,7,Clarify,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,8,Small hint,practice,python_pytest,70,2,18
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,9,AI-минипроект,project,ide_plugin,110,3,35
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,10,Закрепление,test,quiz_single,40,2,10
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,11,Контрольный AI-модуль,project,ide_plugin,110,3,35
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,12,Короткая проверка,summary,,20,2,8
 1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,1,Что это,theory,,40,2,18
 1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,2,Минимальный пример,theory,,40,2,16
 1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,3,Понимание,test,quiz_single,40,2,12
@@ -327,19 +327,19 @@
 1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,8,Проверка,project,ide_plugin,130,2,45
 1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,9,Контрольный артефакт,project,ide_plugin,110,2,30
 1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,10,Итог,summary,,40,2,8
-2,Модуль 2. Python Hard,1,ООП: классы,1,Что это,theory,,40,2,18
-2,Модуль 2. Python Hard,1,ООП: классы,2,Минимальный пример,theory,,40,2,18
-2,Модуль 2. Python Hard,1,ООП: классы,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,1,ООП: классы,4,Задача,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,1,ООП: классы,5,Задача,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,1,ООП: классы,6,Задача,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,1,ООП: классы,7,Задача,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,1,ООП: классы,8,Задача,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,1,ООП: классы,9,Задача,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,1,ООП: классы,10,Мини-проект,project,ide_plugin,120,2,45
-2,Модуль 2. Python Hard,1,ООП: классы,11,Закрепление,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,1,ООП: классы,12,Контрольный артефакт,project,ide_plugin,110,2,30
-2,Модуль 2. Python Hard,1,ООП: классы,13,Итог,summary,,40,2,8
+2,Модуль 2. Python Hard,1,ООП: классы,1,Класс и объект,theory,,40,2,18
+2,Модуль 2. Python Hard,1,ООП: классы,2,Минимальная модель,theory,,40,2,18
+2,Модуль 2. Python Hard,1,ООП: классы,3,Класс и объект,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,1,ООП: классы,4,Book,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,1,ООП: классы,5,Counter,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,1,ООП: классы,6,User,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,1,ООП: классы,7,Cart,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,1,ООП: классы,8,Исправь self,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,1,ООП: классы,9,Session,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,1,ООП: классы,10,Мини-модель задачи,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,1,ООП: классы,11,Проверка объекта,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,1,ООП: классы,12,Контрольная модель,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,1,ООП: классы,13,Короткая проверка,summary,,20,2,8
 2,Модуль 2. Python Hard,2,ООП: атрибуты,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,2,ООП: атрибуты,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,2,ООП: атрибуты,3,Понимание,test,quiz_single,40,2,12
@@ -509,71 +509,71 @@
 2,Модуль 2. Python Hard,14,typing: generics,11,Закрепление,test,quiz_single,40,2,12
 2,Модуль 2. Python Hard,14,typing: generics,12,Контрольный артефакт,project,ide_plugin,110,2,30
 2,Модуль 2. Python Hard,14,typing: generics,13,Итог,summary,,40,2,8
-2,Модуль 2. Python Hard,15,mypy и контракты,1,Что это,theory,,40,2,18
-2,Модуль 2. Python Hard,15,mypy и контракты,2,Минимальный пример,theory,,40,2,18
-2,Модуль 2. Python Hard,15,mypy и контракты,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,15,mypy и контракты,4,Cache TTL,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,15,mypy и контракты,5,Inventory delta,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,15,mypy и контракты,6,State transition,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,15,mypy и контракты,7,CSV columns,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,15,mypy и контракты,8,Priority queue,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,15,mypy и контракты,9,Retry log,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,15,mypy и контракты,10,Мини-проект,project,ide_plugin,120,2,45
-2,Модуль 2. Python Hard,15,mypy и контракты,11,Закрепление,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,15,mypy и контракты,12,Контрольный артефакт,project,ide_plugin,110,2,30
-2,Модуль 2. Python Hard,15,mypy и контракты,13,Итог,summary,,40,2,8
-2,Модуль 2. Python Hard,16,Файлы и pathlib,1,Что это,theory,,40,2,18
-2,Модуль 2. Python Hard,16,Файлы и pathlib,2,Минимальный пример,theory,,40,2,18
-2,Модуль 2. Python Hard,16,Файлы и pathlib,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,16,Файлы и pathlib,4,Inventory delta,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,16,Файлы и pathlib,5,State transition,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,16,Файлы и pathlib,6,CSV columns,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,16,Файлы и pathlib,7,Priority queue,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,16,Файлы и pathlib,8,Retry log,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,16,Файлы и pathlib,9,Cache TTL,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,16,Файлы и pathlib,10,Мини-проект,project,ide_plugin,120,2,45
-2,Модуль 2. Python Hard,16,Файлы и pathlib,11,Закрепление,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,16,Файлы и pathlib,12,Контрольный артефакт,project,ide_plugin,110,2,30
-2,Модуль 2. Python Hard,16,Файлы и pathlib,13,Итог,summary,,40,2,8
+2,Модуль 2. Python Hard,15,mypy и контракты,1,Типы как контракт,theory,,40,2,18
+2,Модуль 2. Python Hard,15,mypy и контракты,2,Optional и TypedDict,theory,,40,2,18
+2,Модуль 2. Python Hard,15,mypy и контракты,3,Контракты типов,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,15,mypy и контракты,4,total_minutes,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,15,mypy и контракты,5,Optional email,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,15,mypy и контракты,6,Typed payload,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,15,mypy и контракты,7,Type error,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,15,mypy и контракты,8,Protocol sender,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,15,mypy и контракты,9,Typed list,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,15,mypy и контракты,10,Typed contracts,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,15,mypy и контракты,11,Ошибки типов,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,15,mypy и контракты,12,Контракт API payload,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,15,mypy и контракты,13,Короткая проверка,summary,,20,2,8
+2,Модуль 2. Python Hard,16,Файлы и pathlib,1,Path вместо строк,theory,,40,2,18
+2,Модуль 2. Python Hard,16,Файлы и pathlib,2,Чтение и запись,theory,,40,2,18
+2,Модуль 2. Python Hard,16,Файлы и pathlib,3,Пути и файлы,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,16,Файлы и pathlib,4,Read text,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,16,Файлы и pathlib,5,Write report,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,16,Файлы и pathlib,6,Ensure dir,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,16,Файлы и pathlib,7,Missing file,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,16,Файлы и pathlib,8,List names,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,16,Файлы и pathlib,9,Append log,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,16,Файлы и pathlib,10,File workspace,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,16,Файлы и pathlib,11,Ошибки pathlib,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,16,Файлы и pathlib,12,Report storage,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,16,Файлы и pathlib,13,Короткая проверка,summary,,20,2,8
 2,Модуль 2. Python Hard,17,JSON и CSV,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,17,JSON и CSV,2,Минимальный пример,theory,,40,2,18
-2,Модуль 2. Python Hard,17,JSON и CSV,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,17,JSON и CSV,4,State transition,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,17,JSON и CSV,5,CSV columns,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,17,JSON и CSV,6,Priority queue,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,17,JSON и CSV,7,Retry log,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,17,JSON и CSV,8,Cache TTL,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,17,JSON и CSV,9,Inventory delta,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,17,JSON и CSV,10,Мини-проект,project,ide_plugin,120,2,45
-2,Модуль 2. Python Hard,17,JSON и CSV,11,Закрепление,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,17,JSON и CSV,12,Контрольный артефакт,project,ide_plugin,110,2,30
-2,Модуль 2. Python Hard,17,JSON и CSV,13,Итог,summary,,40,2,8
+2,Модуль 2. Python Hard,17,JSON и CSV,3,Понимание,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,17,JSON и CSV,4,Parse JSON,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,17,JSON и CSV,5,Dump JSON,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,17,JSON и CSV,6,CSV titles,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,17,JSON и CSV,7,CSV to JSON,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,17,JSON и CSV,8,Invalid JSON,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,17,JSON и CSV,9,Write CSV,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,17,JSON и CSV,10,Мини-проект,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,17,JSON и CSV,11,Закрепление,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,17,JSON и CSV,12,Контрольный модуль,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,17,JSON и CSV,13,Короткая проверка,summary,,20,2,8
 2,Модуль 2. Python Hard,18,Логирование,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,18,Логирование,2,Минимальный пример,theory,,40,2,18
-2,Модуль 2. Python Hard,18,Логирование,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,18,Логирование,4,CSV columns,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,18,Логирование,5,Priority queue,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,18,Логирование,6,Retry log,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,18,Логирование,7,Cache TTL,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,18,Логирование,8,Inventory delta,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,18,Логирование,9,State transition,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,18,Логирование,10,Мини-проект,project,ide_plugin,120,2,45
-2,Модуль 2. Python Hard,18,Логирование,11,Закрепление,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,18,Логирование,12,Контрольный артефакт,project,ide_plugin,110,2,30
-2,Модуль 2. Python Hard,18,Логирование,13,Итог,summary,,40,2,8
+2,Модуль 2. Python Hard,18,Логирование,3,Понимание,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,18,Логирование,4,Info event,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,18,Логирование,5,Warning level,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,18,Логирование,6,Exception log,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,18,Логирование,7,Context fields,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,18,Логирование,8,Logger config,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,18,Логирование,9,Redact secret,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,18,Логирование,10,Мини-проект,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,18,Логирование,11,Закрепление,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,18,Логирование,12,Контрольный модуль,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,18,Логирование,13,Короткая проверка,summary,,20,2,8
 2,Модуль 2. Python Hard,19,Пакеты и импорты,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,19,Пакеты и импорты,2,Минимальный пример,theory,,40,2,18
-2,Модуль 2. Python Hard,19,Пакеты и импорты,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,19,Пакеты и импорты,4,Priority queue,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,19,Пакеты и импорты,5,Retry log,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,19,Пакеты и импорты,6,Cache TTL,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,19,Пакеты и импорты,7,Inventory delta,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,19,Пакеты и импорты,8,State transition,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,19,Пакеты и импорты,9,CSV columns,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,19,Пакеты и импорты,10,Мини-проект,project,ide_plugin,120,2,45
-2,Модуль 2. Python Hard,19,Пакеты и импорты,11,Закрепление,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,19,Пакеты и импорты,12,Контрольный артефакт,project,ide_plugin,110,2,30
-2,Модуль 2. Python Hard,19,Пакеты и импорты,13,Итог,summary,,40,2,8
+2,Модуль 2. Python Hard,19,Пакеты и импорты,3,Понимание,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,19,Пакеты и импорты,4,Import line,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,19,Пакеты и импорты,5,Package marker,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,19,Пакеты и импорты,6,Module path,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,19,Пакеты и импорты,7,Relative import,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,19,Пакеты и импорты,8,Public API,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,19,Пакеты и импорты,9,Import error,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,19,Пакеты и импорты,10,Мини-проект,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,19,Пакеты и импорты,11,Закрепление,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,19,Пакеты и импорты,12,Контрольный модуль,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,19,Пакеты и импорты,13,Короткая проверка,summary,,20,2,8
 2,Модуль 2. Python Hard,20,Poetry,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,20,Poetry,2,Минимальный пример,theory,,40,2,16
 2,Модуль 2. Python Hard,20,Poetry,3,Понимание,test,quiz_single,40,2,12
@@ -584,71 +584,71 @@
 2,Модуль 2. Python Hard,20,Poetry,8,Проверка,project,ide_plugin,130,2,45
 2,Модуль 2. Python Hard,20,Poetry,9,Контрольный артефакт,project,ide_plugin,110,2,30
 2,Модуль 2. Python Hard,20,Poetry,10,Итог,summary,,40,2,8
-2,Модуль 2. Python Hard,21,pytest: функции,1,Что это,theory,,40,2,18
-2,Модуль 2. Python Hard,21,pytest: функции,2,Минимальный пример,theory,,40,2,18
-2,Модуль 2. Python Hard,21,pytest: функции,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,21,pytest: функции,4,Param ids,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,21,pytest: функции,5,Param ids,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,21,pytest: функции,6,Param ids,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,21,pytest: функции,7,Param ids,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,21,pytest: функции,8,Param ids,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,21,pytest: функции,9,Param ids,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,21,pytest: функции,10,Мини-проект,project,ide_plugin,120,2,45
-2,Модуль 2. Python Hard,21,pytest: функции,11,Закрепление,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,21,pytest: функции,12,Контрольный артефакт,project,ide_plugin,110,2,30
-2,Модуль 2. Python Hard,21,pytest: функции,13,Итог,summary,,40,2,8
-2,Модуль 2. Python Hard,22,pytest: fixtures,1,Что это,theory,,40,2,18
-2,Модуль 2. Python Hard,22,pytest: fixtures,2,Минимальный пример,theory,,40,2,18
-2,Модуль 2. Python Hard,22,pytest: fixtures,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,22,pytest: fixtures,4,Param ids,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,22,pytest: fixtures,5,Param ids,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,22,pytest: fixtures,6,Param ids,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,22,pytest: fixtures,7,Param ids,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,22,pytest: fixtures,8,Param ids,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,22,pytest: fixtures,9,Param ids,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,22,pytest: fixtures,10,Мини-проект,project,ide_plugin,120,2,45
-2,Модуль 2. Python Hard,22,pytest: fixtures,11,Закрепление,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,22,pytest: fixtures,12,Контрольный артефакт,project,ide_plugin,110,2,30
-2,Модуль 2. Python Hard,22,pytest: fixtures,13,Итог,summary,,40,2,8
-2,Модуль 2. Python Hard,23,pytest: parametrization,1,Что это,theory,,40,2,18
-2,Модуль 2. Python Hard,23,pytest: parametrization,2,Минимальный пример,theory,,40,2,18
-2,Модуль 2. Python Hard,23,pytest: parametrization,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,23,pytest: parametrization,4,Param ids,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,23,pytest: parametrization,5,Param ids,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,23,pytest: parametrization,6,Param ids,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,23,pytest: parametrization,7,Param ids,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,23,pytest: parametrization,8,Param ids,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,23,pytest: parametrization,9,Param ids,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,23,pytest: parametrization,10,Мини-проект,project,ide_plugin,120,2,45
-2,Модуль 2. Python Hard,23,pytest: parametrization,11,Закрепление,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,23,pytest: parametrization,12,Контрольный артефакт,project,ide_plugin,110,2,30
-2,Модуль 2. Python Hard,23,pytest: parametrization,13,Итог,summary,,40,2,8
-2,Модуль 2. Python Hard,24,pytest: mocking,1,Что это,theory,,40,2,18
-2,Модуль 2. Python Hard,24,pytest: mocking,2,Минимальный пример,theory,,40,2,18
-2,Модуль 2. Python Hard,24,pytest: mocking,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,24,pytest: mocking,4,Mock calls,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,24,pytest: mocking,5,Mock calls,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,24,pytest: mocking,6,Mock calls,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,24,pytest: mocking,7,Mock calls,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,24,pytest: mocking,8,Mock calls,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,24,pytest: mocking,9,Mock calls,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,24,pytest: mocking,10,Мини-проект,project,ide_plugin,120,2,45
-2,Модуль 2. Python Hard,24,pytest: mocking,11,Закрепление,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,24,pytest: mocking,12,Контрольный артефакт,project,ide_plugin,110,2,30
-2,Модуль 2. Python Hard,24,pytest: mocking,13,Итог,summary,,40,2,8
-2,Модуль 2. Python Hard,25,pytest: coverage,1,Что это,theory,,40,2,18
-2,Модуль 2. Python Hard,25,pytest: coverage,2,Минимальный пример,theory,,40,2,18
-2,Модуль 2. Python Hard,25,pytest: coverage,3,Понимание,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,25,pytest: coverage,4,Coverage branches,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,25,pytest: coverage,5,Coverage branches,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,25,pytest: coverage,6,Coverage branches,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,25,pytest: coverage,7,Coverage branches,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,25,pytest: coverage,8,Coverage branches,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,25,pytest: coverage,9,Coverage branches,practice,python_pytest,70,2,18
-2,Модуль 2. Python Hard,25,pytest: coverage,10,Мини-проект,project,ide_plugin,120,2,45
-2,Модуль 2. Python Hard,25,pytest: coverage,11,Закрепление,test,quiz_single,40,2,12
-2,Модуль 2. Python Hard,25,pytest: coverage,12,Контрольный артефакт,project,ide_plugin,110,2,30
-2,Модуль 2. Python Hard,25,pytest: coverage,13,Итог,summary,,40,2,8
+2,Модуль 2. Python Hard,21,pytest: функции,1,Тест функции,theory,,40,2,18
+2,Модуль 2. Python Hard,21,pytest: функции,2,Падающий тест,theory,,40,2,18
+2,Модуль 2. Python Hard,21,pytest: функции,3,Assert,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,21,pytest: функции,4,Discount test,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,21,pytest: функции,5,Boundary test,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,21,pytest: функции,6,Exception test,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,21,pytest: функции,7,Negative case,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,21,pytest: функции,8,Fix expected,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,21,pytest: функции,9,Two asserts,practice,python_pytest,70,2,18
+2,Модуль 2. Python Hard,21,pytest: функции,10,Function checks,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,21,pytest: функции,11,Чтение падения,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,21,pytest: функции,12,Regression checks,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,21,pytest: функции,13,Короткая проверка,summary,,20,2,8
+2,Модуль 2. Python Hard,22,pytest: fixtures,1,Зачем fixture,theory,,40,2,18
+2,Модуль 2. Python Hard,22,pytest: fixtures,2,tmp_path,theory,,40,2,18
+2,Модуль 2. Python Hard,22,pytest: fixtures,3,Fixture basics,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,22,pytest: fixtures,4,User fixture,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,22,pytest: fixtures,5,tmp_path write,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,22,pytest: fixtures,6,Fixture reuse,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,22,pytest: fixtures,7,Fix fixture,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,22,pytest: fixtures,8,App client fixture,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,22,pytest: fixtures,9,Factory fixture,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,22,pytest: fixtures,10,Fixture file lab,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,22,pytest: fixtures,11,Fixture mistakes,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,22,pytest: fixtures,12,Fixture integration,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,22,pytest: fixtures,13,Короткая проверка,summary,,20,2,8
+2,Модуль 2. Python Hard,23,pytest: parametrization,1,Зачем parametrization,theory,,40,2,18
+2,Модуль 2. Python Hard,23,pytest: parametrization,2,IDs cases,theory,,40,2,18
+2,Модуль 2. Python Hard,23,pytest: parametrization,3,Parametrize basics,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,23,pytest: parametrization,4,Even cases,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,23,pytest: parametrization,5,Discount cases,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,23,pytest: parametrization,6,Invalid emails,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,23,pytest: parametrization,7,Fix params,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,23,pytest: parametrization,8,HTTP status table,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,23,pytest: parametrization,9,Param fixture mix,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,23,pytest: parametrization,10,Parametrize lab,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,23,pytest: parametrization,11,Param mistakes,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,23,pytest: parametrization,12,Boundary table,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,23,pytest: parametrization,13,Короткая проверка,summary,,20,2,8
+2,Модуль 2. Python Hard,24,pytest: mocking,1,Зачем mock,theory,,40,2,18
+2,Модуль 2. Python Hard,24,pytest: mocking,2,Fake client,theory,,40,2,18
+2,Модуль 2. Python Hard,24,pytest: mocking,3,Mock basics,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,24,pytest: mocking,4,Monkeypatch rate,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,24,pytest: mocking,5,Fake client payload,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,24,pytest: mocking,6,Failure mock,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,24,pytest: mocking,7,Call count,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,24,pytest: mocking,8,Env monkeypatch,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,24,pytest: mocking,9,Fix real call,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,24,pytest: mocking,10,Mock provider lab,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,24,pytest: mocking,11,Mock mistakes,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,24,pytest: mocking,12,Payment fake,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,24,pytest: mocking,13,Короткая проверка,summary,,20,2,8
+2,Модуль 2. Python Hard,25,pytest: coverage,1,Что такое coverage,theory,,40,2,18
+2,Модуль 2. Python Hard,25,pytest: coverage,2,Branch coverage,theory,,40,2,18
+2,Модуль 2. Python Hard,25,pytest: coverage,3,Coverage basics,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,25,pytest: coverage,4,Both branches,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,25,pytest: coverage,5,Boundary 18,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,25,pytest: coverage,6,Error branch,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,25,pytest: coverage,7,Fix weak coverage,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,25,pytest: coverage,8,Status matrix,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,25,pytest: coverage,9,Coverage threshold,practice,python_pytest,80,24,3
+2,Модуль 2. Python Hard,25,pytest: coverage,10,Coverage lab,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,25,pytest: coverage,11,Coverage mistakes,test,quiz_single,40,2,10
+2,Модуль 2. Python Hard,25,pytest: coverage,12,CI coverage gate,project,ide_plugin,110,3,35
+2,Модуль 2. Python Hard,25,pytest: coverage,13,Короткая проверка,summary,,20,2,8
 2,Модуль 2. Python Hard,26,Алгоритмы: сложность,1,Что это,theory,,40,2,18
 2,Модуль 2. Python Hard,26,Алгоритмы: сложность,2,Минимальный пример,theory,,40,2,18
 2,Модуль 2. Python Hard,26,Алгоритмы: сложность,3,Понимание,test,quiz_single,40,2,12
@@ -1301,58 +1301,58 @@
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,11,Понимание,test,quiz_single,40,2,12
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,12,Мини-проект,project,ide_plugin,110,2,30
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",8,HTTPException,13,Короткий итог,summary,,40,2,8
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,1,Что это,theory,,40,2,18
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,2,Минимальный пример,theory,,40,2,18
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,3,Понимание,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,4,POST /tasks,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,5,PATCH /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,6,DELETE /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,7,GET /users/me,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,8,POST /auth/login,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,9,GET /reports,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,10,API-минипроект,project,ide_plugin,140,2,50
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,11,Закрепление,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,12,Контрольный артефакт,project,ide_plugin,110,2,30
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,13,Итог,summary,,40,2,8
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,1,Что это,theory,,40,2,18
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,2,Минимальный пример,theory,,40,2,18
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,3,Понимание,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,4,DELETE /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,5,GET /users/me,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,6,POST /auth/login,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,7,GET /reports,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,8,GET /metrics,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,9,GET /health,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,10,API-минипроект,project,ide_plugin,140,2,50
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,11,Закрепление,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,12,Контрольный артефакт,project,ide_plugin,110,2,30
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,13,Итог,summary,,40,2,8
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,1,Что это,theory,,40,2,18
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,2,Минимальный пример,theory,,40,2,18
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,3,Понимание,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,4,GET /reports,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,5,GET /metrics,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,6,GET /health,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,7,GET /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,8,GET /tasks,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,9,POST /tasks,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,10,API-минипроект,project,ide_plugin,140,2,50
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,11,Закрепление,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,12,Контрольный артефакт,project,ide_plugin,110,2,30
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,13,Итог,summary,,40,2,8
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,1,Что это,theory,,40,2,18
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,2,Минимальный пример,theory,,40,2,18
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,3,Понимание,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,4,DELETE /tasks/{task_id},practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,5,GET /users/me,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,6,POST /auth/login,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,7,GET /reports,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,8,GET /metrics,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,9,GET /health,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,10,API-минипроект,project,ide_plugin,140,2,50
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,11,Закрепление,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,12,Контрольный артефакт,project,ide_plugin,110,2,30
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,13,Итог,summary,,40,2,8
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,1,Зачем router,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,2,Prefix и tags,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,3,Router contract,test,quiz_single,40,2,10
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,4,GET /tasks,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,5,GET /users/me,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,6,GET /reports/summary,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,7,GET /projects/{id}/tasks,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,8,Router debug,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,9,GET /v1/status,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,10,Routers module,project,ide_plugin,110,3,35
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,11,Router mistakes,test,quiz_single,40,2,10
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,12,Router package,project,ide_plugin,110,3,35
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",9,Routers,13,Короткая проверка,summary,,20,2,8
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,1,Dependency,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,2,Settings,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,3,Depends,test,quiz_single,40,2,10
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,4,GET /config,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,5,GET /limits,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,6,GET /feature,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,7,GET /service-name,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,8,GET /timezone,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,9,GET /ready/config,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,10,Settings module,project,ide_plugin,110,3,35
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,11,Dependency mistakes,test,quiz_single,40,2,10
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,12,Config dependency,project,ide_plugin,110,3,35
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",10,Depends и settings,13,Короткая проверка,summary,,20,2,8
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,1,Middleware-идея,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,2,Лог и контекст,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,3,Logging API,test,quiz_single,40,2,10
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,4,GET /trace,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,5,GET /metrics/request,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,6,GET /log/level,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,7,GET /errors/last,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,8,GET /request/path,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,9,GET /latency,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,10,API logging,project,ide_plugin,110,3,35
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,11,Log mistakes,test,quiz_single,40,2,10
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,12,Request log module,project,ide_plugin,110,3,35
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",11,Middleware и logging,13,Короткая проверка,summary,,20,2,8
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,1,"Health, readiness, liveness",theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,2,Dependency readiness,theory,,40,2,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,3,Health semantics,test,quiz_single,40,2,10
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,4,GET /health,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,5,GET /live,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,6,GET /ready,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,7,GET /ready/queue,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,8,GET /health/version,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,9,GET /ready/fail,practice,http_api,75,3,18
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,10,Health probes,project,ide_plugin,110,3,35
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,11,Probe mistakes,test,quiz_single,40,2,10
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,12,Docker probes,project,ide_plugin,110,3,35
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",12,Healthcheck,13,Короткая проверка,summary,,20,2,8
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",13,Auth JWT,1,Что это,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",13,Auth JWT,2,Минимальный пример,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",13,Auth JWT,3,Понимание,test,quiz_single,40,2,12
@@ -1604,143 +1604,143 @@
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",34,CI/CD: GitHub Actions и GitLab CI,10,Итог,summary,,40,2,8
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,1,Что это,theory,,40,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,2,Минимальный пример,theory,,40,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,3,Понимание,test,quiz_single,40,2,12
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,4,Messages payload,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,5,Messages payload,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,6,Timeout provider,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,7,Schema fallback,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,8,Chunk citation,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,9,Graph node,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,10,AI-минипроект,project,ide_plugin,140,2,50
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,11,Контрольный артефакт,project,ide_plugin,110,2,30
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,12,Итог,summary,,40,2,8
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,3,Понимание,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,4,Messages,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,5,Payload,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,6,Mock call,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,7,Timeout guard,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,8,Retry,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,9,AI-минипроект,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,10,Закрепление,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,11,Контрольный AI-модуль,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",1,AI API request,12,Короткая проверка,summary,,20,2,8
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,1,Что это,theory,,40,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,2,Минимальный пример,theory,,40,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,3,Понимание,test,quiz_single,40,2,12
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,4,Messages payload,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,5,Messages payload,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,6,Timeout provider,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,7,Schema fallback,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,8,Chunk citation,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,9,Graph node,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,10,AI-минипроект,project,ide_plugin,140,2,50
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,11,Контрольный артефакт,project,ide_plugin,110,2,30
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,12,Итог,summary,,40,2,8
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,3,Понимание,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,4,System policy,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,5,User message,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,6,Message order,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,7,Trim context,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,8,Reject secret,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,9,AI-минипроект,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,10,Закрепление,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,11,Контрольный AI-модуль,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",2,Prompt и messages,12,Короткая проверка,summary,,20,2,8
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,1,Что это,theory,,40,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,2,Минимальный пример,theory,,40,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,3,Понимание,test,quiz_single,40,2,12
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,4,Schema fallback,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,5,Schema fallback,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,6,Timeout provider,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,7,Schema fallback,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,8,Graph node,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,9,AI-минипроект,project,ide_plugin,140,2,50
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,10,Контрольный артефакт,project,ide_plugin,110,2,30
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,11,Итог,summary,,40,2,8
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,3,Понимание,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,4,Parse JSON,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,5,Required fields,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,6,Type mismatch,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,7,Fallback,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,8,AI-минипроект,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,9,Закрепление,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,10,Контрольный AI-модуль,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",3,Structured output,11,Короткая проверка,summary,,20,2,8
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,1,Что это,theory,,40,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,2,Минимальный пример,theory,,40,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,3,Понимание,test,quiz_single,40,2,12
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,4,Schema fallback,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,5,Schema fallback,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,6,Timeout provider,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,3,Понимание,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,4,Build schema,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,5,Required,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,6,Type check,practice,python_pytest,70,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,7,Schema fallback,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,8,Graph node,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,9,AI-минипроект,project,ide_plugin,140,2,50
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,10,Контрольный артефакт,project,ide_plugin,110,2,30
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,11,Итог,summary,,40,2,8
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,8,AI-минипроект,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,9,Закрепление,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,10,Контрольный AI-модуль,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",4,JSON schema,11,Короткая проверка,summary,,20,2,8
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,1,Что это,theory,,40,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,2,Минимальный пример,theory,,40,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,3,Понимание,test,quiz_single,40,2,12
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,4,Messages payload,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,5,Messages payload,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,6,Timeout provider,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,7,Schema fallback,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,8,Chunk citation,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,9,Graph node,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,10,AI-минипроект,project,ide_plugin,140,2,50
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,11,Контрольный артефакт,project,ide_plugin,110,2,30
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,12,Итог,summary,,40,2,8
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,3,Понимание,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,4,Provider class,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,5,Provider injection,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,6,Provider failure,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,7,Provider contract,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,8,Provider log,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,9,AI-минипроект,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,10,Закрепление,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,11,Контрольный AI-модуль,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",5,Mock provider,12,Короткая проверка,summary,,20,2,8
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,1,Что это,theory,,40,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,2,Минимальный пример,theory,,40,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,3,Понимание,test,quiz_single,40,2,12
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,4,Timeout provider,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,5,Timeout provider,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,6,Timeout provider,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,7,Timeout provider,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,8,Timeout provider,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,9,Graph node,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,10,AI-минипроект,project,ide_plugin,140,2,50
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,11,Контрольный артефакт,project,ide_plugin,110,2,30
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,12,Итог,summary,,40,2,8
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,3,Понимание,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,4,Retry budget,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,5,Retry decision,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,6,Timeout status,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,7,Backoff,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,8,Retry log,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,9,AI-минипроект,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,10,Закрепление,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,11,Контрольный AI-модуль,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",6,Retries и timeouts,12,Короткая проверка,summary,,20,2,8
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,1,Что это,theory,,40,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,2,Минимальный пример,theory,,40,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,3,Понимание,test,quiz_single,40,2,12
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,4,Messages payload,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,5,Messages payload,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,6,Timeout provider,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,7,Schema fallback,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,8,Chunk citation,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,9,Graph node,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,10,AI-минипроект,project,ide_plugin,140,2,50
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,11,Контрольный артефакт,project,ide_plugin,110,2,30
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,12,Итог,summary,,40,2,8
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,3,Понимание,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,4,Token estimate,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,5,Cost limit,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,6,Rate window,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,7,Queue decision,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,8,Cost log,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,9,AI-минипроект,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,10,Закрепление,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,11,Контрольный AI-модуль,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",7,Rate limits и cost,12,Короткая проверка,summary,,20,2,8
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,1,Что это,theory,,40,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,2,Минимальный пример,theory,,40,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,3,Понимание,test,quiz_single,40,2,12
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,4,Chunk citation,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,5,Chunk citation,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,6,Chunk citation,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,7,Chunk citation,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,8,Chunk citation,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,9,AI-минипроект,project,ide_plugin,140,2,50
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,10,Контрольный артефакт,project,ide_plugin,110,2,30
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,11,Итог,summary,,40,2,8
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,3,Понимание,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,4,Chunks with source,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,5,Retrieval,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,6,Citation,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,7,Guard,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,8,AI-минипроект,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,9,Закрепление,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,10,Контрольный AI-модуль,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",8,RAG chunks,11,Короткая проверка,summary,,20,2,8
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,1,Что это,theory,,40,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,2,Минимальный пример,theory,,40,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,3,Понимание,test,quiz_single,40,2,12
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,4,Messages payload,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,5,Messages payload,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,6,Timeout provider,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,7,Schema fallback,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,8,Chunk citation,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,9,Graph node,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,10,AI-минипроект,project,ide_plugin,140,2,50
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,11,Контрольный артефакт,project,ide_plugin,110,2,30
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,12,Итог,summary,,40,2,8
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,3,Понимание,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,4,Mock embedding,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,5,Cosine,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,6,Top k,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,7,Metadata,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,8,Stale index,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,9,AI-минипроект,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,10,Закрепление,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,11,Контрольный AI-модуль,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",9,Embeddings и vector DB,12,Короткая проверка,summary,,20,2,8
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,1,Что это,theory,,40,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,2,Минимальный пример,theory,,40,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,3,Понимание,test,quiz_single,40,2,12
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,4,Chunk citation,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,5,Chunk citation,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,6,Timeout provider,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,7,Schema fallback,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,8,Chunk citation,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,9,Graph node,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,10,AI-минипроект,project,ide_plugin,140,2,50
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,11,Контрольный артефакт,project,ide_plugin,110,2,30
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,12,Итог,summary,,40,2,8
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,3,Понимание,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,4,Source coverage,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,5,Unsupported,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,6,Precision,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,7,Decision,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,8,Report,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,9,AI-минипроект,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,10,Закрепление,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,11,Контрольный AI-модуль,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",10,Retrieval evaluation hallucination,12,Короткая проверка,summary,,20,2,8
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,1,Что это,theory,,40,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,2,Минимальный пример,theory,,40,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,3,Понимание,test,quiz_single,40,2,12
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,4,Graph node,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,5,Graph node,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,6,Graph node,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,7,Graph node,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,8,Graph node,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,9,AI-минипроект,project,ide_plugin,140,2,50
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,10,Контрольный артефакт,project,ide_plugin,110,2,30
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,11,Итог,summary,,40,2,8
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,3,Понимание,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,4,State,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,5,Node,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,6,Transition,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,7,Tool call,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,8,AI-минипроект,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,9,Закрепление,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,10,Контрольный AI-модуль,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",11,LangChain и LangGraph,11,Короткая проверка,summary,,20,2,8
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,1,Что это,theory,,40,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,2,Минимальный пример,theory,,40,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,3,Понимание,test,quiz_single,40,2,12
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,4,Patch review,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,5,Patch review,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,6,Patch review,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,7,Patch review,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,8,Patch review,practice,python_pytest,70,2,18
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,9,AI-минипроект,project,ide_plugin,140,2,50
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,10,Контрольный артефакт,project,ide_plugin,110,2,30
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,11,Итог,summary,,40,2,8
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,3,Понимание,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,4,Diff review,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,5,Dependency risk,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,6,Hallucinated API,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,7,Review gate,practice,python_pytest,70,2,18
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,8,AI-минипроект,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,9,Закрепление,test,quiz_single,40,2,10
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,10,Контрольный AI-модуль,project,ide_plugin,110,3,35
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",12,Безопасный вайбкодинг,11,Короткая проверка,summary,,20,2,8
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",13,"VPS, безопасность, домен, SSL",1,Что это,theory,,40,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",13,"VPS, безопасность, домен, SSL",2,Минимальный пример,theory,,40,2,16
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",13,"VPS, безопасность, домен, SSL",3,Понимание,test,quiz_single,40,2,12

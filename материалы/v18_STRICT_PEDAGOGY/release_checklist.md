@@ -17,3 +17,10 @@
 - `duplication_report.md` должен показывать максимальный размер оставшейся структурной группы.
 - На staging пройти FastAPI lesson 1 как студент: `GET /health`, `GET /hello`, `GET /version`, `GET /ready`, `GET /about`, `GET /ping`.
 - Не запускать массовый поток без ручной выборки 50-100 шагов после импорта.
+
+## SEMANTIC_ALIGNMENT_2026_05_05
+
+- Запустить `python validate_course.py`.
+- Проверить `pedagogical_audit_report.md`: rewritten lessons > 0, weak lessons after fixes = 0 by gates.
+- Проверить `duplication_report.md`: exact duplicate practice/project bodies = 0, exact duplicate solutions = 0.
+- После импорта на staging пройти вручную 10 первых уроков, известные исправленные уроки module 2/4/5 и минимум 20 случайных шагов.

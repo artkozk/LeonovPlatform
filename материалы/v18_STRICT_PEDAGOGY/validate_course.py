@@ -217,6 +217,138 @@ def fastapi_ladder_issues(course):
                 issues.append(f"FastAPI ladder lesson {order} missing required route marker: {token}")
     return issues
 
+def lesson_blob(lesson):
+    parts = [lesson.get("title", "")]
+    for step in lesson.get("steps", []):
+        parts.extend([
+            step.get("title", ""),
+            step.get("body_markdown", ""),
+            step.get("editor_initial_code", ""),
+            step.get("solution_code", ""),
+            json.dumps(step.get("checker", {}), ensure_ascii=False),
+        ])
+    return "\n".join(parts)
+
+def topic_contract_issues(course):
+    issues = []
+    for module, lesson in iter_lessons(course):
+        title = lesson["title"].lower()
+        blob = lesson_blob(lesson)
+        low = blob.lower()
+
+        if "pathlib" in title:
+            required = ["Path", "read_text", "write_text", "exists", "mkdir", "glob"]
+            missing = [token for token in required if token not in blob]
+            if missing:
+                issues.append(f"pathlib lesson missing topic tokens {missing}: {lesson['id']}")
+            forbidden = ["inventory delta", "cache ttl", "state transition", "priority queue"]
+            if any(token in low for token in forbidden):
+                issues.append(f"pathlib lesson contains foreign generic task: {lesson['id']}")
+
+        if "mypy" in title or "контракт" in title:
+            required = ["->", "Optional", "TypedDict", "Protocol", "list["]
+            missing = [token for token in required if token not in blob]
+            if missing:
+                issues.append(f"typing/mypy lesson missing topic tokens {missing}: {lesson['id']}")
+            forbidden = ["cache ttl", "inventory delta", "state transition", "priority queue"]
+            if any(token in low for token in forbidden):
+                issues.append(f"typing/mypy lesson contains generic algorithm task: {lesson['id']}")
+
+        if title in {"логирование", "middleware и logging"}:
+            required = ["logging", "logger", "info", "warning", "error"]
+            missing = [token for token in required if token not in low]
+            if missing:
+                issues.append(f"logging lesson missing topic tokens {missing}: {lesson['id']}")
+            if "return {" in low and "logger" not in low:
+                issues.append(f"logging lesson looks like return-only generic task: {lesson['id']}")
+
+        if "pytest" in title:
+            if "fixtures" in title:
+                required = ["assert", "pytest", "fixture", "tmp_path"]
+            elif "parametrization" in title:
+                required = ["assert", "pytest", "parametrize", "ids"]
+            elif "mocking" in title:
+                required = ["assert", "pytest", "monkeypatch", "fake"]
+            elif "coverage" in title:
+                required = ["assert", "pytest", "coverage", "branch"]
+            else:
+                required = ["assert", "pytest", "test_"]
+            missing = [token for token in required if token not in low]
+            if missing:
+                issues.append(f"pytest lesson missing topic tokens {missing}: {lesson['id']}")
+            if "param ids" in low:
+                issues.append(f"pytest lesson still contains generic Param ids task: {lesson['id']}")
+
+        if title == "healthcheck":
+            required = ["/health", "/ready", "/live"]
+            missing = [token for token in required if token not in blob]
+            if missing:
+                issues.append(f"healthcheck lesson missing probes {missing}: {lesson['id']}")
+            student_low = " ".join(
+                step.get("title", "") + " " + step.get("body_markdown", "") + " " + step.get("solution_code", "")
+                for step in lesson["steps"]
+            ).lower()
+            forbidden = ["/tasks", "/auth", "/users/me"]
+            if any(token in student_low for token in forbidden):
+                issues.append(f"healthcheck lesson contains foreign CRUD/auth route: {lesson['id']}")
+
+        if title == "routers":
+            required = ["APIRouter", "include_router", "prefix", "tags"]
+            missing = [token for token in required if token not in blob]
+            if missing:
+                issues.append(f"routers lesson missing topic tokens {missing}: {lesson['id']}")
+
+        if "depends" in title and "settings" in title:
+            required = ["Depends", "settings", "dependency"]
+            missing = [token for token in required if token.lower() not in low]
+            if missing:
+                issues.append(f"depends/settings lesson missing topic tokens {missing}: {lesson['id']}")
+
+        if title == "ai api request":
+            required = ["provider", "payload", "messages", "timeout"]
+            missing = [token for token in required if token not in low]
+            if missing:
+                issues.append(f"AI API request lesson missing topic tokens {missing}: {lesson['id']}")
+            if "@app.get" in low or "fastapi" in low:
+                issues.append(f"AI API request lesson contains FastAPI as main example: {lesson['id']}")
+
+        if re.search(r"\brag\b", title):
+            required = ["chunk", "retrieval", "source", "no_answer"]
+            missing = [token for token in required if token not in low]
+            if missing:
+                issues.append(f"RAG lesson missing topic tokens {missing}: {lesson['id']}")
+
+        if "langchain" in title or "langgraph" in title:
+            required = ["state", "node", "transition"]
+            missing = [token for token in required if token not in low]
+            if missing:
+                issues.append(f"LangGraph lesson missing topic tokens {missing}: {lesson['id']}")
+
+        if "вайб" in title:
+            required = ["diff", "secret", "review", "dependency"]
+            missing = [token for token in required if token not in low]
+            if missing:
+                issues.append(f"safe vibe lesson missing topic tokens {missing}: {lesson['id']}")
+
+        theory_count = sum(1 for step in lesson["steps"] if step["type"] == "theory")
+        test_count = sum(1 for step in lesson["steps"] if step["type"] == "test")
+        hand_count = sum(1 for step in lesson["steps"] if step["type"] in {"practice", "project"})
+        debug_or_edge = any(
+            step["type"] in {"practice", "project"} and (
+                step.get("lesson_stage") in {"debug", "edge"}
+                or "исправ" in step.get("body_markdown", "").lower()
+                or "ошиб" in step.get("body_markdown", "").lower()
+                or "edge" in step.get("edge_case", "").lower()
+            )
+            for step in lesson["steps"]
+        )
+        if theory_count < 1 or test_count < 1 or hand_count < 2:
+            issues.append(f"lesson lacks theory/test/hands-on minimum: {lesson['id']}")
+        if not debug_or_edge:
+            issues.append(f"lesson lacks debug or boundary-case task: {lesson['id']}")
+
+    return issues
+
 def manifest_rows(course):
     rows = []
     for module, lesson, step in iter_steps(course):
@@ -355,6 +487,7 @@ def validate(write_reports=True):
     if fastapi_issue:
         errors.append(fastapi_issue)
     errors.extend(fastapi_ladder_issues(course))
+    errors.extend(topic_contract_issues(course))
     expected = manifest_rows(course)
     if MANIFEST_FILE.exists():
         with MANIFEST_FILE.open("r", encoding="utf-8-sig", newline="") as fh:

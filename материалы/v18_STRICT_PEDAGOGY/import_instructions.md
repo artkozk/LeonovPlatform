@@ -14,3 +14,7 @@ python validate_course.py
 Импортировать нужно только `course_import.json`. Markdown-файлы служат для ревью и QA.
 Перед импортом запусти `python validate_course.py`; проверка теперь дополнительно блокирует ранний FastAPI без простых GET endpoint, отсутствие педагогического аудита и отсутствие отчёта по повторам.
 Причина изменения: студент с нуля не должен видеть PATCH, DELETE, auth или базу данных до того, как разобрался с простым endpoint и ответом JSON.
+
+## SEMANTIC_ALIGNMENT_2026_05_05
+
+Импортировать нужно только `course_import.json`. Перед импортом запусти `python validate_course.py`: валидатор теперь проверяет не только структуру, но и topic-contract правила для проблемных уроков. Это сделано, чтобы ревьюер видел: lesson `pathlib` действительно содержит Path/file practice, lesson `AI API request` не подменён FastAPI-примером, а healthcheck не содержит CRUD/auth endpoints.

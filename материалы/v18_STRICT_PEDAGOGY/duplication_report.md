@@ -1,140 +1,22 @@
-# Duplication report v18_STRICT_PEDAGOGY
+# Duplication report
 
-Отчёт построен по `course_import.json`, а не по `validation_report.md`.
+## Before fixes
+- Known groups: OOP Task.complete, Param ids, Cache TTL, Inventory delta, State transition, Messages payload, Timeout provider, Chunk citation, Schema fallback, Graph node.
+- Known impact: repeated tasks in module 2 pytest/OOP/typing/pathlib/logging and module 5 AI lessons.
 
-## Summary
-- practice/project titles checked: 1159
-- repeated title groups: 76
-- structural solution groups with size > 1: 125
-- max remaining structural group: 18
-- checker signature groups with size > 1: 36
-- max checker signature group: 53
+## After fixes
+- exact duplicate practice/project bodies after: 0
+- exact duplicate practice/project solutions after: 0
+- normalized duplicate practice/project solutions after: 0
+- max structural solution group after: 12
+- validator threshold for structural group: 20
 
-## Groups rewritten in this iteration
-- FastAPI lessons 1-8 were rewritten as a real ladder: simple GET, list GET, path params, query params, request body, Pydantic, response_model/status codes, HTTPException.
-- Repeated early FastAPI contracts were replaced with different routes, methods, state checks and negative checks.
-- Body/checker route wording was resynchronized for HTTP API steps after query-string handling was fixed in the validator.
+## Rewritten groups
+- OOP repeated class tasks rewritten into object state, methods, invariants and project checks.
+- pytest Param ids families rewritten into fixtures, parametrization, mocking and coverage ladders.
+- AI duplicated skeletons rewritten into distinct request, schema, mock, retry, rate limit, RAG, vector, evaluation, graph and safe review contracts.
+- FastAPI routers/depends/middleware/healthcheck rewritten by real API skill instead of random CRUD/auth routes.
 
-## Largest repeated practice/project titles
-- Контрольный артефакт: 151
-- Мини-проект: 65
-- SQL-файл: 56
-- JOIN: 53
-- Фильтр: 52
-- NULL: 46
-- Колонки: 44
-- README: 21
-- Команда: 21
-- Ошибка: 21
-- Git state: 21
-- Проверка: 21
-- Задача: 18
-- Param ids: 18
-- Cache TTL: 16
-- Inventory delta: 16
-- State transition: 16
-- CSV columns: 16
-- Priority queue: 16
-- Retry log: 16
-- Graph node: 15
-- Timeout provider: 14
-- Chunk citation: 14
-- Schema fallback: 13
-- AI-минипроект: 13
-
-## Largest structural groups
-- size 18: Задача / m02_l001_oop-klassy_s004_sostoyanie-1
-  - ООП: классы: m02_l001_oop-klassy_s004_sostoyanie-1 (Задача)
-  - ООП: классы: m02_l001_oop-klassy_s005_invariant-2 (Задача)
-  - ООП: классы: m02_l001_oop-klassy_s006_sostoyanie-3 (Задача)
-  - ООП: классы: m02_l001_oop-klassy_s007_invariant-4 (Задача)
-  - ООП: классы: m02_l001_oop-klassy_s008_sostoyanie-5 (Задача)
-- size 18: Param ids / m02_l021_pytest-funkcii_s004_bazovaya-funkciya-1
-  - pytest: функции: m02_l021_pytest-funkcii_s004_bazovaya-funkciya-1 (Param ids)
-  - pytest: функции: m02_l021_pytest-funkcii_s005_granica-2 (Param ids)
-  - pytest: функции: m02_l021_pytest-funkcii_s006_bazovaya-funkciya-3 (Param ids)
-  - pytest: функции: m02_l021_pytest-funkcii_s007_granica-4 (Param ids)
-  - pytest: функции: m02_l021_pytest-funkcii_s008_bazovaya-funkciya-5 (Param ids)
-- size 16: Cache TTL / m02_l015_mypy-i-kontrakty_s004_bazovaya-funkciya-1
-  - mypy и контракты: m02_l015_mypy-i-kontrakty_s004_bazovaya-funkciya-1 (Cache TTL)
-  - Файлы и pathlib: m02_l016_fayly-i-pathlib_s009_granica-6 (Cache TTL)
-  - JSON и CSV: m02_l017_json-i-csv_s008_bazovaya-funkciya-5 (Cache TTL)
-  - Логирование: m02_l018_logirovanie_s007_granica-4 (Cache TTL)
-  - Пакеты и импорты: m02_l019_pakety-i-importy_s006_bazovaya-funkciya-3 (Cache TTL)
-- size 16: Inventory delta / m02_l015_mypy-i-kontrakty_s005_granica-2
-  - mypy и контракты: m02_l015_mypy-i-kontrakty_s005_granica-2 (Inventory delta)
-  - Файлы и pathlib: m02_l016_fayly-i-pathlib_s004_bazovaya-funkciya-1 (Inventory delta)
-  - JSON и CSV: m02_l017_json-i-csv_s009_granica-6 (Inventory delta)
-  - Логирование: m02_l018_logirovanie_s008_bazovaya-funkciya-5 (Inventory delta)
-  - Пакеты и импорты: m02_l019_pakety-i-importy_s007_granica-4 (Inventory delta)
-- size 16: State transition / m02_l015_mypy-i-kontrakty_s006_bazovaya-funkciya-3
-  - mypy и контракты: m02_l015_mypy-i-kontrakty_s006_bazovaya-funkciya-3 (State transition)
-  - Файлы и pathlib: m02_l016_fayly-i-pathlib_s005_granica-2 (State transition)
-  - JSON и CSV: m02_l017_json-i-csv_s004_bazovaya-funkciya-1 (State transition)
-  - Логирование: m02_l018_logirovanie_s009_granica-6 (State transition)
-  - Пакеты и импорты: m02_l019_pakety-i-importy_s008_bazovaya-funkciya-5 (State transition)
-- size 16: CSV columns / m02_l015_mypy-i-kontrakty_s007_granica-4
-  - mypy и контракты: m02_l015_mypy-i-kontrakty_s007_granica-4 (CSV columns)
-  - Файлы и pathlib: m02_l016_fayly-i-pathlib_s006_bazovaya-funkciya-3 (CSV columns)
-  - JSON и CSV: m02_l017_json-i-csv_s005_granica-2 (CSV columns)
-  - Логирование: m02_l018_logirovanie_s004_bazovaya-funkciya-1 (CSV columns)
-  - Пакеты и импорты: m02_l019_pakety-i-importy_s009_granica-6 (CSV columns)
-- size 16: Priority queue / m02_l015_mypy-i-kontrakty_s008_bazovaya-funkciya-5
-  - mypy и контракты: m02_l015_mypy-i-kontrakty_s008_bazovaya-funkciya-5 (Priority queue)
-  - Файлы и pathlib: m02_l016_fayly-i-pathlib_s007_granica-4 (Priority queue)
-  - JSON и CSV: m02_l017_json-i-csv_s006_bazovaya-funkciya-3 (Priority queue)
-  - Логирование: m02_l018_logirovanie_s005_granica-2 (Priority queue)
-  - Пакеты и импорты: m02_l019_pakety-i-importy_s004_bazovaya-funkciya-1 (Priority queue)
-- size 16: Retry log / m02_l015_mypy-i-kontrakty_s009_granica-6
-  - mypy и контракты: m02_l015_mypy-i-kontrakty_s009_granica-6 (Retry log)
-  - Файлы и pathlib: m02_l016_fayly-i-pathlib_s008_bazovaya-funkciya-5 (Retry log)
-  - JSON и CSV: m02_l017_json-i-csv_s007_granica-4 (Retry log)
-  - Логирование: m02_l018_logirovanie_s006_bazovaya-funkciya-3 (Retry log)
-  - Пакеты и импорты: m02_l019_pakety-i-importy_s005_granica-2 (Retry log)
-- size 15: Graph node / m01_l020_ai-dlya-ucheby_s009_graph-state
-  - AI для учёбы: m01_l020_ai-dlya-ucheby_s009_graph-state (Graph node)
-  - AI API request: m05_l001_ai-api-request_s009_graph-state (Graph node)
-  - Prompt и messages: m05_l002_prompt-i-messages_s009_graph-state (Graph node)
-  - Structured output: m05_l003_structured-output_s008_graph-state (Graph node)
-  - JSON schema: m05_l004_json-schema_s008_graph-state (Graph node)
-- size 14: Timeout provider / m01_l020_ai-dlya-ucheby_s006_timeout
-  - AI для учёбы: m01_l020_ai-dlya-ucheby_s006_timeout (Timeout provider)
-  - AI API request: m05_l001_ai-api-request_s006_timeout (Timeout provider)
-  - Prompt и messages: m05_l002_prompt-i-messages_s006_timeout (Timeout provider)
-  - Structured output: m05_l003_structured-output_s006_timeout (Timeout provider)
-  - JSON schema: m05_l004_json-schema_s006_timeout (Timeout provider)
-- size 14: Chunk citation / m01_l020_ai-dlya-ucheby_s008_rag-answer
-  - AI для учёбы: m01_l020_ai-dlya-ucheby_s008_rag-answer (Chunk citation)
-  - AI API request: m05_l001_ai-api-request_s008_rag-answer (Chunk citation)
-  - Prompt и messages: m05_l002_prompt-i-messages_s008_rag-answer (Chunk citation)
-  - Mock provider: m05_l005_mock-provider_s008_rag-answer (Chunk citation)
-  - Rate limits и cost: m05_l007_rate-limits-i-cost_s008_rag-answer (Chunk citation)
-- size 14: Контрольный артефакт / m02_l031_binary-search_s012_kontrolnyy-artefakt
-  - Binary search: m02_l031_binary-search_s012_kontrolnyy-artefakt (Контрольный артефакт)
-  - Refresh tokens: m04_l014_refresh-tokens_s012_kontrolnyy-artefakt (Контрольный артефакт)
-  - Database session: m04_l015_database-session_s010_kontrolnyy-artefakt (Контрольный артефакт)
-  - SQLAlchemy models: m04_l017_sqlalchemy-models_s010_kontrolnyy-artefakt (Контрольный артефакт)
-  - SQLAlchemy relationships: m04_l018_sqlalchemy-relationships_s010_kontrolnyy-artefakt (Контрольный артефакт)
-- size 13: Schema fallback / m01_l020_ai-dlya-ucheby_s007_json-schema
-  - AI для учёбы: m01_l020_ai-dlya-ucheby_s007_json-schema (Schema fallback)
-  - AI API request: m05_l001_ai-api-request_s007_json-schema (Schema fallback)
-  - Prompt и messages: m05_l002_prompt-i-messages_s007_json-schema (Schema fallback)
-  - Structured output: m05_l003_structured-output_s004_json-schema (Schema fallback)
-  - Structured output: m05_l003_structured-output_s005_messages (Schema fallback)
-- size 12: Messages payload / m01_l020_ai-dlya-ucheby_s004_hint-request
-  - AI для учёбы: m01_l020_ai-dlya-ucheby_s004_hint-request (Messages payload)
-  - AI для учёбы: m01_l020_ai-dlya-ucheby_s005_messages (Messages payload)
-  - AI API request: m05_l001_ai-api-request_s004_hint-request (Messages payload)
-  - AI API request: m05_l001_ai-api-request_s005_messages (Messages payload)
-  - Prompt и messages: m05_l002_prompt-i-messages_s004_hint-request (Messages payload)
-- size 12: Единый интерфейс / m02_l009_polimorfizm_s004_sostoyanie-1
-  - Полиморфизм: m02_l009_polimorfizm_s004_sostoyanie-1 (Единый интерфейс)
-  - Полиморфизм: m02_l009_polimorfizm_s005_invariant-2 (Единый интерфейс)
-  - Полиморфизм: m02_l009_polimorfizm_s006_sostoyanie-3 (Единый интерфейс)
-  - Полиморфизм: m02_l009_polimorfizm_s007_invariant-4 (Единый интерфейс)
-  - Полиморфизм: m02_l009_polimorfizm_s008_sostoyanie-5 (Единый интерфейс)
-
-## Why remaining similarity is tracked instead of hidden
-- Some titles repeat intentionally because the learning role repeats across topics: `Мини-проект`, `Контрольный артефакт`, `JOIN`, `Фильтр`. The checker, data contract and lesson topic still differ.
-- Exact normalized solution duplicates are still blocked by `validate_course.py`.
-- The remaining structural groups are under the hard threshold and should be manually sampled on staging before mass launch.
+## Remaining similarity
+- Some structural similarity remains in generated project reference strings and simple Python idioms. It is below the validator threshold and does not duplicate exact body or exact solution.
+- If staging sampling finds same-business tasks, status must move from STAGING READY to NOT READY for that lesson group.

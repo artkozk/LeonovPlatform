@@ -312,3 +312,65 @@
 4. Проверить агрегаты курса: `5|169|1960|1159`.
 5. Открыть `FastAPI: первый API` и убедиться, что первые практики идут через простые GET endpoint: `/health`, `/hello`, `/version`, `/ready`, `/about`, `/ping`.
 6. Перед массовым запуском выполнить staging-регрессию: первые 10 уроков как студент и выборка 50-100 later-шагов.
+
+## 10. Дополнение 2026-05-05: semantic alignment reseed
+
+После FastAPI ladder quality reseed был выполнен более строгий аудит соответствия темы урока и практики. Он показал, что часть уроков могла быть технически валидной, но методически слабой: `Файлы и pathlib` содержали не файловые задачи, `mypy и контракты` не закреплял типовые контракты, `pytest` повторял одинаковые `Param ids`, AI-блоки повторяли один skeleton, а `Healthcheck` мог смешиваться с CRUD/auth.
+
+Что изменено сейчас:
+
+1. Переписаны 28 уроков и 346 шагов в `course_import.json`.
+2. Исправлены известные проблемные группы:
+   - OOP repeated `Task.complete`;
+   - pytest `Param ids`;
+   - generic Cache TTL / Inventory delta / State transition;
+   - duplicated AI payload/timeouts/chunks/schema/graph skeletons;
+   - Healthcheck с чужими CRUD/auth сценариями.
+3. Усилен `validate_course.py`:
+   - topic-contract rules для pathlib, mypy/typing, logging, pytest, FastAPI routers/depends/healthcheck, AI API, RAG, LangGraph, safe vibe;
+   - exact/normalized duplicate gates;
+   - body leak and corruption scan;
+   - manifest/coverage consistency.
+4. Создана новая миграция:
+   - `030_reseed_python_zero_v18_semantic_alignment.sql`.
+
+Почему это отдельная миграция:
+
+1. `029` уже закрывает отдельную проблему FastAPI progression.
+2. `030` закрывает semantic alignment across modules 2, 4 and 5.
+3. Разделение помогает безопасно откатывать и проверять именно слой данных курса, не смешивая его с backend-кодом.
+
+Актуальные метрики после `030`:
+
+1. modules: 5;
+2. lessons: 169;
+3. lesson blocks: 1960;
+4. tasks (practice + project): 1146;
+5. quiz steps: 307;
+6. questions: 921;
+7. estimated hours: 659.5;
+8. checker counts: python_stdout 45, python_pytest 348, sql_query 221, http_api 120, ide_plugin 412;
+9. exact duplicate practice/project bodies: 0;
+10. exact duplicate practice/project solutions: 0;
+11. normalized duplicate practice/project solutions: 0;
+12. max structural solution group: 12.
+
+Проверки после правки:
+
+1. `python материалы/v18_STRICT_PEDAGOGY/validate_course.py` — PASS.
+2. `python tmp_independent_v18_semantic_audit.py` — PASS локально перед удалением временного скрипта:
+   - lessons checked: 169;
+   - rewritten lessons: 28;
+   - rewritten steps: 346;
+   - sampled modules 2–5: по 10 уроков на модуль.
+3. `node backend/tools/generate_python_v18_materials_migration.js` — создан `030`.
+4. `node backend/tools/validate_python_v18_materials_import.js` — PASS против `030`.
+
+Операционная инструкция теперь использует `030`:
+
+1. Запушить commit с миграцией `030`.
+2. Развернуть release на сервер.
+3. Проверить запись `030_reseed_python_zero_v18_semantic_alignment` в `schema_migrations`.
+4. Проверить агрегаты курса: `5|169|1960`.
+5. На staging открыть исправленные уроки: `mypy и контракты`, `Файлы и pathlib`, `pytest: fixtures`, `Healthcheck`, `AI API request`, `RAG chunks`.
+6. Массовый запуск разрешать только после ручной staging-регрессии IDE-plugin проектов и hidden checks.

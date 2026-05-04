@@ -174,3 +174,7 @@ Deploy-задания не должны менять реальный серве
 ## Версионирование
 
 Каждый checker считается контрактом. Если меняются required_files, команды или ожидаемый stdout, нужно обновить версию задания в `admin_notes` или миграции, чтобы ревьюер видел причину изменения.
+
+## SEMANTIC_ALIGNMENT_2026_05_05: topic-contract checks
+
+IDE-plugin checks должны подтверждать смысл задания, а не только наличие файлов. Для healthcheck проверяй `/health`, `/live`, `/ready`; для Dockerfile проверяй `FROM`, `WORKDIR`, `COPY`, `RUN` и `CMD`; для pytest-проектов проверяй запуск pytest и наличие осмысленных assertions; для AI/RAG проектов проверяй mock provider, source citation и no-answer case. Это защищает курс от формально валидных, но педагогически пустых проектных шагов.

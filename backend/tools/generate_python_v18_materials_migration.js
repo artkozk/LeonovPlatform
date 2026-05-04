@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const INPUT_PATH = path.resolve(__dirname, '../../материалы/v18_STRICT_PEDAGOGY/course_import.json');
-const OUT_PATH = path.resolve(__dirname, '../migrations/029_reseed_python_zero_v18_fastapi_ladder_quality.sql');
+const OUT_PATH = path.resolve(__dirname, '../migrations/030_reseed_python_zero_v18_semantic_alignment.sql');
 const COURSE_SLUG = 'python-zero';
 
 const SUPPORTED_CHECKERS = new Set([
@@ -52,6 +52,9 @@ function ensureArray(value) {
 
 function dollarQuote(input, tagBase) {
   const source = String(input ?? '');
+  if (/[ \t](?:\n|$)/.test(source)) {
+    return escapeSqlString(source);
+  }
   const normalizedTagBase = String(tagBase ?? 'q')
     .replace(/[^A-Za-z0-9_]/g, '_')
     .replace(/^([^A-Za-z_])/, '_$1');
@@ -62,6 +65,18 @@ function dollarQuote(input, tagBase) {
     tag = `${normalizedTagBase}_${counter}`;
   }
   return `$${tag}$${source}$${tag}$`;
+}
+
+function escapeSqlString(input) {
+  const source = String(input ?? '');
+  const escaped = source
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\r/g, '\\r')
+    .replace(/\n/g, '\\n')
+    .replace(/\t/g, '\\t')
+    .replace(/ /g, '\\x20');
+  return `E'${escaped}'`;
 }
 
 function normalizeStepType(raw) {

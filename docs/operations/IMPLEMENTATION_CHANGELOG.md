@@ -2916,3 +2916,57 @@
 1. `systemctl start lcp-disk-retention.service` — `status=0/SUCCESS`.
 2. `systemctl list-timers --all` — таймер активен, следующий запуск по расписанию.
 3. `df -h /` после очистки: занято около 25%, свободно ~73G.
+
+## 2026-05-05 — v18 semantic alignment курса Python с нуля
+
+### Что изменено
+
+1. Переписаны проблемные уроки пакета `материалы/v18_STRICT_PEDAGOGY`:
+- `AI для учёбы`;
+- `ООП: классы`;
+- `mypy и контракты`;
+- `Файлы и pathlib`;
+- `JSON и CSV`;
+- `Логирование`;
+- `Пакеты и импорты`;
+- `pytest: функции`;
+- `pytest: fixtures`;
+- `pytest: parametrization`;
+- `pytest: mocking`;
+- `pytest: coverage`;
+- `Routers`;
+- `Depends и settings`;
+- `Middleware и logging`;
+- `Healthcheck`;
+- AI API/RAG/Vector/LangGraph/Safe vibe уроки модуля 5.
+
+2. Обновлён `validate_course.py`:
+- добавлены topic-contract проверки для pathlib, mypy/typing, logging, pytest, FastAPI routers/depends/healthcheck, AI API, RAG, LangGraph и safe vibe;
+- валидатор теперь падает, если урок формально валиден, но практика не соответствует теме урока;
+- отчёты `validation_report.md` и `qa_report.md` пересобираются из фактического JSON.
+
+3. Создана миграция:
+- `backend/migrations/030_reseed_python_zero_v18_semantic_alignment.sql`.
+
+4. Создан отчёт импорта:
+- `docs/operations/PYTHON_V18_STRICT_PEDAGOGY_IMPORT_VALIDATION_2026_05_05_SEMANTIC_ALIGNMENT.md`.
+
+### Почему реализовано именно так
+
+1. Предыдущая версия уже проходила технический импорт, но независимый аудит нашёл методические блокеры: практика не по теме урока, повторяющиеся pytest/AI/OOP задачи и чужие FastAPI/CRUD сценарии в healthcheck.
+2. Правка оформлена новой миграцией `030`, потому что `029` уже описывает FastAPI ladder quality layer. Отдельная миграция позволяет ревьюеру проверить именно semantic alignment без переписывания истории.
+3. Topic-contract проверки добавлены в валидатор, чтобы будущие правки не возвращали “валидный мусор”: lesson `pathlib` должен содержать `Path`, lesson `RAG` должен содержать chunks/sources/no_answer, lesson `Healthcheck` не должен подменяться tasks/auth CRUD.
+
+### Прогон проверок
+
+1. `python материалы/v18_STRICT_PEDAGOGY/validate_course.py` — PASS.
+2. Независимый semantic audit — PASS:
+- lessons checked: 169;
+- rewritten lessons: 28;
+- rewritten steps: 346;
+- exact body duplicate groups: 0;
+- exact solution duplicate groups: 0;
+- normalized solution duplicate groups: 0;
+- max structural solution group: 12.
+3. `node backend/tools/generate_python_v18_materials_migration.js` — создан `030`.
+4. `node backend/tools/validate_python_v18_materials_import.js` — PASS против `030`.

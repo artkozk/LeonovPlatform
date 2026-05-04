@@ -1,81 +1,55 @@
-# Pedagogical audit report v18_STRICT_PEDAGOGY
+# Pedagogical audit report
 
-Отчёт проверяет учебную лестницу по JSON. Он не заменяет ручное прохождение на staging, но фиксирует автоматические педагогические ворота.
-
-## Totals
 - total lessons checked: 169
-- total steps checked: 1960
-- steps by type: {'practice': 831, 'project': 328, 'summary': 169, 'test': 294, 'theory': 338}
-- first 30 lessons checked: 30
-- first 30 lessons with theory/test/practice gates passed: 30
-- body leaks found: 0
-- max structural duplicate group: 18
-
-## Weak lessons before fixes
-- Модуль 4 / FastAPI: первый API: FastAPI started too abruptly or mixed later API concepts into early lessons.
-- Модуль 4 / FastAPI: GET route: FastAPI started too abruptly or mixed later API concepts into early lessons.
-- Модуль 4 / FastAPI: path params: FastAPI started too abruptly or mixed later API concepts into early lessons.
-- Модуль 4 / FastAPI: query params: FastAPI started too abruptly or mixed later API concepts into early lessons.
-- Модуль 4 / FastAPI: request body: FastAPI started too abruptly or mixed later API concepts into early lessons.
-- Модуль 4 / Pydantic models: FastAPI started too abruptly or mixed later API concepts into early lessons.
-- Модуль 4 / response_model и status codes: FastAPI started too abruptly or mixed later API concepts into early lessons.
-- Модуль 4 / HTTPException: FastAPI started too abruptly or mixed later API concepts into early lessons.
-
-## Weak lessons after fixes
-- 0 by the automated gates added in `validate_course.py`.
-- Remaining risk is manual: staging must sample complete student flow, especially hidden checks and IDE-plugin projects.
+- weak lessons before fixes: 28 known blockers plus automated scan of all lessons
+- weak lessons after fixes: 0 by current validator/topic-contract gates
+- lessons rewritten: 28
+- steps rewritten: 346
 
 ## Lessons rewritten
-- Модуль 4 / FastAPI: первый API
-- Модуль 4 / FastAPI: GET route
-- Модуль 4 / FastAPI: path params
-- Модуль 4 / FastAPI: query params
-- Модуль 4 / FastAPI: request body
-- Модуль 4 / Pydantic models
-- Модуль 4 / response_model и status codes
-- Модуль 4 / HTTPException
+- m01_l020_ai-dlya-ucheby — AI для учёбы: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m02_l001_oop-klassy — ООП: классы: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m02_l015_mypy-i-kontrakty — mypy и контракты: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m02_l016_fayly-i-pathlib — Файлы и pathlib: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m02_l017_json-i-csv — JSON и CSV: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m02_l018_logirovanie — Логирование: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m02_l019_pakety-i-importy — Пакеты и импорты: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m02_l021_pytest-funkcii — pytest: функции: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m02_l022_pytest-fixtures — pytest: fixtures: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m02_l023_pytest-parametrization — pytest: parametrization: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m02_l024_pytest-mocking — pytest: mocking: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m02_l025_pytest-coverage — pytest: coverage: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m04_l009_routers — Routers: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m04_l010_depends-i-settings — Depends и settings: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m04_l011_middleware-i-logging — Middleware и logging: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m04_l012_healthcheck — Healthcheck: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m05_l001_ai-api-request — AI API request: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m05_l002_prompt-i-messages — Prompt и messages: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m05_l003_structured-output — Structured output: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m05_l004_json-schema — JSON schema: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m05_l005_mock-provider — Mock provider: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m05_l006_retries-i-timeouts — Retries и timeouts: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m05_l007_rate-limits-i-cost — Rate limits и cost: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m05_l008_rag-chunks — RAG chunks: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m05_l009_embeddings-i-vector-db — Embeddings и vector DB: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m05_l010_retrieval-evaluation-hallucination — Retrieval evaluation hallucination: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m05_l011_langchain-i-langgraph — LangChain и LangGraph: rewritten around lesson topic, concrete practice, checker, debug/edge task
+- m05_l012_bezopasnyy-vaybkoding — Безопасный вайбкодинг: rewritten around lesson topic, concrete practice, checker, debug/edge task
 
 ## Examples of fixed lessons
-- `FastAPI: первый API`: now starts from `GET /health`, `GET /hello`, exact response shapes, one-line diagnostics and negative method checks.
-- `FastAPI: path params`: now isolates path parameters before request body, auth, database or Docker.
-- `FastAPI: query params`: now uses `done`, `q`, `limit`, `kind`, `active`, `page/size` instead of repeating POST create tasks.
-- `HTTPException`: now checks 404/400/422 behavior only after status codes and models were introduced.
+- `m02_l001_oop-klassy`: repeated `Task.complete()` tasks replaced with class state, methods, object behavior and project artifact.
+- `m02_l015_mypy-i-kontrakty`: generic cache/inventory tasks replaced with type hints, Optional, TypedDict and Protocol checks.
+- `m02_l016_fayly-i-pathlib`: generic algorithms replaced with Path/read_text/write_text/mkdir/exists/glob/tmp_path practice.
+- `m04_l012_healthcheck`: unrelated CRUD/auth routes replaced with /health, /live, /ready and dependency readiness probes.
+- `m05_l008_rag-chunks`: generic AI payload tasks replaced with chunks, source retention, retrieval and no_answer guard.
 
-## First 30 lesson gate sample
-- Первый код: PASS
-- Ввод и числа: PASS
-- Строки: PASS
-- bool и None: PASS
-- Условия: PASS
-- Типы и память: PASS
-- Циклы: PASS
-- Списки: PASS
-- Функции: PASS
-- Кортежи: PASS
-- Множества: PASS
-- Словари: PASS
-- map/filter/lambda: PASS
-- datetime: PASS
-- Итераторы: PASS
-- Генераторы: PASS
-- Декораторы: PASS
-- Контекстные менеджеры: PASS
-- Исключения: PASS
-- AI для учёбы: PASS
-- Как работает компьютер: PASS
-- Терминал: базовые команды: PASS
-- Терминал: процессы и bash: PASS
-- Git: первые коммиты: PASS
-- Git: индекс и история: PASS
-- Git: ветки: PASS
-- Git: отмена изменений: PASS
-- Git: merge и rebase: PASS
-- GitHub и remote: PASS
-- CLI-проект: менеджер задач: PASS
+## Topic alignment checks
+- validate_course.py now checks topic contracts for pathlib, mypy/typing, logging, pytest, FastAPI routers/depends/healthcheck, AI API, RAG, LangGraph and safe vibe.
+- All 169 lessons are checked for theory/test/hands-on minimums and debug or boundary-case signal.
 
 ## Remaining risks
-- STAGING regression is still required: import the migration, pass the first 10 lessons as a student, and manually sample 50-100 later steps.
-- Some repeated generic titles remain by role. They are tracked in `duplication_report.md` and must stay below structural duplicate thresholds.
+- IDE-plugin project execution still requires staging import and real plugin run.
+- Large-flow readiness should be confirmed by sampling 50-100 imported steps after deployment.
 
 ## Final status
-- STAGING READY
+- STAGING READY after validator PASS; not marked READY until staging import smoke is complete.
