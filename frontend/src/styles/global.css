@@ -165,6 +165,16 @@ textarea.code-editor {
   font-family: var(--font-mono) !important;
 }
 
+.monaco-editor .view-lines,
+.monaco-editor .view-line,
+.monaco-editor .view-overlays,
+.monaco-editor .cursors-layer,
+.monaco-editor .inputarea {
+  letter-spacing: 0 !important;
+  font-kerning: none;
+  text-rendering: auto;
+}
+
 .text-muted {
   color: var(--text-secondary);
 }
@@ -2035,8 +2045,7 @@ textarea:focus-visible {
 }
 
 .lesson-editor-canvas .monaco-editor .view-lines {
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+  text-rendering: auto;
 }
 
 .lesson-editor-actions {

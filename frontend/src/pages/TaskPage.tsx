@@ -5,6 +5,7 @@ import { useParams } from "react-router-dom";
 import { getSubmission, getTask, runTask, submitTask, taskHint } from "../api/client";
 import { analyzePythonStyleHints } from "../lib/codeStyleHints";
 import { getEditorLanguageLabel, getEditorLanguageMode } from "../lib/editorLanguage";
+import { stabilizeMonacoLayout } from "../lib/stabilizeMonacoLayout";
 import { useAuthStore } from "../store/auth";
 
 type TaskEntity = {
@@ -149,6 +150,7 @@ export function TaskPage() {
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
   const decorationIDsRef = useRef<string[]>([]);
+  const editorLayoutCleanupRef = useRef<(() => void) | null>(null);
   const taskDraftStorageKey = useMemo(() => buildTaskDraftStorageKey(user?.id, taskId), [user?.id, taskId]);
 
   const loadTask = useCallback(async (currentTaskId: string) => {
@@ -333,6 +335,8 @@ export function TaskPage() {
 
   useEffect(() => {
     return () => {
+      editorLayoutCleanupRef.current?.();
+      editorLayoutCleanupRef.current = null;
       const editor = editorRef.current;
       if (editor && decorationIDsRef.current.length) {
         decorationIDsRef.current = editor.deltaDecorations(decorationIDsRef.current, []);
@@ -343,6 +347,8 @@ export function TaskPage() {
   function onEditorMount(editor: any, monaco: any) {
     editorRef.current = editor;
     monacoRef.current = monaco;
+    editorLayoutCleanupRef.current?.();
+    editorLayoutCleanupRef.current = stabilizeMonacoLayout(editor, monaco);
     applyStyleHintDecorations();
   }
 

@@ -2786,3 +2786,46 @@
    - max AI structural group: 15 / 20.
 3. `node backend/tools/generate_python_v18_materials_migration.js` — успешно.
 4. `node backend/tools/validate_python_v18_materials_import.js` — PASS.
+
+## 2026-05-04 — v2.83 (monaco caret/bracket overlay alignment hardening)
+
+### Добавлено/исправлено
+
+1. Устранён визуальный дефект редактора Monaco на страницах практики:
+- каретка могла рисоваться не между символами, а внутри символа (особенно заметно на `"` и `)`);
+- полупрозрачная подсветка парных скобок могла смещаться и визуально «наезжать» на соседние символы.
+
+2. Добавлен системный post-mount пересчёт метрик Monaco:
+- новый helper `frontend/src/lib/stabilizeMonacoLayout.ts`;
+- после инициализации редактора выполняется `monaco.editor.remeasureFonts()` + `editor.layout()` + `editor.render(true)`;
+- выполняется повторный пересчёт после `document.fonts.ready` и на событиях `loadingdone/loadingerror` у `document.fonts`.
+
+3. Helper подключён в оба пользовательских сценария с Monaco:
+- `frontend/src/pages/TaskPage.tsx`;
+- `frontend/src/pages/LessonPage.tsx`.
+
+4. Добавлен cleanup для исключения накопления подписок и лишних reflow:
+- cleanup вызывается при размонтировании страницы;
+- cleanup перезапускается безопасно при повторном mount редактора.
+
+5. В CSS добавлен безопасный reset геометрии текстовых слоёв Monaco:
+- `letter-spacing: 0 !important` для слоёв текста/курсов/оверлеев;
+- `font-kerning: none`;
+- `text-rendering: auto`.
+
+6. В lesson-override убран `text-rendering: optimizeLegibility` для `.monaco-editor .view-lines`, потому что этот режим может менять кернинг/метрики глифов и провоцировать рассинхрон позиционирования каретки и overlay-слоёв.
+
+### Почему реализовано именно так
+
+1. Дефект был в визуальной геометрии редактора, а не в бизнес-логике задач, поэтому исправление сделано на уровне font-metrics/layout Monaco.
+2. Проблема имеет регрессионный характер при изменениях интерфейса и/или шрифтов, поэтому нужен не только CSS-фрагмент, но и runtime-пересчёт после загрузки шрифтов.
+3. Правка затрагивает только визуальный контур рендера редактора и не меняет API, checker-runtime, формат задач, submit flow и данные пользователя.
+4. Разделение на helper + точечное подключение в `TaskPage/LessonPage` позволяет явно контролировать жизненный цикл и не размазывать workaround по всему коду.
+
+### Прогон проверок
+
+1. `npm.cmd run build` (frontend) — должен завершаться успешно.
+2. Ручная проверка в UI:
+- открыть `TaskPage` и ввести `print("")`, `print("()")`;
+- убедиться, что каретка встает строго между символами кавычек/скобок;
+- убедиться, что подсветка парных скобок не смещена и не накладывается на соседние символы.

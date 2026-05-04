@@ -18,6 +18,7 @@ import { Link, useParams } from "react-router-dom";
 import { checkLessonQuiz, getLesson, getSubmission, getTask, runTask, submitTask, taskHint } from "../api/client";
 import { analyzePythonStyleHints } from "../lib/codeStyleHints";
 import { getEditorLanguageLabel, getEditorLanguageMode } from "../lib/editorLanguage";
+import { stabilizeMonacoLayout } from "../lib/stabilizeMonacoLayout";
 import { useAuthStore } from "../store/auth";
 
 type LessonBlockQuizOption = {
@@ -484,6 +485,7 @@ export function LessonPage() {
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
   const decorationIDsRef = useRef<string[]>([]);
+  const editorLayoutCleanupRef = useRef<(() => void) | null>(null);
 
   const progressStorageKey = useMemo(() => (lessonId ? `lc_lesson_progress_${lessonId}` : ""), [lessonId]);
   const codeDraftsStorageKey = useMemo(() => buildLessonDraftsStorageKey(user?.id, lessonId), [user?.id, lessonId]);
@@ -807,6 +809,8 @@ export function LessonPage() {
 
   useEffect(() => {
     return () => {
+      editorLayoutCleanupRef.current?.();
+      editorLayoutCleanupRef.current = null;
       const editor = editorRef.current;
       if (editor && decorationIDsRef.current.length) {
         decorationIDsRef.current = editor.deltaDecorations(decorationIDsRef.current, []);
@@ -821,6 +825,8 @@ export function LessonPage() {
   function onEditorMount(editor: any, monaco: any) {
     editorRef.current = editor;
     monacoRef.current = monaco;
+    editorLayoutCleanupRef.current?.();
+    editorLayoutCleanupRef.current = stabilizeMonacoLayout(editor, monaco);
     applyStyleHintDecorations();
   }
 
