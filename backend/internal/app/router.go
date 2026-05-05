@@ -72,6 +72,7 @@ func (a *App) Router() *gin.Engine {
 			authed.GET("/me/achievements", a.MyAchievements)
 
 			authed.GET("/courses", a.ListCourses)
+			authed.GET("/plugin/bootstrap", a.GetPluginBootstrap)
 			authed.GET("/courses/:courseID", a.GetCourse)
 			authed.GET("/courses/:courseID/tasks-catalog", a.GetCourseTasksCatalog)
 			authed.GET("/lessons/:lessonID", a.GetLesson)

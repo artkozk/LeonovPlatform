@@ -41,6 +41,12 @@ data class Task(
     val unavailable: Boolean = false,
 )
 
+data class StartupBootstrap(
+    val selectedCourseId: String?,
+    val courses: List<Course>,
+    val tasks: List<Task>,
+)
+
 enum class StatementFormat {
     MARKDOWN,
     HTML,

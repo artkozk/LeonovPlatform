@@ -152,6 +152,209 @@ func (a *App) ListCourses(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"items": out})
 }
 
+func (a *App) GetPluginBootstrap(c *gin.Context) {
+	uctx, ok := userFromContext(c)
+	if !ok {
+		unauthorized(c, "unauthorized")
+		return
+	}
+
+	preferredLanguage := strings.ToLower(strings.TrimSpace(c.Query("preferredLanguage")))
+	selectedCourseHint := strings.TrimSpace(c.Query("selectedCourseId"))
+	currentTaskHint := strings.TrimSpace(c.Query("currentTaskId"))
+
+	type course struct {
+		ID          string `json:"id"`
+		Slug        string `json:"slug"`
+		Title       string `json:"title"`
+		Description string `json:"description"`
+	}
+
+	courseRows, err := a.DB.Query(c.Request.Context(), `
+		SELECT id, slug, title, description
+		FROM courses
+		WHERE is_published = TRUE
+		ORDER BY created_at ASC
+	`)
+	if err != nil {
+		internalServerError(c, err)
+		return
+	}
+	defer courseRows.Close()
+
+	courses := make([]course, 0)
+	for courseRows.Next() {
+		var item course
+		if err := courseRows.Scan(&item.ID, &item.Slug, &item.Title, &item.Description); err != nil {
+			internalServerError(c, err)
+			return
+		}
+		courses = append(courses, item)
+	}
+	if err := courseRows.Err(); err != nil {
+		internalServerError(c, err)
+		return
+	}
+
+	selectedCourseID := ""
+	validCourseIDs := make(map[string]struct{}, len(courses))
+	for _, item := range courses {
+		validCourseIDs[item.ID] = struct{}{}
+	}
+
+	if currentTaskHint != "" {
+		var fromTask sql.NullString
+		if err := a.DB.QueryRow(c.Request.Context(), `
+			SELECT m.course_id
+			FROM tasks t
+			JOIN lessons l ON l.id = t.lesson_id
+			JOIN modules m ON m.id = l.module_id
+			JOIN courses c ON c.id = m.course_id
+			WHERE t.id = $1
+			  AND t.is_published = TRUE
+			  AND l.is_published = TRUE
+			  AND c.is_published = TRUE
+			LIMIT 1
+		`, currentTaskHint).Scan(&fromTask); err == nil && fromTask.Valid && fromTask.String != "" {
+			if _, exists := validCourseIDs[fromTask.String]; exists {
+				selectedCourseID = fromTask.String
+			}
+		}
+	}
+
+	if selectedCourseID == "" && selectedCourseHint != "" {
+		if _, exists := validCourseIDs[selectedCourseHint]; exists {
+			selectedCourseID = selectedCourseHint
+		}
+	}
+
+	if selectedCourseID == "" && preferredLanguage != "" {
+		var byLanguage sql.NullString
+		if err := a.DB.QueryRow(c.Request.Context(), `
+			SELECT c.id
+			FROM courses c
+			WHERE c.is_published = TRUE
+			  AND EXISTS (
+				SELECT 1
+				FROM modules m
+				JOIN lessons l ON l.module_id = m.id
+				JOIN tasks t ON t.lesson_id = l.id
+				WHERE m.course_id = c.id
+				  AND l.is_published = TRUE
+				  AND t.is_published = TRUE
+				  AND LOWER(COALESCE(t.language, 'java')) = $1
+			  )
+			ORDER BY c.created_at ASC
+			LIMIT 1
+		`, preferredLanguage).Scan(&byLanguage); err == nil && byLanguage.Valid && byLanguage.String != "" {
+			if _, exists := validCourseIDs[byLanguage.String]; exists {
+				selectedCourseID = byLanguage.String
+			}
+		}
+	}
+
+	if selectedCourseID == "" && len(courses) > 0 {
+		selectedCourseID = courses[0].ID
+	}
+
+	type taskCatalogItem struct {
+		TaskID      string `json:"taskId"`
+		Title       string `json:"title"`
+		Difficulty  int    `json:"difficulty"`
+		XP          int    `json:"xp"`
+		Topic       string `json:"topic"`
+		Language    string `json:"language"`
+		Type        string `json:"type"`
+		LessonID    string `json:"lessonId"`
+		LessonTitle string `json:"lessonTitle"`
+		ModuleTitle string `json:"moduleTitle"`
+		Position    int    `json:"position"`
+		Status      string `json:"status"`
+	}
+
+	items := make([]taskCatalogItem, 0)
+	if selectedCourseID != "" {
+		rows, err := a.DB.Query(c.Request.Context(), `
+			WITH user_task_progress AS (
+				SELECT
+					s.task_id,
+					BOOL_OR(s.status = 'accepted') AS solved,
+					COUNT(*) > 0 AS attempted
+				FROM submissions s
+				WHERE s.user_id = $2
+				GROUP BY s.task_id
+			)
+			SELECT
+				t.id,
+				t.title,
+				t.difficulty,
+				t.xp_reward,
+				t.topic,
+				COALESCE(t.language, 'java') AS language,
+				COALESCE(t.source_policy::text, '{}'::text) AS source_policy,
+				l.id AS lesson_id,
+				l.title AS lesson_title,
+				m.title AS module_title,
+				ROW_NUMBER() OVER (ORDER BY m.position, l.position, t.difficulty ASC, t.title ASC)::int AS position,
+				CASE
+					WHEN COALESCE(utp.solved, FALSE) THEN 'SOLVED'
+					WHEN COALESCE(utp.attempted, FALSE) THEN 'IN_PROGRESS'
+					ELSE 'NEW'
+				END AS status
+			FROM tasks t
+			JOIN lessons l ON l.id = t.lesson_id
+			JOIN modules m ON m.id = l.module_id
+			LEFT JOIN user_task_progress utp ON utp.task_id = t.id
+			WHERE m.course_id = $1
+			  AND l.is_published = TRUE
+			  AND t.is_published = TRUE
+			ORDER BY m.position, l.position, t.difficulty ASC, t.title ASC
+		`, selectedCourseID, uctx.ID)
+		if err != nil {
+			internalServerError(c, err)
+			return
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var (
+				item            taskCatalogItem
+				sourcePolicyRaw string
+			)
+			if err := rows.Scan(
+				&item.TaskID,
+				&item.Title,
+				&item.Difficulty,
+				&item.XP,
+				&item.Topic,
+				&item.Language,
+				&sourcePolicyRaw,
+				&item.LessonID,
+				&item.LessonTitle,
+				&item.ModuleTitle,
+				&item.Position,
+				&item.Status,
+			); err != nil {
+				internalServerError(c, err)
+				return
+			}
+			item.Type = inferTaskTypeFromSourcePolicy(sourcePolicyRaw)
+			items = append(items, item)
+		}
+		if err := rows.Err(); err != nil {
+			internalServerError(c, err)
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"courses":          courses,
+		"selectedCourseId": selectedCourseID,
+		"tasks":            items,
+		"serverTime":       time.Now().UTC(),
+	})
+}
+
 func (a *App) GetCourse(c *gin.Context) {
 	courseID := c.Param("courseID")
 
@@ -231,7 +434,22 @@ func (a *App) GetCourseTasksCatalog(c *gin.Context) {
 		return
 	}
 
+	uctx, ok := userFromContext(c)
+	if !ok {
+		unauthorized(c, "unauthorized")
+		return
+	}
+
 	rows, err := a.DB.Query(c.Request.Context(), `
+		WITH user_task_progress AS (
+			SELECT
+				s.task_id,
+				BOOL_OR(s.status = 'accepted') AS solved,
+				COUNT(*) > 0 AS attempted
+			FROM submissions s
+			WHERE s.user_id = $2
+			GROUP BY s.task_id
+		)
 		SELECT
 			t.id,
 			t.title,
@@ -241,15 +459,22 @@ func (a *App) GetCourseTasksCatalog(c *gin.Context) {
 			COALESCE(t.language, 'java') AS language,
 			l.id AS lesson_id,
 			l.title AS lesson_title,
-			m.title AS module_title
+			m.title AS module_title,
+			ROW_NUMBER() OVER (ORDER BY m.position, l.position, t.difficulty ASC, t.title ASC)::int AS position,
+			CASE
+				WHEN COALESCE(utp.solved, FALSE) THEN 'SOLVED'
+				WHEN COALESCE(utp.attempted, FALSE) THEN 'IN_PROGRESS'
+				ELSE 'NEW'
+			END AS status
 		FROM tasks t
 		JOIN lessons l ON l.id = t.lesson_id
 		JOIN modules m ON m.id = l.module_id
+		LEFT JOIN user_task_progress utp ON utp.task_id = t.id
 		WHERE m.course_id = $1
 		  AND l.is_published = TRUE
 		  AND t.is_published = TRUE
 		ORDER BY m.position, l.position, t.difficulty ASC, t.title ASC
-	`, courseID)
+	`, courseID, uctx.ID)
 	if err != nil {
 		internalServerError(c, err)
 		return
@@ -266,6 +491,8 @@ func (a *App) GetCourseTasksCatalog(c *gin.Context) {
 		LessonID    string `json:"lessonId"`
 		LessonTitle string `json:"lessonTitle"`
 		ModuleTitle string `json:"moduleTitle"`
+		Position    int    `json:"position"`
+		Status      string `json:"status"`
 	}
 
 	items := make([]taskCatalogItem, 0)
@@ -281,6 +508,8 @@ func (a *App) GetCourseTasksCatalog(c *gin.Context) {
 			&item.LessonID,
 			&item.LessonTitle,
 			&item.ModuleTitle,
+			&item.Position,
+			&item.Status,
 		); err != nil {
 			internalServerError(c, err)
 			return

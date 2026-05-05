@@ -11,9 +11,11 @@ import com.leonovcare.plugin.task.TaskType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.URI
+import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.nio.charset.StandardCharsets
 import java.time.Instant
 
 class HttpPlatformApiClient(
@@ -44,6 +46,71 @@ class HttpPlatformApiClient(
             displayName = displayName,
             avatarUrl = node.path("avatarUrl").takeUnless { it.isMissingNode || it.isNull }?.asText(),
         )
+    }
+
+    override suspend fun getStartupBootstrap(
+        token: String,
+        preferredLanguage: String?,
+        selectedCourseId: String?,
+        currentTaskId: String?,
+    ): StartupBootstrap? {
+        val params = linkedMapOf<String, String>()
+        preferredLanguage?.trim()
+            ?.takeUnless { it.isBlank() }
+            ?.let { params["preferredLanguage"] = it }
+        selectedCourseId?.trim()
+            ?.takeUnless { it.isBlank() }
+            ?.let { params["selectedCourseId"] = it }
+        currentTaskId?.trim()
+            ?.takeUnless { it.isBlank() }
+            ?.let { params["currentTaskId"] = it }
+
+        val query = params.entries.joinToString("&") { (key, value) ->
+            "${URLEncoder.encode(key, StandardCharsets.UTF_8)}=${URLEncoder.encode(value, StandardCharsets.UTF_8)}"
+        }
+        val path = if (query.isBlank()) endpoints.pluginBootstrap else "${endpoints.pluginBootstrap}?$query"
+
+        return try {
+            val node = requestNode("GET", path, token, retrySafe = true)
+            val coursesNode = node.path("courses").takeUnless { it.isMissingNode || it.isNull } ?: node.path("items")
+            val courses = coursesNode.map { item ->
+                Course(
+                    id = firstText(item, "id").orEmpty(),
+                    title = firstText(item, "title").orEmpty(),
+                    description = firstText(item, "description").orEmpty(),
+                    progressPercent = item.path("progressPercent").asInt(0),
+                    tasksTotal = item.path("tasksTotal").asInt(0),
+                    tasksSolved = item.path("tasksSolved").asInt(0),
+                )
+            }.filter { it.id.isNotBlank() }
+
+            val selected = firstText(node, "selectedCourseId")
+            val selectedId = selected
+                ?.takeUnless { it.isBlank() }
+                ?: courses.firstOrNull()?.id
+                ?: return null
+
+            val tasks = node.path("tasks")
+                .mapIndexedNotNull { index, taskNode ->
+                    mapCatalogTask(
+                        taskNode = taskNode,
+                        courseId = selectedId,
+                        fallbackOrder = index + 1,
+                    )
+                }
+
+            StartupBootstrap(
+                selectedCourseId = selectedId,
+                courses = courses,
+                tasks = tasks,
+            )
+        } catch (ex: ApiException) {
+            if (ex.statusCode in listOf(404, 405)) {
+                null
+            } else {
+                throw ex
+            }
+        }
     }
 
     override suspend fun getCourses(token: String): List<Course> {
@@ -81,47 +148,14 @@ class HttpPlatformApiClient(
         if (!items.isArray) {
             throw ApiException(500, "Invalid tasks-catalog response")
         }
-        val tasks = mutableListOf<Task>()
-        var order = 1
-        items.forEach { taskNode ->
-            val taskId = firstText(
-                taskNode,
-                "taskId",
-                "id",
-                "taskID",
-                "uuid",
-            ).orEmpty().trim()
-            if (taskId.isBlank()) {
-                logger.warn("Skipping task catalog item without id for course=$courseId")
-                return@forEach
+        return items
+            .mapIndexedNotNull { index, taskNode ->
+                mapCatalogTask(
+                    taskNode = taskNode,
+                    courseId = courseId,
+                    fallbackOrder = index + 1,
+                )
             }
-
-            val lessonId = firstText(taskNode, "lessonId", "lessonID", "lesson.id").orEmpty()
-            val moduleTitle = firstText(taskNode, "moduleTitle", "module.title", "moduleName").orEmpty().trim()
-            val lessonTitle = firstText(taskNode, "lessonTitle", "lesson.title", "lessonName").orEmpty()
-            val taskLanguage = TaskLanguage.fromApi(firstText(taskNode, "language", "lang").orEmpty().ifBlank { "JAVA" })
-            val locked = taskNode.path("locked").asBoolean(false)
-            val unavailable = taskNode.path("unavailable").asBoolean(false)
-            val explicitOrder = taskNode.path("order").asInt(0).takeIf { it > 0 }
-                ?: taskNode.path("position").asInt(0).takeIf { it > 0 }
-                ?: order
-            tasks += Task(
-                id = taskId,
-                courseId = courseId,
-                moduleId = moduleTitle.ifBlank { null },
-                lessonId = lessonId.ifBlank { null },
-                lessonTitle = lessonTitle.ifBlank { null },
-                title = firstText(taskNode, "title", "name").orEmpty().ifBlank { "Task $order" },
-                order = explicitOrder,
-                status = parseTaskStatus(taskNode, locked = locked, unavailable = unavailable),
-                type = TaskType.fromApi(taskNode.path("type").asText("CONSOLE")),
-                language = taskLanguage.apiName,
-                locked = locked,
-                unavailable = unavailable,
-            )
-            order++
-        }
-        return tasks
     }
 
     private suspend fun getCourseTasksFromLessonFanout(token: String, courseId: String): List<Task> {
@@ -634,6 +668,49 @@ class HttpPlatformApiClient(
             else -> null
         }
         return TaskStatus.fromApi(rawStatus, locked = locked, unavailable = unavailable)
+    }
+
+    private fun mapCatalogTask(
+        taskNode: JsonNode,
+        courseId: String,
+        fallbackOrder: Int,
+    ): Task? {
+        val taskId = firstText(
+            taskNode,
+            "taskId",
+            "id",
+            "taskID",
+            "uuid",
+        ).orEmpty().trim()
+        if (taskId.isBlank()) {
+            logger.warn("Skipping task catalog item without id for course=$courseId")
+            return null
+        }
+
+        val lessonId = firstText(taskNode, "lessonId", "lessonID", "lesson.id").orEmpty()
+        val moduleTitle = firstText(taskNode, "moduleTitle", "module.title", "moduleName").orEmpty().trim()
+        val lessonTitle = firstText(taskNode, "lessonTitle", "lesson.title", "lessonName").orEmpty()
+        val taskLanguage = TaskLanguage.fromApi(firstText(taskNode, "language", "lang").orEmpty().ifBlank { "JAVA" })
+        val locked = taskNode.path("locked").asBoolean(false)
+        val unavailable = taskNode.path("unavailable").asBoolean(false)
+        val explicitOrder = taskNode.path("order").asInt(0).takeIf { it > 0 }
+            ?: taskNode.path("position").asInt(0).takeIf { it > 0 }
+            ?: fallbackOrder
+
+        return Task(
+            id = taskId,
+            courseId = courseId,
+            moduleId = moduleTitle.ifBlank { null },
+            lessonId = lessonId.ifBlank { null },
+            lessonTitle = lessonTitle.ifBlank { null },
+            title = firstText(taskNode, "title", "name").orEmpty().ifBlank { "Task $fallbackOrder" },
+            order = explicitOrder,
+            status = parseTaskStatus(taskNode, locked = locked, unavailable = unavailable),
+            type = TaskType.fromApi(taskNode.path("type").asText("CONSOLE")),
+            language = taskLanguage.apiName,
+            locked = locked,
+            unavailable = unavailable,
+        )
     }
 
     private fun firstText(node: JsonNode, vararg paths: String): String? {

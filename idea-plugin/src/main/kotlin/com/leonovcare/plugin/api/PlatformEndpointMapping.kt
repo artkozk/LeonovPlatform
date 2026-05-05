@@ -4,6 +4,7 @@ import java.time.Duration
 
 data class PlatformEndpointMapping(
     val me: String = "/me",
+    val pluginBootstrap: String = "/plugin/bootstrap",
     val courses: String = "/courses",
     val courseDetails: String = "/courses/{courseId}",
     val courseTasksCatalog: String = "/courses/{courseId}/tasks-catalog",

@@ -37,11 +37,11 @@ class SyncService(private val project: Project) {
         scope.launch {
             while (true) {
                 val state = settings.mutableState()
+                val interval = state.autoSyncIntervalMinutes.coerceIn(1, 120)
+                delay(interval * 60_000L)
                 if (state.autoSyncEnabled) {
                     runSync(showNotifications = false)
                 }
-                val interval = state.autoSyncIntervalMinutes.coerceIn(1, 120)
-                delay(interval * 60_000L)
             }
         }
     }

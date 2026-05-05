@@ -8,6 +8,22 @@ class MockPlatformApiClient : PlatformApiClient {
 
     private val mockTaskId = "task-1"
 
+    override suspend fun getStartupBootstrap(
+        token: String,
+        preferredLanguage: String?,
+        selectedCourseId: String?,
+        currentTaskId: String?,
+    ): StartupBootstrap? {
+        val courses = getCourses(token)
+        val selectedId = selectedCourseId ?: courses.firstOrNull()?.id
+        val tasks = selectedId?.let { getCourseTasks(token, it) }.orEmpty()
+        return StartupBootstrap(
+            selectedCourseId = selectedId,
+            courses = courses,
+            tasks = tasks,
+        )
+    }
+
     override suspend fun getCurrentUser(token: String): UserProfile {
         if (token.isBlank()) throw UnauthorizedException("Token is empty")
         return UserProfile(

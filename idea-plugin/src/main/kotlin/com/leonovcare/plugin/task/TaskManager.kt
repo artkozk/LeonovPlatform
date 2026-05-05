@@ -59,7 +59,8 @@ class TaskManager(private val project: Project) {
     private val lessonCache = LessonCache.getInstance()
 
     private val lessonCacheTtlMillis = TimeUnit.HOURS.toMillis(8)
-    private val requestTimeoutMillis = TimeUnit.SECONDS.toMillis(12)
+    private val requestTimeoutMillis = TimeUnit.SECONDS.toMillis(8)
+    private val startupBootstrapTimeoutMillis = TimeUnit.MILLISECONDS.toMillis(4500)
     private val maxLessonPrefetchPerRefresh = 120
     private val refreshMutex = Mutex()
 
@@ -105,17 +106,70 @@ class TaskManager(private val project: Project) {
                 runCatching {
                     authService.withAuthorizedToken { token ->
                         val client = apiFactory.client()
+                        val preferredLanguage = preferredLanguageForCurrentIde()
+                        val state = settings.mutableState()
+                        val cachedTasksByCourse = normalizeTasksByCourse(taskCache.getTasksByCourse())
+                        val tasksByCourse = cachedTasksByCourse.toMutableMap()
+
+                        if (!hasVisibleData) {
+                            val startupBootstrap = runCatching {
+                                withTimeout(startupBootstrapTimeoutMillis) {
+                                    client.getStartupBootstrap(
+                                        token = token,
+                                        preferredLanguage = preferredLanguage?.apiName,
+                                        selectedCourseId = state.selectedCourseId,
+                                        currentTaskId = state.currentTaskId,
+                                    )
+                                }
+                            }.onFailure { ex ->
+                                logger.warn("Startup bootstrap failed: ${ex.message}")
+                            }.getOrNull()
+
+                            if (startupBootstrap != null && startupBootstrap.courses.isNotEmpty()) {
+                                val bootstrapSelectedCourseId = startupBootstrap.selectedCourseId
+                                    ?: startupBootstrap.courses.firstOrNull()?.id
+                                if (bootstrapSelectedCourseId != null) {
+                                    tasksByCourse[bootstrapSelectedCourseId] = normalizeTasks(startupBootstrap.tasks)
+                                }
+
+                                state.selectedCourseId = bootstrapSelectedCourseId
+                                state.lastSyncEpochMillis = System.currentTimeMillis()
+                                courseCache.saveCourses(startupBootstrap.courses)
+                                taskCache.saveTasksByCourse(tasksByCourse)
+
+                                val bootstrapSelection = resolveStartupSelection(
+                                    courses = startupBootstrap.courses,
+                                    tasksByCourse = tasksByCourse,
+                                    preferredLanguage = preferredLanguage,
+                                )
+                                state.selectedCourseId = bootstrapSelection.selectedCourseId
+                                stateFlow.value = TaskManagerState(
+                                    loading = false,
+                                    courses = startupBootstrap.courses,
+                                    selectedCourseId = bootstrapSelection.selectedCourseId,
+                                    tasks = bootstrapSelection.selectedCourseTasks,
+                                    offlineMode = false,
+                                )
+                                maybeAutoOpenStartupTask(
+                                    startupTask = bootstrapSelection.startupTask,
+                                    selectedCourseTasks = bootstrapSelection.selectedCourseTasks,
+                                )
+                            }
+                        }
+
                         val courses = withTimeout(requestTimeoutMillis) {
                             client.getCourses(token)
                         }
 
-                        val cachedTasksByCourse = normalizeTasksByCourse(taskCache.getTasksByCourse())
-                        val tasksByCourse = cachedTasksByCourse.toMutableMap()
-                        val cacheSelection = resolveStartupSelection(courses = courses, tasksByCourse = tasksByCourse)
+                        val cacheSelection = resolveStartupSelection(
+                            courses = courses,
+                            tasksByCourse = tasksByCourse,
+                            preferredLanguage = preferredLanguage,
+                        )
                         val selectedCourseId = cacheSelection.selectedCourseId
 
-                        settings.mutableState().selectedCourseId = selectedCourseId
-                        settings.mutableState().lastSyncEpochMillis = System.currentTimeMillis()
+                        state.selectedCourseId = selectedCourseId
+                        state.lastSyncEpochMillis = System.currentTimeMillis()
                         courseCache.saveCourses(courses)
                         taskCache.saveTasksByCourse(tasksByCourse)
 

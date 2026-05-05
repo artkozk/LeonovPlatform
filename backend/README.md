@@ -713,3 +713,28 @@ node backend/tools/validate_python_v18_materials_import.js
 ```
 
 Почему это нужно: backend import layer должен защищать production от ситуации, когда JSON формально валиден, но runtime-миграция не соответствует фактическому содержанию курса.
+
+## Актуализация от 2026-05-05: Plugin startup bootstrap endpoint
+
+1. Для ускорения старта IDE-плагина добавлен endpoint:
+- `GET /api/v1/plugin/bootstrap` (только для авторизованных пользователей).
+
+2. Endpoint возвращает минимально достаточный startup-пакет:
+- `courses[]`;
+- `selectedCourseId`;
+- `tasks[]` выбранного курса;
+- `serverTime`.
+
+3. Поддерживаемые query-параметры:
+- `preferredLanguage` — приоритизация курса под IDE (`PYTHON`, `JAVA` и т.д.);
+- `selectedCourseId` — hint от клиента по сохраненному выбору;
+- `currentTaskId` — приоритетный resume на курс, где находится задача.
+
+4. В `tasks[]` добавлены поля startup-важности:
+- `status` (`NEW|IN_PROGRESS|SOLVED`) по user-progress;
+- `position` для стабильного порядка.
+
+5. Почему сделано именно так:
+- убираем блокирующую последовательность множественных API-вызовов на cold start;
+- уменьшаем время до первого полезного контента в tool-window;
+- оставляем полную синхронизацию в фоне, не блокируя начало обучения.

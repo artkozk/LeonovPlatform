@@ -2,6 +2,12 @@ package com.leonovcare.plugin.api
 
 interface PlatformApiClient {
     suspend fun getCurrentUser(token: String): UserProfile
+    suspend fun getStartupBootstrap(
+        token: String,
+        preferredLanguage: String? = null,
+        selectedCourseId: String? = null,
+        currentTaskId: String? = null,
+    ): StartupBootstrap?
     suspend fun getCourses(token: String): List<Course>
     suspend fun getCourseTasks(token: String, courseId: String): List<Task>
     suspend fun getLessonMaterial(token: String, lessonId: String): LessonMaterial

@@ -3171,3 +3171,75 @@
 1. `cd idea-plugin && ./gradlew.bat test` — PASS.
 2. `cd idea-plugin && ./gradlew.bat buildPlugin` — PASS.
 3. `cd backend && go test ./...` — PASS.
+
+## 2026-05-05 — Startup architecture rewrite for near-instant course/task loading
+
+### Что мешало быстрой загрузке раньше
+
+1. На холодном старте plugin-UI ждал блокирующую цепочку из нескольких network-call:
+- `GET /courses`;
+- `GET /courses/{id}/tasks-catalog`;
+- параллельно запускался auto-sync цикл, который создавал дополнительную нагрузку на старте.
+2. При медленном/шумном канале пользователь видел долгий экран `Загрузка курсов и задач…`, даже если часть данных уже можно было показать.
+3. До изменения не было отдельного «быстрого bootstrap API» для startup-сценария IDE-клиента.
+
+### Что внедрено (архитектура)
+
+1. Добавлен backend endpoint `GET /api/v1/plugin/bootstrap`:
+- возвращает список курсов;
+- возвращает `selectedCourseId` для startup;
+- возвращает задачи выбранного курса с вычисленным user-progress статусом (`NEW|IN_PROGRESS|SOLVED`);
+- поддерживает параметры `preferredLanguage`, `selectedCourseId`, `currentTaskId`.
+
+2. Изменен startup pipeline в plugin `TaskManager.refreshAll()`:
+- на cold start сначала вызывается `getStartupBootstrap(...)` с short timeout;
+- shell (курсы + задачи выбранного курса) рендерится сразу после bootstrap, без ожидания полного refresh остальных данных;
+- далее выполняется полная фоновая сверка через стандартные endpoints.
+
+3. Сокращены задержки старта:
+- уменьшен базовый request-timeout для startup-path;
+- bootstrap вынесен в отдельный fail-fast таймаут.
+
+4. Убран лишний startup-шум от sync:
+- `SyncService.startAutoSync()` больше не запускает sync немедленно при старте;
+- первая auto-sync итерация запускается после configured interval.
+
+5. Стабилизировано поведение loading-card:
+- loading-экран показывается только если реально нет видимых данных;
+- при наличии курсов/задач UI остаётся в ready-state даже при фоновой догрузке.
+
+### Технические изменения
+
+1. Backend:
+- `backend/internal/app/router.go` — добавлен маршрут `GET /plugin/bootstrap`;
+- `backend/internal/app/handlers_learning.go`:
+  - добавлен `GetPluginBootstrap`;
+  - усилен `GetCourseTasksCatalog` (добавлены `status` и `position`).
+
+2. IDEA plugin API:
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/api/PlatformApiClient.kt` — добавлен `getStartupBootstrap(...)`;
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/api/HttpPlatformApiClient.kt` — реализация bootstrap + парсинг;
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/api/MockPlatformApiClient.kt` — mock bootstrap;
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/api/ApiModels.kt` — `StartupBootstrap`;
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/api/PlatformEndpointMapping.kt` — `pluginBootstrap` endpoint.
+
+3. IDEA plugin startup/sync/UI:
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/task/TaskManager.kt` — bootstrap-first flow;
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/sync/SyncService.kt` — deferred first auto-sync;
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/ui/PlatformToolWindowPanel.kt` — loading-card guard.
+
+4. Тесты:
+- `idea-plugin/src/test/kotlin/com/leonovcare/plugin/api/HttpPlatformApiClientTest.kt` — bootstrap parsing test.
+
+### Почему сделано именно так
+
+1. Для UX важен «первый полезный кадр», а не только абсолютное время полного refresh.
+2. Отдельный bootstrap endpoint уменьшает число блокирующих round-trip на старте.
+3. Deferred auto-sync убирает конкурирующий сетевой поток в критический момент cold start.
+4. Эта схема масштабируется на большие курсы: пользователь начинает работу, пока полная индексация/синхронизация идет в фоне.
+
+### Проверки
+
+1. `cd idea-plugin && ./gradlew.bat test` — PASS.
+2. `cd idea-plugin && ./gradlew.bat buildPlugin` — PASS.
+3. `cd backend && go test ./...` — PASS.

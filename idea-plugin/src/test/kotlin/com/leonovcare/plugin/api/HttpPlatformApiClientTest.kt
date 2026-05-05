@@ -142,6 +142,39 @@ class HttpPlatformApiClientTest {
         assertTrue(result)
     }
 
+    @Test
+    fun `maps startup bootstrap payload`() {
+        startServer { exchange ->
+            when (exchange.requestURI.path) {
+                "/plugin/bootstrap" -> {
+                    assertTrue(exchange.requestURI.query.orEmpty().contains("preferredLanguage=PYTHON"))
+                    respond(
+                        exchange,
+                        200,
+                        """{"selectedCourseId":"course-python","courses":[{"id":"course-python","title":"Python","description":"desc"}],"tasks":[{"taskId":"task-1","title":"Task 1","lessonId":"lesson-1","lessonTitle":"Lesson 1","moduleTitle":"Module 1","language":"python","type":"console","position":1,"status":"NEW"}]}""",
+                    )
+                }
+                else -> respond(exchange, 404, """{"error":"unknown"}""")
+            }
+        }
+
+        val client = HttpPlatformApiClient(baseUrl())
+        val bootstrap = runBlocking {
+            client.getStartupBootstrap(
+                token = "token",
+                preferredLanguage = "PYTHON",
+                selectedCourseId = null,
+                currentTaskId = null,
+            )
+        }
+
+        requireNotNull(bootstrap)
+        assertEquals("course-python", bootstrap.selectedCourseId)
+        assertEquals(1, bootstrap.courses.size)
+        assertEquals(1, bootstrap.tasks.size)
+        assertEquals("task-1", bootstrap.tasks.first().id)
+    }
+
     private fun startServer(handler: (HttpExchange) -> Unit) {
         server = HttpServer.create(InetSocketAddress(0), 0)
         server?.createContext("/") { exchange -> handler(exchange) }

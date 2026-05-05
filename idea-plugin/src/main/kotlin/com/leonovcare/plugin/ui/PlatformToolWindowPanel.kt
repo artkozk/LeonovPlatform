@@ -367,7 +367,8 @@ class PlatformToolWindowPanel(private val project: Project) {
         scope.launch {
             taskManager.state().collectLatest { taskState ->
                 SwingUtilities.invokeLater {
-                    if (taskState.loading && authService.state().value.authorized) {
+                    val hasVisibleData = taskState.courses.isNotEmpty() || taskState.tasks.isNotEmpty()
+                    if (taskState.loading && authService.state().value.authorized && !hasVisibleData) {
                         showCard("loading")
                     } else if (taskState.errorMessage != null && authService.state().value.authorized && taskState.tasks.isEmpty()) {
                         errorMessage.text = taskState.errorMessage

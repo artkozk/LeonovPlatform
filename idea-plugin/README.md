@@ -481,3 +481,54 @@ cd idea-plugin
 4. Добавлены unit-tests:
 - fallback чтение `taskId` из `id` для `tasks-catalog`;
 - чтение unwrapped task-details payload.
+
+## 2026-05-05 — Fast Startup Architecture (bootstrap-first)
+
+### Проблема
+
+1. При cold start пользователь мог долго видеть `Загрузка курсов и задач…`.
+2. Блокирующий startup-path выполнял несколько последовательных запросов до первого полезного контента.
+3. Immediate auto-sync добавлял конкурирующий сетевой поток в момент инициализации.
+
+### Новая схема
+
+1. Введен отдельный startup endpoint backend:
+- `GET /api/v1/plugin/bootstrap`.
+
+2. Плагин на cold start работает по `bootstrap-first`:
+- вызывает `getStartupBootstrap(...)` с short timeout;
+- сразу рендерит список курсов и задач выбранного курса;
+- затем запускает полную догрузку и синхронизацию в фоне.
+
+3. Loading-card теперь показывается только когда нет вообще никаких видимых данных.
+
+4. Первичный auto-sync больше не стартует мгновенно на инициализации:
+- первая итерация выполняется после `autoSyncIntervalMinutes`.
+
+### Контракт bootstrap endpoint
+
+Запрос:
+- `GET /api/v1/plugin/bootstrap?preferredLanguage=PYTHON&selectedCourseId=<id>&currentTaskId=<id>`.
+
+Ответ:
+- `courses[]`;
+- `selectedCourseId`;
+- `tasks[]` (уже для выбранного курса, с `status` и `position`);
+- `serverTime`.
+
+### Почему так
+
+1. Ускоряется время до первого полезного экрана (TTFP) вместо ожидания полного refresh.
+2. Снижается вероятность «подвисания» startup при сетевой деградации.
+3. Для больших курсов пользователь получает рабочий UI сразу, а не после полной индексации.
+
+### Файлы
+
+1. `src/main/kotlin/com/leonovcare/plugin/task/TaskManager.kt`.
+2. `src/main/kotlin/com/leonovcare/plugin/sync/SyncService.kt`.
+3. `src/main/kotlin/com/leonovcare/plugin/ui/PlatformToolWindowPanel.kt`.
+4. `src/main/kotlin/com/leonovcare/plugin/api/PlatformApiClient.kt`.
+5. `src/main/kotlin/com/leonovcare/plugin/api/HttpPlatformApiClient.kt`.
+6. `src/main/kotlin/com/leonovcare/plugin/api/PlatformEndpointMapping.kt`.
+7. `src/main/kotlin/com/leonovcare/plugin/api/ApiModels.kt`.
+8. `src/test/kotlin/com/leonovcare/plugin/api/HttpPlatformApiClientTest.kt`.
