@@ -413,3 +413,30 @@ pm2 env <api_id> | grep IDE_CHECKER_ALLOWED_COMMANDS
 ```
 2. Убедиться, что значение пустое или не задано по умолчанию.
 3. Повторить проверку project-step в IDE: безопасные python-команды не должны падать с `command is blocked in production`.
+
+## 16. IDE checker strict-default fix + legacy project submit fallback (append-only, 2026-05-05)
+
+### 16.1 Проблема
+
+1. Даже после изменения PM2 fallback оставался strict allowlist, потому что backend config имел default `IDE_CHECKER_ALLOWED_COMMANDS=python -m pytest,pytest`.
+2. Для части пользователей project-step сабмиты падали с `required file is missing`, когда клиент присылал только `sourceCode` (или неполный список файлов) после старой инициализации задачи.
+
+### 16.2 Что изменено
+
+1. В `backend/internal/config/config.go` дефолт `IDE_CHECKER_ALLOWED_COMMANDS` изменен на пустое значение.
+2. В `POST /api/v1/tasks/:taskID/submissions` добавлен fallback для `checker_type=ide_plugin`: backend достраивает missing `required_files` из template-логики (включая `README.md`) перед запуском checker.
+
+### 16.3 Почему так
+
+1. PM2-слой и backend default не должны конфликтовать; строгий allowlist включается только явной настройкой env.
+2. Legacy-клиенты и кешированные task-директории не должны приводить к ложным отказам при корректной логике решения.
+
+### 16.4 Проверка после выката
+
+1. Проверить фактический env API-процесса:
+```bash
+pm2 env <api_id> | grep IDE_CHECKER_ALLOWED_COMMANDS
+```
+2. Для `task_id=4e410f45-d3fc-433b-b2ca-44167f60e5a1` выполнить сабмит через IDE/plugin и убедиться, что:
+- нет ошибки `command is blocked in production`,
+- нет ложного `required file is missing` из-за отсутствующего `README.md` в payload.

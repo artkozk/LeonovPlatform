@@ -10,6 +10,7 @@ import com.leonovcare.plugin.auth.AuthService
 import com.leonovcare.plugin.i18n.PlatformBundle
 import com.leonovcare.plugin.task.CurrentTaskService
 import com.leonovcare.plugin.task.TaskManager
+import com.leonovcare.plugin.task.TaskFileService
 import com.leonovcare.plugin.api.PlatformApiClientFactory
 import com.leonovcare.plugin.util.PluginRuntimeInfo
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +31,7 @@ class SubmissionService(private val project: Project) {
     private val currentTaskService = CurrentTaskService.getInstance(project)
     private val apiFactory = PlatformApiClientFactory.getInstance()
     private val taskManager = TaskManager.getInstance(project)
+    private val taskFileService = TaskFileService()
     private val fileCollector = SubmissionFileCollector()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -62,6 +64,15 @@ class SubmissionService(private val project: Project) {
         scope.launch {
             val result = runCatching {
                 authService.withAuthorizedToken { token ->
+                    // Keep task workspace aligned with latest backend template before submit.
+                    taskFileService.createOrUpdateTaskFiles(
+                        project = project,
+                        courseId = context.courseId,
+                        details = context.details,
+                        template = context.template,
+                        overwriteExistingEditableFiles = false,
+                        lessonMaterial = context.lessonMaterial,
+                    )
                     val files = fileCollector.collect(context.taskDir)
                     val request = SubmissionRequest(
                         taskId = context.task.id,

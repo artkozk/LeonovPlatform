@@ -324,7 +324,7 @@ class HttpPlatformApiClient(
     }
 
     override suspend fun submitSolution(token: String, taskId: String, request: SubmissionRequest): SubmissionResult {
-        val sourceCode = request.files.firstOrNull()?.content.orEmpty()
+        val sourceCode = selectPrimarySourceCode(request)
         val payload = mapper.writeValueAsString(
             mapOf(
                 "sourceCode" to sourceCode,
@@ -350,6 +350,47 @@ class HttpPlatformApiClient(
             message = node.path("status").asText("queued"),
             createdAt = Instant.now(),
         )
+    }
+
+    private fun selectPrimarySourceCode(request: SubmissionRequest): String {
+        if (request.files.isEmpty()) {
+            return ""
+        }
+        val normalizedFiles = request.files.map { file ->
+            file.path.replace('\\', '/').trim() to file.content
+        }
+        fun findByPath(path: String): String? {
+            val normalized = path.replace('\\', '/').trim().lowercase()
+            return normalizedFiles.firstOrNull { (p, _) -> p.lowercase() == normalized }?.second
+        }
+        fun findBySuffix(suffixes: List<String>): String? {
+            val lowered = suffixes.map { it.lowercase() }
+            return normalizedFiles.firstOrNull { (p, _) ->
+                val lp = p.lowercase()
+                lowered.any { lp == it || lp.endsWith("/$it") }
+            }?.second
+        }
+
+        val fromMain = findByPath("main.py")
+            ?: findByPath("main.java")
+            ?: findByPath("Main.java")
+            ?: findByPath("query.sql")
+        if (fromMain != null) {
+            return fromMain
+        }
+
+        val language = request.language.trim().lowercase()
+        val languagePreferred = when {
+            language == "python" -> findBySuffix(listOf("main.py", "solution.py", "app.py", "__init__.py"))
+            language == "java" -> findBySuffix(listOf("Main.java"))
+            language == "sql" -> findBySuffix(listOf("query.sql", "solution.sql"))
+            else -> null
+        }
+        if (languagePreferred != null) {
+            return languagePreferred
+        }
+
+        return request.files.firstOrNull()?.content.orEmpty()
     }
 
     override suspend fun getSubmissionResult(token: String, taskId: String, attemptId: String): SubmissionResult {

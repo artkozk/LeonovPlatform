@@ -83,7 +83,7 @@ func Load() (Config, error) {
 		SubmissionReconcileBatch:      getIntOr("SUBMISSION_RECONCILE_BATCH", 200),
 		JavaTimeoutSeconds:            getIntOr("JAVA_TIMEOUT_SECONDS", 4),
 		JudgeMode:                     getOr("JUDGE_MODE", "local"),
-		IDECheckerAllowedCommands:     getOr("IDE_CHECKER_ALLOWED_COMMANDS", "python -m pytest,pytest"),
+		IDECheckerAllowedCommands:     getOr("IDE_CHECKER_ALLOWED_COMMANDS", ""),
 		DailyFreeSubmissions:          getIntOr("FREE_DAILY_SUBMISSIONS", 20),
 		AuthRateLimitPerMinute:        getIntOr("AUTH_RATE_LIMIT_PER_MINUTE", 60),
 		AIHintRateLimitPerMinute:      getIntOr("AI_HINT_RATE_LIMIT_PER_MINUTE", 20),

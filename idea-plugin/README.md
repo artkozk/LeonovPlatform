@@ -561,3 +561,24 @@ cd idea-plugin
 2. `src/main/kotlin/com/leonovcare/plugin/ui/MarkdownHtmlRenderer.kt`.
 3. `src/main/kotlin/com/leonovcare/plugin/task/LessonMaterialFormatter.kt`.
 4. `src/main/kotlin/com/leonovcare/plugin/ai/AiHintService.kt`.
+
+## 2026-05-05 — Submission payload hardening for project steps
+
+### Что изменено
+
+1. Перед отправкой сабмита плагин теперь повторно синхронизирует task workspace с template (`TaskFileService.createOrUpdateTaskFiles(..., overwrite=false)`):
+- missing template-файлы (например `README.md`) автоматически создаются даже в старых task-директориях.
+
+2. В HTTP-клиенте изменен выбор `sourceCode` для payload:
+- вместо `first file content` выбирается приоритетный исходник (`main.py`, `Main.java`, `query.sql`, language-aware fallback),
+- это устраняет ложные случаи, когда первым файлом в сортировке оказывался не исходник задачи.
+
+### Почему это сделано
+
+1. Project-step проверка должна оценивать актуальный набор файлов задачи, а не legacy-состояние директории.
+2. Поле `sourceCode` должно отражать основной файл решения, иначе backend/source-policy может оценивать неверный контент.
+
+### Файлы
+
+1. `src/main/kotlin/com/leonovcare/plugin/submission/SubmissionService.kt`.
+2. `src/main/kotlin/com/leonovcare/plugin/api/HttpPlatformApiClient.kt`.

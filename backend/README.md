@@ -821,6 +821,25 @@ node backend/tools/validate_python_v18_materials_import.js
 4. Как проверить:
 - `pm2 env <api_id>` не должен показывать фиксированный список команд по умолчанию;
 - project-step с `python main.py`/`printf ... | python main.py` не должен падать с `command is blocked in production`.
+
+## Актуализация от 2026-05-05: IDE submission hardening (allowlist default + required files fallback)
+
+1. Что было проблемой:
+- даже при пустом env в runtime оставался strict allowlist для IDE checker команд, потому что backend config имел дефолт `python -m pytest,pytest`;
+- в project-step задачах legacy/частично синхронизированные клиенты могли прислать только `sourceCode` без полного набора файлов (`README.md`), после чего checker возвращал `required file is missing`.
+
+2. Что изменено:
+- в `internal/config/config.go` дефолт `IDE_CHECKER_ALLOWED_COMMANDS` переведен в пустое значение, strict режим включается только при явном env;
+- в `CreateSubmission` добавлен fallback для `ide_plugin` задач: перед оценкой сервер достраивает обязательные template-файлы из `required_files` (включая `README.md`), если их не прислал клиент.
+
+3. Почему сделано именно так:
+- команда эксплуатации не должна получать strict allowlist “по умолчанию” без явного решения;
+- project-step не должен ложно падать из-за несоответствия между новой backend-схемой template и старыми клиентами/кэшем.
+
+4. Проверка:
+- `go test ./...` должен проходить, включая новые unit-тесты `internal/config` и `internal/app`;
+- для задачи `4e410f45-d3fc-433b-b2ca-44167f60e5a1` проверка не должна падать с `command is blocked in production`;
+- для project-step сабмитов не должно быть ложного `required file is missing`, если обязательные файлы отсутствовали только из-за legacy-клиента.
 ## 2026-05-05: v18 Module 1 Batch Pedagogy Refresh
 
 This note documents the current behavior after the targeted rewrite of `материалы/v18_STRICT_PEDAGOGY` for Module 1 lessons `m01_l011` through `m01_l031`. It is appended instead of replacing older rollout notes so reviewers can see why the v18 migration changed again and why migration `031` must be regenerated from the JSON source.

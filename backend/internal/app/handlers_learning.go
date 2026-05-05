@@ -870,21 +870,39 @@ func (a *App) CreateSubmission(c *gin.Context) {
 		badRequest(c, errors.New("sourceCode is required"))
 		return
 	}
-	if tooLargeErr := validateSubmissionPayloadSize(a.Cfg.MaxSubmissionSourceBytes, sourceCode, req.Files); tooLargeErr != nil {
-		c.JSON(http.StatusRequestEntityTooLarge, APIError{Error: tooLargeErr.Error()})
-		return
-	}
 
 	taskID := c.Param("taskID")
 	var maxAttempts int
 	var taskLanguage string
 	var sourcePolicyRaw string
+	var taskTitle string
+	var taskMainFilePath string
+	var taskStarterCode string
 	if err := a.DB.QueryRow(c.Request.Context(), `
-		SELECT max_attempts, COALESCE(language, 'java'), COALESCE(source_policy::text, '{}'::text)
+		SELECT max_attempts, COALESCE(language, 'java'), COALESCE(source_policy::text, '{}'::text),
+		       COALESCE(title, ''), COALESCE(main_file_path, ''), COALESCE(starter_code, '')
 		FROM tasks
 		WHERE id = $1 AND is_published = TRUE
-	`, taskID).Scan(&maxAttempts, &taskLanguage, &sourcePolicyRaw); err != nil {
+	`, taskID).Scan(&maxAttempts, &taskLanguage, &sourcePolicyRaw, &taskTitle, &taskMainFilePath, &taskStarterCode); err != nil {
 		notFound(c, "task not found")
+		return
+	}
+	if parseTaskSourcePolicy(sourcePolicyRaw).CheckerType == "ide_plugin" {
+		req.Files = ensureIDEPluginRequiredFiles(
+			req.Files,
+			sourceCode,
+			sourcePolicyRaw,
+			taskLanguage,
+			taskTitle,
+			taskMainFilePath,
+			taskStarterCode,
+		)
+		if strings.TrimSpace(sourceCode) == "" {
+			sourceCode = firstNonEmptySourceFromFiles(req.Files)
+		}
+	}
+	if tooLargeErr := validateSubmissionPayloadSize(a.Cfg.MaxSubmissionSourceBytes, sourceCode, req.Files); tooLargeErr != nil {
+		c.JSON(http.StatusRequestEntityTooLarge, APIError{Error: tooLargeErr.Error()})
 		return
 	}
 
@@ -978,6 +996,71 @@ func (a *App) CreateSubmission(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusAccepted, gin.H{"submissionId": submissionID, "status": "queued"})
+}
+
+func ensureIDEPluginRequiredFiles(
+	files []submissionFilePayload,
+	sourceCode string,
+	sourcePolicyRaw string,
+	language string,
+	taskTitle string,
+	mainFilePath string,
+	starterCode string,
+) []submissionFilePayload {
+	paths := inferTemplateFilesFromSourcePolicy(sourcePolicyRaw, language)
+	if len(paths) == 0 {
+		return files
+	}
+
+	primary := strings.TrimSpace(mainFilePath)
+	if primary == "" {
+		primary = inferMainFilePathFromSourcePolicy(sourcePolicyRaw, language)
+	}
+	if primary == "" {
+		primary = paths[0]
+	}
+	normalizedPrimary, err := normalizePathForWorkspace(primary)
+	if err == nil {
+		primary = normalizedPrimary
+	}
+
+	out := append([]submissionFilePayload(nil), files...)
+	indexByPath := make(map[string]int, len(out))
+	for idx, file := range out {
+		normalized, pathErr := normalizePathForWorkspace(file.Path)
+		if pathErr != nil {
+			continue
+		}
+		indexByPath[strings.ToLower(normalized)] = idx
+	}
+
+	for _, rawPath := range paths {
+		normalized, pathErr := normalizePathForWorkspace(rawPath)
+		if pathErr != nil {
+			continue
+		}
+		lower := strings.ToLower(normalized)
+		if _, exists := indexByPath[lower]; exists {
+			continue
+		}
+		content := ""
+		if strings.EqualFold(normalized, primary) {
+			if strings.TrimSpace(sourceCode) != "" {
+				content = sourceCode
+			} else {
+				content = starterCode
+			}
+		} else if strings.EqualFold(filepath.Base(normalized), "README.md") {
+			content = defaultReadmeTemplate(taskTitle, primary)
+		}
+		out = append(out, submissionFilePayload{
+			Path:    normalized,
+			Content: content,
+		})
+		indexByPath[lower] = len(out) - 1
+	}
+
+	return out
 }
 
 func (a *App) GetSubmission(c *gin.Context) {
