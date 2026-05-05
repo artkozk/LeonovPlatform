@@ -17,6 +17,7 @@ import com.leonovcare.plugin.settings.PlatformSettingsConfigurable
 import com.leonovcare.plugin.submission.SubmissionResultPanel
 import com.leonovcare.plugin.submission.SubmissionService
 import com.leonovcare.plugin.sync.SyncService
+import com.leonovcare.plugin.task.CurrentTaskService
 import com.leonovcare.plugin.task.TaskManager
 import com.leonovcare.plugin.task.TaskStatus
 import kotlinx.coroutines.CoroutineScope
@@ -40,6 +41,7 @@ class PlatformToolWindowPanel(private val project: Project) {
     private val submissionService = SubmissionService.getInstance(project)
     private val runService = TaskRunConfigurationService.getInstance(project)
     private val syncService = SyncService.getInstance(project)
+    private val currentTaskService = CurrentTaskService.getInstance(project)
     private val restoreService = ProjectRestoreService.getInstance(project)
     private val codeStyleService = CodeStyleAnalysisService.getInstance(project)
     private val aiHintService = AiHintService.getInstance(project)
@@ -132,7 +134,7 @@ class PlatformToolWindowPanel(private val project: Project) {
             }
         },
         onReference = {
-            val context = com.leonovcare.plugin.task.CurrentTaskService.getInstance(project).getCurrentTask()
+            val context = currentTaskService.getCurrentTask()
             if (context == null) {
                 PlatformNotifications.taskError(project, PlatformBundle.message("errors.taskUnavailable"))
                 return@TaskStatementPanel
@@ -304,6 +306,7 @@ class PlatformToolWindowPanel(private val project: Project) {
             authService.state().collectLatest { authState ->
                 SwingUtilities.invokeLater {
                     if (!authState.authorized) {
+                        statementPanel.setTaskDetails(null, null)
                         showCard("unauthorized")
                     } else {
                         userLabel.text = "${authState.userProfile?.displayName ?: "User"} (${authState.userProfile?.email ?: ""})"
@@ -338,6 +341,14 @@ class PlatformToolWindowPanel(private val project: Project) {
             submissionService.latestResult().collectLatest { result ->
                 SwingUtilities.invokeLater {
                     resultPanel.setResult(result)
+                }
+            }
+        }
+
+        scope.launch {
+            currentTaskService.state().collectLatest { context ->
+                SwingUtilities.invokeLater {
+                    statementPanel.setTaskDetails(context?.details, context?.lessonMaterial)
                 }
             }
         }

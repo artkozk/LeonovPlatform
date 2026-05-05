@@ -161,6 +161,9 @@ class TaskManager(private val project: Project) {
                             offlineMode = selectedCourseError != null,
                         )
 
+                        // Open startup task immediately after selected course is ready.
+                        maybeAutoOpenStartupTask(finalSelection.startupTask)
+
                         loadRemainingCourseTasks(
                             token = token,
                             client = client,
@@ -179,7 +182,6 @@ class TaskManager(private val project: Project) {
                             tasksByCourse = tasksByCourse,
                             startupTask = startupAfterBackground,
                         )
-                        maybeAutoOpenStartupTask(startupAfterBackground)
                     }
                 }.onFailure { ex ->
                     logger.warn("Failed to refresh courses/tasks: ${ex.message}")

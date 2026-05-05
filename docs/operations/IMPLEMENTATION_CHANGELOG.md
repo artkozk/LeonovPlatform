@@ -3009,3 +3009,36 @@
 
 1. `cd idea-plugin && ./gradlew.bat test` — PASS.
 2. `cd idea-plugin && ./gradlew.bat buildPlugin` — PASS.
+
+## 2026-05-05 — IDE plugin UX fix: unavailable task actions and module/lesson visibility
+
+### Добавлено/исправлено
+
+1. В `idea-plugin/src/main/kotlin/com/leonovcare/plugin/task/CurrentTaskService.kt` добавлен реактивный канал состояния:
+- `MutableStateFlow<CurrentTaskContext?>`;
+- метод `state()` для подписки UI;
+- метод `clear()` для явной очистки.
+
+2. В `idea-plugin/src/main/kotlin/com/leonovcare/plugin/ui/PlatformToolWindowPanel.kt` добавлен bind на `CurrentTaskService.state()`:
+- statement-панель теперь обновляется при любом фактическом открытии задачи, включая auto-open.
+
+3. В `idea-plugin/src/main/kotlin/com/leonovcare/plugin/task/TaskManager.kt` startup auto-open сдвинут раньше:
+- открытие стартовой задачи запускается сразу после готовности выбранного курса, до полной фоновой догрузки остальных курсов.
+
+4. В task-list UI добавлена структурная группировка:
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/ui/TaskListPanel.kt`;
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/ui/TaskListRenderer.kt`;
+- список строится как `Модуль -> Урок -> Задачи`;
+- добавлены заголовки модулей/уроков и безопасное открытие только task-элементов.
+
+### Почему реализовано именно так
+
+1. Ошибка `Задача недоступна` при нажатии action-кнопок была следствием отсутствия гарантированной синхронизации UI со сменой `CurrentTaskContext`.
+2. Подписка на `StateFlow` делает отображение deterministic и устраняет “пустую правую панель” после фонового открытия.
+3. Ранний auto-open сокращает промежуток времени, когда пользователь уже видит курс, но контекст задачи еще не установлен.
+4. Группировка списка по модулям и урокам убирает плоский “бесструктурный” список и снижает когнитивную нагрузку на длинных курсах.
+
+### Прогон проверок
+
+1. `cd idea-plugin && ./gradlew.bat test` — PASS.
+2. `cd idea-plugin && ./gradlew.bat buildPlugin` — PASS.

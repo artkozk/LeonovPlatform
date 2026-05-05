@@ -7,6 +7,7 @@ import com.leonovcare.plugin.api.Task
 import com.leonovcare.plugin.task.TaskStatus
 import java.awt.BorderLayout
 import java.awt.FlowLayout
+import java.awt.Point
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -18,6 +19,12 @@ import javax.swing.JList
 import javax.swing.JPanel
 import javax.swing.KeyStroke
 import javax.swing.ListSelectionModel
+
+sealed interface TaskListEntry {
+    data class ModuleHeader(val title: String) : TaskListEntry
+    data class LessonHeader(val title: String) : TaskListEntry
+    data class TaskItem(val task: Task) : TaskListEntry
+}
 
 enum class TaskFilter {
     ALL,
@@ -33,7 +40,7 @@ class TaskListPanel(
 
     val root: JPanel = JPanel(BorderLayout(8, 8))
 
-    private val model = DefaultListModel<Task>()
+    private val model = DefaultListModel<TaskListEntry>()
     private val list = JList(model)
     private val searchField = JBTextField()
     private val filterCombo = JComboBox(TaskFilter.entries.toTypedArray())
@@ -47,7 +54,7 @@ class TaskListPanel(
             object : MouseAdapter() {
                 override fun mouseClicked(e: MouseEvent) {
                     if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 1 && !e.isPopupTrigger) {
-                        openSelectedTask()
+                        openTaskAtPoint(e.point)
                     }
                 }
             }
@@ -88,6 +95,7 @@ class TaskListPanel(
     }
 
     private fun applyFilters() {
+        val selectedTaskId = (list.selectedValue as? TaskListEntry.TaskItem)?.task?.id
         val filter = filterCombo.selectedItem as? TaskFilter ?: TaskFilter.ALL
         val query = searchField.text.trim().lowercase()
 
@@ -104,10 +112,58 @@ class TaskListPanel(
         }
 
         model.clear()
-        filtered.forEach { model.addElement(it) }
+        var currentModule: String? = null
+        var currentLesson: String? = null
+
+        filtered.forEach { task ->
+            val moduleTitle = moduleTitle(task)
+            if (moduleTitle != currentModule) {
+                currentModule = moduleTitle
+                currentLesson = null
+                model.addElement(TaskListEntry.ModuleHeader("Модуль: $moduleTitle"))
+            }
+
+            val lessonTitle = lessonTitle(task)
+            if (lessonTitle != currentLesson) {
+                currentLesson = lessonTitle
+                model.addElement(TaskListEntry.LessonHeader("Урок: $lessonTitle"))
+            }
+
+            model.addElement(TaskListEntry.TaskItem(task))
+        }
+
+        if (selectedTaskId != null) {
+            for (index in 0 until model.size) {
+                val entry = model.getElementAt(index)
+                if (entry is TaskListEntry.TaskItem && entry.task.id == selectedTaskId) {
+                    list.selectedIndex = index
+                    break
+                }
+            }
+        }
     }
 
     private fun openSelectedTask() {
-        list.selectedValue?.let { onTaskOpen(it) }
+        val selectedTask = (list.selectedValue as? TaskListEntry.TaskItem)?.task ?: return
+        onTaskOpen(selectedTask)
+    }
+
+    private fun openTaskAtPoint(point: Point) {
+        val index = list.locationToIndex(point)
+        if (index < 0) return
+
+        val cellBounds = list.getCellBounds(index, index) ?: return
+        if (!cellBounds.contains(point)) return
+
+        list.selectedIndex = index
+        openSelectedTask()
+    }
+
+    private fun moduleTitle(task: Task): String {
+        return task.moduleId?.trim().takeUnless { it.isNullOrBlank() } ?: "Без модуля"
+    }
+
+    private fun lessonTitle(task: Task): String {
+        return task.lessonTitle?.trim().takeUnless { it.isNullOrBlank() } ?: "Без урока"
     }
 }
