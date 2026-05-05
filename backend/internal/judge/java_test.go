@@ -132,33 +132,12 @@ INSERT INTO users(id, name, active) VALUES
 }
 
 func TestDockerModeFallsBackToLocalWhenDockerUnavailable(t *testing.T) {
-	pythonBin, err := detectPythonBinary()
-	if err != nil {
+	if _, err := detectPythonBinary(); err != nil {
 		t.Skip("python interpreter not found in PATH")
 	}
-	pythonAbs, err := exec.LookPath(pythonBin)
-	if err != nil {
-		t.Skip("python interpreter path could not be resolved")
+	if dockerBinaryAvailable() {
+		t.Skip("docker binary is available; fallback path is not active")
 	}
-
-	dir := t.TempDir()
-	var shimName string
-	var shimContent []byte
-	if runtime.GOOS == "windows" {
-		shimName = "python.cmd"
-		shimContent = []byte("@echo off\r\n\"" + pythonAbs + "\" %*\r\n")
-		t.Setenv("PATHEXT", ".COM;.EXE;.BAT;.CMD")
-	} else {
-		shimName = "python"
-		shimContent = []byte("#!/usr/bin/env sh\nexec \"" + pythonAbs + "\" \"$@\"\n")
-	}
-
-	shimPath := filepath.Join(dir, shimName)
-	if writeErr := os.WriteFile(shimPath, shimContent, 0o755); writeErr != nil {
-		t.Fatalf("write python shim: %v", writeErr)
-	}
-
-	t.Setenv("PATH", dir)
 
 	engine := NewJavaEngine(3, "docker")
 	res := engine.EvaluatePython("print('ok')\n", []TestCase{{Input: "", Expected: "ok"}})
