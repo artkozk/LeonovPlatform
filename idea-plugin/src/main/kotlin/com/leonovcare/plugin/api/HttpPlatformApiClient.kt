@@ -84,21 +84,34 @@ class HttpPlatformApiClient(
         val tasks = mutableListOf<Task>()
         var order = 1
         items.forEach { taskNode ->
-            val lessonId = taskNode.path("lessonId").asText("")
-            val moduleTitle = taskNode.path("moduleTitle").asText("").trim()
-            val taskLanguage = TaskLanguage.fromApi(taskNode.path("language").asText("JAVA"))
+            val taskId = firstText(
+                taskNode,
+                "taskId",
+                "id",
+                "taskID",
+                "uuid",
+            ).orEmpty().trim()
+            if (taskId.isBlank()) {
+                logger.warn("Skipping task catalog item without id for course=$courseId")
+                return@forEach
+            }
+
+            val lessonId = firstText(taskNode, "lessonId", "lessonID", "lesson.id").orEmpty()
+            val moduleTitle = firstText(taskNode, "moduleTitle", "module.title", "moduleName").orEmpty().trim()
+            val lessonTitle = firstText(taskNode, "lessonTitle", "lesson.title", "lessonName").orEmpty()
+            val taskLanguage = TaskLanguage.fromApi(firstText(taskNode, "language", "lang").orEmpty().ifBlank { "JAVA" })
             val locked = taskNode.path("locked").asBoolean(false)
             val unavailable = taskNode.path("unavailable").asBoolean(false)
             val explicitOrder = taskNode.path("order").asInt(0).takeIf { it > 0 }
                 ?: taskNode.path("position").asInt(0).takeIf { it > 0 }
                 ?: order
             tasks += Task(
-                id = taskNode.path("taskId").asText(),
+                id = taskId,
                 courseId = courseId,
                 moduleId = moduleTitle.ifBlank { null },
                 lessonId = lessonId.ifBlank { null },
-                lessonTitle = taskNode.path("lessonTitle").asText(""),
-                title = taskNode.path("title").asText(),
+                lessonTitle = lessonTitle.ifBlank { null },
+                title = firstText(taskNode, "title", "name").orEmpty().ifBlank { "Task $order" },
                 order = explicitOrder,
                 status = parseTaskStatus(taskNode, locked = locked, unavailable = unavailable),
                 type = TaskType.fromApi(taskNode.path("type").asText("CONSOLE")),
@@ -123,22 +136,33 @@ class HttpPlatformApiClient(
             val lessonId = lesson.path("id").asText()
             val lessonPath = endpoint(endpoints.lessonDetails, "lessonId" to lessonId)
             val lessonNode = requestNode("GET", lessonPath, token, retrySafe = true)
-            val moduleId = lesson.path("moduleTitle").asText().ifBlank { lessonNode.path("lesson").path("moduleTitle").asText("") }
+            val moduleId = firstText(lesson, "moduleTitle", "module.title").orEmpty().ifBlank {
+                firstText(lessonNode, "lesson.moduleTitle", "moduleTitle", "lesson.module.title").orEmpty()
+            }
+            val lessonTitle = firstText(lesson, "title").orEmpty().ifBlank {
+                firstText(lessonNode, "lesson.title", "title").orEmpty()
+            }
 
             lessonNode.path("tasks").forEach { taskNode ->
-                val taskLanguage = TaskLanguage.fromApi(taskNode.path("language").asText("JAVA"))
+                val taskId = firstText(taskNode, "id", "taskId", "taskID", "uuid").orEmpty().trim()
+                if (taskId.isBlank()) {
+                    logger.warn("Skipping lesson task without id for lesson=$lessonId")
+                    return@forEach
+                }
+
+                val taskLanguage = TaskLanguage.fromApi(firstText(taskNode, "language", "lang").orEmpty().ifBlank { "JAVA" })
                 val locked = taskNode.path("locked").asBoolean(false)
                 val unavailable = taskNode.path("unavailable").asBoolean(false)
                 val explicitOrder = taskNode.path("order").asInt(0).takeIf { it > 0 }
                     ?: taskNode.path("position").asInt(0).takeIf { it > 0 }
                     ?: order
                 tasks += Task(
-                    id = taskNode.path("id").asText(),
+                    id = taskId,
                     courseId = courseId,
                     moduleId = moduleId.ifBlank { null },
                     lessonId = lessonId,
-                    lessonTitle = lesson.path("title").asText("").ifBlank { lessonNode.path("lesson").path("title").asText("") },
-                    title = taskNode.path("title").asText(),
+                    lessonTitle = lessonTitle.ifBlank { null },
+                    title = firstText(taskNode, "title", "name").orEmpty().ifBlank { "Task $order" },
                     order = explicitOrder,
                     status = parseTaskStatus(taskNode, locked = locked, unavailable = unavailable),
                     type = TaskType.fromApi(taskNode.path("type").asText("CONSOLE")),
@@ -156,23 +180,25 @@ class HttpPlatformApiClient(
     override suspend fun getLessonMaterial(token: String, lessonId: String): LessonMaterial {
         val lessonPath = endpoint(endpoints.lessonDetails, "lessonId" to lessonId)
         val node = requestNode("GET", lessonPath, token, retrySafe = true)
-        val lesson = node.path("lesson")
+        val lesson = node.path("lesson").takeUnless { it.isMissingNode || it.isNull } ?: node
+        val tasksNode = node.path("tasks").takeUnless { it.isMissingNode || it.isNull } ?: lesson.path("tasks")
+        val blocksNode = node.path("blocks").takeUnless { it.isMissingNode || it.isNull } ?: lesson.path("blocks")
 
-        val tasks = node.path("tasks").map { taskNode ->
+        val tasks = tasksNode.map { taskNode ->
             LessonTaskSummary(
-                id = taskNode.path("id").asText(),
-                title = taskNode.path("title").asText(""),
+                id = firstText(taskNode, "id", "taskId").orEmpty(),
+                title = firstText(taskNode, "title", "name").orEmpty(),
                 type = TaskType.fromApi(taskNode.path("type").asText("CONSOLE")),
-                language = TaskLanguage.fromApi(taskNode.path("language").asText("JAVA")).apiName,
+                language = TaskLanguage.fromApi(firstText(taskNode, "language", "lang").orEmpty().ifBlank { "JAVA" }).apiName,
             )
         }
 
-        val blocks = node.path("blocks").map { blockNode ->
+        val blocks = blocksNode.map { blockNode ->
             LessonBlock(
-                id = blockNode.path("id").asText(),
+                id = firstText(blockNode, "id", "blockId").orEmpty(),
                 type = blockNode.path("type").asText("unknown"),
-                title = blockNode.path("title").asText(""),
-                contentMd = blockNode.path("contentMd").asText(""),
+                title = firstText(blockNode, "title", "name").orEmpty(),
+                contentMd = firstText(blockNode, "contentMd", "content", "bodyMd").orEmpty(),
                 position = blockNode.path("position").asInt(0),
                 taskId = blockNode.path("taskId").takeUnless { it.isMissingNode || it.isNull }?.asText(),
                 taskTitle = blockNode.path("taskTitle").takeUnless { it.isMissingNode || it.isNull }?.asText(),
@@ -180,11 +206,11 @@ class HttpPlatformApiClient(
         }
 
         return LessonMaterial(
-            id = lesson.path("id").asText(lessonId),
-            title = lesson.path("title").asText(""),
-            moduleTitle = lesson.path("moduleTitle").asText(""),
+            id = firstText(lesson, "id").orEmpty().ifBlank { lessonId },
+            title = firstText(lesson, "title", "name").orEmpty(),
+            moduleTitle = firstText(lesson, "moduleTitle", "module.title", "moduleName").orEmpty(),
             position = lesson.path("position").asInt(0),
-            contentMd = lesson.path("contentMd").asText(""),
+            contentMd = firstText(lesson, "contentMd", "content", "content_markdown").orEmpty(),
             tasks = tasks,
             blocks = blocks,
             fetchedAtEpochMillis = System.currentTimeMillis(),
@@ -194,9 +220,16 @@ class HttpPlatformApiClient(
     override suspend fun getTaskDetails(token: String, taskId: String): TaskDetails {
         val taskPath = endpoint(endpoints.taskDetails, "taskId" to taskId)
         val node = requestNode("GET", taskPath, token, retrySafe = true)
-        val task = node.path("task")
+        val task = node.path("task").takeUnless { it.isMissingNode || it.isNull } ?: node
         val examples = node.path("examples")
-        val taskLanguage = TaskLanguage.fromApi(task.path("language").asText("JAVA"))
+        val taskLanguage = TaskLanguage.fromApi(firstText(task, "language", "lang").orEmpty().ifBlank { "JAVA" })
+        val statementBody = firstText(
+            task,
+            "statementMd",
+            "statement",
+            "contentMd",
+            "description",
+        ).orEmpty()
 
         val requirements = mutableListOf<String>()
         if (examples.isArray && examples.size() > 0) {
@@ -204,19 +237,19 @@ class HttpPlatformApiClient(
         }
 
         return TaskDetails(
-            id = task.path("id").asText(taskId),
-            courseId = task.path("courseId").asText("unknown-course"),
-            title = task.path("title").asText("Task"),
+            id = firstText(task, "id", "taskId", "uuid").orEmpty().ifBlank { taskId },
+            courseId = firstText(task, "courseId", "course.id", "courseID").orEmpty().ifBlank { "unknown-course" },
+            title = firstText(task, "title", "name").orEmpty().ifBlank { "Task" },
             statement = TaskStatement(
                 format = StatementFormat.MARKDOWN,
-                body = task.path("statementMd").asText(""),
+                body = statementBody,
                 requirements = requirements,
             ),
             language = taskLanguage.apiName,
             type = TaskType.fromApi(task.path("type").asText("CONSOLE")),
             templateVersion = "1",
-            entryPoint = task.path("entryPoint").asText(taskLanguage.defaultEntryPoint),
-            mainFilePath = task.path("mainFilePath").asText(taskLanguage.defaultMainFilePath),
+            entryPoint = firstText(task, "entryPoint", "entry_file").orEmpty().ifBlank { taskLanguage.defaultEntryPoint },
+            mainFilePath = firstText(task, "mainFilePath", "mainFile", "path").orEmpty().ifBlank { taskLanguage.defaultMainFilePath },
         )
     }
 
@@ -224,7 +257,10 @@ class HttpPlatformApiClient(
         val templatePath = endpoint(endpoints.taskTemplate, "taskId" to taskId)
         return try {
             val node = requestNode("GET", templatePath, token, retrySafe = true)
-            val files = node.path("files").map { file ->
+            val filesNode = node.path("files")
+                .takeUnless { it.isMissingNode || it.isNull }
+                ?: node.path("template").path("files")
+            val files = filesNode.map { file ->
                 TaskTemplateFile(
                     path = file.path("path").asText(),
                     content = file.path("content").asText(),
@@ -598,5 +634,24 @@ class HttpPlatformApiClient(
             else -> null
         }
         return TaskStatus.fromApi(rawStatus, locked = locked, unavailable = unavailable)
+    }
+
+    private fun firstText(node: JsonNode, vararg paths: String): String? {
+        for (path in paths) {
+            val parts = path.split('.')
+            var current: JsonNode = node
+            var missing = false
+            for (part in parts) {
+                current = current.path(part)
+                if (current.isMissingNode || current.isNull) {
+                    missing = true
+                    break
+                }
+            }
+            if (missing) continue
+            val value = current.asText("")
+            if (value.isNotBlank()) return value
+        }
+        return null
     }
 }

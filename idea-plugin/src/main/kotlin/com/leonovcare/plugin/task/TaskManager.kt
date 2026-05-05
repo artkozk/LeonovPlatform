@@ -163,7 +163,10 @@ class TaskManager(private val project: Project) {
                         )
 
                         // Open startup task immediately after selected course is ready.
-                        maybeAutoOpenStartupTask(finalSelection.startupTask)
+                        maybeAutoOpenStartupTask(
+                            startupTask = finalSelection.startupTask,
+                            selectedCourseTasks = finalSelection.selectedCourseTasks,
+                        )
 
                         loadRemainingCourseTasks(
                             token = token,
@@ -252,7 +255,10 @@ class TaskManager(private val project: Project) {
         onOpened: (CurrentTaskContext) -> Unit = {},
         onError: (Throwable) -> Unit = {},
     ) {
-        if (authService.token() == null) return
+        if (authService.token() == null) {
+            onError(IllegalStateException("Authorization is required to open task"))
+            return
+        }
         val courseId = stateFlow.value.selectedCourseId ?: task.courseId
 
         scope.launch {
@@ -397,23 +403,47 @@ class TaskManager(private val project: Project) {
         return age > lessonCacheTtlMillis
     }
 
-    private fun maybeAutoOpenStartupTask(startupTask: Task?) {
+    private fun maybeAutoOpenStartupTask(
+        startupTask: Task?,
+        selectedCourseTasks: List<Task>,
+    ) {
         if (startupTask == null || !isTaskOpenable(startupTask)) return
         if (authService.token() == null) return
         if (currentTaskService.getCurrentTask()?.task?.id == startupTask.id) return
         if (startupTaskAutoOpenInFlight || startupTaskAutoOpenedId == startupTask.id) return
 
+        val candidates = buildList {
+            add(startupTask)
+            selectedCourseTasks
+                .asSequence()
+                .filter(::isTaskOpenable)
+                .filter { it.id != startupTask.id }
+                .forEach { add(it) }
+        }
+        if (candidates.isEmpty()) return
+
         startupTaskAutoOpenInFlight = true
+        openStartupCandidate(candidates, index = 0)
+    }
+
+    private fun openStartupCandidate(candidates: List<Task>, index: Int) {
+        if (index >= candidates.size) {
+            startupTaskAutoOpenInFlight = false
+            startupTaskAutoOpenedId = null
+            logger.warn("Startup task auto-open exhausted candidates without success")
+            return
+        }
+
+        val candidate = candidates[index]
         openTask(
-            task = startupTask,
+            task = candidate,
             onOpened = {
-                startupTaskAutoOpenedId = startupTask.id
+                startupTaskAutoOpenedId = candidate.id
                 startupTaskAutoOpenInFlight = false
             },
             onError = { ex ->
-                startupTaskAutoOpenInFlight = false
-                startupTaskAutoOpenedId = null
-                logger.warn("Startup task auto-open failed (${startupTask.id}): ${ex.message}")
+                logger.warn("Startup task auto-open failed (${candidate.id}): ${ex.message}")
+                openStartupCandidate(candidates, index + 1)
             },
         )
     }

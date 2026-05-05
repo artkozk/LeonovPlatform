@@ -431,3 +431,53 @@ cd idea-plugin
 - `HttpPlatformApiClientTest` (fallback mark-in-progress);
 - `HttpPlatformApiClientLanguageTest` (status mapping from tasks-catalog);
 - `SubmissionFileCollectorTest` (too-many-files guard).
+
+## 2026-05-05 — IDE plugin resilience closure: task context bootstrap and API format fallback
+
+### Добавлено/исправлено
+
+1. Усилен парсинг `tasks-catalog` в `src/main/kotlin/com/leonovcare/plugin/api/HttpPlatformApiClient.kt`:
+- `taskId` теперь читается не только из `taskId`, но и из `id/taskID/uuid`;
+- если id отсутствует, элемент не ломает UI и безопасно пропускается с логированием;
+- `lessonTitle/moduleTitle/language` читаются с fallback-путями, чтобы не зависеть от единственного формата payload.
+
+2. Усилен парсинг `GET /tasks/:taskId`:
+- поддерживаются оба формата ответа: обертка `{"task":{...}}` и плоский объект;
+- `statement` берется по fallback-цепочке (`statementMd -> statement -> contentMd -> description`);
+- `entryPoint/mainFilePath` теперь тоже читаются с fallback-ключами.
+
+3. Усилен парсинг `GET /lessons/:lessonId` и task template:
+- lesson/tasks/blocks читаются как из стандартных полей, так и из fallback-структур;
+- template files читаются из `files` и из `template.files`.
+
+4. Усилен startup auto-open в `TaskManager`:
+- если стартовая задача не открылась, выполняется fallback на следующую доступную задачу из выбранного курса;
+- это устраняет состояние, когда список задач уже виден, а `CurrentTaskContext` остается пустым.
+
+5. Убран silent-fail при открытии задачи без авторизации:
+- `TaskManager.openTask()` теперь возвращает явную ошибку в `onError`, а не выходит без сигнала;
+- это предотвращает «тихие» зависания UX в action-кнопках.
+
+6. Усилен UX для action-кнопок в `PlatformToolWindowPanel`:
+- при `AI-подсказка`/`Ответ`, если текущая задача еще не открыта, плагин автоматически открывает первую доступную задачу и только после этого выполняет action;
+- пользователь больше не получает ложное `Задача недоступна` при валидном списке задач.
+
+7. Улучшена группировка списка задач:
+- в `TaskListPanel` fallback для заголовка урока включает `lessonId`, если `lessonTitle` отсутствует;
+- это сохраняет разделение по урокам даже при неполных метаданных.
+
+### Почему реализовано именно так
+
+1. Основная боль по продукту была в том, что список задач виден, но материалы/подсказки недоступны из-за пустого task-context.
+2. В production реальные payload могут отличаться по структуре между версиями backend и plugin API-контрактом; fallback-парсинг убирает этот класс сбоев.
+3. Fallback auto-open и lazy-open перед action закрывают UX-разрыв «контент есть, кнопки не работают».
+4. Подход не ломает текущий контракт и остается обратно совместимым с уже развернутыми endpoint-форматами.
+
+### Прогон проверок
+
+1. `cd idea-plugin && ./gradlew.bat test` — PASS.
+2. `cd idea-plugin && ./gradlew.bat buildPlugin` — PASS.
+3. `cd backend && go test ./...` — PASS.
+4. Добавлены unit-tests:
+- fallback чтение `taskId` из `id` для `tasks-catalog`;
+- чтение unwrapped task-details payload.

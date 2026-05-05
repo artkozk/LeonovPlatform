@@ -6,6 +6,7 @@ import com.intellij.ui.components.JBLabel
 import com.leonovcare.plugin.ai.AiHintService
 import com.leonovcare.plugin.analysis.CodeStyleAnalysisService
 import com.leonovcare.plugin.api.Course
+import com.leonovcare.plugin.api.Task
 import com.leonovcare.plugin.api.PlatformApiClientFactory
 import com.leonovcare.plugin.auth.AuthService
 import com.leonovcare.plugin.auth.LoginDialog
@@ -123,44 +124,86 @@ class PlatformToolWindowPanel(private val project: Project) {
             }
         },
         onAiHint = {
-            aiHintService.requestHintForCurrentTask { result ->
-                SwingUtilities.invokeLater {
-                    result.onSuccess { response ->
-                        AiHintDialog(project, response).showAndGet()
-                    }.onFailure {
-                        PlatformNotifications.taskError(project, it.message ?: PlatformBundle.message("status.aiHintError"))
+            fun requestHint() {
+                aiHintService.requestHintForCurrentTask { result ->
+                    SwingUtilities.invokeLater {
+                        result.onSuccess { response ->
+                            AiHintDialog(project, response).showAndGet()
+                        }.onFailure {
+                            PlatformNotifications.taskError(project, it.message ?: PlatformBundle.message("status.aiHintError"))
+                        }
                     }
                 }
             }
-        },
-        onReference = {
-            val context = currentTaskService.getCurrentTask()
-            if (context == null) {
-                PlatformNotifications.taskError(project, PlatformBundle.message("errors.taskUnavailable"))
+
+            if (currentTaskService.getCurrentTask() == null) {
+                val candidate = firstOpenableTaskFromState()
+                if (candidate == null) {
+                    PlatformNotifications.taskError(project, PlatformBundle.message("errors.taskUnavailable"))
+                    return@TaskStatementPanel
+                }
+                taskManager.openTask(
+                    task = candidate,
+                    overwriteExistingEditableFiles = false,
+                    onOpened = { requestHint() },
+                    onError = { ex ->
+                        PlatformNotifications.taskError(project, ex.message ?: PlatformBundle.message("errors.taskUnavailable"))
+                    },
+                )
                 return@TaskStatementPanel
             }
 
-            scope.launch {
-                runCatching {
-                    val reference = authService.withAuthorizedToken { token ->
-                        PlatformApiClientFactory.getInstance()
-                            .client()
-                            .getReferenceSolution(token, context.task.id)
-                    }
+            requestHint()
+        },
+        onReference = {
+            fun showReference() {
+                val context = currentTaskService.getCurrentTask()
+                if (context == null) {
+                    PlatformNotifications.taskError(project, PlatformBundle.message("errors.taskUnavailable"))
+                    return
+                }
 
-                    SwingUtilities.invokeLater {
-                        if (!reference.available) {
-                            PlatformNotifications.taskInfo(project, reference.unavailableReason ?: "Эталонное решение недоступно")
-                        } else {
-                            ReferenceSolutionViewer(project, reference).showAndGet()
+                scope.launch {
+                    runCatching {
+                        val reference = authService.withAuthorizedToken { token ->
+                            PlatformApiClientFactory.getInstance()
+                                .client()
+                                .getReferenceSolution(token, context.task.id)
                         }
-                    }
-                }.onFailure {
-                    SwingUtilities.invokeLater {
-                        PlatformNotifications.taskError(project, it.message ?: "Ошибка получения эталона")
+
+                        SwingUtilities.invokeLater {
+                            if (!reference.available) {
+                                PlatformNotifications.taskInfo(project, reference.unavailableReason ?: "Эталонное решение недоступно")
+                            } else {
+                                ReferenceSolutionViewer(project, reference).showAndGet()
+                            }
+                        }
+                    }.onFailure {
+                        SwingUtilities.invokeLater {
+                            PlatformNotifications.taskError(project, it.message ?: "Ошибка получения эталона")
+                        }
                     }
                 }
             }
+
+            if (currentTaskService.getCurrentTask() == null) {
+                val candidate = firstOpenableTaskFromState()
+                if (candidate == null) {
+                    PlatformNotifications.taskError(project, PlatformBundle.message("errors.taskUnavailable"))
+                    return@TaskStatementPanel
+                }
+                taskManager.openTask(
+                    task = candidate,
+                    overwriteExistingEditableFiles = false,
+                    onOpened = { showReference() },
+                    onError = { ex ->
+                        PlatformNotifications.taskError(project, ex.message ?: PlatformBundle.message("errors.taskUnavailable"))
+                    },
+                )
+                return@TaskStatementPanel
+            }
+
+            showReference()
         },
         onSync = {
             syncService.triggerManualSync()
@@ -370,6 +413,12 @@ class PlatformToolWindowPanel(private val project: Project) {
                     break
                 }
             }
+        }
+    }
+
+    private fun firstOpenableTaskFromState(): Task? {
+        return taskManager.state().value.tasks.firstOrNull { task ->
+            task.status != TaskStatus.LOCKED && task.status != TaskStatus.UNAVAILABLE
         }
     }
 

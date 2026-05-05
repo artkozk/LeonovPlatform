@@ -5,6 +5,7 @@ import com.leonovcare.plugin.task.TaskStatus
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import java.net.InetSocketAddress
 
@@ -51,6 +52,31 @@ class HttpPlatformApiClientLanguageTest {
 
         val task = runBlocking { client.getCourseTasks("token", "course-1").single() }
         assertEquals(TaskStatus.IN_PROGRESS, task.status)
+    }
+
+    @Test
+    fun `maps catalog task id from fallback id field`() {
+        startServerForCatalogWithLegacyTaskId()
+        val client = HttpPlatformApiClient(baseUrl())
+
+        val task = runBlocking { client.getCourseTasks("token", "course-legacy").single() }
+        assertEquals("legacy-task-1", task.id)
+        assertEquals("lesson-legacy-1", task.lessonId)
+        assertEquals("Lesson Legacy", task.lessonTitle)
+        assertFalse(task.locked)
+    }
+
+    @Test
+    fun `maps unwrapped task details payload`() {
+        startServerForUnwrappedTaskDetails()
+        val client = HttpPlatformApiClient(baseUrl())
+
+        val details = runBlocking { client.getTaskDetails("token", "legacy-task-1") }
+        assertEquals("legacy-task-1", details.id)
+        assertEquals("course-1", details.courseId)
+        assertEquals("Legacy statement", details.statement.body)
+        assertEquals("script.py", details.entryPoint)
+        assertEquals("src/main/python/script.py", details.mainFilePath)
     }
 
     private fun startServer() {
@@ -110,6 +136,44 @@ class HttpPlatformApiClientLanguageTest {
                         exchange,
                         200,
                         """{"items":[{"taskId":"task-1","lessonId":"lesson-1","lessonTitle":"Lesson One","moduleTitle":"Module A","title":"Task One","language":"python","type":"console","status":"IN_PROGRESS","locked":false,"unavailable":false}]}""",
+                    )
+                }
+                else -> {
+                    respond(exchange, 404, """{"error":"unknown path"}""")
+                }
+            }
+        }
+        server?.start()
+    }
+
+    private fun startServerForCatalogWithLegacyTaskId() {
+        server = HttpServer.create(InetSocketAddress(0), 0)
+        server?.createContext("/") { exchange ->
+            when {
+                exchange.requestURI.path == "/courses/course-legacy/tasks-catalog" -> {
+                    respond(
+                        exchange,
+                        200,
+                        """{"items":[{"id":"legacy-task-1","lessonId":"lesson-legacy-1","lessonTitle":"Lesson Legacy","moduleTitle":"Module Legacy","title":"Task Legacy","language":"python","type":"console","status":"NEW","locked":false,"unavailable":false}]}""",
+                    )
+                }
+                else -> {
+                    respond(exchange, 404, """{"error":"unknown path"}""")
+                }
+            }
+        }
+        server?.start()
+    }
+
+    private fun startServerForUnwrappedTaskDetails() {
+        server = HttpServer.create(InetSocketAddress(0), 0)
+        server?.createContext("/") { exchange ->
+            when {
+                exchange.requestURI.path == "/tasks/legacy-task-1" -> {
+                    respond(
+                        exchange,
+                        200,
+                        """{"id":"legacy-task-1","courseId":"course-1","title":"Legacy Task","statement":"Legacy statement","language":"python","mainFilePath":"src/main/python/script.py","entryPoint":"script.py","type":"console"}""",
                     )
                 }
                 else -> {

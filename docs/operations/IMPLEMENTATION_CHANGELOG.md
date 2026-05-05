@@ -3134,3 +3134,40 @@
 
 1. `cd idea-plugin && ./gradlew.bat test` — PASS.
 2. `cd idea-plugin && ./gradlew.bat buildPlugin` — PASS.
+
+## 2026-05-05 — Closure patch: task-context availability + tolerant API parsing
+
+### Что исправлено
+
+1. `idea-plugin/src/main/kotlin/com/leonovcare/plugin/api/HttpPlatformApiClient.kt`:
+- в `getCourseTasksFromCatalog` добавлен fallback task-id (`taskId|id|taskID|uuid`), пропуск битых элементов без id и fallback-извлечение `lessonTitle/moduleTitle/language`;
+- в `getTaskDetails` добавлена поддержка unwrapped payload (`{"task":...}` и `{...}`), fallback по statement/body полям и fallback по `entryPoint/mainFilePath`;
+- в `getLessonMaterial` добавлен tolerant parser для `lesson/tasks/blocks` при вариативном формате;
+- в `getTaskTemplate` добавлен fallback на `template.files`.
+
+2. `idea-plugin/src/main/kotlin/com/leonovcare/plugin/task/TaskManager.kt`:
+- startup auto-open теперь пытается открыть следующую доступную задачу, если первичный кандидат не открылся;
+- `openTask()` больше не делает silent-return при отсутствии auth и возвращает явную ошибку через `onError`.
+
+3. `idea-plugin/src/main/kotlin/com/leonovcare/plugin/ui/PlatformToolWindowPanel.kt`:
+- для `AI-подсказка` и `Ответ` добавлен lazy-open fallback: если current task context пуст, сначала открывается первая доступная задача, затем выполняется action.
+
+4. `idea-plugin/src/main/kotlin/com/leonovcare/plugin/ui/TaskListPanel.kt`:
+- fallback заголовка урока расширен до `lessonId` при отсутствии `lessonTitle`, чтобы не терялась структура при частичных метаданных.
+
+5. Тесты:
+- `idea-plugin/src/test/kotlin/com/leonovcare/plugin/api/HttpPlatformApiClientLanguageTest.kt`:
+  - добавлен тест fallback task-id из `id`;
+  - добавлен тест unwrapped task-details payload.
+
+### Почему это важно для production
+
+1. Устранен класс проблем, когда пользователь видит задачи, но не может получить материалы/подсказки из-за пустого `CurrentTaskContext`.
+2. Убрана жесткая зависимость от единственного формата JSON-ответов backend, что снижает риск регрессий при разнородных релизах.
+3. Снижено количество ложных UX-ошибок `Задача недоступна` в валидном учебном потоке.
+
+### Проверки
+
+1. `cd idea-plugin && ./gradlew.bat test` — PASS.
+2. `cd idea-plugin && ./gradlew.bat buildPlugin` — PASS.
+3. `cd backend && go test ./...` — PASS.

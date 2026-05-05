@@ -94,6 +94,14 @@ class TaskListPanel(
         applyFilters()
     }
 
+    fun selectedTaskOrFirstOpenable(): Task? {
+        val selected = (list.selectedValue as? TaskListEntry.TaskItem)?.task
+        if (selected != null && selected.status != TaskStatus.LOCKED && selected.status != TaskStatus.UNAVAILABLE) {
+            return selected
+        }
+        return allTasks.firstOrNull { it.status != TaskStatus.LOCKED && it.status != TaskStatus.UNAVAILABLE }
+    }
+
     private fun applyFilters() {
         val selectedTaskId = (list.selectedValue as? TaskListEntry.TaskItem)?.task?.id
         val filter = filterCombo.selectedItem as? TaskFilter ?: TaskFilter.ALL
@@ -164,6 +172,8 @@ class TaskListPanel(
     }
 
     private fun lessonTitle(task: Task): String {
-        return task.lessonTitle?.trim().takeUnless { it.isNullOrBlank() } ?: "Без урока"
+        return task.lessonTitle?.trim().takeUnless { it.isNullOrBlank() }
+            ?: task.lessonId?.trim()?.takeUnless { it.isBlank() }
+            ?: "Без урока"
     }
 }
