@@ -259,6 +259,7 @@ func (a *App) GetPluginBootstrap(c *gin.Context) {
 
 	type taskCatalogItem struct {
 		TaskID      string `json:"taskId"`
+		ID          string `json:"id"`
 		Title       string `json:"title"`
 		Difficulty  int    `json:"difficulty"`
 		XP          int    `json:"xp"`
@@ -269,7 +270,9 @@ func (a *App) GetPluginBootstrap(c *gin.Context) {
 		LessonTitle string `json:"lessonTitle"`
 		ModuleTitle string `json:"moduleTitle"`
 		Position    int    `json:"position"`
+		Order       int    `json:"order"`
 		Status      string `json:"status"`
+		TaskStatus  string `json:"taskStatus"`
 	}
 
 	items := make([]taskCatalogItem, 0)
@@ -338,6 +341,9 @@ func (a *App) GetPluginBootstrap(c *gin.Context) {
 				internalServerError(c, err)
 				return
 			}
+			item.ID = item.TaskID
+			item.Order = item.Position
+			item.TaskStatus = item.Status
 			item.Type = inferTaskTypeFromSourcePolicy(sourcePolicyRaw)
 			items = append(items, item)
 		}
@@ -483,6 +489,7 @@ func (a *App) GetCourseTasksCatalog(c *gin.Context) {
 
 	type taskCatalogItem struct {
 		TaskID      string `json:"taskId"`
+		ID          string `json:"id"`
 		Title       string `json:"title"`
 		Difficulty  int    `json:"difficulty"`
 		XP          int    `json:"xp"`
@@ -492,7 +499,9 @@ func (a *App) GetCourseTasksCatalog(c *gin.Context) {
 		LessonTitle string `json:"lessonTitle"`
 		ModuleTitle string `json:"moduleTitle"`
 		Position    int    `json:"position"`
+		Order       int    `json:"order"`
 		Status      string `json:"status"`
+		TaskStatus  string `json:"taskStatus"`
 	}
 
 	items := make([]taskCatalogItem, 0)
@@ -514,6 +523,9 @@ func (a *App) GetCourseTasksCatalog(c *gin.Context) {
 			internalServerError(c, err)
 			return
 		}
+		item.ID = item.TaskID
+		item.Order = item.Position
+		item.TaskStatus = item.Status
 		items = append(items, item)
 	}
 	if err := rows.Err(); err != nil {
