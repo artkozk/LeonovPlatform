@@ -1,7 +1,6 @@
 package com.leonovcare.plugin.ui
 
 import com.intellij.ui.components.JBScrollPane
-import com.intellij.ui.components.JBTextArea
 import com.leonovcare.plugin.api.LessonMaterial
 import com.leonovcare.plugin.api.TaskDetails
 import com.leonovcare.plugin.i18n.PlatformBundle
@@ -9,6 +8,7 @@ import com.leonovcare.plugin.task.LessonMaterialFormatter
 import java.awt.BorderLayout
 import java.awt.FlowLayout
 import javax.swing.JButton
+import javax.swing.JEditorPane
 import javax.swing.JPanel
 
 class TaskStatementPanel(
@@ -23,12 +23,12 @@ class TaskStatementPanel(
 ) {
 
     val root: JPanel = JPanel(BorderLayout(8, 8))
-    private val statementArea = JBTextArea()
+    private val statementArea = JEditorPane()
 
     init {
+        statementArea.contentType = "text/html"
         statementArea.isEditable = false
-        statementArea.lineWrap = true
-        statementArea.wrapStyleWord = true
+        statementArea.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, true)
 
         val actions = JPanel(FlowLayout(FlowLayout.LEFT, 6, 0))
 
@@ -69,7 +69,8 @@ class TaskStatementPanel(
     }
 
     fun setTaskDetails(details: TaskDetails?, lessonMaterial: LessonMaterial? = null) {
-        statementArea.text = LessonMaterialFormatter.buildTaskAndLessonText(details, lessonMaterial)
+        val markdown = LessonMaterialFormatter.buildTaskAndLessonText(details, lessonMaterial)
+        statementArea.text = MarkdownHtmlRenderer.render(markdown)
         statementArea.caretPosition = 0
     }
 }

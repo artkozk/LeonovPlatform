@@ -1,7 +1,9 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
+	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -14,9 +16,10 @@ func (a *App) GetTaskTemplate(c *gin.Context) {
 	}
 
 	taskID := c.Param("taskID")
-	var language, sourcePolicyRaw, statementMD, starterCode, solutionCode string
+	var title, language, sourcePolicyRaw, statementMD, starterCode, solutionCode string
 	if err := a.DB.QueryRow(c.Request.Context(), `
 		SELECT
+			COALESCE(title, ''),
 			COALESCE(language, 'java'),
 			COALESCE(source_policy::text, '{}'::text),
 			COALESCE(statement_md, ''),
@@ -24,24 +27,70 @@ func (a *App) GetTaskTemplate(c *gin.Context) {
 			COALESCE(solution_code, '')
 		FROM tasks
 		WHERE id = $1 AND is_published = TRUE
-	`, taskID).Scan(&language, &sourcePolicyRaw, &statementMD, &starterCode, &solutionCode); err != nil {
+	`, taskID).Scan(&title, &language, &sourcePolicyRaw, &statementMD, &starterCode, &solutionCode); err != nil {
 		notFound(c, "task not found")
 		return
 	}
 
 	mainPath := inferMainFilePathFromSourcePolicy(sourcePolicyRaw, language)
 	starter := withStarterFallback(starterCode, statementMD, language, solutionCode)
+	files := buildTemplateFilesFromSourcePolicy(sourcePolicyRaw, language, title, mainPath, starter)
 
 	c.JSON(http.StatusOK, gin.H{
 		"taskId": taskID,
-		"files": []gin.H{
-			{
-				"path":     mainPath,
-				"content":  starter,
-				"editable": true,
-			},
-		},
+		"files":  files,
 	})
+}
+
+func buildTemplateFilesFromSourcePolicy(sourcePolicyRaw, language, title, mainPath, starter string) []gin.H {
+	paths := inferTemplateFilesFromSourcePolicy(sourcePolicyRaw, language)
+	if len(paths) == 0 {
+		paths = []string{mainPath}
+	}
+	files := make([]gin.H, 0, len(paths))
+	mainNormalized := strings.ToLower(filepath.ToSlash(strings.TrimSpace(mainPath)))
+	for _, path := range paths {
+		normalized := filepath.ToSlash(strings.TrimSpace(path))
+		if normalized == "" {
+			continue
+		}
+		content := ""
+		if strings.ToLower(normalized) == mainNormalized {
+			content = starter
+		} else if strings.EqualFold(filepath.Base(normalized), "README.md") {
+			content = defaultReadmeTemplate(title, mainPath)
+		}
+		files = append(files, gin.H{
+			"path":     normalized,
+			"content":  content,
+			"editable": true,
+		})
+	}
+	if len(files) == 0 {
+		files = append(files, gin.H{
+			"path":     mainPath,
+			"content":  starter,
+			"editable": true,
+		})
+	}
+	return files
+}
+
+func defaultReadmeTemplate(taskTitle, mainPath string) string {
+	title := strings.TrimSpace(taskTitle)
+	if title == "" {
+		title = "Решение задачи"
+	}
+	entry := strings.TrimSpace(mainPath)
+	if entry == "" {
+		entry = "main.py"
+	}
+	content := fmt.Sprintf(
+		"# %s\n\n## Запуск\n\n```bash\npython %s\n```\n\n## Пример\n\nВвод:\n\n```text\n2026\n```\n\nВывод:\n\n```text\n2027\n```\n",
+		title,
+		entry,
+	)
+	return strings.TrimSpace(content) + "\n"
 }
 
 func (a *App) TaskStyleCheck(c *gin.Context) {

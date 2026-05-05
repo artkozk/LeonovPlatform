@@ -92,8 +92,11 @@ type checkerIDEPlugin struct {
 	RequiredDirs   []string `json:"required_dirs"`
 	ForbiddenFiles []string `json:"forbidden_files"`
 	Commands       []struct {
-		Cmd        string `json:"cmd"`
-		TimeoutSec int    `json:"timeout_sec"`
+		Cmd            string `json:"cmd"`
+		TimeoutSec     int    `json:"timeout_sec"`
+		Stdin          string `json:"stdin"`
+		ExpectStdout   string `json:"expect_stdout"`
+		ExpectExitCode *int   `json:"expect_exit_code"`
 	} `json:"commands"`
 	SendToServerForHiddenTests bool `json:"send_to_server_for_hidden_tests"`
 }
@@ -247,10 +250,14 @@ func runCommandWithTimeout(ctx context.Context, command string, args []string, w
 }
 
 func runShellCommand(ctx context.Context, workdir, command string) (string, error, bool) {
+	return runShellCommandWithStdin(ctx, workdir, command, "")
+}
+
+func runShellCommandWithStdin(ctx context.Context, workdir, command string, stdin string) (string, error, bool) {
 	if runtime.GOOS == "windows" {
-		return runCommandWithTimeout(ctx, "cmd", []string{"/C", command}, workdir, "")
+		return runCommandWithTimeout(ctx, "cmd", []string{"/C", command}, workdir, stdin)
 	}
-	return runCommandWithTimeout(ctx, "bash", []string{"-lc", command}, workdir, "")
+	return runCommandWithTimeout(ctx, "bash", []string{"-lc", command}, workdir, stdin)
 }
 
 func checkerDockerUnavailableResult(runLog string) judge.Result {
@@ -311,6 +318,51 @@ func normalizeCommandForAllowlist(raw string) string {
 	return strings.Join(parts, " ")
 }
 
+func containsDangerousShellTokens(command string) bool {
+	lower := strings.ToLower(strings.TrimSpace(command))
+	if lower == "" {
+		return true
+	}
+	for _, token := range []string{"&&", "||", ";", "`", "$(", ">|", ">>", "<", "\n", "\r"} {
+		if strings.Contains(lower, token) {
+			return true
+		}
+	}
+	return false
+}
+
+func isSimplePythonOrPytestCommand(command string) bool {
+	lower := strings.ToLower(strings.TrimSpace(command))
+	if lower == "" || containsDangerousShellTokens(lower) {
+		return false
+	}
+	return strings.HasPrefix(lower, "python ") ||
+		strings.HasPrefix(lower, "python3 ") ||
+		strings.HasPrefix(lower, "python -m pytest") ||
+		strings.HasPrefix(lower, "python3 -m pytest") ||
+		strings.HasPrefix(lower, "pytest")
+}
+
+func isSafePrintfPipeToPython(command string) bool {
+	lower := strings.ToLower(strings.TrimSpace(command))
+	if lower == "" {
+		return false
+	}
+	if strings.Count(lower, "|") != 1 {
+		return false
+	}
+	parts := strings.SplitN(lower, "|", 2)
+	left := strings.TrimSpace(parts[0])
+	right := strings.TrimSpace(parts[1])
+	if !strings.HasPrefix(left, "printf ") {
+		return false
+	}
+	if strings.Contains(left, "&&") || strings.Contains(left, "||") || strings.Contains(left, ";") || strings.Contains(left, "`") || strings.Contains(left, "$(") {
+		return false
+	}
+	return isSimplePythonOrPytestCommand(right)
+}
+
 func (a *App) ideCheckerCommandAllowedInProduction(command string) bool {
 	normalized := normalizeCommandForAllowlist(command)
 	if normalized == "" {
@@ -328,13 +380,24 @@ func (a *App) ideCheckerCommandAllowedInProduction(command string) bool {
 				allowed[entry] = struct{}{}
 			}
 		}
-	} else {
-		for _, entry := range []string{"python -m pytest", "pytest"} {
-			allowed[normalizeCommandForAllowlist(entry)] = struct{}{}
-		}
+		_, ok := allowed[normalized]
+		return ok
 	}
-	_, ok := allowed[normalized]
-	return ok
+
+	for _, entry := range []string{"python -m pytest", "python3 -m pytest", "pytest"} {
+		allowed[normalizeCommandForAllowlist(entry)] = struct{}{}
+	}
+	if _, ok := allowed[normalized]; ok {
+		return true
+	}
+
+	if isSimplePythonOrPytestCommand(command) {
+		return true
+	}
+	if isSafePrintfPipeToPython(command) {
+		return true
+	}
+	return false
 }
 
 func parseTaskSourcePolicy(sourcePolicyRaw string) taskSourcePolicyEnvelope {
@@ -383,6 +446,36 @@ func inferMainFilePathFromSourcePolicy(sourcePolicyRaw, language string) string 
 		}
 	}
 	return defaultPath
+}
+
+func inferTemplateFilesFromSourcePolicy(sourcePolicyRaw, language string) []string {
+	mainPath := inferMainFilePathFromSourcePolicy(sourcePolicyRaw, language)
+	files := []string{mainPath}
+	seen := map[string]struct{}{}
+	seen[mainPath] = struct{}{}
+
+	policy := parseTaskSourcePolicy(sourcePolicyRaw)
+	if policy.CheckerType != "ide_plugin" || len(policy.Checker) == 0 {
+		return files
+	}
+	var checker struct {
+		RequiredFiles []string `json:"required_files"`
+	}
+	if err := json.Unmarshal(policy.Checker, &checker); err != nil {
+		return files
+	}
+	for _, raw := range checker.RequiredFiles {
+		normalized, err := normalizePathForWorkspace(raw)
+		if err != nil || strings.TrimSpace(normalized) == "" {
+			continue
+		}
+		if _, ok := seen[normalized]; ok {
+			continue
+		}
+		files = append(files, normalized)
+		seen[normalized] = struct{}{}
+	}
+	return files
 }
 
 func buildJudgeTestsFromPythonStdout(checker checkerPythonStdout) []judge.TestCase {
@@ -1071,21 +1164,44 @@ func (a *App) evaluateIDEPluginChecker(sourceCode string, files []submissionFile
 			timeoutSec = 8
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSec)*time.Second)
-		output, runErr, timedOut := runShellCommand(ctx, workspace, cmdText)
+		stdin := command.Stdin
+		output, runErr, timedOut := runShellCommandWithStdin(ctx, workspace, cmdText, stdin)
 		cancel()
 		tr := judge.TestResult{Index: len(tests) + 1, Input: cmdText, Expected: "exit=0", Actual: output}
 		if timedOut {
 			tr.Passed = false
 			tr.Error = "command timeout"
 		} else if runErr != nil {
-			tr.Passed = false
-			tr.Error = strings.TrimSpace(runErr.Error())
-			if tr.Error == "" {
-				tr.Error = "command failed"
+			expectedExitCode := 0
+			if command.ExpectExitCode != nil {
+				expectedExitCode = *command.ExpectExitCode
+			}
+			if exitErr, ok := runErr.(*exec.ExitError); ok && exitErr.ExitCode() == expectedExitCode {
+				tr.Passed = true
+				passed++
+			} else {
+				tr.Passed = false
+				tr.Error = strings.TrimSpace(runErr.Error())
+				if tr.Error == "" {
+					tr.Error = "command failed"
+				}
 			}
 		} else {
 			tr.Passed = true
 			passed++
+		}
+		if tr.Passed && strings.TrimSpace(command.ExpectStdout) != "" {
+			expected := normalizeOutput(command.ExpectStdout)
+			actual := normalizeOutput(output)
+			if expected != actual {
+				if tr.Passed {
+					passed--
+				}
+				tr.Passed = false
+				tr.Error = "stdout does not match expected output"
+				tr.Expected = expected
+				tr.Actual = actual
+			}
 		}
 		tests = append(tests, tr)
 	}

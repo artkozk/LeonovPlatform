@@ -775,3 +775,31 @@ node backend/tools/validate_python_v18_materials_import.js
 5. Проверка результата:
 - тест `TestDockerModeFallsBackToLocalWhenDockerUnavailable` подтверждает, что режим `docker` не блокирует проверку stdout-задач при недоступном Docker;
 - `go test ./...` должен проходить без регрессий.
+
+## Актуализация от 2026-05-05: IDE project checks + template completeness + hint consistency
+
+1. Что было проблемой:
+- для части `ide_plugin` задач пользователь мог получить `required file is missing` сразу после открытия задачи, потому что backend template отдавал только `main.py`;
+- в production команды из checker могли блокироваться allowlist-правилом даже для безопасных учебных команд (`printf ... | python main.py`);
+- AI-подсказка в IDE могла анализировать неактуальный код, если изменения в редакторе еще не сохранены на диск.
+
+2. Что изменено в backend:
+- `GET /api/v1/tasks/:taskID/template` теперь строит шаблон из `required_files` (`source_policy.checker.required_files`) и отдает все обязательные файлы, а не только один entry file;
+- для `README.md` добавляется стартовый шаблон с запуском и примером, чтобы ученик не блокировался на пустом проекте;
+- для `ide_plugin` checker-команд расширена безопасная default-политика production allowlist:
+  - сохранена поддержка `pytest`/`python -m pytest`,
+  - добавлена поддержка простых `python/python3` команд и безопасного шаблона `printf ... | python ...`,
+  - команды с опасными shell-токенами (`;`, `&&`, `||`, `` ` ``, `$(`, redirect и т.п.) остаются запрещенными;
+- `ide_plugin` checker начал учитывать `expect_stdout` и `expect_exit_code`, чтобы проектная проверка валидировала не только факт запуска, но и результат.
+
+3. Что изменено в IDE plugin:
+- AI hint читает код из открытого редактора через document model (включая несохраненные изменения), а не только с диска.
+
+4. Почему сделано именно так:
+- шаблон должен быть self-contained: если checker требует `README.md`, файл должен появляться сразу при открытии задачи;
+- безопасные команды учебного контура должны проходить без ручного расширения env allowlist;
+- подсказка должна работать по фактическому коду ученика “сейчас”, иначе UX воспринимается как ложный.
+
+5. Проверка:
+- backend: `go test ./...` PASS;
+- plugin: `./gradlew test` PASS.

@@ -7,52 +7,28 @@ object LessonMaterialFormatter {
 
     fun buildTaskAndLessonText(details: TaskDetails?, lesson: LessonMaterial?): String {
         if (details == null) return ""
-        if (lesson == null) return details.statement.body
+        if (lesson == null) return details.statement.body.trim()
 
         val buffer = StringBuilder()
-
-        buffer.appendLine("=== УРОК ===")
-        buffer.appendLine("Модуль: ${lesson.moduleTitle}")
-        buffer.appendLine("Урок: ${lesson.title}")
-        buffer.appendLine()
-
-        val lessonTheory = lesson.contentMd.trim()
-        if (lessonTheory.isNotBlank()) {
-            buffer.appendLine("=== ТЕОРИЯ УРОКА ===")
-            buffer.appendLine(lessonTheory)
+        val moduleTitle = lesson.moduleTitle.trim()
+        val lessonTitle = lesson.title.trim()
+        if (moduleTitle.isNotBlank()) {
+            buffer.appendLine("**Модуль:** $moduleTitle")
+        }
+        if (lessonTitle.isNotBlank()) {
+            buffer.appendLine("**Урок:** $lessonTitle")
+        }
+        if (buffer.isNotEmpty()) {
+            buffer.appendLine()
+            buffer.appendLine("---")
             buffer.appendLine()
         }
 
-        if (lesson.blocks.isNotEmpty()) {
-            buffer.appendLine("=== ШАГИ УРОКА ===")
-            lesson.blocks.sortedBy { it.position }.forEach { block ->
-                buffer.append("[")
-                    .append(block.position)
-                    .append("] ")
-                    .append(block.type.uppercase())
-                    .append(" — ")
-                    .append(if (block.title.isBlank()) "Без названия" else block.title)
-                    .appendLine()
-
-                if (block.taskTitle != null && block.taskTitle.isNotBlank()) {
-                    buffer.appendLine("Задача блока: ${block.taskTitle}")
-                }
-
-                val blockContent = block.contentMd.trim()
-                if (blockContent.isNotBlank()) {
-                    buffer.appendLine(blockContent)
-                }
-                buffer.appendLine()
-            }
+        val statement = details.statement.body.trim()
+        if (statement.isNotBlank()) {
+            buffer.appendLine(statement)
         }
-
-        buffer.appendLine("=== ТЕКУЩАЯ ЗАДАЧА ===")
-        buffer.appendLine(details.title)
-        buffer.appendLine()
-        buffer.append(details.statement.body.trim())
-        buffer.appendLine()
-
-        return buffer.toString()
+        return buffer.toString().trim()
     }
 
     fun buildLessonMarkdown(lesson: LessonMaterial): String {

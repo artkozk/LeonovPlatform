@@ -1,7 +1,9 @@
 package com.leonovcare.plugin.ai
 
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.leonovcare.plugin.api.AiHintResponse
 import com.leonovcare.plugin.api.PlatformApiClientFactory
 import com.leonovcare.plugin.auth.AuthService
@@ -51,20 +53,36 @@ class AiHintService(private val project: Project) {
 
     private fun loadSourceCode(context: CurrentTaskContext): String {
         val mainFile = context.taskDir.resolve(context.details.mainFilePath).normalize()
-        if (mainFile.startsWith(context.taskDir.normalize()) && Files.exists(mainFile)) {
-            return Files.readString(mainFile)
-        }
+        readPathPreferDocument(mainFile, context.taskDir)?.let { return it }
 
-        val templateMain = context.template.files.firstOrNull()?.path?.let {
-            context.taskDir.resolve(it).normalize()
-        }
-        if (templateMain != null && templateMain.startsWith(context.taskDir.normalize()) && Files.exists(templateMain)) {
-            return Files.readString(templateMain)
+        val templateMain = context.template.files.firstOrNull()
+            ?.path
+            ?.let { context.taskDir.resolve(it).normalize() }
+        if (templateMain != null) {
+            readPathPreferDocument(templateMain, context.taskDir)?.let { return it }
         }
 
         return submissionCollector.collect(context.taskDir).joinToString(separator = "\n\n") { file ->
             "// ${file.path}\n${file.content}"
         }
+    }
+
+    private fun readPathPreferDocument(path: java.nio.file.Path, taskRoot: java.nio.file.Path): String? {
+        val normalized = path.normalize()
+        if (!normalized.startsWith(taskRoot.normalize())) {
+            return null
+        }
+        val vFile = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(normalized)
+        if (vFile != null) {
+            val document = FileDocumentManager.getInstance().getDocument(vFile)
+            if (document != null) {
+                return document.text
+            }
+        }
+        if (Files.exists(normalized)) {
+            return Files.readString(normalized)
+        }
+        return null
     }
 
     companion object {

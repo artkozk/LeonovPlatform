@@ -59,8 +59,40 @@ func TestIDECheckerCommandAllowedInProduction(t *testing.T) {
 	if !a.ideCheckerCommandAllowedInProduction("pytest") {
 		t.Fatalf("expected pytest to be allowlisted")
 	}
+	if a.ideCheckerCommandAllowedInProduction("python main.py") {
+		t.Fatalf("expected command to be blocked by explicit allowlist")
+	}
 	if a.ideCheckerCommandAllowedInProduction("bash -lc whoami") {
 		t.Fatalf("unexpected non-allowlisted command")
+	}
+}
+
+func TestIDECheckerCommandAllowedInProductionDefaultSafeSet(t *testing.T) {
+	a := &App{}
+	a.Cfg.IDECheckerAllowedCommands = ""
+
+	if !a.ideCheckerCommandAllowedInProduction("python main.py") {
+		t.Fatalf("expected python main.py to be allowed in default safe set")
+	}
+	if !a.ideCheckerCommandAllowedInProduction("printf '2026\\n' | python main.py") {
+		t.Fatalf("expected safe printf->python command to be allowed")
+	}
+	if a.ideCheckerCommandAllowedInProduction("python main.py; rm -rf /") {
+		t.Fatalf("dangerous command must be blocked")
+	}
+}
+
+func TestInferTemplateFilesFromSourcePolicy(t *testing.T) {
+	policy := `{"checker_type":"ide_plugin","checker":{"required_files":["main.py","README.md","./README.md"]}}`
+	got := inferTemplateFilesFromSourcePolicy(policy, "python")
+	if len(got) != 2 {
+		t.Fatalf("expected 2 unique template files, got %d: %#v", len(got), got)
+	}
+	if got[0] != "main.py" {
+		t.Fatalf("expected first template file to be main.py, got %q", got[0])
+	}
+	if got[1] != "README.md" {
+		t.Fatalf("expected README.md to be included, got %#v", got)
 	}
 }
 

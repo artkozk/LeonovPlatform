@@ -532,3 +532,32 @@ cd idea-plugin
 6. `src/main/kotlin/com/leonovcare/plugin/api/PlatformEndpointMapping.kt`.
 7. `src/main/kotlin/com/leonovcare/plugin/api/ApiModels.kt`.
 8. `src/test/kotlin/com/leonovcare/plugin/api/HttpPlatformApiClientTest.kt`.
+
+## 2026-05-05 — Markdown statement rendering + task/lesson separation + AI hint source alignment
+
+### Что изменено
+
+1. Рендер statement переведен с plain-text на Markdown->HTML:
+- `TaskStatementPanel` теперь использует `JEditorPane` с `text/html`;
+- добавлен `MarkdownHtmlRenderer` для заголовков, списков, цитат, inline/fenced code.
+
+2. Убран визуальный “слип” теории урока и текущей задачи:
+- `LessonMaterialFormatter.buildTaskAndLessonText(...)` больше не склеивает все блоки урока в statement;
+- в statement остаются контекст модуля/урока и текст текущей задачи.
+
+3. AI hint теперь читает актуальный код из редактора:
+- `AiHintService` сначала берет текст из `FileDocumentManager` (включая несохраненные изменения),
+- и только потом делает fallback на файл на диске.
+
+### Почему это сделано
+
+1. Пользователь должен видеть нормальный формат условий, а не сырые `###`, backticks и `>` из markdown.
+2. Теория и задача на платформе разделены по шагам, поэтому в tool-window они тоже должны быть разделены, чтобы не создавать ложную путаницу.
+3. AI-подсказка по stale-файлу воспринимается как “подсказка не в мой код”; чтение из editor-document устраняет этот класс проблем.
+
+### Файлы
+
+1. `src/main/kotlin/com/leonovcare/plugin/ui/TaskStatementPanel.kt`.
+2. `src/main/kotlin/com/leonovcare/plugin/ui/MarkdownHtmlRenderer.kt`.
+3. `src/main/kotlin/com/leonovcare/plugin/task/LessonMaterialFormatter.kt`.
+4. `src/main/kotlin/com/leonovcare/plugin/ai/AiHintService.kt`.

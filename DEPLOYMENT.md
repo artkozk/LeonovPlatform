@@ -360,3 +360,30 @@ export JUDGE_MODE=docker
 docker ps
 pm2 restart leonovcare-api leonovcare-worker
 ```
+
+## 14. IDE Checker + Template Contract Update (append-only, 2026-05-05)
+
+### 14.1 Что изменено
+
+1. `GET /api/v1/tasks/:taskID/template` теперь отдает все `required_files` для `ide_plugin` задач, а не только один entry file.
+2. Для `README.md` backend выдает стартовый шаблон, чтобы пользователь не блокировался на `required file is missing` сразу после открытия задачи.
+3. Production-политика IDE checker команд расширена безопасным default-набором:
+- `pytest`, `python -m pytest`,
+- простые `python/python3` команды,
+- безопасный шаблон `printf ... | python ...`.
+4. По-прежнему запрещены команды с опасными shell-токенами (`;`, `&&`, `||`, `` ` ``, `$(`, redirect и т.д.).
+
+### 14.2 Почему это важно
+
+1. Для project-step задач пользователь должен получать полноценный стартовый набор файлов из template API.
+2. Ранее валидные учебные команды могли блокироваться allowlist-политикой и давать ложный `FAILED`.
+3. Новая политика сохраняет защиту от опасных команд и одновременно не ломает нормальные сценарии обучения.
+
+### 14.3 Проверка после деплоя
+
+1. Проверить template выдачу для project-задачи:
+```bash
+curl -fsS -H "Authorization: Bearer <token>" http://127.0.0.1:8510/api/v1/tasks/<task_id>/template
+```
+2. Убедиться, что в `files[]` присутствуют как минимум `main.py` и `README.md` (если они требуются checker'ом).
+3. Запустить проверку project-step в IDE и убедиться, что ошибка `command is blocked in production` для безопасных python-команд больше не возникает.
