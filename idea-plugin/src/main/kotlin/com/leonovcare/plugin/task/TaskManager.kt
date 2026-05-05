@@ -22,6 +22,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeout
 import java.util.concurrent.TimeUnit
 
 data class TaskManagerState(
@@ -47,6 +50,8 @@ class TaskManager(private val project: Project) {
     private val lessonCache = LessonCache.getInstance()
 
     private val lessonCacheTtlMillis = TimeUnit.HOURS.toMillis(8)
+    private val requestTimeoutMillis = TimeUnit.SECONDS.toMillis(12)
+    private val refreshMutex = Mutex()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val stateFlow = MutableStateFlow(TaskManagerState())
@@ -73,47 +78,121 @@ class TaskManager(private val project: Project) {
             if (authService.token() == null) {
                 return@launch
             }
-            stateFlow.value = stateFlow.value.copy(loading = true, errorMessage = null)
-            runCatching {
-                authService.withAuthorizedToken { token ->
-                    val client = apiFactory.client()
-                    val courses = client.getCourses(token)
-                    val selectedCourseId = settings.mutableState().selectedCourseId ?: courses.firstOrNull()?.id
-                    val tasksByCourse = mutableMapOf<String, List<Task>>()
-                    val cachedTasksByCourse = taskCache.getTasksByCourse()
-                    courses.forEach { course ->
-                        val remoteTasks = client.getCourseTasks(token, course.id)
-                        val mergedTasks = SyncStatusMerger.merge(
-                            existingTasks = cachedTasksByCourse[course.id].orEmpty(),
-                            remoteTasks = remoteTasks,
-                        ).tasks
-                        tasksByCourse[course.id] = mergedTasks
+            refreshMutex.withLock {
+                val current = stateFlow.value
+                val hasVisibleData = current.courses.isNotEmpty() || current.tasks.isNotEmpty()
+                stateFlow.value = current.copy(
+                    loading = !hasVisibleData,
+                    errorMessage = null,
+                )
+
+                runCatching {
+                    authService.withAuthorizedToken { token ->
+                        val client = apiFactory.client()
+                        val courses = withTimeout(requestTimeoutMillis) {
+                            client.getCourses(token)
+                        }
+                        val selectedCourseId = settings.mutableState().selectedCourseId ?: courses.firstOrNull()?.id
+                        val cachedTasksByCourse = taskCache.getTasksByCourse()
+                        val tasksByCourse = cachedTasksByCourse.toMutableMap()
+
+                        var selectedCourseError: String? = null
+                        if (selectedCourseId != null) {
+                            val selectedCached = cachedTasksByCourse[selectedCourseId].orEmpty()
+                            val selectedRemote = runCatching {
+                                withTimeout(requestTimeoutMillis) {
+                                    client.getCourseTasks(token, selectedCourseId)
+                                }
+                            }.onFailure { ex ->
+                                selectedCourseError = ex.message ?: "Failed to load tasks"
+                                logger.warn("Failed to load selected course tasks ($selectedCourseId): ${ex.message}")
+                            }.getOrNull()
+
+                            if (selectedRemote != null) {
+                                tasksByCourse[selectedCourseId] = SyncStatusMerger.merge(
+                                    existingTasks = selectedCached,
+                                    remoteTasks = selectedRemote,
+                                ).tasks
+                            }
+                        }
+
+                        settings.mutableState().selectedCourseId = selectedCourseId
+                        settings.mutableState().lastSyncEpochMillis = System.currentTimeMillis()
+                        courseCache.saveCourses(courses)
+                        taskCache.saveTasksByCourse(tasksByCourse)
+
+                        val selectedTasks = selectedCourseId?.let { tasksByCourse[it] }.orEmpty()
+                        stateFlow.value = TaskManagerState(
+                            loading = false,
+                            courses = courses,
+                            selectedCourseId = selectedCourseId,
+                            tasks = selectedTasks,
+                            errorMessage = if (selectedTasks.isEmpty()) selectedCourseError else null,
+                            offlineMode = selectedCourseError != null,
+                        )
+
+                        // Finish loading remaining courses in background without blocking initial UI.
+                        loadRemainingCourseTasks(
+                            token = token,
+                            client = client,
+                            courses = courses,
+                            selectedCourseId = selectedCourseId,
+                            cachedTasksByCourse = cachedTasksByCourse,
+                            tasksByCourse = tasksByCourse,
+                        )
+
+                        prefetchLessonMaterialsInBackground(tasksByCourse.values.flatten())
                     }
-
-                    settings.mutableState().selectedCourseId = selectedCourseId
-                    settings.mutableState().lastSyncEpochMillis = System.currentTimeMillis()
-                    courseCache.saveCourses(courses)
-                    taskCache.saveTasksByCourse(tasksByCourse)
-
-                    stateFlow.value = TaskManagerState(
+                }.onFailure { ex ->
+                    logger.warn("Failed to refresh courses/tasks: ${ex.message}")
+                    val fallback = stateFlow.value
+                    stateFlow.value = fallback.copy(
                         loading = false,
-                        courses = courses,
-                        selectedCourseId = selectedCourseId,
-                        tasks = selectedCourseId?.let { tasksByCourse[it] }.orEmpty(),
-                        offlineMode = false,
+                        errorMessage = ex.message,
+                        offlineMode = true,
                     )
+                }
+            }
+        }
+    }
 
-                    prefetchLessonMaterialsInBackground(tasksByCourse.values.flatten())
+    private suspend fun loadRemainingCourseTasks(
+        token: String,
+        client: com.leonovcare.plugin.api.PlatformApiClient,
+        courses: List<Course>,
+        selectedCourseId: String?,
+        cachedTasksByCourse: Map<String, List<Task>>,
+        tasksByCourse: MutableMap<String, List<Task>>,
+    ) {
+        if (courses.isEmpty()) return
+
+        var updated = false
+        for (course in courses) {
+            if (course.id == selectedCourseId) continue
+
+            val remoteTasks = runCatching {
+                withTimeout(requestTimeoutMillis) {
+                    client.getCourseTasks(token, course.id)
                 }
             }.onFailure { ex ->
-                logger.warn("Failed to refresh courses/tasks: ${ex.message}")
-                val fallback = stateFlow.value
-                stateFlow.value = fallback.copy(
-                    loading = false,
-                    errorMessage = ex.message,
-                    offlineMode = true,
-                )
-            }
+                logger.warn("Failed to load course tasks (${course.id}): ${ex.message}")
+            }.getOrNull() ?: continue
+
+            tasksByCourse[course.id] = SyncStatusMerger.merge(
+                existingTasks = cachedTasksByCourse[course.id].orEmpty(),
+                remoteTasks = remoteTasks,
+            ).tasks
+            updated = true
+        }
+
+        if (!updated) return
+
+        taskCache.saveTasksByCourse(tasksByCourse)
+        val selectedNow = settings.mutableState().selectedCourseId
+        if (selectedNow != null && selectedNow == stateFlow.value.selectedCourseId) {
+            stateFlow.value = stateFlow.value.copy(
+                tasks = tasksByCourse[selectedNow].orEmpty(),
+            )
         }
     }
 
