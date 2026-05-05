@@ -803,3 +803,21 @@ node backend/tools/validate_python_v18_materials_import.js
 5. Проверка:
 - backend: `go test ./...` PASS;
 - plugin: `./gradlew test` PASS.
+
+## Актуализация от 2026-05-05: IDE checker allowlist fallback в PM2
+
+1. Что было проблемой:
+- даже после расширения backend safe-policy часть project-step команд продолжала блокироваться в production;
+- причина: в PM2 default переменная `IDE_CHECKER_ALLOWED_COMMANDS` всегда была непустой (`python -m pytest,pytest`), что принудительно включало strict allowlist.
+
+2. Что изменено:
+- default `IDE_CHECKER_ALLOWED_COMMANDS` в `deploy/server/ecosystem.config.cjs` переведен в пустое значение;
+- strict режим теперь включается только при явной настройке переменной окружения.
+
+3. Почему сделано именно так:
+- учебные команды должны проходить в защищенном, но не “ломающем UX” режиме без ручного env-тюнинга;
+- эксплуатация сохраняет контроль: при необходимости можно задать точный allowlist вручную.
+
+4. Как проверить:
+- `pm2 env <api_id>` не должен показывать фиксированный список команд по умолчанию;
+- project-step с `python main.py`/`printf ... | python main.py` не должен падать с `command is blocked in production`.

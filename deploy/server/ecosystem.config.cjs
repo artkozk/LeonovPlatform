@@ -74,7 +74,9 @@ const sharedEnv = {
   SUBMISSION_MAX_ATTEMPTS: pickEnv("SUBMISSION_MAX_ATTEMPTS", "30"),
   JAVA_TIMEOUT_SECONDS: pickEnv("JAVA_TIMEOUT_SECONDS", "4"),
   JUDGE_MODE: pickEnv("JUDGE_MODE", "auto"),
-  IDE_CHECKER_ALLOWED_COMMANDS: pickEnv("IDE_CHECKER_ALLOWED_COMMANDS", "python -m pytest,pytest"),
+  // Keep default empty so backend safe policy can allow valid training commands
+  // (python main.py, safe printf|python, pytest) without hard-coded per-task env tuning.
+  IDE_CHECKER_ALLOWED_COMMANDS: pickEnv("IDE_CHECKER_ALLOWED_COMMANDS", ""),
   FREE_DAILY_SUBMISSIONS: pickEnv("FREE_DAILY_SUBMISSIONS", "20"),
   AUTH_RATE_LIMIT_PER_MINUTE: pickEnv("AUTH_RATE_LIMIT_PER_MINUTE", "60"),
   AI_HINT_RATE_LIMIT_PER_MINUTE: pickEnv("AI_HINT_RATE_LIMIT_PER_MINUTE", "20"),

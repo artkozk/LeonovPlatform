@@ -387,3 +387,29 @@ curl -fsS -H "Authorization: Bearer <token>" http://127.0.0.1:8510/api/v1/tasks/
 ```
 2. Убедиться, что в `files[]` присутствуют как минимум `main.py` и `README.md` (если они требуются checker'ом).
 3. Запустить проверку project-step в IDE и убедиться, что ошибка `command is blocked in production` для безопасных python-команд больше не возникает.
+
+## 15. IDE checker env fallback alignment (append-only, 2026-05-05)
+
+### 15.1 Проблема
+
+1. В PM2-конфиге default для `IDE_CHECKER_ALLOWED_COMMANDS` был `python -m pytest,pytest`.
+2. Из-за этого backend воспринимал policy как явный strict allowlist и блокировал валидные учебные команды (`python main.py`, `printf ... | python main.py`) даже после расширения безопасной default-политики.
+
+### 15.2 Что изменено
+
+1. В `deploy/server/ecosystem.config.cjs` default для `IDE_CHECKER_ALLOWED_COMMANDS` изменен на пустую строку.
+2. Теперь strict allowlist включается только когда его действительно задают явно через env.
+
+### 15.3 Почему так
+
+1. Без явной настройки должен работать безопасный встроенный policy backend для учебных сценариев.
+2. Если нужен строгий production-контур, команда эксплуатации может задать конкретный allowlist осознанно.
+
+### 15.4 Проверка
+
+1. Проверить env процесса API:
+```bash
+pm2 env <api_id> | grep IDE_CHECKER_ALLOWED_COMMANDS
+```
+2. Убедиться, что значение пустое или не задано по умолчанию.
+3. Повторить проверку project-step в IDE: безопасные python-команды не должны падать с `command is blocked in production`.
