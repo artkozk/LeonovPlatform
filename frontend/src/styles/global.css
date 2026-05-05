@@ -175,6 +175,11 @@ textarea.code-editor {
   text-rendering: auto;
 }
 
+.monaco-editor,
+.monaco-editor * {
+  letter-spacing: 0 !important;
+}
+
 .text-muted {
   color: var(--text-secondary);
 }
