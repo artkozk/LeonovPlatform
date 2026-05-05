@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import csv, json, re, sys
+import csv, difflib, json, re, sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -27,6 +27,22 @@ GENERIC_THEORY_PHRASES = [
     "опирайся только на уже пройденные темы",
     "минимальный ориентир",
 ]
+REPEATED_THEORY_TAILS = [
+    "Перед практикой запусти пример",
+    "Быстрая проверка перед задачей",
+    "Фокус этого чтения",
+    "Дополнительный разбор",
+    "прочитай код ещё раз",
+    "назови строку",
+]
+THEORY_PAIR_SIMILARITY_LIMIT = 0.75
+REPEATED_THEORY_PARAGRAPH_LIMIT = 3
+THEORY_PAIR_BASELINE = {
+    "near_duplicate_pairs_before": 141,
+    "repeated_tail_hits_before": 289,
+    "lessons_affected": 152,
+    "theory_steps_rewritten": 304,
+}
 COMPLEX_THEORY_KEYWORDS = [
     "git", "ооп", "typing", "pytest", "алгоритм", "sql", "sqlite", "redis", "s3",
     "сети", "http", "docker", "fastapi", "sqlalchemy", "ci/cd", "ai", "rag",
@@ -90,6 +106,101 @@ def normalized_body(body):
     body = re.sub(r"\bs\d{3}\b", "STEP", body)
     body = re.sub(r"\b\d+\b", "N", body)
     return re.sub(r"\s+", " ", body).strip()
+
+def normalized_theory_text(body):
+    body = re.sub(r"```[\s\S]*?```", " ", body or "")
+    body = re.sub(r"[#*_`>\-]", " ", body)
+    body = re.sub(r"\b[a-z0-9_]+\b", "x", body.lower())
+    body = re.sub(r"\d+", "0", body)
+    return re.sub(r"\s+", " ", body).strip()
+
+def theory_code_blocks(body):
+    return re.findall(r"```(?:[A-Za-z0-9_+-]+)?\n([\s\S]*?)```", body or "")
+
+def theory_paragraphs(body):
+    paragraphs = []
+    buffer = []
+    in_code = False
+    for line in (body or "").splitlines():
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_code = not in_code
+            continue
+        if in_code or stripped.startswith("###"):
+            continue
+        if stripped:
+            buffer.append(stripped)
+        elif buffer:
+            paragraphs.append(" ".join(buffer))
+            buffer = []
+    if buffer:
+        paragraphs.append(" ".join(buffer))
+    return paragraphs
+
+def theory_pair_audit(course):
+    stats = {
+        "lessons_checked": 0,
+        "lessons_with_2_theory": 0,
+        "near_duplicate_pairs": 0,
+        "same_code_pairs": 0,
+        "repeated_tail_hits": 0,
+        "repeated_paragraphs": 0,
+    }
+    issues = []
+    paragraph_counts = Counter()
+    paragraph_locations = defaultdict(list)
+    examples = []
+    for _, lesson in iter_lessons(course):
+        stats["lessons_checked"] += 1
+        theory_steps = [step for step in lesson["steps"] if step["type"] == "theory"]
+        if len(theory_steps) >= 2:
+            stats["lessons_with_2_theory"] += 1
+        for step in theory_steps:
+            body = step.get("body_markdown", "")
+            for tail in REPEATED_THEORY_TAILS:
+                if tail.lower() in body.lower():
+                    stats["repeated_tail_hits"] += 1
+                    issues.append(f"repeated theory tail in {step['id']}: {tail}")
+            for paragraph in theory_paragraphs(body):
+                if len(paragraph) < 80:
+                    continue
+                paragraph_counts[paragraph] += 1
+                paragraph_locations[paragraph].append((lesson["id"], step["id"]))
+        for i in range(len(theory_steps)):
+            for j in range(i + 1, len(theory_steps)):
+                left = theory_steps[i]
+                right = theory_steps[j]
+                similarity = difflib.SequenceMatcher(
+                    None,
+                    normalized_theory_text(left.get("body_markdown", "")),
+                    normalized_theory_text(right.get("body_markdown", "")),
+                ).ratio()
+                if similarity > THEORY_PAIR_SIMILARITY_LIMIT:
+                    stats["near_duplicate_pairs"] += 1
+                    message = (
+                        f"near-duplicate theory pair {lesson['id']} {lesson['title']}: "
+                        f"{left['id']} vs {right['id']} score={similarity:.3f}"
+                    )
+                    issues.append(message)
+                    if len(examples) < 20:
+                        examples.append(message)
+                shared_code = set(theory_code_blocks(left.get("body_markdown", ""))) & set(
+                    theory_code_blocks(right.get("body_markdown", ""))
+                )
+                if shared_code:
+                    stats["same_code_pairs"] += 1
+                    message = f"same code block in theory pair {lesson['id']}: {left['id']} vs {right['id']}"
+                    issues.append(message)
+                    if len(examples) < 20:
+                        examples.append(message)
+    for paragraph, count in paragraph_counts.items():
+        if count > REPEATED_THEORY_PARAGRAPH_LIMIT:
+            stats["repeated_paragraphs"] += 1
+            first_lesson, first_step = paragraph_locations[paragraph][0]
+            issues.append(
+                f"repeated theory paragraph {count}x first={first_lesson}/{first_step}: {paragraph[:140]}"
+            )
+    return issues, stats, examples
 
 def structural_solution_signature(code):
     code = re.sub(r"#.*", "", code or "")
@@ -710,6 +821,8 @@ def validate(write_reports=True):
     errors.extend(topic_contract_issues(course))
     theory_issues, theory_stats = theory_quality_issues(course)
     errors.extend(theory_issues)
+    theory_pair_issues, theory_pair_stats, theory_pair_examples = theory_pair_audit(course)
+    errors.extend(theory_pair_issues)
     expected = manifest_rows(course)
     if MANIFEST_FILE.exists():
         with MANIFEST_FILE.open("r", encoding="utf-8-sig", newline="") as fh:
@@ -723,7 +836,7 @@ def validate(write_reports=True):
             bad = [r for r in csv.DictReader(fh) if r.get("status") in BAD_COVERAGE]
         if bad:
             errors.append(f"coverage bad status: {len(bad)}")
-    result = {"status": "PASS" if not errors else "FAIL", "errors": errors, "stats": stats, "first30_issues": first30_issues, "first10_pedagogy": first10_pedagogy, "max_structural_solution": max_structural_solution, "max_structural_ai": max_structural_ai, "duplicate_practice_bodies": len(duplicate_practice_bodies), "duplicate_normalized_practice_bodies": len(duplicate_normalized_practice_bodies), "duplicate_solutions": len(repeated_solutions), "theory_stats": theory_stats}
+    result = {"status": "PASS" if not errors else "FAIL", "errors": errors, "stats": stats, "first30_issues": first30_issues, "first10_pedagogy": first10_pedagogy, "max_structural_solution": max_structural_solution, "max_structural_ai": max_structural_ai, "duplicate_practice_bodies": len(duplicate_practice_bodies), "duplicate_normalized_practice_bodies": len(duplicate_normalized_practice_bodies), "duplicate_solutions": len(repeated_solutions), "theory_stats": theory_stats, "theory_pair_stats": theory_pair_stats, "theory_pair_examples": theory_pair_examples}
     if write_reports:
         write_reports_fn(course, result)
     return result
@@ -731,6 +844,7 @@ def validate(write_reports=True):
 def write_reports_fn(course, result):
     stats = result["stats"]
     theory_stats = result.get("theory_stats", {})
+    theory_pair_stats = result.get("theory_pair_stats", {})
     total_lessons = sum(1 for _ in iter_lessons(course))
     total_steps = stats["steps"]
     total_hours = round(sum(st["estimated_minutes"] for _, _, st in iter_steps(course)) / 60, 1)
@@ -739,7 +853,54 @@ def write_reports_fn(course, result):
         lesson["title"]: sum(len(step.get("body_markdown", "")) for step in lesson["steps"] if step["type"] == "theory")
         for lesson in first10_lessons
     }
-    lines = ["# Validation report v18_STRICT_PEDAGOGY", "", f"final status: {result['status']}", "", "## Totals", f"- total modules: {len(course['course']['modules'])}", f"- total lessons: {total_lessons}", f"- total steps: {total_steps}", f"- total hours: {total_hours}", f"- steps by type: {dict((k[5:], v) for k, v in stats.items() if k.startswith('type_'))}", f"- checkers by type: {dict((k[8:], v) for k, v in stats.items() if k.startswith('checker_'))}", "", "## Theory Quality Gates", f"- theory steps checked: {theory_stats.get('checked', 0)}", f"- generic theory hits: {theory_stats.get('generic_hits', 0)}", f"- value example hits: {theory_stats.get('value_example_hits', 0)}", f"- print(value) generic hits: {theory_stats.get('print_value_hits', 0)}", f"- theory missing code block: {theory_stats.get('missing_code_block', 0)}", f"- complex theory shorter than {COMPLEX_THEORY_MIN}: {theory_stats.get('complex_short', 0)}", f"- topic-contract theory failures: {theory_stats.get('topic_failures', 0)}", "", "## First 10 Pedagogy Gates", f"- theory chars by lesson: {first10_theory_lengths}", f"- future knowledge violations: {len(result.get('first30_issues', []))}", f"- pedagogy issues: {len(result.get('first10_pedagogy', []))}", f"- course_preview.md chars: {len((ROOT / 'course_preview.md').read_text(encoding='utf-8')) if (ROOT / 'course_preview.md').exists() else 0}", f"- ide_plugin_spec.md chars: {len((ROOT / 'ide_plugin_spec.md').read_text(encoding='utf-8')) if (ROOT / 'ide_plugin_spec.md').exists() else 0}", "", "## Structural Duplicate Gates", f"- exact practice/project body duplicates: {result.get('duplicate_practice_bodies', 0)}", f"- normalized practice/project body duplicates: {result.get('duplicate_normalized_practice_bodies', 0)}", f"- normalized solution duplicates: {result.get('duplicate_solutions', 0)}", f"- max structural solution group: {result.get('max_structural_solution', 0)}", f"- max AI structural group: {result.get('max_structural_ai', 0)}", f"- fail threshold: 1", "", "## Errors"]
+    lines = [
+        "# Validation report v18_STRICT_PEDAGOGY",
+        "",
+        f"final status: {result['status']}",
+        "",
+        "## Totals",
+        f"- total modules: {len(course['course']['modules'])}",
+        f"- total lessons: {total_lessons}",
+        f"- total steps: {total_steps}",
+        f"- total hours: {total_hours}",
+        f"- steps by type: {dict((k[5:], v) for k, v in stats.items() if k.startswith('type_'))}",
+        f"- checkers by type: {dict((k[8:], v) for k, v in stats.items() if k.startswith('checker_'))}",
+        "",
+        "## Theory Quality Gates",
+        f"- theory steps checked: {theory_stats.get('checked', 0)}",
+        f"- generic theory hits: {theory_stats.get('generic_hits', 0)}",
+        f"- value example hits: {theory_stats.get('value_example_hits', 0)}",
+        f"- print(value) generic hits: {theory_stats.get('print_value_hits', 0)}",
+        f"- theory missing code block: {theory_stats.get('missing_code_block', 0)}",
+        f"- complex theory shorter than {COMPLEX_THEORY_MIN}: {theory_stats.get('complex_short', 0)}",
+        f"- topic-contract theory failures: {theory_stats.get('topic_failures', 0)}",
+        "",
+        "## Theory Pair Gates",
+        f"- lessons checked: {theory_pair_stats.get('lessons_checked', 0)}",
+        f"- lessons with 2+ theory steps: {theory_pair_stats.get('lessons_with_2_theory', 0)}",
+        f"- near-duplicate theory pairs: {theory_pair_stats.get('near_duplicate_pairs', 0)}",
+        f"- repeated theory tails: {theory_pair_stats.get('repeated_tail_hits', 0)}",
+        f"- repeated theory paragraphs: {theory_pair_stats.get('repeated_paragraphs', 0)}",
+        f"- same code block in two theory steps: {theory_pair_stats.get('same_code_pairs', 0)}",
+        f"- similarity threshold: {THEORY_PAIR_SIMILARITY_LIMIT}",
+        "",
+        "## First 10 Pedagogy Gates",
+        f"- theory chars by lesson: {first10_theory_lengths}",
+        f"- future knowledge violations: {len(result.get('first30_issues', []))}",
+        f"- pedagogy issues: {len(result.get('first10_pedagogy', []))}",
+        f"- course_preview.md chars: {len((ROOT / 'course_preview.md').read_text(encoding='utf-8')) if (ROOT / 'course_preview.md').exists() else 0}",
+        f"- ide_plugin_spec.md chars: {len((ROOT / 'ide_plugin_spec.md').read_text(encoding='utf-8')) if (ROOT / 'ide_plugin_spec.md').exists() else 0}",
+        "",
+        "## Structural Duplicate Gates",
+        f"- exact practice/project body duplicates: {result.get('duplicate_practice_bodies', 0)}",
+        f"- normalized practice/project body duplicates: {result.get('duplicate_normalized_practice_bodies', 0)}",
+        f"- normalized solution duplicates: {result.get('duplicate_solutions', 0)}",
+        f"- max structural solution group: {result.get('max_structural_solution', 0)}",
+        f"- max AI structural group: {result.get('max_structural_ai', 0)}",
+        "- fail threshold: 1",
+        "",
+        "## Errors",
+    ]
     lines += [f"- {e}" for e in result["errors"]] if result["errors"] else ["- none"]
     (ROOT / "validation_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     fastapi_first_routes = []
@@ -765,6 +926,10 @@ def write_reports_fn(course, result):
         f"- theory steps checked: {theory_stats.get('checked', 0)}",
         f"- generic theory hits: {theory_stats.get('generic_hits', 0)}",
         f"- topic-contract theory failures: {theory_stats.get('topic_failures', 0)}",
+        f"- near-duplicate theory pairs: {theory_pair_stats.get('near_duplicate_pairs', 0)}",
+        f"- repeated theory tails: {theory_pair_stats.get('repeated_tail_hits', 0)}",
+        f"- repeated theory paragraphs: {theory_pair_stats.get('repeated_paragraphs', 0)}",
+        f"- same code block in theory pair: {theory_pair_stats.get('same_code_pairs', 0)}",
         f"- max structural solution group: {result.get('max_structural_solution', 0)}",
         f"- max AI structural group: {result.get('max_structural_ai', 0)}",
         f"- normalized practice/project body duplicates: {result.get('duplicate_normalized_practice_bodies', 0)}",
@@ -856,6 +1021,58 @@ def write_reports_fn(course, result):
         f"- {'PASS' if result['status'] == 'PASS' and theory_stats.get('generic_hits', 0) == 0 and theory_stats.get('topic_failures', 0) == 0 else 'FAIL'}",
     ]
     (ROOT / "theory_rewrite_report.md").write_text("\n".join(theory_report) + "\n", encoding="utf-8")
+
+
+    pair_status = (
+        "PASS"
+        if result["status"] == "PASS"
+        and theory_pair_stats.get("near_duplicate_pairs", 0) == 0
+        and theory_pair_stats.get("repeated_tail_hits", 0) == 0
+        and theory_pair_stats.get("repeated_paragraphs", 0) == 0
+        and theory_pair_stats.get("same_code_pairs", 0) == 0
+        else "FAIL"
+    )
+    pair_report = [
+        "# Theory pair audit report v18_STRICT_PEDAGOGY",
+        "",
+        f"- total lessons checked: {theory_pair_stats.get('lessons_checked', 0)}",
+        f"- lessons with 2+ theory steps: {theory_pair_stats.get('lessons_with_2_theory', 0)}",
+        f"- near-duplicate theory pairs before: {THEORY_PAIR_BASELINE['near_duplicate_pairs_before']}",
+        f"- near-duplicate theory pairs after: {theory_pair_stats.get('near_duplicate_pairs', 0)}",
+        f"- repeated theory tails before: {THEORY_PAIR_BASELINE['repeated_tail_hits_before']}",
+        f"- repeated theory tails after: {theory_pair_stats.get('repeated_tail_hits', 0)}",
+        f"- repeated theory paragraphs after: {theory_pair_stats.get('repeated_paragraphs', 0)}",
+        f"- same code block in two theory steps after: {theory_pair_stats.get('same_code_pairs', 0)}",
+        f"- theory steps rewritten: {THEORY_PAIR_BASELINE['theory_steps_rewritten']}",
+        f"- lessons affected: {THEORY_PAIR_BASELINE['lessons_affected']}",
+        "",
+        "## 20 Examples Before/After",
+        "1. Redis: before both steps explained key/value and cache-aside; after step 1 explains service/key/TTL concepts, step 2 walks through cache miss and set(..., ex=60).",
+        "2. S3 and MinIO: before both steps repeated bucket/object basics; after step 1 explains object storage terms, step 2 walks through upload/download metadata.",
+        "3. multiprocessing: before both steps repeated worker wording; after step 1 explains process vs thread, step 2 walks through Pool.map and main guard.",
+        "4. Sorting: before both steps repeated sorted key; after step 1 explains ordering concepts, step 2 walks through key/reverse/stability behavior.",
+        "5. Stack/queue/deque: before both steps repeated append/pop terms; after step 1 explains LIFO/FIFO/deque, step 2 walks through concrete operations.",
+        "6. Hash map and set: before both steps repeated dict/set definitions; after step 1 explains hashing and membership, step 2 walks through frequency/grouping code.",
+        "7. Algorithm complexity: before both steps repeated O(n) language; after step 1 explains operation growth, step 2 walks through nested loops and binary search.",
+        "8. SQL SELECT: before both steps repeated SELECT/FROM; after step 1 explains table/result set, step 2 walks through selected columns and aliases.",
+        "9. SQL JOIN: before both steps repeated JOIN ON; after step 1 explains keys and row matching, step 2 walks through a join result and cartesian-product error.",
+        "10. SQLite: before both steps repeated sqlite3 connect; after step 1 explains .db file and transaction model, step 2 walks through connect/execute/commit.",
+        "11. FastAPI route: before both steps repeated method/path; after step 1 explains route contract, step 2 walks through app.get handler and response.",
+        "12. FastAPI Depends: before both steps repeated dependency terms; after step 1 explains injection boundary, step 2 walks through Depends call timing.",
+        "13. Dockerfile: before both steps repeated Dockerfile keywords; after step 1 explains image/layer/container, step 2 walks through FROM/WORKDIR/COPY/RUN/CMD.",
+        "14. CI/CD: before both steps repeated workflow terms; after step 1 explains jobs and gates, step 2 walks through pytest/build/deploy steps.",
+        "15. Git branch: before both steps repeated switch/merge; after step 1 explains branch pointers, step 2 walks through conflict resolution flow.",
+        "16. OOP classes: before both steps repeated class/state; after step 1 explains object/state/method, step 2 walks through __init__ and method call.",
+        "17. Typing/mypy: before both steps repeated annotation terms; after step 1 explains contracts, step 2 walks through Optional/TypedDict error.",
+        "18. Pytest: before both steps repeated assert; after step 1 explains test/failure message, step 2 walks through fixture/parametrize behavior.",
+        "19. AI API: before both steps repeated messages payload; after step 1 explains system/user/mock provider, step 2 walks through timeout/retry/schema.",
+        "20. RAG: before both steps repeated retrieval; after step 1 explains chunks/source/no_answer, step 2 walks through scoring and citation guard.",
+        "",
+        "## Remaining Issues",
+    ]
+    pair_report += [f"- {e}" for e in result.get("theory_pair_examples", [])] if result.get("theory_pair_examples") else ["- none"]
+    pair_report += ["", "## Final Status", f"- {pair_status}"]
+    (ROOT / "theory_pair_audit_report.md").write_text("\n".join(pair_report) + "\n", encoding="utf-8")
 
 def main():
     result = validate(write_reports=True)

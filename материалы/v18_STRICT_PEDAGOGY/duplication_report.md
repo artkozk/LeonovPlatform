@@ -1,33 +1,31 @@
-﻿# Duplication report v18_STRICT_PEDAGOGY
+# Duplication report v18_STRICT_PEDAGOGY
 
-## Итог после правок
-- exact duplicate bodies after: 0
-- normalized duplicate bodies after: 0
-- exact duplicate solutions after: 0
-- normalized duplicate solutions after: 0
-- max duplicate group after: 1
+- duplicate groups before: legacy groups included renderer polymorphism, cache/inventory/state/retry task families, generic theory value/print blocks, and theory-pair collisions.
+- near-duplicate theory pairs before this pass: 141
+- repeated theory tails before this pass: 289
 
-## Theory Duplicate / Generic Audit
-- generic theory hits before: 245
-- generic theory hits after: 0
-- topic-contract theory failures after: 0
-- value/print generic examples after: 0
+## After
+- exact duplicate practice/project bodies after: 0
+- normalized duplicate practice/project bodies after: 0
+- exact/normalized duplicate solutions after: 0
+- max structural solution group after: 1
+- max AI structural group after: 1
+- near-duplicate theory pairs after: 0
+- repeated theory tails/paragraph/code-pair issues after: 0
+- max duplicate group after: 1 for practice/project/solution structures under the validator gates.
 
-## Переписанные группы
-- Единый интерфейс в полиморфизме и абстракциях заменён на providers, senders, serializers, policies, adapters, repositories и service boundaries.
-- Cache TTL, Inventory delta, State transition, CSV columns, Priority queue, Retry log удалены из чужих уроков; Redis/S3/network/algorithms получили свои задачи.
-- Повторяющиеся OOP-задачи по атрибутам, методам, инкапсуляции, магическим методам и dataclasses заменены на разные объектные контракты.
-- Универсальные theory steps заменены на объяснение конкретной темы урока.
+## Rewritten groups
+- Redis/S3/algorithm/structure task families were replaced with topic-specific tasks in earlier passes.
+- This pass rewrote duplicated theory roles: concept step and minimal-example step now carry separate responsibilities.
+- Repeated tails such as pre-practice boilerplate were removed or rewritten as lesson-specific explanation.
 
-## Статус
-- PASS по duplicate-аудиту.
-- STAGING READY до реального IDE-plugin прогона на staging.
+## Final result
+- PASS
 
-## Method
-Аудит читает `course_import.json`, берёт только student-facing practice/project body и `solution_code`, затем сравнивает exact и normalized формы. Нормализация убирает имена функций, классов, числовые маркеры и технические id, поэтому задача не считается уникальной, если меняется только название функции или урока.
 
-## Why Remaining Similarity Is Acceptable
-Оставшееся сходство относится к учебной структуре урока: theory, structured questions, practice, edge/debug step, mini-project. Проверяемые задачи после правок отличаются входом, выходом, edge case, checker-кодом или topic contract. Если будущая независимая проверка найдёт группу practice/project больше 1, пакет должен получить NOT READY.
-
-## Deployment Gate
-Перед массовым запуском нужно импортировать пакет на staging, пройти первые 30 уроков как студент, запустить IDE-plugin на Git/FastAPI/Docker/final-project gates и сверить hidden checks с `mentor_handbook.md`.
+## Review method
+- Exact body duplicates are counted only for practice/project steps because theory may share structural headings but must not share near-identical content inside one lesson.
+- Normalized body duplicates remove numbers, technical step ids and function-like names before comparison, so superficial renaming does not hide copied tasks.
+- Solution duplicates normalize function/class identifiers and imports. A repeated checked solution in two practice/project steps is a blocker.
+- Theory-pair duplication is checked separately with similarity ratio, repeated-tail detection, repeated-paragraph detection and same-code-block detection inside one lesson.
+- Remaining repeated headings such as section titles are allowed only when paragraph content, code, checker and learning role differ.

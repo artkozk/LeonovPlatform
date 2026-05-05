@@ -19,6 +19,10 @@ PASS/FAIL: PASS
 - theory steps checked: 338
 - generic theory hits: 0
 - topic-contract theory failures: 0
+- near-duplicate theory pairs: 0
+- repeated theory tails: 0
+- repeated theory paragraphs: 0
+- same code block in theory pair: 0
 - max structural solution group: 1
 - max AI structural group: 1
 - normalized practice/project body duplicates: 0
