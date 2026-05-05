@@ -8,8 +8,8 @@
 - `value = "пример"` before: 139
 - `value = "пример"` after: 0
 - `print(value)` generic examples after: 0
-- theory steps rewritten: 256
-- lessons affected: 132
+- theory steps rewritten: 2
+- lessons affected: 2
 - topic-contract theory failures after: 0
 - missing code block after: 0
 - complex theory too short after: 0

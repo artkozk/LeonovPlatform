@@ -1,4 +1,4 @@
-﻿module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_type,checker_type,xp,difficulty,estimated_minutes
+module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_type,checker_type,xp,difficulty,estimated_minutes
 1,"Модуль 1. Python Core, терминал, Git",1,Первый код,1,Смысл,theory,,20,1,18
 1,"Модуль 1. Python Core, терминал, Git",1,Первый код,2,print,theory,,20,1,18
 1,"Модуль 1. Python Core, терминал, Git",1,Первый код,3,print и вывод,test,quiz_single,25,1,10
