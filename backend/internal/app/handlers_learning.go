@@ -876,14 +876,13 @@ func (a *App) CreateSubmission(c *gin.Context) {
 	var taskLanguage string
 	var sourcePolicyRaw string
 	var taskTitle string
-	var taskMainFilePath string
 	var taskStarterCode string
 	if err := a.DB.QueryRow(c.Request.Context(), `
 		SELECT COALESCE(max_attempts, 0), COALESCE(language, 'java'), COALESCE(source_policy::text, '{}'::text),
-		       COALESCE(title, ''), COALESCE(main_file_path, ''), COALESCE(starter_code, '')
+		       COALESCE(title, ''), COALESCE(starter_code, '')
 		FROM tasks
 		WHERE id = $1 AND is_published = TRUE
-	`, taskID).Scan(&maxAttempts, &taskLanguage, &sourcePolicyRaw, &taskTitle, &taskMainFilePath, &taskStarterCode); err != nil {
+	`, taskID).Scan(&maxAttempts, &taskLanguage, &sourcePolicyRaw, &taskTitle, &taskStarterCode); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			notFound(c, "task not found")
 			return
@@ -898,7 +897,7 @@ func (a *App) CreateSubmission(c *gin.Context) {
 			sourcePolicyRaw,
 			taskLanguage,
 			taskTitle,
-			taskMainFilePath,
+			"",
 			taskStarterCode,
 		)
 		if strings.TrimSpace(sourceCode) == "" {
