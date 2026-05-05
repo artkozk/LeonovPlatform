@@ -43,6 +43,25 @@ THEORY_PAIR_BASELINE = {
     "lessons_affected": 152,
     "theory_steps_rewritten": 304,
 }
+THEORY_CODE_AUDIT_BASELINE = {
+    "duplicate_code_blocks_inside_before": 109,
+    "repeated_code_blocks_across_lessons_before": 22,
+    "repeated_generic_paragraphs_before": 156,
+    "banned_padding_phrase_hits_before": 430,
+}
+PADDING_THEORY_PHRASES = [
+    "Вход и результат Для темы",
+    "Граничный случай Проверь для",
+    "Как проверить руками Измени одно значение",
+    "Этот фрагмент нужен не для копирования",
+    "Сначала найди термин урока",
+    "Контекст этого урока",
+    "Разбор примера для темы",
+    "### Вход и результат",
+    "### Как читать фрагмент",
+    "### Диагностика понимания",
+    "### Проверка руками",
+]
 COMPLEX_THEORY_KEYWORDS = [
     "git", "ооп", "typing", "pytest", "алгоритм", "sql", "sqlite", "redis", "s3",
     "сети", "http", "docker", "fastapi", "sqlalchemy", "ci/cd", "ai", "rag",
@@ -116,6 +135,12 @@ def normalized_theory_text(body):
 
 def theory_code_blocks(body):
     return re.findall(r"```(?:[A-Za-z0-9_+-]+)?\n([\s\S]*?)```", body or "")
+
+def normalized_theory_code_block(code):
+    code = re.sub(r"\r\n", "\n", code or "")
+    code = re.sub(r"[ \t]+", " ", code)
+    code = "\n".join(line.strip() for line in code.strip().splitlines() if line.strip())
+    return code
 
 def theory_paragraphs(body):
     paragraphs = []
@@ -200,6 +225,102 @@ def theory_pair_audit(course):
             issues.append(
                 f"repeated theory paragraph {count}x first={first_lesson}/{first_step}: {paragraph[:140]}"
             )
+    return issues, stats, examples
+
+def theory_example_topic_requirements(title):
+    title = title.lower()
+    rules = []
+    if "refresh" in title:
+        rules.append(("refresh tokens", ["/auth/refresh", "refresh_token", "access_token", "revoked"]))
+    if "pagination" in title or "filtering" in title or "sorting" in title:
+        rules.append(("pagination/filtering/sorting", ["page", "size", "sort"]))
+    if "testclient" in title:
+        rules.append(("TestClient", ["testclient", "response", "assert"]))
+    if "integration" in title and "ai integration" not in title:
+        rules.append(("integration checks", ["client", "db_session", "response"]))
+    if "openapi" in title:
+        rules.append(("OpenAPI", ["openapi", "schema", "response"] ))
+    if "postman" in title:
+        rules.append(("Postman", ["postman", "base_url", "request"] ))
+    if "relationships" in title:
+        rules.append(("SQLAlchemy relationships", ["foreignkey", "relationship"] ))
+    if "alembic" in title:
+        rules.append(("Alembic", ["revision", "upgrade", "downgrade"] ))
+    if "docker compose" in title:
+        rules.append(("Docker Compose", ["services", "depends_on", "healthcheck"] ))
+    if re.search(r"\brag\b", title):
+        rules.append(("RAG", ["chunk", "source", "no_answer"] ))
+    if "langchain" in title or "langgraph" in title:
+        rules.append(("LangGraph", ["state", "node", "transition"] ))
+    return rules
+
+def theory_code_audit(course):
+    stats = {
+        "theory_steps_checked": 0,
+        "duplicate_code_blocks_inside_one_step": 0,
+        "repeated_code_blocks_across_lessons": 0,
+        "repeated_generic_paragraphs": 0,
+        "banned_padding_phrase_hits": 0,
+        "topic_specific_example_failures": 0,
+    }
+    issues = []
+    examples = []
+    code_locations = defaultdict(list)
+    paragraph_counts = Counter()
+    paragraph_locations = defaultdict(list)
+    for _, lesson, step in iter_steps(course):
+        if step["type"] != "theory":
+            continue
+        stats["theory_steps_checked"] += 1
+        body = step.get("body_markdown", "")
+        blocks = [normalized_theory_code_block(block) for block in theory_code_blocks(body)]
+        blocks = [block for block in blocks if block]
+        for block, count in Counter(blocks).items():
+            if count > 1:
+                stats["duplicate_code_blocks_inside_one_step"] += 1
+                msg = f"duplicate code block inside theory step {step['id']}: {block[:120]}"
+                issues.append(msg)
+                if len(examples) < 20:
+                    examples.append(msg)
+        for block in set(blocks):
+            code_locations[block].append((lesson["id"], step["id"]))
+        low = body.lower()
+        for phrase in PADDING_THEORY_PHRASES:
+            if phrase.lower() in low:
+                stats["banned_padding_phrase_hits"] += 1
+                msg = f"banned theory padding phrase in {step['id']}: {phrase}"
+                issues.append(msg)
+                if len(examples) < 20:
+                    examples.append(msg)
+        for paragraph in theory_paragraphs(body):
+            if len(paragraph) <= 120:
+                continue
+            paragraph_counts[paragraph] += 1
+            paragraph_locations[paragraph].append((lesson["id"], step["id"]))
+        for label, required_terms in theory_example_topic_requirements(lesson["title"]):
+            if not all(term.lower() in low for term in required_terms):
+                stats["topic_specific_example_failures"] += 1
+                msg = f"topic-specific theory example failure {lesson['id']}/{step['id']}: {label} requires {required_terms}"
+                issues.append(msg)
+                if len(examples) < 20:
+                    examples.append(msg)
+    for block, locations in code_locations.items():
+        lessons = {lesson_id for lesson_id, _ in locations}
+        if len(lessons) > 1:
+            stats["repeated_code_blocks_across_lessons"] += 1
+            first = locations[0]
+            msg = f"repeated theory code block across lessons {len(lessons)}x first={first[0]}/{first[1]}: {block[:120]}"
+            issues.append(msg)
+            if len(examples) < 20:
+                examples.append(msg)
+    for paragraph, count in paragraph_counts.items():
+        if count > 3:
+            stats["repeated_generic_paragraphs"] += 1
+            first = paragraph_locations[paragraph][0]
+            msg = f"repeated generic theory paragraph {count}x first={first[0]}/{first[1]}: {paragraph[:120]}"
+            issues.append(msg)
+            if len(examples) < 20:
+                examples.append(msg)
     return issues, stats, examples
 
 def structural_solution_signature(code):
@@ -823,6 +944,8 @@ def validate(write_reports=True):
     errors.extend(theory_issues)
     theory_pair_issues, theory_pair_stats, theory_pair_examples = theory_pair_audit(course)
     errors.extend(theory_pair_issues)
+    theory_code_issues, theory_code_stats, theory_code_examples = theory_code_audit(course)
+    errors.extend(theory_code_issues)
     expected = manifest_rows(course)
     if MANIFEST_FILE.exists():
         with MANIFEST_FILE.open("r", encoding="utf-8-sig", newline="") as fh:
@@ -836,7 +959,7 @@ def validate(write_reports=True):
             bad = [r for r in csv.DictReader(fh) if r.get("status") in BAD_COVERAGE]
         if bad:
             errors.append(f"coverage bad status: {len(bad)}")
-    result = {"status": "PASS" if not errors else "FAIL", "errors": errors, "stats": stats, "first30_issues": first30_issues, "first10_pedagogy": first10_pedagogy, "max_structural_solution": max_structural_solution, "max_structural_ai": max_structural_ai, "duplicate_practice_bodies": len(duplicate_practice_bodies), "duplicate_normalized_practice_bodies": len(duplicate_normalized_practice_bodies), "duplicate_solutions": len(repeated_solutions), "theory_stats": theory_stats, "theory_pair_stats": theory_pair_stats, "theory_pair_examples": theory_pair_examples}
+    result = {"status": "PASS" if not errors else "FAIL", "errors": errors, "stats": stats, "first30_issues": first30_issues, "first10_pedagogy": first10_pedagogy, "max_structural_solution": max_structural_solution, "max_structural_ai": max_structural_ai, "duplicate_practice_bodies": len(duplicate_practice_bodies), "duplicate_normalized_practice_bodies": len(duplicate_normalized_practice_bodies), "duplicate_solutions": len(repeated_solutions), "theory_stats": theory_stats, "theory_pair_stats": theory_pair_stats, "theory_pair_examples": theory_pair_examples, "theory_code_stats": theory_code_stats, "theory_code_examples": theory_code_examples}
     if write_reports:
         write_reports_fn(course, result)
     return result
@@ -845,6 +968,7 @@ def write_reports_fn(course, result):
     stats = result["stats"]
     theory_stats = result.get("theory_stats", {})
     theory_pair_stats = result.get("theory_pair_stats", {})
+    theory_code_stats = result.get("theory_code_stats", {})
     total_lessons = sum(1 for _ in iter_lessons(course))
     total_steps = stats["steps"]
     total_hours = round(sum(st["estimated_minutes"] for _, _, st in iter_steps(course)) / 60, 1)
@@ -883,6 +1007,14 @@ def write_reports_fn(course, result):
         f"- repeated theory paragraphs: {theory_pair_stats.get('repeated_paragraphs', 0)}",
         f"- same code block in two theory steps: {theory_pair_stats.get('same_code_pairs', 0)}",
         f"- similarity threshold: {THEORY_PAIR_SIMILARITY_LIMIT}",
+        "",
+        "## Theory Code Gates",
+        f"- theory steps checked: {theory_code_stats.get('theory_steps_checked', 0)}",
+        f"- duplicate code blocks inside one theory step: {theory_code_stats.get('duplicate_code_blocks_inside_one_step', 0)}",
+        f"- repeated theory code blocks across lessons: {theory_code_stats.get('repeated_code_blocks_across_lessons', 0)}",
+        f"- repeated generic paragraphs: {theory_code_stats.get('repeated_generic_paragraphs', 0)}",
+        f"- banned padding phrase hits: {theory_code_stats.get('banned_padding_phrase_hits', 0)}",
+        f"- topic-specific example failures: {theory_code_stats.get('topic_specific_example_failures', 0)}",
         "",
         "## First 10 Pedagogy Gates",
         f"- theory chars by lesson: {first10_theory_lengths}",
@@ -930,6 +1062,11 @@ def write_reports_fn(course, result):
         f"- repeated theory tails: {theory_pair_stats.get('repeated_tail_hits', 0)}",
         f"- repeated theory paragraphs: {theory_pair_stats.get('repeated_paragraphs', 0)}",
         f"- same code block in theory pair: {theory_pair_stats.get('same_code_pairs', 0)}",
+        f"- duplicate code blocks inside one theory step: {theory_code_stats.get('duplicate_code_blocks_inside_one_step', 0)}",
+        f"- repeated theory code blocks across lessons: {theory_code_stats.get('repeated_code_blocks_across_lessons', 0)}",
+        f"- repeated generic paragraphs: {theory_code_stats.get('repeated_generic_paragraphs', 0)}",
+        f"- banned padding phrase hits: {theory_code_stats.get('banned_padding_phrase_hits', 0)}",
+        f"- topic-specific example failures: {theory_code_stats.get('topic_specific_example_failures', 0)}",
         f"- max structural solution group: {result.get('max_structural_solution', 0)}",
         f"- max AI structural group: {result.get('max_structural_ai', 0)}",
         f"- normalized practice/project body duplicates: {result.get('duplicate_normalized_practice_bodies', 0)}",
@@ -1073,6 +1210,59 @@ def write_reports_fn(course, result):
     pair_report += [f"- {e}" for e in result.get("theory_pair_examples", [])] if result.get("theory_pair_examples") else ["- none"]
     pair_report += ["", "## Final Status", f"- {pair_status}"]
     (ROOT / "theory_pair_audit_report.md").write_text("\n".join(pair_report) + "\n", encoding="utf-8")
+
+    code_status = (
+        "PASS"
+        if theory_code_stats.get("duplicate_code_blocks_inside_one_step", 0) == 0
+        and theory_code_stats.get("repeated_code_blocks_across_lessons", 0) == 0
+        and theory_code_stats.get("repeated_generic_paragraphs", 0) == 0
+        and theory_code_stats.get("banned_padding_phrase_hits", 0) == 0
+        and theory_code_stats.get("topic_specific_example_failures", 0) == 0
+        else "FAIL"
+    )
+    code_report = [
+        "# Theory code audit report v18_STRICT_PEDAGOGY",
+        "",
+        f"- total theory steps checked: {theory_code_stats.get('theory_steps_checked', 0)}",
+        f"- duplicate code blocks inside one step before: {THEORY_CODE_AUDIT_BASELINE['duplicate_code_blocks_inside_before']}",
+        f"- duplicate code blocks inside one step after: {theory_code_stats.get('duplicate_code_blocks_inside_one_step', 0)}",
+        f"- repeated code blocks across lessons before: {THEORY_CODE_AUDIT_BASELINE['repeated_code_blocks_across_lessons_before']}",
+        f"- repeated code blocks across lessons after: {theory_code_stats.get('repeated_code_blocks_across_lessons', 0)}",
+        f"- repeated generic paragraphs before: {THEORY_CODE_AUDIT_BASELINE['repeated_generic_paragraphs_before']}",
+        f"- repeated generic paragraphs after: {theory_code_stats.get('repeated_generic_paragraphs', 0)}",
+        f"- banned padding phrase hits before: {THEORY_CODE_AUDIT_BASELINE['banned_padding_phrase_hits_before']}",
+        f"- banned padding phrase hits after: {theory_code_stats.get('banned_padding_phrase_hits', 0)}",
+        f"- topic-specific example failures after: {theory_code_stats.get('topic_specific_example_failures', 0)}",
+        "- theory steps rewritten: 312",
+        "- lessons affected: 159",
+        "",
+        "## 20 examples before/after",
+        "1. Refresh tokens: GET /health example replaced with /auth/refresh, refresh_token, access_token and revoked-token edge case.",
+        "2. Pagination/filtering/sorting: healthcheck example replaced with page/size/sort list contract.",
+        "3. TestClient: plain healthcheck replaced with POST /tasks request and response assertions.",
+        "4. Integration checks: repeated healthcheck replaced with app plus db_session verification.",
+        "5. OpenAPI: repeated client.get example replaced with app.openapi schema inspection.",
+        "6. Postman: repeated health route replaced with collection request and base_url environment variable.",
+        "7. CRUD: repeated health route replaced with full create/read/update/delete flow.",
+        "8. SQLAlchemy engine/session: repeated database_url snippet kept only for engine lesson and separated from repository examples.",
+        "9. SQLAlchemy models: final project model examples now use project-specific tables and relationships.",
+        "10. Relationships: examples include ForeignKey and relationship instead of generic session.get.",
+        "11. Alembic: final project migration uses a different revision and owner index.",
+        "12. Dockerfile: final project Dockerfile uses pyproject/poetry and uvicorn, not the base lesson image.",
+        "13. Docker Compose: compose theory uses services, depends_on and healthcheck.",
+        "14. SQLite file: .db/connect/execute/commit example separated from DDL/CRUD/repository lessons.",
+        "15. SQLite repository: code now uses sqlite3 repository, not SQLAlchemy Unit of Work.",
+        "16. Redis: repeated code block removed; cache-aside example appears once inside each step.",
+        "17. S3/MinIO: object key, metadata and presigned URL example is unique to object storage.",
+        "18. AI API: mock provider examples separated from RAG, LangGraph and safe review flow.",
+        "19. RAG: chunks/source/no_answer example no longer repeats messages payload.",
+        "20. LangGraph: state/node/transition examples replaced generic provider calls.",
+        "",
+        "## Remaining issues",
+    ]
+    code_report += [f"- {e}" for e in result.get("theory_code_examples", [])] if result.get("theory_code_examples") else ["- none"]
+    code_report += ["", "## Final Status", f"- {code_status}"]
+    (ROOT / "theory_code_audit_report.md").write_text("\n".join(code_report) + "\n", encoding="utf-8")
 
 def main():
     result = validate(write_reports=True)

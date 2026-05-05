@@ -23,6 +23,11 @@ PASS/FAIL: PASS
 - repeated theory tails: 0
 - repeated theory paragraphs: 0
 - same code block in theory pair: 0
+- duplicate code blocks inside one theory step: 0
+- repeated theory code blocks across lessons: 0
+- repeated generic paragraphs: 0
+- banned padding phrase hits: 0
+- topic-specific example failures: 0
 - max structural solution group: 1
 - max AI structural group: 1
 - normalized practice/project body duplicates: 0

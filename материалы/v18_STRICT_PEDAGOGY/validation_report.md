@@ -28,11 +28,19 @@ final status: PASS
 - same code block in two theory steps: 0
 - similarity threshold: 0.75
 
+## Theory Code Gates
+- theory steps checked: 338
+- duplicate code blocks inside one theory step: 0
+- repeated theory code blocks across lessons: 0
+- repeated generic paragraphs: 0
+- banned padding phrase hits: 0
+- topic-specific example failures: 0
+
 ## First 10 Pedagogy Gates
-- theory chars by lesson: {'Первый код': 2530, 'Ввод и числа': 2374, 'Строки': 2154, 'bool и None': 2118, 'Условия': 2103, 'Типы и память': 2062, 'Циклы': 2001, 'Списки': 2019, 'Функции': 1901, 'Кортежи': 2408}
+- theory chars by lesson: {'Первый код': 2532, 'Ввод и числа': 2376, 'Строки': 2156, 'bool и None': 2120, 'Условия': 2105, 'Типы и память': 2064, 'Циклы': 2003, 'Списки': 2021, 'Функции': 1903, 'Кортежи': 2401}
 - future knowledge violations: 0
 - pedagogy issues: 0
-- course_preview.md chars: 221395
+- course_preview.md chars: 108947
 - ide_plugin_spec.md chars: 6737
 
 ## Structural Duplicate Gates

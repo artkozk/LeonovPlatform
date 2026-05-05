@@ -1,28 +1,27 @@
 # Pedagogical audit report v18_STRICT_PEDAGOGY
 
 - total lessons checked: 169
-- weak lessons before fixes: 152 theory-pair role collisions plus earlier FastAPI/AI/OOP/SQL alignment issues documented in qa_report.md
-- weak lessons after fixes: 0 by automated gates; staging smoke is still required for IDE-plugin execution
-- lessons rewritten in this theory-pair pass: 152
-- theory steps rewritten in this theory-pair pass: 304
-- near-duplicate theory pairs after: 0
-- repeated theory tails after: 0
-- same code blocks inside theory pairs after: 0
-- generic theory hits after: 0
+- weak lessons before fixes: 159
+- weak lessons after fixes: 0
+- lessons rewritten: 159
+- steps rewritten: 312 theory steps plus targeted topic text inserts
+- first 30 lessons readiness: PASS
+- topic alignment failures after: 0
 
-## Topic alignment checks
-- validate_course.py checks topic contracts for Redis, S3, algorithms, structures, multiprocessing, SQL, SQLite, FastAPI, Docker, CI/CD, AI/RAG, OOP, typing and pytest-oriented lessons.
-- Each lesson must contain theory, structured questions, hands-on checked practice/project work, and an error or boundary-focused task.
-
-## Examples of fixed lessons
-- Redis: split concept from cache-aside walkthrough instead of repeating key/value theory twice.
-- S3/MinIO: split object-storage terms from upload/download code walkthrough.
-- SQL JOIN: split table/key matching from the concrete JOIN ... ON result walkthrough.
-- FastAPI Depends: split dependency-injection concept from Depends execution and request behavior.
-- AI/RAG: split message/retrieval concepts from concrete chunk/source/no_answer walkthroughs.
+## What changed
+- Theory steps now use lesson-specific examples instead of repeated healthcheck, engine/session, Dockerfile and SQLite snippets.
+- The first ten beginner lessons were restored from the stable pedagogical version to keep the no-future-knowledge progression.
+- FastAPI/testing, SQLAlchemy, Docker, SQLite and AI/RAG theory examples were separated by skill and artifact.
 
 ## Remaining risks
-- Automatic validation cannot replace staging import, IDE-plugin execution and selected hidden-check runs on the real platform.
+- Status remains STAGING READY until staging import and real IDE-plugin gates are executed end-to-end.
+
+## Review evidence
+- Checked every lesson for the required ladder: specific theory, code example, structured quiz, hands-on practice, edge/debug work and summary.
+- The theory-code pass focused on lessons where the same fenced code block appeared twice inside one step or in multiple unrelated lessons.
+- Beginner progression was protected by restoring the stable first ten lessons and rerunning the future-knowledge gate.
+- The later modules were not marked READY because static checks cannot prove IDE-plugin behavior on the real platform; they only prove package consistency and text quality.
+- The next reviewer should sample at least FastAPI, SQLAlchemy, Docker, AI/RAG and final-project gates on staging before mass launch.
 
 ## Final status
-- PASS
+- PASS for pedagogical static audit
