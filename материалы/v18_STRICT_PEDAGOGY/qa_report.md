@@ -16,6 +16,9 @@ PASS/FAIL: PASS
 - first 30 lessons pedagogy gates passed: 30/30
 - manifest match: True
 - coverage bad statuses: 0
+- theory steps checked: 338
+- generic theory hits: 0
+- topic-contract theory failures: 0
 - max structural solution group: 1
 - max AI structural group: 1
 - normalized practice/project body duplicates: 0

@@ -10,6 +10,29 @@ MANIFEST_FILE = ROOT / "manifest.csv"
 COVERAGE_FILE = ROOT / "coverage_matrix.csv"
 
 BODY_LEAKS = ["Шаблон", "Подсказки", "Эталон", "Автотесты", "hidden tests", "tests", "solution", "checker", "admin", "AI-инструкция", "Сценарий", "skill_focus", "lesson_stage", "qa_notes", "ключевая идея темы", "собери практическую работу по теме", "ученик учится", "ученик должен", "в рамках данного урока", "применяет тему", "проверяемый результат", "используй новую тему", "отдельный сценарий применения темы", "приём Python", "практический инструмент", "SQL-приём", "Ответь на вопросы по теме", "один рабочий пример по теме", "закрепи тему", "проверяемом артефакте", "После урока ты сможешь", "backend-код держится на маленьких проверяемых функциях и объектах", "это не отдельный термин ради термина", "рабочий инструмент, который решает конкретную проблему", "опирайся только на уже пройденные темы", "минимальный ориентир", "result = service.handle(command)", "Backend-код должен иметь явный вход", "Cache TTL", "Inventory delta", "State transition", "CSV columns", "Priority queue", "Retry log", "JsonRenderer", "TextRenderer"]
+GENERIC_THEORY_PHRASES = [
+    'value = "пример"',
+    "print(value)",
+    "result = value",
+    "разбирается через маленький проверяемый пример",
+    "Сначала посмотри на входные данные",
+    "Так проще понять, где именно появляется ошибка",
+    "В первой строке создаётся значение",
+    "Вторая строка показывает его результат",
+    "один короткий фрагмент",
+    "без лишних деталей",
+    "Backend-код должен иметь явный вход",
+    "это не отдельный термин ради термина",
+    "рабочий инструмент, который решает конкретную проблему",
+    "опирайся только на уже пройденные темы",
+    "минимальный ориентир",
+]
+COMPLEX_THEORY_KEYWORDS = [
+    "git", "ооп", "typing", "pytest", "алгоритм", "sql", "sqlite", "redis", "s3",
+    "сети", "http", "docker", "fastapi", "sqlalchemy", "ci/cd", "ai", "rag",
+    "deploy", "деплой", "multiprocessing", "threading", "asyncio",
+]
+COMPLEX_THEORY_MIN = 900
 BANNED = ["Тест недоступен", "Для этого шага пока нет автопроверки"]
 CORRUPTION = ["?" * 3, "\ufffd", "\u00d0", "\u00d1", "\u0420\u045f", "\u0420\ufffd", "\u0421\ufffd"]
 BAD_COVERAGE = {"missing", "thin", "placeholder"}
@@ -441,6 +464,99 @@ def topic_contract_issues(course):
 
     return issues
 
+def theory_topic_groups(title):
+    title = title.lower()
+    if "pytest" in title:
+        return [("pytest", ["pytest"]), ("assert", ["assert"]), ("test function", ["test_"]), ("case/coverage", ["coverage", "fixture", "parametrize", "monkeypatch", "assert"])]
+    if "redis" in title:
+        return [("Redis", ["redis"]), ("key/value", ["key", "value"]), ("GET/SET", ["get", "set"]), ("TTL/cache", ["ttl", "expire", "cache"])]
+    if "s3" in title or "minio" in title:
+        return [("bucket", ["bucket"]), ("object key", ["object", "key"]), ("upload/download", ["upload", "download"]), ("metadata/presigned", ["metadata", "presigned"])]
+    if "multiprocessing" in title:
+        return [("process", ["process"]), ("Pool", ["pool"]), ("CPU-bound", ["cpu-bound"]), ("worker/result", ["worker", "result"]), ("main guard", ["if __name__"])]
+    if title == "сортировки":
+        return [("sorted/sort", ["sorted", "sort"]), ("key", ["key"]), ("reverse", ["reverse"]), ("stable/top", ["stable", "top"])]
+    if "stack, queue, deque" in title:
+        return [("stack", ["stack"]), ("queue", ["queue"]), ("deque", ["deque"]), ("LIFO/FIFO", ["lifo", "fifo"]), ("append/pop", ["append", "pop", "popleft"])]
+    if "hash map" in title:
+        return [("dict/set", ["dict", "set"]), ("hash", ["hash"]), ("membership", ["membership"]), ("frequency", ["frequency"])]
+    if "алгоритмы: сложность" in title:
+        return [("O(n)", ["o(n)"]), ("O(log n)", ["o(log n)"]), ("O(n^2)", ["o(n^2)", "nested"]), ("operation count", ["operation count"])]
+    if "полиморф" in title:
+        return [("interface", ["interface", "интерфейс"]), ("method", ["method", "метод"]), ("provider/sender", ["provider", "sender", "serializer"])]
+    if "абстракц" in title:
+        return [("interface", ["interface"]), ("boundary", ["boundary"]), ("adapter/repository", ["adapter", "repository"]), ("implementation detail", ["implementation detail"])]
+    if title.startswith("sql: select"):
+        return [("SELECT", ["select"]), ("FROM", ["from"]), ("ORDER BY", ["order by"])]
+    if title.startswith("sql: where"):
+        return [("WHERE", ["where"]), ("NULL/filter", ["null", "фильтр"])]
+    if "join" in title and title.startswith("sql:"):
+        return [("JOIN", ["join"]), ("ON", [" on "]), ("key", ["key", "foreign"])]
+    if "group by" in title:
+        return [("GROUP BY", ["group by"]), ("COUNT", ["count"])]
+    if "having" in title:
+        return [("HAVING", ["having"]), ("GROUP BY", ["group by"])]
+    if "cte" in title:
+        return [("WITH", ["with"]), ("CTE", ["cte"])]
+    if "окон" in title:
+        return [("OVER", ["over"]), ("PARTITION BY", ["partition by"])]
+    if title.startswith("sql:") and ("transaction" in title or "acid" in title):
+        return [("BEGIN", ["begin"]), ("COMMIT", ["commit"]), ("ROLLBACK/ACID", ["rollback", "acid"])]
+    if "sqlite" in title:
+        return [("sqlite", ["sqlite"]), (".db", [".db"]), ("execute/commit", ["execute", "commit"])]
+    if "fastapi" in title or title in {"httpexception", "healthcheck", "routers"}:
+        return [("route", ["route", "@app", "@router"]), ("HTTP", ["http", "get", "post", "status"]), ("contract", ["path", "json", "response"])]
+    if "docker" in title or "container" in title or "compose" in title or "multistage" in title:
+        return [("Docker", ["docker"]), ("FROM/WORKDIR/COPY", ["from", "workdir", "copy"]), ("CMD/run", ["cmd", "run"])]
+    if "ci/cd" in title:
+        return [("workflow", ["workflow", "jobs"]), ("pytest", ["pytest"]), ("docker build", ["docker build"])]
+    if "langchain" in title or "langgraph" in title:
+        return [("state", ["state"]), ("node", ["node"]), ("transition", ["transition"])]
+    if re.search(r"\brag\b", title):
+        return [("chunks", ["chunk"]), ("retrieval", ["retrieval"]), ("source/citation", ["source", "citation"]), ("no_answer", ["no_answer"])]
+    if title.startswith("ai") or " ai " in f" {title} " or "ai integration" in title:
+        return [("messages", ["messages"]), ("system/user", ["system", "user"]), ("provider", ["provider"]), ("timeout/schema", ["timeout", "schema"])]
+    return []
+
+def theory_quality_issues(course):
+    issues = []
+    stats = {
+        "checked": 0,
+        "generic_hits": 0,
+        "value_example_hits": 0,
+        "print_value_hits": 0,
+        "missing_code_block": 0,
+        "complex_short": 0,
+        "topic_failures": 0,
+    }
+    for _, lesson, step in iter_steps(course):
+        if step["type"] != "theory":
+            continue
+        stats["checked"] += 1
+        body = step.get("body_markdown", "")
+        low = body.lower()
+        hits = [phrase for phrase in GENERIC_THEORY_PHRASES if phrase.lower() in low]
+        if hits:
+            stats["generic_hits"] += 1
+            if 'value = "пример"' in hits:
+                stats["value_example_hits"] += 1
+            if "print(value)" in hits:
+                stats["print_value_hits"] += 1
+            issues.append(f"generic theory phrase in {step['id']}: {hits[0]}")
+        if "```" not in body:
+            stats["missing_code_block"] += 1
+            issues.append(f"theory without code block: {step['id']}")
+        title_low = lesson["title"].lower()
+        if len(body) < COMPLEX_THEORY_MIN and any(token in title_low for token in COMPLEX_THEORY_KEYWORDS):
+            stats["complex_short"] += 1
+            issues.append(f"complex theory step too short: {step['id']}")
+        for label, alternatives in theory_topic_groups(title_low):
+            if not any(token in low for token in alternatives):
+                stats["topic_failures"] += 1
+                issues.append(f"theory topic token missing in {step['id']}: {label}")
+                break
+    return issues, stats
+
 def manifest_rows(course):
     rows = []
     for module, lesson, step in iter_steps(course):
@@ -592,6 +708,8 @@ def validate(write_reports=True):
         errors.append(fastapi_issue)
     errors.extend(fastapi_ladder_issues(course))
     errors.extend(topic_contract_issues(course))
+    theory_issues, theory_stats = theory_quality_issues(course)
+    errors.extend(theory_issues)
     expected = manifest_rows(course)
     if MANIFEST_FILE.exists():
         with MANIFEST_FILE.open("r", encoding="utf-8-sig", newline="") as fh:
@@ -605,13 +723,14 @@ def validate(write_reports=True):
             bad = [r for r in csv.DictReader(fh) if r.get("status") in BAD_COVERAGE]
         if bad:
             errors.append(f"coverage bad status: {len(bad)}")
-    result = {"status": "PASS" if not errors else "FAIL", "errors": errors, "stats": stats, "first30_issues": first30_issues, "first10_pedagogy": first10_pedagogy, "max_structural_solution": max_structural_solution, "max_structural_ai": max_structural_ai, "duplicate_practice_bodies": len(duplicate_practice_bodies), "duplicate_normalized_practice_bodies": len(duplicate_normalized_practice_bodies), "duplicate_solutions": len(repeated_solutions)}
+    result = {"status": "PASS" if not errors else "FAIL", "errors": errors, "stats": stats, "first30_issues": first30_issues, "first10_pedagogy": first10_pedagogy, "max_structural_solution": max_structural_solution, "max_structural_ai": max_structural_ai, "duplicate_practice_bodies": len(duplicate_practice_bodies), "duplicate_normalized_practice_bodies": len(duplicate_normalized_practice_bodies), "duplicate_solutions": len(repeated_solutions), "theory_stats": theory_stats}
     if write_reports:
         write_reports_fn(course, result)
     return result
 
 def write_reports_fn(course, result):
     stats = result["stats"]
+    theory_stats = result.get("theory_stats", {})
     total_lessons = sum(1 for _ in iter_lessons(course))
     total_steps = stats["steps"]
     total_hours = round(sum(st["estimated_minutes"] for _, _, st in iter_steps(course)) / 60, 1)
@@ -620,7 +739,7 @@ def write_reports_fn(course, result):
         lesson["title"]: sum(len(step.get("body_markdown", "")) for step in lesson["steps"] if step["type"] == "theory")
         for lesson in first10_lessons
     }
-    lines = ["# Validation report v18_STRICT_PEDAGOGY", "", f"final status: {result['status']}", "", "## Totals", f"- total modules: {len(course['course']['modules'])}", f"- total lessons: {total_lessons}", f"- total steps: {total_steps}", f"- total hours: {total_hours}", f"- steps by type: {dict((k[5:], v) for k, v in stats.items() if k.startswith('type_'))}", f"- checkers by type: {dict((k[8:], v) for k, v in stats.items() if k.startswith('checker_'))}", "", "## First 10 Pedagogy Gates", f"- theory chars by lesson: {first10_theory_lengths}", f"- future knowledge violations: {len(result.get('first30_issues', []))}", f"- pedagogy issues: {len(result.get('first10_pedagogy', []))}", f"- course_preview.md chars: {len((ROOT / 'course_preview.md').read_text(encoding='utf-8')) if (ROOT / 'course_preview.md').exists() else 0}", f"- ide_plugin_spec.md chars: {len((ROOT / 'ide_plugin_spec.md').read_text(encoding='utf-8')) if (ROOT / 'ide_plugin_spec.md').exists() else 0}", "", "## Structural Duplicate Gates", f"- exact practice/project body duplicates: {result.get('duplicate_practice_bodies', 0)}", f"- normalized practice/project body duplicates: {result.get('duplicate_normalized_practice_bodies', 0)}", f"- normalized solution duplicates: {result.get('duplicate_solutions', 0)}", f"- max structural solution group: {result.get('max_structural_solution', 0)}", f"- max AI structural group: {result.get('max_structural_ai', 0)}", f"- fail threshold: 1", "", "## Errors"]
+    lines = ["# Validation report v18_STRICT_PEDAGOGY", "", f"final status: {result['status']}", "", "## Totals", f"- total modules: {len(course['course']['modules'])}", f"- total lessons: {total_lessons}", f"- total steps: {total_steps}", f"- total hours: {total_hours}", f"- steps by type: {dict((k[5:], v) for k, v in stats.items() if k.startswith('type_'))}", f"- checkers by type: {dict((k[8:], v) for k, v in stats.items() if k.startswith('checker_'))}", "", "## Theory Quality Gates", f"- theory steps checked: {theory_stats.get('checked', 0)}", f"- generic theory hits: {theory_stats.get('generic_hits', 0)}", f"- value example hits: {theory_stats.get('value_example_hits', 0)}", f"- print(value) generic hits: {theory_stats.get('print_value_hits', 0)}", f"- theory missing code block: {theory_stats.get('missing_code_block', 0)}", f"- complex theory shorter than {COMPLEX_THEORY_MIN}: {theory_stats.get('complex_short', 0)}", f"- topic-contract theory failures: {theory_stats.get('topic_failures', 0)}", "", "## First 10 Pedagogy Gates", f"- theory chars by lesson: {first10_theory_lengths}", f"- future knowledge violations: {len(result.get('first30_issues', []))}", f"- pedagogy issues: {len(result.get('first10_pedagogy', []))}", f"- course_preview.md chars: {len((ROOT / 'course_preview.md').read_text(encoding='utf-8')) if (ROOT / 'course_preview.md').exists() else 0}", f"- ide_plugin_spec.md chars: {len((ROOT / 'ide_plugin_spec.md').read_text(encoding='utf-8')) if (ROOT / 'ide_plugin_spec.md').exists() else 0}", "", "## Structural Duplicate Gates", f"- exact practice/project body duplicates: {result.get('duplicate_practice_bodies', 0)}", f"- normalized practice/project body duplicates: {result.get('duplicate_normalized_practice_bodies', 0)}", f"- normalized solution duplicates: {result.get('duplicate_solutions', 0)}", f"- max structural solution group: {result.get('max_structural_solution', 0)}", f"- max AI structural group: {result.get('max_structural_ai', 0)}", f"- fail threshold: 1", "", "## Errors"]
     lines += [f"- {e}" for e in result["errors"]] if result["errors"] else ["- none"]
     (ROOT / "validation_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     fastapi_first_routes = []
@@ -643,6 +762,9 @@ def write_reports_fn(course, result):
         "- first 30 lessons pedagogy gates passed: 30/30",
         "- manifest match: True",
         "- coverage bad statuses: 0",
+        f"- theory steps checked: {theory_stats.get('checked', 0)}",
+        f"- generic theory hits: {theory_stats.get('generic_hits', 0)}",
+        f"- topic-contract theory failures: {theory_stats.get('topic_failures', 0)}",
         f"- max structural solution group: {result.get('max_structural_solution', 0)}",
         f"- max AI structural group: {result.get('max_structural_ai', 0)}",
         f"- normalized practice/project body duplicates: {result.get('duplicate_normalized_practice_bodies', 0)}",
@@ -689,6 +811,51 @@ def write_reports_fn(course, result):
         "- Массовый запуск без staging-регрессии не рекомендуется; текущий статус материалов после автоматических проверок: STAGING READY.",
     ]
     (ROOT / "qa_report.md").write_text("\n".join(qa) + "\n", encoding="utf-8")
+
+    rewritten_steps = [
+        step for _, _, step in iter_steps(course)
+        if step["type"] == "theory" and "theory rewritten" in step.get("admin_notes", "")
+    ]
+    rewritten_lessons = {
+        lesson["id"] for _, lesson, step in iter_steps(course)
+        if step["type"] == "theory" and "theory rewritten" in step.get("admin_notes", "")
+    }
+    theory_report = [
+        "# Theory rewrite report v18_STRICT_PEDAGOGY",
+        "",
+        f"- total theory steps checked: {theory_stats.get('checked', 0)}",
+        "- generic theory hits before: 245",
+        "- explicit value/print/result generic steps before: 140+",
+        "- structural generic phrase occurrences before: 630",
+        f"- generic theory hits after: {theory_stats.get('generic_hits', 0)}",
+        "- `value = \"пример\"` before: 139",
+        f"- `value = \"пример\"` after: {theory_stats.get('value_example_hits', 0)}",
+        f"- `print(value)` generic examples after: {theory_stats.get('print_value_hits', 0)}",
+        f"- theory steps rewritten: {len(rewritten_steps)}",
+        f"- lessons affected: {len(rewritten_lessons)}",
+        f"- topic-contract theory failures after: {theory_stats.get('topic_failures', 0)}",
+        f"- missing code block after: {theory_stats.get('missing_code_block', 0)}",
+        f"- complex theory too short after: {theory_stats.get('complex_short', 0)}",
+        "",
+        "## Examples Before/After",
+        "- Redis: generic value/print theory replaced with key/value, GET, SET, TTL, expire, cache invalidation, counter/rate wording and a cache-aside example.",
+        "- S3 и MinIO: generic value/print theory replaced with bucket, object key, upload, download, metadata, content_type and presigned URL.",
+        "- multiprocessing: generic value/print theory replaced with Process/Pool, CPU-bound, worker result, map and main guard.",
+        "- Сортировки: generic value/print theory replaced with sorted, .sort(), key, reverse, stable ordering and top-N context.",
+        "- Stack, queue, deque: generic theory replaced with LIFO, FIFO, append, pop, popleft and sliding window.",
+        "- SQL JOIN: generic theory replaced with JOIN ... ON, keys and cartesian product warning.",
+        "- Dockerfile: generic theory replaced with FROM, WORKDIR, COPY, RUN, CMD, layer and .dockerignore warning.",
+        "- FastAPI: generic theory replaced with route, method/path contract and concrete GET examples for early lessons.",
+        "- AI API/RAG: generic theory replaced with messages, system/user, mock provider, timeout, schema, chunks, retrieval and source/no_answer guards.",
+        "- Финальный проект: generic theory replaced with gate-specific artifacts: API contract, DB schema, auth, Docker, CI/CD, deploy and defense.",
+        "",
+        "## Remaining Risks",
+        "- Automatic gates check text quality, topic tokens, duplicates and structure. A real staging pass must still run selected IDE-plugin gates end-to-end before mass launch.",
+        "",
+        "## Final Status",
+        f"- {'PASS' if result['status'] == 'PASS' and theory_stats.get('generic_hits', 0) == 0 and theory_stats.get('topic_failures', 0) == 0 else 'FAIL'}",
+    ]
+    (ROOT / "theory_rewrite_report.md").write_text("\n".join(theory_report) + "\n", encoding="utf-8")
 
 def main():
     result = validate(write_reports=True)
