@@ -1,5 +1,6 @@
 package com.leonovcare.plugin.task
 
+import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -7,6 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.leonovcare.plugin.api.Course
 import com.leonovcare.plugin.api.LessonMaterial
+import com.leonovcare.plugin.api.PlatformApiClient
 import com.leonovcare.plugin.api.PlatformApiClientFactory
 import com.leonovcare.plugin.api.Task
 import com.leonovcare.plugin.auth.AuthService
@@ -39,6 +41,13 @@ data class TaskManagerState(
 @Service(Service.Level.PROJECT)
 class TaskManager(private val project: Project) {
 
+    private data class StartupSelection(
+        val selectedCourseId: String?,
+        val selectedCourseTasks: List<Task>,
+        val startupTask: Task?,
+        val preferredLanguage: TaskLanguage?,
+    )
+
     private val logger = Logger.getInstance(TaskManager::class.java)
     private val settings = PlatformSettings.getInstance()
     private val authService = AuthService.getInstance()
@@ -53,23 +62,29 @@ class TaskManager(private val project: Project) {
     private val requestTimeoutMillis = TimeUnit.SECONDS.toMillis(12)
     private val refreshMutex = Mutex()
 
+    @Volatile
+    private var startupTaskAutoOpenInFlight = false
+
+    @Volatile
+    private var startupTaskAutoOpenedId: String? = null
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val stateFlow = MutableStateFlow(TaskManagerState())
 
     fun state(): StateFlow<TaskManagerState> = stateFlow.asStateFlow()
 
     fun initializeFromCache() {
-        val state = settings.mutableState()
         val courses = courseCache.getCourses()
-        val tasksByCourse = taskCache.getTasksByCourse()
-        val selectedCourse = state.selectedCourseId ?: courses.firstOrNull()?.id
-        val selectedTasks = selectedCourse?.let { tasksByCourse[it] }.orEmpty()
+        val tasksByCourse = normalizeTasksByCourse(taskCache.getTasksByCourse())
+        val selection = resolveStartupSelection(courses = courses, tasksByCourse = tasksByCourse)
+
+        settings.mutableState().selectedCourseId = selection.selectedCourseId
         stateFlow.value = TaskManagerState(
             loading = false,
             courses = courses,
-            selectedCourseId = selectedCourse,
-            tasks = selectedTasks,
-            offlineMode = courses.isNotEmpty() || selectedTasks.isNotEmpty(),
+            selectedCourseId = selection.selectedCourseId,
+            tasks = selection.selectedCourseTasks,
+            offlineMode = courses.isNotEmpty() || selection.selectedCourseTasks.isNotEmpty(),
         )
     }
 
@@ -92,13 +107,28 @@ class TaskManager(private val project: Project) {
                         val courses = withTimeout(requestTimeoutMillis) {
                             client.getCourses(token)
                         }
-                        val selectedCourseId = settings.mutableState().selectedCourseId ?: courses.firstOrNull()?.id
-                        val cachedTasksByCourse = taskCache.getTasksByCourse()
+
+                        val cachedTasksByCourse = normalizeTasksByCourse(taskCache.getTasksByCourse())
                         val tasksByCourse = cachedTasksByCourse.toMutableMap()
+                        val cacheSelection = resolveStartupSelection(courses = courses, tasksByCourse = tasksByCourse)
+                        val selectedCourseId = cacheSelection.selectedCourseId
+
+                        settings.mutableState().selectedCourseId = selectedCourseId
+                        settings.mutableState().lastSyncEpochMillis = System.currentTimeMillis()
+                        courseCache.saveCourses(courses)
+                        taskCache.saveTasksByCourse(tasksByCourse)
+
+                        // Render course shell immediately from cache so user is not blocked by full refresh.
+                        stateFlow.value = TaskManagerState(
+                            loading = false,
+                            courses = courses,
+                            selectedCourseId = selectedCourseId,
+                            tasks = cacheSelection.selectedCourseTasks,
+                            offlineMode = false,
+                        )
 
                         var selectedCourseError: String? = null
                         if (selectedCourseId != null) {
-                            val selectedCached = cachedTasksByCourse[selectedCourseId].orEmpty()
                             val selectedRemote = runCatching {
                                 withTimeout(requestTimeoutMillis) {
                                     client.getCourseTasks(token, selectedCourseId)
@@ -109,39 +139,47 @@ class TaskManager(private val project: Project) {
                             }.getOrNull()
 
                             if (selectedRemote != null) {
-                                tasksByCourse[selectedCourseId] = SyncStatusMerger.merge(
-                                    existingTasks = selectedCached,
+                                val mergedSelected = SyncStatusMerger.merge(
+                                    existingTasks = tasksByCourse[selectedCourseId].orEmpty(),
                                     remoteTasks = selectedRemote,
                                 ).tasks
+                                tasksByCourse[selectedCourseId] = normalizeTasks(mergedSelected)
+                                taskCache.saveTasksByCourse(tasksByCourse)
                             }
                         }
 
-                        settings.mutableState().selectedCourseId = selectedCourseId
-                        settings.mutableState().lastSyncEpochMillis = System.currentTimeMillis()
-                        courseCache.saveCourses(courses)
-                        taskCache.saveTasksByCourse(tasksByCourse)
-
-                        val selectedTasks = selectedCourseId?.let { tasksByCourse[it] }.orEmpty()
-                        stateFlow.value = TaskManagerState(
-                            loading = false,
+                        val finalSelection = resolveStartupSelection(
                             courses = courses,
-                            selectedCourseId = selectedCourseId,
-                            tasks = selectedTasks,
-                            errorMessage = if (selectedTasks.isEmpty()) selectedCourseError else null,
+                            tasksByCourse = tasksByCourse,
+                            preferredLanguage = cacheSelection.preferredLanguage,
+                        )
+                        settings.mutableState().selectedCourseId = finalSelection.selectedCourseId
+                        stateFlow.value = stateFlow.value.copy(
+                            selectedCourseId = finalSelection.selectedCourseId,
+                            tasks = finalSelection.selectedCourseTasks,
+                            errorMessage = if (finalSelection.selectedCourseTasks.isEmpty()) selectedCourseError else null,
                             offlineMode = selectedCourseError != null,
                         )
 
-                        // Finish loading remaining courses in background without blocking initial UI.
                         loadRemainingCourseTasks(
                             token = token,
                             client = client,
                             courses = courses,
-                            selectedCourseId = selectedCourseId,
+                            selectedCourseId = finalSelection.selectedCourseId,
                             cachedTasksByCourse = cachedTasksByCourse,
                             tasksByCourse = tasksByCourse,
                         )
 
-                        prefetchLessonMaterialsInBackground(tasksByCourse.values.flatten())
+                        val startupAfterBackground = resolveStartupSelection(
+                            courses = courses,
+                            tasksByCourse = tasksByCourse,
+                            preferredLanguage = finalSelection.preferredLanguage,
+                        ).startupTask
+                        prefetchLessonMaterialsInBackground(
+                            tasksByCourse = tasksByCourse,
+                            startupTask = startupAfterBackground,
+                        )
+                        maybeAutoOpenStartupTask(startupAfterBackground)
                     }
                 }.onFailure { ex ->
                     logger.warn("Failed to refresh courses/tasks: ${ex.message}")
@@ -158,7 +196,7 @@ class TaskManager(private val project: Project) {
 
     private suspend fun loadRemainingCourseTasks(
         token: String,
-        client: com.leonovcare.plugin.api.PlatformApiClient,
+        client: PlatformApiClient,
         courses: List<Course>,
         selectedCourseId: String?,
         cachedTasksByCourse: Map<String, List<Task>>,
@@ -178,27 +216,32 @@ class TaskManager(private val project: Project) {
                 logger.warn("Failed to load course tasks (${course.id}): ${ex.message}")
             }.getOrNull() ?: continue
 
-            tasksByCourse[course.id] = SyncStatusMerger.merge(
+            val merged = SyncStatusMerger.merge(
                 existingTasks = cachedTasksByCourse[course.id].orEmpty(),
                 remoteTasks = remoteTasks,
             ).tasks
+            tasksByCourse[course.id] = normalizeTasks(merged)
             updated = true
         }
 
         if (!updated) return
 
         taskCache.saveTasksByCourse(tasksByCourse)
-        val selectedNow = settings.mutableState().selectedCourseId
-        if (selectedNow != null && selectedNow == stateFlow.value.selectedCourseId) {
-            stateFlow.value = stateFlow.value.copy(
-                tasks = tasksByCourse[selectedNow].orEmpty(),
-            )
-        }
+        val refreshedSelection = resolveStartupSelection(
+            courses = courses,
+            tasksByCourse = tasksByCourse,
+        )
+        settings.mutableState().selectedCourseId = refreshedSelection.selectedCourseId
+
+        stateFlow.value = stateFlow.value.copy(
+            selectedCourseId = refreshedSelection.selectedCourseId,
+            tasks = refreshedSelection.selectedCourseTasks,
+        )
     }
 
     fun selectCourse(courseId: String) {
         settings.mutableState().selectedCourseId = courseId
-        val tasks = taskCache.getTasksByCourse()[courseId].orEmpty()
+        val tasks = normalizeTasks(taskCache.getTasksByCourse()[courseId].orEmpty())
         stateFlow.value = stateFlow.value.copy(selectedCourseId = courseId, tasks = tasks)
     }
 
@@ -259,23 +302,41 @@ class TaskManager(private val project: Project) {
         }
     }
 
-    private fun prefetchLessonMaterialsInBackground(tasks: List<Task>) {
+    private fun prefetchLessonMaterialsInBackground(
+        tasksByCourse: Map<String, List<Task>>,
+        startupTask: Task?,
+    ) {
         scope.launch {
             runCatching {
                 authService.withAuthorizedToken { token ->
                     val client = apiFactory.client()
                     val existingLessons = lessonCache.getLessonsById().toMutableMap()
 
-                    val lessonIds = tasks.mapNotNull { it.lessonId }.toSet()
-                    var updated = 0
+                    val orderedTasks = tasksByCourse.values
+                        .asSequence()
+                        .flatten()
+                        .toList()
+                        .let(::normalizeTasks)
 
-                    for (lessonId in lessonIds) {
+                    val orderedLessonIds = linkedSetOf<String>()
+                    startupTask?.lessonId?.let { orderedLessonIds.add(it) }
+                    orderedTasks.mapNotNullTo(orderedLessonIds) { it.lessonId }
+
+                    var updated = 0
+                    for (lessonId in orderedLessonIds) {
                         val cached = existingLessons[lessonId]
                         if (!shouldRefreshLesson(cached)) {
                             continue
                         }
 
-                        val fetched = client.getLessonMaterial(token, lessonId)
+                        val fetched = runCatching {
+                            withTimeout(requestTimeoutMillis) {
+                                client.getLessonMaterial(token, lessonId)
+                            }
+                        }.onFailure { ex ->
+                            logger.warn("Failed to prefetch lesson material ($lessonId): ${ex.message}")
+                        }.getOrNull() ?: continue
+
                         existingLessons[lessonId] = fetched
                         updated++
                     }
@@ -292,7 +353,7 @@ class TaskManager(private val project: Project) {
     }
 
     private suspend fun getOrLoadLessonMaterial(
-        client: com.leonovcare.plugin.api.PlatformApiClient,
+        client: PlatformApiClient,
         token: String,
         task: Task,
     ): LessonMaterial? {
@@ -304,7 +365,9 @@ class TaskManager(private val project: Project) {
         }
 
         return runCatching {
-            val fetched = client.getLessonMaterial(token, lessonId)
+            val fetched = withTimeout(requestTimeoutMillis) {
+                client.getLessonMaterial(token, lessonId)
+            }
             cachedLessons[lessonId] = fetched
             lessonCache.saveLessonsById(cachedLessons)
             fetched
@@ -320,6 +383,159 @@ class TaskManager(private val project: Project) {
         if (lesson.fetchedAtEpochMillis <= 0L) return true
         val age = System.currentTimeMillis() - lesson.fetchedAtEpochMillis
         return age > lessonCacheTtlMillis
+    }
+
+    private fun maybeAutoOpenStartupTask(startupTask: Task?) {
+        if (startupTask == null || !isTaskOpenable(startupTask)) return
+        if (authService.token() == null) return
+        if (currentTaskService.getCurrentTask()?.task?.id == startupTask.id) return
+        if (startupTaskAutoOpenInFlight || startupTaskAutoOpenedId == startupTask.id) return
+
+        startupTaskAutoOpenInFlight = true
+        openTask(
+            task = startupTask,
+            onOpened = {
+                startupTaskAutoOpenedId = startupTask.id
+                startupTaskAutoOpenInFlight = false
+            },
+            onError = { ex ->
+                startupTaskAutoOpenInFlight = false
+                startupTaskAutoOpenedId = null
+                logger.warn("Startup task auto-open failed (${startupTask.id}): ${ex.message}")
+            },
+        )
+    }
+
+    private fun resolveStartupSelection(
+        courses: List<Course>,
+        tasksByCourse: Map<String, List<Task>>,
+        preferredLanguage: TaskLanguage? = preferredLanguageForCurrentIde(),
+    ): StartupSelection {
+        if (courses.isEmpty()) {
+            return StartupSelection(
+                selectedCourseId = null,
+                selectedCourseTasks = emptyList(),
+                startupTask = null,
+                preferredLanguage = preferredLanguage,
+            )
+        }
+
+        val state = settings.mutableState()
+        val currentTaskId = state.currentTaskId
+        val validCourseIds = courses.asSequence().map { it.id }.toSet()
+
+        val resumeCourseId = currentTaskId
+            ?.let { taskId ->
+                tasksByCourse.entries.firstOrNull { (_, tasks) ->
+                    tasks.any { it.id == taskId }
+                }?.key
+            }
+            ?.takeIf { validCourseIds.contains(it) }
+
+        val selectedFromSettings = state.selectedCourseId?.takeIf { validCourseIds.contains(it) }
+        val idePreferredCourseId = preferredLanguage?.let {
+            pickCourseForLanguage(courses = courses, tasksByCourse = tasksByCourse, language = it)
+        }
+
+        val selectedCourseId = resumeCourseId
+            ?: selectedFromSettings
+            ?: idePreferredCourseId
+            ?: courses.firstOrNull()?.id
+
+        val selectedTasks = normalizeTasks(selectedCourseId?.let { tasksByCourse[it].orEmpty() }.orEmpty())
+        val startupTask = pickStartupTask(
+            tasks = selectedTasks,
+            preferredLanguage = preferredLanguage,
+            currentTaskId = currentTaskId,
+        )
+
+        return StartupSelection(
+            selectedCourseId = selectedCourseId,
+            selectedCourseTasks = selectedTasks,
+            startupTask = startupTask,
+            preferredLanguage = preferredLanguage,
+        )
+    }
+
+    private fun pickCourseForLanguage(
+        courses: List<Course>,
+        tasksByCourse: Map<String, List<Task>>,
+        language: TaskLanguage,
+    ): String? {
+        val tasksMatch = courses.firstOrNull { course ->
+            tasksByCourse[course.id].orEmpty().any { task ->
+                TaskLanguage.fromApi(task.language) == language
+            }
+        }?.id
+        if (tasksMatch != null) return tasksMatch
+
+        return courses.firstOrNull { course ->
+            courseMatchesLanguageByText(course, language)
+        }?.id
+    }
+
+    private fun pickStartupTask(
+        tasks: List<Task>,
+        preferredLanguage: TaskLanguage?,
+        currentTaskId: String?,
+    ): Task? {
+        if (tasks.isEmpty()) return null
+
+        val openable = tasks.filter(::isTaskOpenable)
+        if (openable.isEmpty()) return null
+
+        val resumeTask = currentTaskId?.let { taskId ->
+            openable.firstOrNull { it.id == taskId }
+        }
+        if (resumeTask != null) return resumeTask
+
+        val preferredTask = preferredLanguage
+            ?.let { language ->
+                openable.firstOrNull { TaskLanguage.fromApi(it.language) == language }
+            }
+        return preferredTask ?: openable.first()
+    }
+
+    private fun isTaskOpenable(task: Task): Boolean {
+        return task.status != TaskStatus.LOCKED && task.status != TaskStatus.UNAVAILABLE
+    }
+
+    private fun normalizeTasksByCourse(tasksByCourse: Map<String, List<Task>>): Map<String, List<Task>> {
+        return tasksByCourse.mapValues { (_, tasks) -> normalizeTasks(tasks) }
+    }
+
+    private fun normalizeTasks(tasks: List<Task>): List<Task> {
+        return tasks.sortedWith(
+            compareBy<Task> { it.order }
+                .thenBy { it.lessonTitle.orEmpty() }
+                .thenBy { it.title }
+                .thenBy { it.id }
+        )
+    }
+
+    private fun preferredLanguageForCurrentIde(): TaskLanguage? {
+        val product = ApplicationNamesInfo.getInstance().fullProductName.lowercase()
+        return when {
+            product.contains("pycharm") || product.contains("dataspell") -> TaskLanguage.PYTHON
+            product.contains("intellij") || product.contains("idea") -> TaskLanguage.JAVA
+            product.contains("webstorm") -> TaskLanguage.JAVASCRIPT
+            product.contains("datagrip") -> TaskLanguage.SQL
+            product.contains("phpstorm") -> TaskLanguage.JAVASCRIPT
+            else -> null
+        }
+    }
+
+    private fun courseMatchesLanguageByText(course: Course, language: TaskLanguage): Boolean {
+        val haystack = "${course.title} ${course.description}".lowercase()
+        val keywords = when (language) {
+            TaskLanguage.PYTHON -> listOf("python", "питон", "пайтон")
+            TaskLanguage.JAVA -> listOf("java", "джава", "java core")
+            TaskLanguage.KOTLIN -> listOf("kotlin", "котлин")
+            TaskLanguage.SQL -> listOf("sql", "postgres", "mysql", "база данных", "database")
+            TaskLanguage.JAVASCRIPT -> listOf("javascript", "typescript", "frontend", "node", "жаваскрипт")
+            TaskLanguage.UNKNOWN -> emptyList()
+        }
+        return keywords.any { haystack.contains(it) }
     }
 
     private fun closeEditorsUnder(taskDir: java.nio.file.Path) {
