@@ -6,9 +6,9 @@ final status: PASS
 - total modules: 5
 - total lessons: 169
 - total steps: 1960
-- total hours: 659.5
-- steps by type: {'theory': 338, 'test': 307, 'practice': 818, 'project': 328, 'summary': 169}
-- checkers by type: {'quiz_single': 307, 'python_stdout': 45, 'ide_plugin': 412, 'python_pytest': 348, 'sql_query': 221, 'http_api': 120}
+- total hours: 634.2
+- steps by type: {'theory': 338, 'test': 307, 'practice': 825, 'project': 321, 'summary': 169}
+- checkers by type: {'quiz_single': 307, 'python_stdout': 45, 'ide_plugin': 405, 'python_pytest': 355, 'sql_query': 221, 'http_api': 120}
 
 ## Theory Quality Gates
 - theory steps checked: 338
@@ -40,8 +40,14 @@ final status: PASS
 - theory chars by lesson: {'Первый код': 2532, 'Ввод и числа': 2376, 'Строки': 2156, 'bool и None': 2120, 'Условия': 2105, 'Типы и память': 2064, 'Циклы': 2003, 'Списки': 2021, 'Функции': 1903, 'Кортежи': 2401}
 - future knowledge violations: 0
 - pedagogy issues: 0
-- course_preview.md chars: 744613
+- course_preview.md chars: 409800
 - ide_plugin_spec.md chars: 6737
+
+## Target Batch Gates
+- target batch lessons checked: 21
+- target batch hands-on checked: 127
+- repeated practice/project titles over 5: 0
+- control artifact phrase hits: 0
 
 ## Structural Duplicate Gates
 - exact practice/project body duplicates: 0

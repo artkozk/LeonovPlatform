@@ -805,6 +805,99 @@ def theory_quality_issues(course):
                 break
     return issues, stats
 
+TARGET_BATCH_LESSON_IDS = {
+    "m01_l011_mnozhestva",
+    "m01_l012_slovari",
+    "m01_l013_map-filter-lambda",
+    "m01_l014_datetime",
+    "m01_l015_iteratory",
+    "m01_l016_generatory",
+    "m01_l017_dekoratory",
+    "m01_l018_kontekstnye-menedzhery",
+    "m01_l019_isklyucheniya",
+    "m01_l020_ai-dlya-ucheby",
+    "m01_l021_kak-rabotaet-kompyuter",
+    "m01_l022_terminal-bazovye-komandy",
+    "m01_l023_terminal-processy-i-bash",
+    "m01_l024_git-pervye-kommity",
+    "m01_l025_git-indeks-i-istoriya",
+    "m01_l026_git-vetki",
+    "m01_l027_git-otmena-izmeneniy",
+    "m01_l028_git-merge-i-rebase",
+    "m01_l029_github-i-remote",
+    "m01_l030_cli-proekt-menedzher-zadach",
+    "m01_l031_ekzamen-1",
+}
+
+GENERIC_BATCH_TITLES = {
+    "Контрольный артефакт",
+    "Мини-проект",
+    "README",
+    "Команда",
+    "Ошибка",
+    "Git state",
+    "Проверка",
+    "SQL-файл",
+    "Колонки",
+    "Фильтр",
+    "JOIN",
+    "NULL",
+}
+
+def batch_quality_issues(course):
+    issues = []
+    stats = Counter()
+    practice_project_titles = Counter()
+    control_artifact_hits = 0
+    for _, lesson in iter_lessons(course):
+        if lesson["id"] not in TARGET_BATCH_LESSON_IDS:
+            continue
+        stats["lessons_checked"] += 1
+        title_low = lesson["title"].lower()
+        is_git = "git" in title_low or "github" in title_low or lesson["id"] == "m01_l031_ekzamen-1"
+        is_terminal = "терминал" in title_low or "компьютер" in title_low
+        for step in lesson["steps"]:
+            if step["type"] not in {"practice", "project"}:
+                continue
+            stats["hands_on_checked"] += 1
+            title = step.get("title", "")
+            body = step.get("body_markdown", "")
+            checker = step.get("checker") or {}
+            checker_type = checker.get("type")
+            practice_project_titles[title] += 1
+            if title in GENERIC_BATCH_TITLES:
+                issues.append(f"generic batch title still present: {lesson['id']} / {step['id']} / {title}")
+            if "Контрольный артефакт" in title or "Контрольный артефакт" in body:
+                control_artifact_hits += 1
+            if title == "Мини-проект" or "собери проверяемый артефакт" in body:
+                issues.append(f"generic mini-project wording: {step['id']}")
+            if title == "README" or checker.get("required_files") == ["README.md"]:
+                issues.append(f"README-only task in target batch: {step['id']}")
+            if len(body) < 300:
+                issues.append(f"short practice/project body in target batch: {step['id']}")
+            if checker_type == "sql_query" and "sql" not in title_low and "sqlite" not in title_low:
+                issues.append(f"SQL task outside SQL/SQLite block: {step['id']}")
+            if re.search(r"\b(SELECT|JOIN|INSERT|UPDATE|DELETE)\b", body) and "sql" not in title_low and "sqlite" not in title_low:
+                issues.append(f"SQL wording outside SQL/SQLite lesson: {step['id']}")
+            if is_git and checker_type == "ide_plugin" and not checker.get("git_checks"):
+                issues.append(f"Git step without git_checks: {step['id']}")
+            if is_terminal and checker_type == "ide_plugin" and not checker.get("commands"):
+                issues.append(f"terminal/system step without commands: {step['id']}")
+            if step["type"] == "project" and checker_type == "ide_plugin":
+                if not checker.get("required_files") or not checker.get("commands"):
+                    issues.append(f"IDE project lacks required_files/commands: {step['id']}")
+            if step["type"] == "practice" and checker_type in {"python_pytest", "python_stdout", "sql_query", "http_api"}:
+                if not checker.get("hidden_tests"):
+                    issues.append(f"practice lacks hidden checks: {step['id']}")
+    for title, count in practice_project_titles.items():
+        if count > 5:
+            issues.append(f"practice/project title repeated in target batch more than 5 times: {title} ({count})")
+    if control_artifact_hits > 2:
+        issues.append(f"Контрольный артефакт appears too often in target batch: {control_artifact_hits}")
+    stats["repeated_title_over_5"] = sum(1 for count in practice_project_titles.values() if count > 5)
+    stats["control_artifact_hits"] = control_artifact_hits
+    return issues, stats
+
 def manifest_rows(course):
     rows = []
     for module, lesson, step in iter_steps(course):
@@ -962,6 +1055,8 @@ def validate(write_reports=True):
     errors.extend(theory_pair_issues)
     theory_code_issues, theory_code_stats, theory_code_examples = theory_code_audit(course)
     errors.extend(theory_code_issues)
+    batch_issues, batch_stats = batch_quality_issues(course)
+    errors.extend(batch_issues)
     expected = manifest_rows(course)
     if MANIFEST_FILE.exists():
         with MANIFEST_FILE.open("r", encoding="utf-8-sig", newline="") as fh:
@@ -975,7 +1070,7 @@ def validate(write_reports=True):
             bad = [r for r in csv.DictReader(fh) if r.get("status") in BAD_COVERAGE]
         if bad:
             errors.append(f"coverage bad status: {len(bad)}")
-    result = {"status": "PASS" if not errors else "FAIL", "errors": errors, "stats": stats, "first30_issues": first30_issues, "first10_pedagogy": first10_pedagogy, "max_structural_solution": max_structural_solution, "max_structural_ai": max_structural_ai, "duplicate_practice_bodies": len(duplicate_practice_bodies), "duplicate_normalized_practice_bodies": len(duplicate_normalized_practice_bodies), "duplicate_solutions": len(repeated_solutions), "theory_stats": theory_stats, "theory_pair_stats": theory_pair_stats, "theory_pair_examples": theory_pair_examples, "theory_code_stats": theory_code_stats, "theory_code_examples": theory_code_examples}
+    result = {"status": "PASS" if not errors else "FAIL", "errors": errors, "stats": stats, "first30_issues": first30_issues, "first10_pedagogy": first10_pedagogy, "max_structural_solution": max_structural_solution, "max_structural_ai": max_structural_ai, "duplicate_practice_bodies": len(duplicate_practice_bodies), "duplicate_normalized_practice_bodies": len(duplicate_normalized_practice_bodies), "duplicate_solutions": len(repeated_solutions), "theory_stats": theory_stats, "theory_pair_stats": theory_pair_stats, "theory_pair_examples": theory_pair_examples, "theory_code_stats": theory_code_stats, "theory_code_examples": theory_code_examples, "batch_stats": batch_stats, "batch_issues": batch_issues}
     if write_reports:
         write_reports_fn(course, result)
     return result
@@ -985,6 +1080,7 @@ def write_reports_fn(course, result):
     theory_stats = result.get("theory_stats", {})
     theory_pair_stats = result.get("theory_pair_stats", {})
     theory_code_stats = result.get("theory_code_stats", {})
+    batch_stats = result.get("batch_stats", {})
     total_lessons = sum(1 for _ in iter_lessons(course))
     total_steps = stats["steps"]
     total_hours = round(sum(st["estimated_minutes"] for _, _, st in iter_steps(course)) / 60, 1)
@@ -1038,6 +1134,12 @@ def write_reports_fn(course, result):
         f"- pedagogy issues: {len(result.get('first10_pedagogy', []))}",
         f"- course_preview.md chars: {len((ROOT / 'course_preview.md').read_text(encoding='utf-8')) if (ROOT / 'course_preview.md').exists() else 0}",
         f"- ide_plugin_spec.md chars: {len((ROOT / 'ide_plugin_spec.md').read_text(encoding='utf-8')) if (ROOT / 'ide_plugin_spec.md').exists() else 0}",
+        "",
+        "## Target Batch Gates",
+        f"- target batch lessons checked: {batch_stats.get('lessons_checked', 0)}",
+        f"- target batch hands-on checked: {batch_stats.get('hands_on_checked', 0)}",
+        f"- repeated practice/project titles over 5: {batch_stats.get('repeated_title_over_5', 0)}",
+        f"- control artifact phrase hits: {batch_stats.get('control_artifact_hits', 0)}",
         "",
         "## Structural Duplicate Gates",
         f"- exact practice/project body duplicates: {result.get('duplicate_practice_bodies', 0)}",

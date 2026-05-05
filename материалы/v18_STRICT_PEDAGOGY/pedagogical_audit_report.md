@@ -1,27 +1,27 @@
 # Pedagogical audit report v18_STRICT_PEDAGOGY
 
 - total lessons checked: 169
-- weak lessons before fixes: 159
-- weak lessons after fixes: 0
-- lessons rewritten: 159
-- steps rewritten: 312 theory steps plus targeted topic text inserts
-- first 30 lessons readiness: PASS
-- topic alignment failures after: 0
+- weak lessons before fixes: target batch m01_l011-m01_l031 contained generic titles and weak IDE tasks
+- weak lessons after fixes: 0 by automated target-batch gates
+- lessons rewritten in this pass: 21
+- steps reviewed in target batch: 221
 
-## What changed
-- Theory steps now use lesson-specific examples instead of repeated healthcheck, engine/session, Dockerfile and SQLite snippets.
-- The first ten beginner lessons were restored from the stable pedagogical version to keep the no-future-knowledge progression.
-- FastAPI/testing, SQLAlchemy, Docker, SQLite and AI/RAG theory examples were separated by skill and artifact.
+## What Changed
+- Множества и словари получили конкретные задачи на уникальность, роли, теги, KeyError, настройки и JSON-like словари.
+- map/filter/lambda, datetime, итераторы, генераторы, декораторы, context managers, исключения и AI для учёбы переписаны под тему урока.
+- Терминал, процессы, Git, remote, CLI-проект и экзамен получили IDE-проверки с конкретными командами, файлами и Git-состояниями.
+- Summary в Git/terminal уроках теперь различаются по теме урока и не повторяют один универсальный текст.
 
-## Remaining risks
-- Status remains STAGING READY until staging import and real IDE-plugin gates are executed end-to-end.
+## Remaining Risks
+- Нужен staging-import и прогон IDE-plugin на реальном sandbox окружении.
+- Следующая партия должна пройти такой же ручной методический аудит модулей 2-5.
 
-## Review evidence
-- Checked every lesson for the required ladder: specific theory, code example, structured quiz, hands-on practice, edge/debug work and summary.
-- The theory-code pass focused on lessons where the same fenced code block appeared twice inside one step or in multiple unrelated lessons.
-- Beginner progression was protected by restoring the stable first ten lessons and rerunning the future-knowledge gate.
-- The later modules were not marked READY because static checks cannot prove IDE-plugin behavior on the real platform; they only prove package consistency and text quality.
-- The next reviewer should sample at least FastAPI, SQLAlchemy, Docker, AI/RAG and final-project gates on staging before mass launch.
+## Reviewer Notes
+- Правка сделана в JSON, потому что платформа импортирует `course_import.json`; Markdown пересобран только для методиста.
+- В целевой партии сохранены lesson_id и step_id, поэтому импорт не потеряет связку с manifest.
+- Практики в Python Core используют текущие знания: set/dict/map/filter/datetime/iterator/generator/decorator/with/exception/AI-helper.
+- Terminal/Git шаги проверяют воспроизводимое состояние: файлы, команды, stdout/stderr, exit code, git status, ветки и историю.
+- Project steps больше не сводятся к универсальному README: каждый шаг имеет required_files, команды и смысловую проверку навыка.
 
-## Final status
-- PASS for pedagogical static audit
+## Final Status
+- target batch ready for student testing after validation PASS

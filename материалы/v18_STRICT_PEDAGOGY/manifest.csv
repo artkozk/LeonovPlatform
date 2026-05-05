@@ -1,4 +1,4 @@
-module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_type,checker_type,xp,difficulty,estimated_minutes
+﻿module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_type,checker_type,xp,difficulty,estimated_minutes
 1,"Модуль 1. Python Core, терминал, Git",1,Первый код,1,Смысл,theory,,20,1,18
 1,"Модуль 1. Python Core, терминал, Git",1,Первый код,2,print,theory,,20,1,18
 1,"Модуль 1. Python Core, терминал, Git",1,Первый код,3,print и вывод,test,quiz_single,25,1,10
@@ -106,227 +106,227 @@ module_order,module_title,lesson_order,lesson_title,step_order,step_title,step_t
 1,"Модуль 1. Python Core, терминал, Git",10,Кортежи,9,Минимум и максимум,practice,python_pytest,80,2,16
 1,"Модуль 1. Python Core, терминал, Git",10,Кортежи,10,Координата точки,project,ide_plugin,140,2,30
 1,"Модуль 1. Python Core, терминал, Git",10,Кортежи,11,Короткая проверка,summary,,10,1,6
-1,"Модуль 1. Python Core, терминал, Git",11,Множества,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",11,Множества,2,Минимальный пример,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",11,Множества,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",11,Множества,4,Уникальные теги,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",11,Множества,5,Общие роли,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",11,Множества,6,Недостающие права,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",11,Множества,7,Есть дубликаты,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",11,Множества,8,Мини-проект,project,ide_plugin,120,2,45
-1,"Модуль 1. Python Core, терминал, Git",11,Множества,9,Закрепление,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",11,Множества,10,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",11,Множества,11,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",12,Словари,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",12,Словари,2,Минимальный пример,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",12,Словари,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",12,Словари,4,Счётчик статусов,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",12,Словари,5,Настройка по умолчанию,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",12,Словари,6,Индекс по id,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",12,Словари,7,Слияние настроек,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",12,Словари,8,Мини-проект,project,ide_plugin,120,2,45
-1,"Модуль 1. Python Core, терминал, Git",12,Словари,9,Закрепление,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",12,Словари,10,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",12,Словари,11,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,2,Минимальный пример,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,4,Имена активных,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,5,Скидки к ценам,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,6,Коды ошибок,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,7,Нормальные email,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,8,Мини-проект,project,ide_plugin,120,2,45
-1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,9,Закрепление,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,10,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,11,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",14,datetime,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",14,datetime,2,Минимальный пример,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",14,datetime,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",14,datetime,4,Разбор даты,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",14,datetime,5,Дни между датами,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",14,datetime,6,Статус дедлайна,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",14,datetime,7,Плюс дни,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",14,datetime,8,Мини-проект,project,ide_plugin,120,2,45
-1,"Модуль 1. Python Core, терминал, Git",14,datetime,9,Закрепление,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",14,datetime,10,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",14,datetime,11,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,2,Минимальный пример,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,4,Первые два,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,5,До стоп-слова,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,6,Нумерация строк,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,7,Расход iterator,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,8,Мини-проект,project,ide_plugin,120,2,45
-1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,9,Закрепление,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,10,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,11,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,2,Минимальный пример,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,4,Квадраты,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,5,Chunks слов,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,6,Накопительная сумма,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,7,Непустые строки,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,8,Мини-проект,project,ide_plugin,120,2,45
-1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,9,Закрепление,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,10,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,11,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,2,Минимальный пример,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,4,Счётчик вызовов,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,5,Только positive,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,6,Верхний регистр,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,7,Лог аргументов,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,8,Мини-проект,project,ide_plugin,120,2,45
-1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,9,Закрепление,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,10,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,11,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,2,Минимальный пример,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,4,Порядок входа,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,5,Временный флаг,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,6,Только ValueError,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,7,Закрытие ресурса,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,8,Мини-проект,project,ide_plugin,120,2,45
-1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,9,Закрепление,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,10,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,11,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",19,Исключения,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",19,Исключения,2,Минимальный пример,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",19,Исключения,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",19,Исключения,4,Порт сервера,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",19,Исключения,5,Деление безопасно,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",19,Исключения,6,Обязательный ключ,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",19,Исключения,7,Положительная сумма,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",19,Исключения,8,Мини-проект,project,ide_plugin,120,2,45
-1,"Модуль 1. Python Core, терминал, Git",19,Исключения,9,Закрепление,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",19,Исключения,10,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",19,Исключения,11,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,2,Минимальный пример,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,3,Понимание,test,quiz_single,40,2,10
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,4,Hint request,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,5,No secrets,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,6,Verify answer,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,7,Clarify,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,8,Small hint,practice,python_pytest,70,2,18
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,9,AI-минипроект,project,ide_plugin,110,3,35
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,10,Закрепление,test,quiz_single,40,2,10
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,11,Контрольный AI-модуль,project,ide_plugin,110,3,35
-1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,12,Короткая проверка,summary,,20,2,8
-1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,2,Минимальный пример,theory,,40,2,16
-1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,4,README,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,5,Команда,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,6,Ошибка,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,7,Git state,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,8,Проверка,project,ide_plugin,130,2,45
-1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,9,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,10,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,2,Минимальный пример,theory,,40,2,16
-1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,4,README,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,5,Команда,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,6,Ошибка,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,7,Git state,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,8,Проверка,project,ide_plugin,130,2,45
-1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,9,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,10,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,2,Минимальный пример,theory,,40,2,16
-1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,4,README,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,5,Команда,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,6,Ошибка,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,7,Git state,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,8,Проверка,project,ide_plugin,130,2,45
-1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,9,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,10,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,2,Минимальный пример,theory,,40,2,16
-1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,4,README,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,5,Команда,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,6,Ошибка,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,7,Git state,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,8,Проверка,project,ide_plugin,130,2,45
-1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,9,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,10,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,2,Минимальный пример,theory,,40,2,16
-1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,4,README,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,5,Команда,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,6,Ошибка,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,7,Git state,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,8,Проверка,project,ide_plugin,130,2,45
-1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,9,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,10,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,2,Минимальный пример,theory,,40,2,16
-1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,4,README,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,5,Команда,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,6,Ошибка,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,7,Git state,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,8,Проверка,project,ide_plugin,130,2,45
-1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,9,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,10,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,2,Минимальный пример,theory,,40,2,16
-1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,4,README,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,5,Команда,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,6,Ошибка,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,7,Git state,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,8,Проверка,project,ide_plugin,130,2,45
-1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,9,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,10,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,2,Минимальный пример,theory,,40,2,16
-1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,4,README,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,5,Команда,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,6,Ошибка,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,7,Git state,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,8,Проверка,project,ide_plugin,130,2,45
-1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,9,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,10,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,2,Минимальный пример,theory,,40,2,16
-1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,4,README,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,5,Команда,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,6,Ошибка,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,7,Git state,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,8,Проверка,project,ide_plugin,130,2,45
-1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,9,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,10,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,2,Минимальный пример,theory,,40,2,16
-1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,4,README,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,5,Команда,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,6,Ошибка,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,7,Git state,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,8,Проверка,project,ide_plugin,130,2,45
-1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,9,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,10,Итог,summary,,40,2,8
-1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,1,Что это,theory,,40,2,18
-1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,2,Минимальный пример,theory,,40,2,16
-1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,3,Понимание,test,quiz_single,40,2,12
-1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,4,README,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,5,Команда,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,6,Ошибка,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,7,Git state,practice,ide_plugin,90,2,30
-1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,8,Проверка,project,ide_plugin,130,2,45
-1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,9,Контрольный артефакт,project,ide_plugin,110,2,30
-1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,10,Итог,summary,,40,2,8
+1,"Модуль 1. Python Core, терминал, Git",11,Множества,1,Что такое set,theory,,20,2,14
+1,"Модуль 1. Python Core, терминал, Git",11,Множества,2,Операции над наборами,theory,,20,2,14
+1,"Модуль 1. Python Core, терминал, Git",11,Множества,3,Проверка set,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",11,Множества,4,Уникальные id,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",11,Множества,5,Доступ по роли,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",11,Множества,6,Общие теги,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",11,Множества,7,Граница: нет id,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",11,Множества,8,Права доступа,project,ide_plugin,90,3,28
+1,"Модуль 1. Python Core, терминал, Git",11,Множества,9,Ошибки set,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",11,Множества,10,Отчёт по тегам,project,ide_plugin,90,3,28
+1,"Модуль 1. Python Core, терминал, Git",11,Множества,11,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",12,Словари,1,Ключ и значение,theory,,20,2,14
+1,"Модуль 1. Python Core, терминал, Git",12,Словари,2,Безопасное чтение,theory,,20,2,14
+1,"Модуль 1. Python Core, терминал, Git",12,Словари,3,Проверка dict,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",12,Словари,4,Профиль,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",12,Словари,5,Счётчик слов,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",12,Словари,6,Настройки,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",12,Словари,7,Ошибка: KeyError,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",12,Словари,8,Карточка профиля,project,ide_plugin,90,3,28
+1,"Модуль 1. Python Core, терминал, Git",12,Словари,9,KeyError,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",12,Словари,10,Аудит настроек,project,ide_plugin,90,3,28
+1,"Модуль 1. Python Core, терминал, Git",12,Словари,11,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,4,Строки в числа,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,5,Активные пользователи,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,6,Email в нижний регистр,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,7,Валидные значения,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,8,Сложная lambda,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,9,Разбор ошибок,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,10,Почта рассылки,project,ide_plugin,90,3,28
+1,"Модуль 1. Python Core, терминал, Git",13,map/filter/lambda,11,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",14,datetime,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",14,datetime,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",14,datetime,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",14,datetime,4,Срок токена,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",14,datetime,5,Дедлайн,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",14,datetime,6,Формат даты,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",14,datetime,7,Разница дней,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",14,datetime,8,Строка и дата,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",14,datetime,9,Разбор ошибок,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",14,datetime,10,Календарь задач,project,ide_plugin,90,3,28
+1,"Модуль 1. Python Core, терминал, Git",14,datetime,11,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,4,next(),practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,5,StopIteration,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,6,Одноразовый проход,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,7,Первые строки,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,8,Повторный проход,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,9,Разбор ошибок,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,10,Постраничное чтение,project,ide_plugin,90,3,28
+1,"Модуль 1. Python Core, терминал, Git",15,Итераторы,11,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,4,yield числа,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,5,Непустые строки,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,6,Пачки,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,7,Бесконечный счётчик,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,8,return вместо yield,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,9,Разбор ошибок,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,10,Ленивая фильтрация логов,project,ide_plugin,90,3,28
+1,"Модуль 1. Python Core, терминал, Git",16,Генераторы,11,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,4,Лог вызова,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,5,Потерянный return,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,6,Проверка прав,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,7,wraps,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,8,args и kwargs,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,9,Разбор ошибок,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,10,Доступ к команде,project,ide_plugin,90,3,28
+1,"Модуль 1. Python Core, терминал, Git",17,Декораторы,11,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,4,with open,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,5,Безопасная запись,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,6,Свой менеджер,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,7,contextmanager,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,8,Закрытие при ошибке,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,9,Разбор ошибок,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,10,Запись отчёта,project,ide_plugin,90,3,28
+1,"Модуль 1. Python Core, терминал, Git",18,Контекстные менеджеры,11,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",19,Исключения,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",19,Исключения,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",19,Исключения,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",19,Исключения,4,int parsing,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",19,Исключения,5,Positive,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",19,Исключения,6,Своя ошибка,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",19,Исключения,7,finally cleanup,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",19,Исключения,8,bare except,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",19,Исключения,9,Разбор ошибок,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",19,Исключения,10,Валидация формы,project,ide_plugin,90,3,28
+1,"Модуль 1. Python Core, терминал, Git",19,Исключения,11,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,4,Безопасный prompt,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,5,Убрать секреты,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,6,Просьба о hint,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,7,Проверка ответа,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,8,Mock response,practice,python_pytest,60,2,16
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,9,AI-помощник без секретов,project,ide_plugin,90,3,28
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,10,Разбор ошибок,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,11,Журнал AI-проверки,project,ide_plugin,90,3,28
+1,"Модуль 1. Python Core, терминал, Git",20,AI для учёбы,12,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,4,stdout,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,5,stderr,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,6,exit code,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,7,stdin,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,8,Диагностика потоков,project,ide_plugin,90,3,24
+1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,9,Проверка: Как работает компьютер,project,ide_plugin,90,3,18
+1,"Модуль 1. Python Core, терминал, Git",21,Как работает компьютер,10,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,4,pwd,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,5,mkdir,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,6,cat,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,7,Ошибка: путь,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,8,Дерево проекта,project,ide_plugin,90,3,24
+1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,9,Проверка: Терминал: базовые команды,project,ide_plugin,90,3,18
+1,"Модуль 1. Python Core, терминал, Git",22,Терминал: базовые команды,10,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,4,env,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,5,pipe,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,6,Ошибка: exit code,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,7,ps marker,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,8,Фильтр логов,project,ide_plugin,90,3,24
+1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,9,Проверка: Терминал: процессы и bash,project,ide_plugin,90,3,18
+1,"Модуль 1. Python Core, терминал, Git",23,Терминал: процессы и bash,10,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,4,git init,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,5,Первый commit,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,6,staging area,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,7,Ошибка: забытый файл,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,8,История первых файлов,project,ide_plugin,90,3,24
+1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,9,Проверка: Git: первые коммиты,project,ide_plugin,90,3,18
+1,"Модуль 1. Python Core, терминал, Git",24,Git: первые коммиты,10,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,4,diff,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,5,Граница: staged diff,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,6,git log,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,7,HEAD,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,8,Аудит истории,project,ide_plugin,90,3,24
+1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,9,Проверка: Git: индекс и история,project,ide_plugin,90,3,18
+1,"Модуль 1. Python Core, терминал, Git",25,Git: индекс и история,10,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,4,branch,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,5,switch,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,6,feature commit,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,7,Ошибка: ветка не main,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,8,Feature flow,project,ide_plugin,90,3,24
+1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,9,Проверка: Git: ветки,project,ide_plugin,90,3,18
+1,"Модуль 1. Python Core, терминал, Git",26,Git: ветки,10,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,4,restore,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,5,Ошибка: staged файл,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,6,revert,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,7,git rm,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,8,Безопасная отмена,project,ide_plugin,90,3,24
+1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,9,Проверка: Git: отмена изменений,project,ide_plugin,90,3,18
+1,"Модуль 1. Python Core, терминал, Git",27,Git: отмена изменений,10,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,4,Ошибка: merge conflict,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,5,rebase conflict,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,6,stash,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,7,cherry-pick,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,8,История без маркеров,project,ide_plugin,90,3,24
+1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,9,Проверка: Git: merge и rebase,project,ide_plugin,90,3,18
+1,"Модуль 1. Python Core, терминал, Git",28,Git: merge и rebase,10,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,4,remote origin,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,5,upstream,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,6,Ошибка: non-fast-forward,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,7,force-with-lease,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,8,Remote workflow,project,ide_plugin,90,3,24
+1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,9,Проверка: GitHub и remote,project,ide_plugin,90,3,18
+1,"Модуль 1. Python Core, терминал, Git",29,GitHub и remote,10,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,4,add,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,5,list,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,6,done,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,7,bad id,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,8,CLI task manager,project,ide_plugin,90,3,24
+1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,9,Проверка: CLI-проект: менеджер задач,project,ide_plugin,90,3,18
+1,"Модуль 1. Python Core, терминал, Git",30,CLI-проект: менеджер задач,10,Итог,summary,,15,1,6
+1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,1,Что это,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,2,Минимальный пример,theory,,20,2,15
+1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,3,Понимание,test,quiz_single,25,2,8
+1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,4,Python задача,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,5,CLI запуск,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,6,Git история,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,7,Ошибочный ввод,practice,ide_plugin,70,3,18
+1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,8,Экзаменационный пакет,project,ide_plugin,90,3,24
+1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,9,Проверка: Экзамен 1,project,ide_plugin,90,3,18
+1,"Модуль 1. Python Core, терминал, Git",31,Экзамен 1,10,Итог,summary,,15,1,6
 2,Модуль 2. Python Hard,1,ООП: классы,1,Класс и объект,theory,,40,2,18
 2,Модуль 2. Python Hard,1,ООП: классы,2,Минимальная модель,theory,,40,2,18
 2,Модуль 2. Python Hard,1,ООП: классы,3,Класс и объект,test,quiz_single,40,2,10

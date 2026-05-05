@@ -821,3 +821,38 @@ node backend/tools/validate_python_v18_materials_import.js
 4. Как проверить:
 - `pm2 env <api_id>` не должен показывать фиксированный список команд по умолчанию;
 - project-step с `python main.py`/`printf ... | python main.py` не должен падать с `command is blocked in production`.
+## 2026-05-05: v18 Module 1 Batch Pedagogy Refresh
+
+This note documents the current behavior after the targeted rewrite of `материалы/v18_STRICT_PEDAGOGY` for Module 1 lessons `m01_l011` through `m01_l031`. It is appended instead of replacing older rollout notes so reviewers can see why the v18 migration changed again and why migration `031` must be regenerated from the JSON source.
+
+What changed now:
+
+- `course_import.json` remains the single source of truth for the platform import.
+- Lessons `m01_l011`-`m01_l031` were rewritten to remove generic task titles such as `README`, `Команда`, `Ошибка`, `Git state`, `Проверка`, `Мини-проект` and `Контрольный артефакт`.
+- The target batch now uses concrete student tasks for sets, dictionaries, map/filter/lambda, datetime, iterators, generators, decorators, context managers, exceptions, AI-for-learning, computer/process basics, terminal commands, Git, GitHub remote workflow, CLI project and exam.
+- Git and terminal tasks now validate observable state: required files, commands, stdout/stderr, exit code, `git status`, branches, commits and remote/upstream state.
+- `validate_course.py` has target-batch gates so the same generic titles, README-only tasks, missing Git checks, missing terminal commands, short practice bodies and missing hidden checks fail before import.
+
+Why it is implemented this way:
+
+- The platform imports JSON, not Markdown, so all student-facing fixes must live in `course_import.json`.
+- Markdown reports are regenerated from JSON only for reviewer inspection.
+- Regenerating migration `031_reseed_python_zero_v18_no_duplicate_tasks.sql` keeps production/staging import aligned with the current JSON rather than relying on stale SQL seed content.
+- The batch was not marked as a full-course pedagogical rewrite. It is a scoped refresh of Module 1 lessons 11-31, with the rest of the course still covered by the existing v18 validators and reports.
+
+Verification commands run after the change:
+
+```bash
+python материалы/v18_STRICT_PEDAGOGY/validate_course.py
+node backend/tools/generate_python_v18_materials_migration.js
+node backend/tools/validate_python_v18_materials_import.js
+go test ./...
+cd frontend && npm run build
+```
+
+Observed validation status:
+
+- course validator: PASS;
+- import migration validator: PASS;
+- backend Go tests: PASS;
+- frontend build: PASS, with the existing Vite large chunk warning only.
