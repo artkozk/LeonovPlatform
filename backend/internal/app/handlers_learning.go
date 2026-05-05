@@ -879,12 +879,16 @@ func (a *App) CreateSubmission(c *gin.Context) {
 	var taskMainFilePath string
 	var taskStarterCode string
 	if err := a.DB.QueryRow(c.Request.Context(), `
-		SELECT max_attempts, COALESCE(language, 'java'), COALESCE(source_policy::text, '{}'::text),
+		SELECT COALESCE(max_attempts, 0), COALESCE(language, 'java'), COALESCE(source_policy::text, '{}'::text),
 		       COALESCE(title, ''), COALESCE(main_file_path, ''), COALESCE(starter_code, '')
 		FROM tasks
 		WHERE id = $1 AND is_published = TRUE
 	`, taskID).Scan(&maxAttempts, &taskLanguage, &sourcePolicyRaw, &taskTitle, &taskMainFilePath, &taskStarterCode); err != nil {
-		notFound(c, "task not found")
+		if errors.Is(err, pgx.ErrNoRows) {
+			notFound(c, "task not found")
+			return
+		}
+		internalServerError(c, err)
 		return
 	}
 	if parseTaskSourcePolicy(sourcePolicyRaw).CheckerType == "ide_plugin" {

@@ -840,6 +840,23 @@ node backend/tools/validate_python_v18_materials_import.js
 - `go test ./...` должен проходить, включая новые unit-тесты `internal/config` и `internal/app`;
 - для задачи `4e410f45-d3fc-433b-b2ca-44167f60e5a1` проверка не должна падать с `command is blocked in production`;
 - для project-step сабмитов не должно быть ложного `required file is missing`, если обязательные файлы отсутствовали только из-за legacy-клиента.
+
+## Актуализация от 2026-05-05: false 404 на `/tasks/:taskID/submissions` при `max_attempts IS NULL`
+
+1. Что было проблемой:
+- для части опубликованных задач `GET /tasks/:taskID` возвращал `200`, но `POST /tasks/:taskID/submissions` возвращал `404 task not found`;
+- причина: в `CreateSubmission` SQL выбирал `max_attempts` без `COALESCE`, и `NULL` ломал `Scan` в `int`;
+- ошибка `Scan` обрабатывалась как `not found`, поэтому клиент получал ложный `404`.
+
+2. Что изменено:
+- SQL в `CreateSubmission` переведен на `COALESCE(max_attempts, 0)`;
+- обработка ошибок разделена:
+  - `pgx.ErrNoRows` -> `404 task not found`;
+  - остальные ошибки -> `500`.
+
+3. Почему сделано именно так:
+- `NULL` в `max_attempts` означает отсутствие лимита, а не отсутствие задачи;
+- ложный `404` в submit-пути ломал основной сценарий обучения и маскировал настоящую причину.
 ## 2026-05-05: v18 Module 1 Batch Pedagogy Refresh
 
 This note documents the current behavior after the targeted rewrite of `материалы/v18_STRICT_PEDAGOGY` for Module 1 lessons `m01_l011` through `m01_l031`. It is appended instead of replacing older rollout notes so reviewers can see why the v18 migration changed again and why migration `031` must be regenerated from the JSON source.

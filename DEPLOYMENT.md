@@ -440,3 +440,22 @@ pm2 env <api_id> | grep IDE_CHECKER_ALLOWED_COMMANDS
 2. Для `task_id=4e410f45-d3fc-433b-b2ca-44167f60e5a1` выполнить сабмит через IDE/plugin и убедиться, что:
 - нет ошибки `command is blocked in production`,
 - нет ложного `required file is missing` из-за отсутствующего `README.md` в payload.
+
+## 17. False 404 submissions fix (`max_attempts IS NULL`) (append-only, 2026-05-05)
+
+### 17.1 Проблема
+
+1. Для части задач наблюдалась рассинхронизация: `GET /tasks/:taskID` -> `200`, но `POST /tasks/:taskID/submissions` -> `404 task not found`.
+2. Корень: в `CreateSubmission` выборка `max_attempts` без `COALESCE`; при `NULL` падал `Scan` в `int`, и ошибка маскировалась как `not found`.
+
+### 17.2 Что изменено
+
+1. SQL переведен на `COALESCE(max_attempts, 0)`.
+2. Ошибки в `CreateSubmission` разделены:
+- `pgx.ErrNoRows` -> `404`;
+- остальные ошибки -> `500`.
+
+### 17.3 Проверка после выката
+
+1. Взять task id из `/courses/:courseID/tasks-catalog`, который возвращается в `GET /tasks/:taskID`.
+2. Выполнить `POST /tasks/:taskID/submissions` с валидным токеном и убедиться, что нет ложного `404`.
