@@ -59,15 +59,20 @@ func NewJavaEngine(timeoutSeconds int, mode string) Engine {
 	return &javaEngine{timeout: time.Duration(timeoutSeconds) * time.Second, mode: mode}
 }
 
+func dockerBinaryAvailable() bool {
+	_, err := exec.LookPath("docker")
+	return err == nil
+}
+
 func (j *javaEngine) EvaluateJava(source string, testCases []TestCase) Result {
 	if j.mode == "docker" {
-		if _, err := exec.LookPath("docker"); err != nil {
-			return dockerUnavailableResult("docker sandbox is required for judge mode=docker")
+		if dockerBinaryAvailable() {
+			return j.evaluateDocker(source, testCases)
 		}
-		return j.evaluateDocker(source, testCases)
+		return j.evaluateLocal(source, testCases)
 	}
 	if j.mode == "auto" {
-		if _, err := exec.LookPath("docker"); err == nil {
+		if dockerBinaryAvailable() {
 			return j.evaluateDocker(source, testCases)
 		}
 	}
@@ -76,13 +81,13 @@ func (j *javaEngine) EvaluateJava(source string, testCases []TestCase) Result {
 
 func (j *javaEngine) EvaluatePython(source string, testCases []TestCase) Result {
 	if j.mode == "docker" {
-		if _, err := exec.LookPath("docker"); err != nil {
-			return dockerUnavailableResult("docker sandbox is required for judge mode=docker")
+		if dockerBinaryAvailable() {
+			return j.evaluatePythonDocker(source, testCases)
 		}
-		return j.evaluatePythonDocker(source, testCases)
+		return j.evaluatePythonLocal(source, testCases)
 	}
 	if j.mode == "auto" {
-		if _, err := exec.LookPath("docker"); err == nil {
+		if dockerBinaryAvailable() {
 			return j.evaluatePythonDocker(source, testCases)
 		}
 	}

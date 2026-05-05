@@ -320,3 +320,43 @@ node -v
 npm -v
 ```
 2. После обновления перезапустить стандартный deploy-проход.
+
+## 13. Judge Runtime Availability Update (append-only, 2026-05-05)
+
+### 13.1 Что зафиксировано
+
+1. Для PM2 default в `deploy/server/ecosystem.config.cjs` используется `JUDGE_MODE=auto` (вместо hard default `docker`).
+2. Для stdout-задач backend теперь не блокирует проверку при отсутствии Docker: judge переключается на local runtime.
+3. Docker-dependent checker’ы (`python_pytest`, `http_api`) остаются требовательными к Docker и при его отсутствии возвращают контролируемую ошибку.
+
+### 13.2 Почему это важно
+
+1. Рабочий код пользователя не должен падать с `FAILED` из-за инфраструктурной недоступности Docker в базовых задачах.
+2. `auto` даёт предсказуемое поведение:
+- Docker есть: используется sandbox;
+- Docker нет: stdout-задачи работают в local runtime, без блокировки обучения.
+3. Отдельные sandbox-checker’ы не переведены на local fallback, чтобы не размывать ограничения изоляции.
+
+### 13.3 Как проверить после деплоя
+
+1. Проверить эффективный judge mode в окружении PM2:
+```bash
+pm2 env leonovcare-api | grep JUDGE_MODE
+```
+2. Выполнить smoke-check stdout задачи через plugin/API и убедиться, что нет ошибки `docker is not available`.
+3. Для задач типа `python_pytest`/`http_api` убедиться, что:
+- при наличии Docker проверки проходят штатно;
+- при отсутствии Docker ошибка явно сообщает причину sandbox-недоступности.
+
+### 13.4 Когда включать strict docker режим
+
+1. Если требуется принудительная контейнеризация всех проверок, на сервере должен быть установлен и доступен Docker runtime для процессов API/worker.
+2. После этого можно явно задать:
+```bash
+export JUDGE_MODE=docker
+```
+3. И обязательно проверить:
+```bash
+docker ps
+pm2 restart leonovcare-api leonovcare-worker
+```

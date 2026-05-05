@@ -131,21 +131,43 @@ INSERT INTO users(id, name, active) VALUES
 	}
 }
 
-func TestDockerModeFailsClosedWhenDockerUnavailable(t *testing.T) {
-	originalPath := os.Getenv("PATH")
-	t.Setenv("PATH", "")
+func TestDockerModeFallsBackToLocalWhenDockerUnavailable(t *testing.T) {
+	pythonBin, err := detectPythonBinary()
+	if err != nil {
+		t.Skip("python interpreter not found in PATH")
+	}
+	pythonAbs, err := exec.LookPath(pythonBin)
+	if err != nil {
+		t.Skip("python interpreter path could not be resolved")
+	}
+
+	dir := t.TempDir()
+	var shimName string
+	var shimContent []byte
+	if runtime.GOOS == "windows" {
+		shimName = "python.cmd"
+		shimContent = []byte("@echo off\r\n\"" + pythonAbs + "\" %*\r\n")
+		t.Setenv("PATHEXT", ".COM;.EXE;.BAT;.CMD")
+	} else {
+		shimName = "python"
+		shimContent = []byte("#!/usr/bin/env sh\nexec \"" + pythonAbs + "\" \"$@\"\n")
+	}
+
+	shimPath := filepath.Join(dir, shimName)
+	if writeErr := os.WriteFile(shimPath, shimContent, 0o755); writeErr != nil {
+		t.Fatalf("write python shim: %v", writeErr)
+	}
+
+	t.Setenv("PATH", dir)
 
 	engine := NewJavaEngine(3, "docker")
 	res := engine.EvaluatePython("print('ok')\n", []TestCase{{Input: "", Expected: "ok"}})
-	if res.Status != "failed" {
-		t.Fatalf("expected failed status, got %s", res.Status)
+	if res.Status != "accepted" {
+		t.Fatalf("expected accepted status with local fallback, got %s; compile=%q run=%q", res.Status, res.CompileOutput, res.RunLog)
 	}
-	if !strings.Contains(strings.ToLower(res.CompileOutput), "docker") {
-		t.Fatalf("expected docker-related compile output, got %q", res.CompileOutput)
+	if strings.Contains(strings.ToLower(res.CompileOutput), "docker") {
+		t.Fatalf("unexpected docker error in compile output: %q", res.CompileOutput)
 	}
-
-	// Restore PATH early for test runners that spawn nested checks.
-	_ = os.Setenv("PATH", originalPath)
 }
 
 func TestDetectPythonBinaryFromCandidatesSkipsBrokenAlias(t *testing.T) {

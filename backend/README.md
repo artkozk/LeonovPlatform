@@ -751,3 +751,27 @@ node backend/tools/validate_python_v18_materials_import.js
 - часть старых клиентов использует legacy-ключи и без них не открывает задачу, хотя список задач виден.
 
 3. Это решение сохранено как API-совместимость, чтобы пользователь не блокировался на обновлении клиента.
+
+## Актуализация от 2026-05-05: Judge runtime fallback при отсутствии Docker
+
+1. Что было проблемой:
+- при `JUDGE_MODE=docker` и отсутствии docker binary backend возвращал `docker is not available`;
+- пользовательский рабочий код мог получать `FAILED` до фактической проверки логики решения.
+
+2. Что изменено в коде:
+- `EvaluateJava` и `EvaluatePython` в `internal/judge/java.go` теперь при `mode=docker` и недоступном Docker автоматически переходят в local runtime;
+- при `mode=auto` поведение сохранено: если Docker найден — используется docker sandbox, иначе local runtime;
+- дефолт orchestration-настройки в `deploy/server/ecosystem.config.cjs` изменен с `JUDGE_MODE=docker` на `JUDGE_MODE=auto`.
+
+3. Что осталось без изменений:
+- checker-режимы, которые требуют контейнеризацию (`python_pytest`, `http_api` в `checker_runtime.go`), по-прежнему возвращают контролируемую ошибку при отсутствии Docker;
+- это сохранено намеренно, потому что эти проверки предполагают изолированное окружение и multi-file/runtime сценарии.
+
+4. Почему сделано именно так:
+- для базовых учебных задач (`python_stdout`/`java stdout`) критичнее непрерывный UX и прохождение корректного кода;
+- fallback устраняет инфраструктурный false-negative без изменения бизнес-логики проверок;
+- `auto` как дефолт снижает риск повторного прод-инцидента после рестарта/переезда окружения.
+
+5. Проверка результата:
+- тест `TestDockerModeFallsBackToLocalWhenDockerUnavailable` подтверждает, что режим `docker` не блокирует проверку stdout-задач при недоступном Docker;
+- `go test ./...` должен проходить без регрессий.
