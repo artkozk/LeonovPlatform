@@ -16,6 +16,7 @@ data class PlatformEndpointMapping(
     val taskReferenceSolution: String = "/tasks/{taskId}/reference-solution",
     val aiTaskHint: String = "/ai/task-hint",
     val taskProgressReset: String = "/tasks/{taskId}/progress/reset",
+    val taskProgressInProgress: String = "/tasks/{taskId}/progress/in-progress",
     val sync: String = "/sync",
     val defaultTimeout: Duration = Duration.ofSeconds(20),
 )

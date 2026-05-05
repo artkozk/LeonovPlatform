@@ -60,6 +60,7 @@ class TaskManager(private val project: Project) {
 
     private val lessonCacheTtlMillis = TimeUnit.HOURS.toMillis(8)
     private val requestTimeoutMillis = TimeUnit.SECONDS.toMillis(12)
+    private val maxLessonPrefetchPerRefresh = 120
     private val refreshMutex = Mutex()
 
     @Volatile
@@ -229,16 +230,14 @@ class TaskManager(private val project: Project) {
         if (!updated) return
 
         taskCache.saveTasksByCourse(tasksByCourse)
-        val refreshedSelection = resolveStartupSelection(
-            courses = courses,
-            tasksByCourse = tasksByCourse,
-        )
-        settings.mutableState().selectedCourseId = refreshedSelection.selectedCourseId
-
-        stateFlow.value = stateFlow.value.copy(
-            selectedCourseId = refreshedSelection.selectedCourseId,
-            tasks = refreshedSelection.selectedCourseTasks,
-        )
+        val selectedNow = stateFlow.value.selectedCourseId ?: settings.mutableState().selectedCourseId
+        if (selectedNow != null) {
+            settings.mutableState().selectedCourseId = selectedNow
+            stateFlow.value = stateFlow.value.copy(
+                selectedCourseId = selectedNow,
+                tasks = normalizeTasks(tasksByCourse[selectedNow].orEmpty()),
+            )
+        }
     }
 
     fun selectCourse(courseId: String) {
@@ -260,8 +259,12 @@ class TaskManager(private val project: Project) {
             runCatching {
                 authService.withAuthorizedToken { token ->
                     val client = apiFactory.client()
-                    val details = client.getTaskDetails(token, task.id)
-                    val template = client.getTaskTemplate(token, task.id)
+                    val details = withTimeout(requestTimeoutMillis) {
+                        client.getTaskDetails(token, task.id)
+                    }
+                    val template = withTimeout(requestTimeoutMillis) {
+                        client.getTaskTemplate(token, task.id)
+                    }
                     val lessonMaterial = getOrLoadLessonMaterial(client = client, token = token, task = task)
 
                     val result = fileService.createOrUpdateTaskFiles(
@@ -325,7 +328,13 @@ class TaskManager(private val project: Project) {
                     orderedTasks.mapNotNullTo(orderedLessonIds) { it.lessonId }
 
                     var updated = 0
+                    var fetchedCount = 0
                     for (lessonId in orderedLessonIds) {
+                        if (fetchedCount >= maxLessonPrefetchPerRefresh) {
+                            logger.info("Lesson prefetch limit reached: $maxLessonPrefetchPerRefresh lessons per refresh")
+                            break
+                        }
+
                         val cached = existingLessons[lessonId]
                         if (!shouldRefreshLesson(cached)) {
                             continue
@@ -341,6 +350,7 @@ class TaskManager(private val project: Project) {
 
                         existingLessons[lessonId] = fetched
                         updated++
+                        fetchedCount++
                     }
 
                     if (updated > 0) {

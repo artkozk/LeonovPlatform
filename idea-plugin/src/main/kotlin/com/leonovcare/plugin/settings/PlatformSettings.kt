@@ -5,6 +5,7 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import com.leonovcare.plugin.cache.PluginCacheStorage
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.leonovcare.plugin.util.PlatformConstants
 
@@ -49,6 +50,7 @@ class PlatformSettings : PersistentStateComponent<PlatformSettings.State> {
         state.lessonsCacheJson = ""
         state.currentTaskId = null
         state.lastSyncEpochMillis = 0L
+        PluginCacheStorage.clearAll()
     }
 
     companion object {

@@ -1,6 +1,7 @@
 package com.leonovcare.plugin.api
 
 import com.sun.net.httpserver.HttpServer
+import com.leonovcare.plugin.task.TaskStatus
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -43,6 +44,15 @@ class HttpPlatformApiClientLanguageTest {
         assertEquals("Lesson One", task.lessonTitle)
     }
 
+    @Test
+    fun `maps task status from tasks catalog`() {
+        startServerForCatalogFlow()
+        val client = HttpPlatformApiClient(baseUrl())
+
+        val task = runBlocking { client.getCourseTasks("token", "course-1").single() }
+        assertEquals(TaskStatus.IN_PROGRESS, task.status)
+    }
+
     private fun startServer() {
         server = HttpServer.create(InetSocketAddress(0), 0)
         server?.createContext("/") { exchange ->
@@ -81,6 +91,25 @@ class HttpPlatformApiClientLanguageTest {
                         exchange,
                         200,
                         """{"lesson":{"id":"lesson-1","title":"Lesson One","moduleTitle":"Module A","position":1},"tasks":[{"id":"task-1","title":"Task One","language":"python","type":"console"}],"blocks":[]}""",
+                    )
+                }
+                else -> {
+                    respond(exchange, 404, """{"error":"unknown path"}""")
+                }
+            }
+        }
+        server?.start()
+    }
+
+    private fun startServerForCatalogFlow() {
+        server = HttpServer.create(InetSocketAddress(0), 0)
+        server?.createContext("/") { exchange ->
+            when {
+                exchange.requestURI.path == "/courses/course-1/tasks-catalog" -> {
+                    respond(
+                        exchange,
+                        200,
+                        """{"items":[{"taskId":"task-1","lessonId":"lesson-1","lessonTitle":"Lesson One","moduleTitle":"Module A","title":"Task One","language":"python","type":"console","status":"IN_PROGRESS","locked":false,"unavailable":false}]}""",
                     )
                 }
                 else -> {

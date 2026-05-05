@@ -3010,6 +3010,74 @@
 1. `cd idea-plugin && ./gradlew.bat test` — PASS.
 2. `cd idea-plugin && ./gradlew.bat buildPlugin` — PASS.
 
+## 2026-05-05 — IDE plugin full gap-closure package (post-audit hardening)
+
+### Добавлено/исправлено
+
+1. Исправлено восстановление статусов задач из backend:
+- `idea-plugin/src/main/kotlin/com/leonovcare/plugin/api/HttpPlatformApiClient.kt`;
+- при загрузке задач теперь читаются реальные `status/taskStatus/progressStatus/state`;
+- статус больше не принудительно `NEW`.
+
+2. Реализован рабочий `markTaskInProgress`:
+- primary endpoint: `/tasks/{taskId}/progress/in-progress`;
+- fallback на legacy paths (`/progress/start`, `/progress`, `/in-progress`, `/start`) при `404/405/501`;
+- `401/403` не подавляются.
+
+3. Введен file-backed cache для больших курсов:
+- новый `idea-plugin/src/main/kotlin/com/leonovcare/plugin/cache/PluginCacheStorage.kt`;
+- `CourseCache`, `TaskCache`, `LessonCache` переведены с приоритетом чтения из disk-cache;
+- legacy JSON в `PlatformSettings` используется как миграционный fallback и очищается после успешной миграции.
+
+4. Усилен submit-контур:
+- `SubmissionService` больше не делает silent-return при отсутствии auth/task context;
+- добавлен guard от параллельных submit (`submissionInProgress`);
+- добавлены timeout на submit/polling;
+- `pluginVersion/platform` в `SubmissionClientInfo` теперь берутся runtime через `PluginRuntimeInfo` (без hardcode `0.1.0`).
+
+5. Добавлены лимиты payload на стороне плагина:
+- `SubmissionFileCollector` теперь ограничивает:
+  - число файлов;
+  - размер одного файла;
+  - суммарный размер отправки;
+- превышение лимитов возвращает user-facing ошибку, а не “тихую” деградацию.
+
+6. Усилен `TaskManager`:
+- `openTask()` оборачивает `getTaskDetails/getTaskTemplate` в timeout;
+- prefetch lesson materials ограничен по количеству уроков за цикл refresh;
+- фоновая догрузка больше не перезаписывает выбранный пользователем курс эвристикой.
+
+7. Усилен `SyncService`:
+- `startAutoSync()` защищен от повторного запуска автосинк-цикла в рамках одного project-сервиса.
+
+8. Восстановлен Python local run path:
+- `TaskRunConfigurationService` получил `PythonRunConfigurationProvider`;
+- провайдер создаёт Python Run Configuration через runtime reflection API PyCharm;
+- при недоступности API выдаётся controlled ошибка, без падения плагина.
+
+9. Auth/UI консистентность:
+- в unauthorized-состоянии очищается `CurrentTaskService`, чтобы не оставался stale task context.
+
+10. Обновлена локализация ошибок:
+- добавлены ключи для лимитов submit, занятости submit и ошибок Python-run-конфигурации в `PlatformBundle.properties` и `PlatformBundle_ru.properties`.
+
+### Почему реализовано именно так
+
+1. После устранения блокирующих UX-дефектов оставались системные риски на больших курсах: storage pressure, burst-prefetch и oversized submit.
+2. File-backed cache нужен для масштабируемости и стабильности IDE-настроек при больших JSON-объёмах.
+3. Реальный status mapping и mark-in-progress критичны для честного прогресса и корректной аналитики обучения.
+4. Submit guards/timeouts/size-limits закрывают эксплуатационные риски “зависаний” и неуправляемых payload.
+5. Python run path обязателен для целевой сборки PyCharm + Python-course; ранее этот путь отсутствовал.
+
+### Прогон проверок
+
+1. `cd idea-plugin && ./gradlew.bat test` — PASS.
+2. `cd idea-plugin && ./gradlew.bat buildPlugin` — PASS.
+3. Обновлены unit-tests:
+- `HttpPlatformApiClientTest` (`markTaskInProgress` fallback);
+- `HttpPlatformApiClientLanguageTest` (status mapping from catalog);
+- `SubmissionFileCollectorTest` (too-many-files guard).
+
 ## 2026-05-05 — IDE plugin UX fix: unavailable task actions and module/lesson visibility
 
 ### Добавлено/исправлено

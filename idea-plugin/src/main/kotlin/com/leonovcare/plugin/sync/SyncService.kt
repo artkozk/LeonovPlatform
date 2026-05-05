@@ -23,12 +23,17 @@ class SyncService(private val project: Project) {
     private val taskManager = TaskManager.getInstance(project)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val syncInProgress = AtomicBoolean(false)
+    private val autoSyncStarted = AtomicBoolean(false)
 
     fun triggerManualSync() {
         runSync(showNotifications = true)
     }
 
     fun startAutoSync() {
+        if (!autoSyncStarted.compareAndSet(false, true)) {
+            return
+        }
+
         scope.launch {
             while (true) {
                 val state = settings.mutableState()

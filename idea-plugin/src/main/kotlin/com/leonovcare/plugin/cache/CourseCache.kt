@@ -11,15 +11,31 @@ import com.leonovcare.plugin.settings.PlatformSettings
 class CourseCache {
     private val mapper = jacksonObjectMapper()
     private val settings = PlatformSettings.getInstance()
+    private val cacheFileName = "courses.json"
 
     fun getCourses(): List<Course> {
-        val json = settings.mutableState().coursesCacheJson
-        if (json.isBlank()) return emptyList()
-        return runCatching { mapper.readValue<List<Course>>(json) }.getOrDefault(emptyList())
+        val fileJson = PluginCacheStorage.readJson(cacheFileName)
+        if (!fileJson.isNullOrBlank()) {
+            return runCatching { mapper.readValue<List<Course>>(fileJson) }.getOrDefault(emptyList())
+        }
+
+        val legacyJson = settings.mutableState().coursesCacheJson
+        if (legacyJson.isBlank()) return emptyList()
+
+        val parsed = runCatching { mapper.readValue<List<Course>>(legacyJson) }.getOrDefault(emptyList())
+        if (parsed.isNotEmpty() && PluginCacheStorage.writeJson(cacheFileName, legacyJson)) {
+            settings.mutableState().coursesCacheJson = ""
+        }
+        return parsed
     }
 
     fun saveCourses(courses: List<Course>) {
-        settings.mutableState().coursesCacheJson = mapper.writeValueAsString(courses)
+        val json = mapper.writeValueAsString(courses)
+        if (PluginCacheStorage.writeJson(cacheFileName, json)) {
+            settings.mutableState().coursesCacheJson = ""
+        } else {
+            settings.mutableState().coursesCacheJson = json
+        }
     }
 
     companion object {

@@ -87,6 +87,11 @@ class HttpPlatformApiClient(
             val lessonId = taskNode.path("lessonId").asText("")
             val moduleTitle = taskNode.path("moduleTitle").asText("").trim()
             val taskLanguage = TaskLanguage.fromApi(taskNode.path("language").asText("JAVA"))
+            val locked = taskNode.path("locked").asBoolean(false)
+            val unavailable = taskNode.path("unavailable").asBoolean(false)
+            val explicitOrder = taskNode.path("order").asInt(0).takeIf { it > 0 }
+                ?: taskNode.path("position").asInt(0).takeIf { it > 0 }
+                ?: order
             tasks += Task(
                 id = taskNode.path("taskId").asText(),
                 courseId = courseId,
@@ -94,13 +99,14 @@ class HttpPlatformApiClient(
                 lessonId = lessonId.ifBlank { null },
                 lessonTitle = taskNode.path("lessonTitle").asText(""),
                 title = taskNode.path("title").asText(),
-                order = order++,
-                status = TaskStatus.NEW,
+                order = explicitOrder,
+                status = parseTaskStatus(taskNode, locked = locked, unavailable = unavailable),
                 type = TaskType.fromApi(taskNode.path("type").asText("CONSOLE")),
                 language = taskLanguage.apiName,
-                locked = taskNode.path("locked").asBoolean(false),
-                unavailable = taskNode.path("unavailable").asBoolean(false),
+                locked = locked,
+                unavailable = unavailable,
             )
+            order++
         }
         return tasks
     }
@@ -121,6 +127,11 @@ class HttpPlatformApiClient(
 
             lessonNode.path("tasks").forEach { taskNode ->
                 val taskLanguage = TaskLanguage.fromApi(taskNode.path("language").asText("JAVA"))
+                val locked = taskNode.path("locked").asBoolean(false)
+                val unavailable = taskNode.path("unavailable").asBoolean(false)
+                val explicitOrder = taskNode.path("order").asInt(0).takeIf { it > 0 }
+                    ?: taskNode.path("position").asInt(0).takeIf { it > 0 }
+                    ?: order
                 tasks += Task(
                     id = taskNode.path("id").asText(),
                     courseId = courseId,
@@ -128,13 +139,14 @@ class HttpPlatformApiClient(
                     lessonId = lessonId,
                     lessonTitle = lesson.path("title").asText("").ifBlank { lessonNode.path("lesson").path("title").asText("") },
                     title = taskNode.path("title").asText(),
-                    order = order++,
-                    status = TaskStatus.NEW,
+                    order = explicitOrder,
+                    status = parseTaskStatus(taskNode, locked = locked, unavailable = unavailable),
                     type = TaskType.fromApi(taskNode.path("type").asText("CONSOLE")),
                     language = taskLanguage.apiName,
-                    locked = taskNode.path("locked").asBoolean(false),
-                    unavailable = taskNode.path("unavailable").asBoolean(false),
+                    locked = locked,
+                    unavailable = unavailable,
                 )
+                order++
             }
         }
 
@@ -436,7 +448,34 @@ class HttpPlatformApiClient(
     }
 
     override suspend fun markTaskInProgress(token: String, taskId: String): Boolean {
-        return true
+        val primaryPath = endpoint(endpoints.taskProgressInProgress, "taskId" to taskId)
+        val fallbackPaths = listOf(
+            "/tasks/$taskId/progress/start",
+            "/tasks/$taskId/progress",
+            "/tasks/$taskId/in-progress",
+            "/tasks/$taskId/start",
+        )
+
+        val candidates = listOf(primaryPath) + fallbackPaths
+        for (path in candidates) {
+            val success = runCatching {
+                requestNode("POST", path, token, "{}")
+                true
+            }.onFailure { ex ->
+                if (ex is ApiException && ex.statusCode in listOf(404, 405, 501)) {
+                    logger.info("Mark in progress endpoint is unavailable: $path (${ex.statusCode})")
+                } else if (ex is ApiException && ex.statusCode in listOf(401, 403)) {
+                    throw ex
+                } else {
+                    logger.warn("Failed to mark task in progress via $path: ${ex.message}")
+                }
+            }.getOrElse { false }
+
+            if (success) {
+                return true
+            }
+        }
+        return false
     }
 
     private suspend fun requestNode(
@@ -548,5 +587,16 @@ class HttpPlatformApiClient(
             "time_limit", "timeout" -> SubmissionStatus.TIMEOUT
             else -> SubmissionStatus.ERROR
         }
+    }
+
+    private fun parseTaskStatus(taskNode: JsonNode, locked: Boolean, unavailable: Boolean): TaskStatus {
+        val rawStatus = when {
+            taskNode.hasNonNull("status") -> taskNode.path("status").asText()
+            taskNode.hasNonNull("taskStatus") -> taskNode.path("taskStatus").asText()
+            taskNode.hasNonNull("progressStatus") -> taskNode.path("progressStatus").asText()
+            taskNode.hasNonNull("state") -> taskNode.path("state").asText()
+            else -> null
+        }
+        return TaskStatus.fromApi(rawStatus, locked = locked, unavailable = unavailable)
     }
 }

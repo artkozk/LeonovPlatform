@@ -7,9 +7,11 @@ import com.leonovcare.plugin.api.SubmissionRequest
 import com.leonovcare.plugin.api.SubmissionResult
 import com.leonovcare.plugin.api.SubmissionStatus
 import com.leonovcare.plugin.auth.AuthService
+import com.leonovcare.plugin.i18n.PlatformBundle
 import com.leonovcare.plugin.task.CurrentTaskService
 import com.leonovcare.plugin.task.TaskManager
 import com.leonovcare.plugin.api.PlatformApiClientFactory
+import com.leonovcare.plugin.util.PluginRuntimeInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -18,6 +20,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
+import java.util.concurrent.atomic.AtomicBoolean
 
 @Service(Service.Level.PROJECT)
 class SubmissionService(private val project: Project) {
@@ -30,12 +34,30 @@ class SubmissionService(private val project: Project) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val resultFlow = MutableStateFlow<SubmissionResult?>(null)
+    private val submissionInProgress = AtomicBoolean(false)
+    private val submitRequestTimeoutMillis = 30_000L
+    private val pollRequestTimeoutMillis = 20_000L
 
     fun latestResult(): StateFlow<SubmissionResult?> = resultFlow.asStateFlow()
 
     fun submitCurrentTask(onResult: (Result<SubmissionResult>) -> Unit) {
-        if (authService.token() == null) return
-        val context = currentTaskService.getCurrentTask() ?: return
+        if (!submissionInProgress.compareAndSet(false, true)) {
+            onResult(Result.failure(IllegalStateException(PlatformBundle.message("errors.submissionInProgress"))))
+            return
+        }
+
+        if (authService.token() == null) {
+            submissionInProgress.set(false)
+            onResult(Result.failure(IllegalStateException(PlatformBundle.message("errors.authRequired"))))
+            return
+        }
+
+        val context = currentTaskService.getCurrentTask()
+        if (context == null) {
+            submissionInProgress.set(false)
+            onResult(Result.failure(IllegalStateException(PlatformBundle.message("errors.taskUnavailable"))))
+            return
+        }
 
         scope.launch {
             val result = runCatching {
@@ -46,15 +68,17 @@ class SubmissionService(private val project: Project) {
                         language = context.details.language,
                         files = files,
                         client = SubmissionClientInfo(
-                            pluginVersion = "0.1.0",
+                            pluginVersion = PluginRuntimeInfo.pluginVersion(),
                             ideVersion = com.intellij.openapi.application.ApplicationInfo.getInstance().build.asString(),
-                            platform = "IntelliJ IDEA",
+                            platform = PluginRuntimeInfo.idePlatformName(),
                         ),
                         courseId = context.courseId,
                     )
 
                     val client = apiFactory.client()
-                    val submission = client.submitSolution(token, context.task.id, request)
+                    val submission = withTimeout(submitRequestTimeoutMillis) {
+                        client.submitSolution(token, context.task.id, request)
+                    }
                     val finalResult = if (submission.status == SubmissionStatus.QUEUED || submission.status == SubmissionStatus.RUNNING) {
                         pollSubmission(client = client, token = token, taskId = context.task.id, attemptId = submission.attemptId)
                     } else {
@@ -66,6 +90,7 @@ class SubmissionService(private val project: Project) {
                     finalResult
                 }
             }
+            submissionInProgress.set(false)
             onResult(result)
         }
     }
@@ -77,7 +102,9 @@ class SubmissionService(private val project: Project) {
         attemptId: String,
     ): SubmissionResult {
         repeat(30) {
-            val latest = client.getSubmissionResult(token, taskId, attemptId)
+            val latest = withTimeout(pollRequestTimeoutMillis) {
+                client.getSubmissionResult(token, taskId, attemptId)
+            }
             if (latest.status !in setOf(SubmissionStatus.QUEUED, SubmissionStatus.RUNNING)) {
                 return latest
             }

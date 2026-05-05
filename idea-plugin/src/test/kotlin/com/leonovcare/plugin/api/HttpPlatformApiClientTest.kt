@@ -127,6 +127,21 @@ class HttpPlatformApiClientTest {
         assertEquals("task-1", lesson.blocks.first().taskId)
     }
 
+    @Test
+    fun `mark task in progress falls back to legacy endpoint`() {
+        startServer { exchange ->
+            when (exchange.requestURI.path) {
+                "/tasks/task-1/progress/in-progress" -> respond(exchange, 404, """{"error":"not found"}""")
+                "/tasks/task-1/progress/start" -> respond(exchange, 200, """{"ok":true}""")
+                else -> respond(exchange, 404, """{"error":"unknown"}""")
+            }
+        }
+
+        val client = HttpPlatformApiClient(baseUrl())
+        val result = runBlocking { client.markTaskInProgress("token", "task-1") }
+        assertTrue(result)
+    }
+
     private fun startServer(handler: (HttpExchange) -> Unit) {
         server = HttpServer.create(InetSocketAddress(0), 0)
         server?.createContext("/") { exchange -> handler(exchange) }

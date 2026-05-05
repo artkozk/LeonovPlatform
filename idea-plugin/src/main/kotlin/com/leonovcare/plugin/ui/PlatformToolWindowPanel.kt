@@ -306,6 +306,7 @@ class PlatformToolWindowPanel(private val project: Project) {
             authService.state().collectLatest { authState ->
                 SwingUtilities.invokeLater {
                     if (!authState.authorized) {
+                        currentTaskService.clear()
                         statementPanel.setTaskDetails(null, null)
                         showCard("unauthorized")
                     } else {

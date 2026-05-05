@@ -323,3 +323,111 @@ cd idea-plugin
 4. Проверка:
 1. `./gradlew test` — PASS.
 2. `./gradlew buildPlugin` — PASS.
+
+## Update 2026-05-05 — remaining gap closure package (stability + scale + run/submit hardening)
+
+1. Цель изменения:
+- закрыть оставшиеся продуктовые пробелы после предыдущих фиксов;
+- сделать поведение плагина устойчивым на больших курсах;
+- убрать регресс-риск в прогрессе задач и в отправке решений.
+
+2. Исправление статусов задач и прогресса:
+1. В `HttpPlatformApiClient` исправлено маппирование `Task.status`:
+- теперь статус берется из API-полей `status/taskStatus/progressStatus/state` и маппится через `TaskStatus.fromApi(...)`;
+- `locked/unavailable` по-прежнему имеют приоритет и корректно пробрасываются в статус.
+2. Добавлен best-effort `markTaskInProgress(...)`:
+- сначала используется целевой endpoint `/tasks/{taskId}/progress/in-progress`;
+- при `404/405/501` идет fallback на legacy-варианты (`/progress/start`, `/progress`, `/in-progress`, `/start`);
+- при `401/403` ошибка не скрывается.
+
+Почему так:
+1. До фикса плагин часто показывал все задачи как `NEW`, что искажало прогресс.
+2. Mark-in-progress ранее был заглушкой и не отправлял факт старта задачи на backend.
+
+3. Масштабируемый cache-storage для больших курсов:
+1. Добавлен `PluginCacheStorage` (disk-backed cache в системной директории IDE).
+2. `CourseCache`, `TaskCache`, `LessonCache` переведены на файловый JSON:
+- чтение сначала из file-cache;
+- fallback на legacy JSON из `PlatformSettings` (для миграции старых установок);
+- при успешной миграции legacy JSON очищается.
+3. `PlatformSettings.clearLocalCache()` теперь очищает и disk-cache.
+
+Почему так:
+1. Хранение больших JSON в `PersistentState` увеличивает размер XML-настроек IDE и ухудшает скорость на курсах с большим числом задач/уроков.
+2. File-cache снижает давление на XML storage и повышает устойчивость при больших объемах данных.
+
+4. Hardening submit path:
+1. В `SubmissionService` устранены silent-return сценарии:
+- если нет auth или нет текущей задачи, `onResult` всегда получает явную ошибку.
+2. Добавлена защита от дублированного submit:
+- одновременно разрешен только один submit (`submissionInProgress` guard).
+3. Добавлены timeout-контуры:
+- `submitSolution` обернут в `withTimeout`;
+- polling запросы также ограничены timeout.
+4. Исправлена клиентская мета-информация submit:
+- версия плагина теперь берется runtime из `PluginRuntimeInfo` (а не hardcoded `0.1.0`);
+- platform name тоже runtime.
+5. `SubmissionFileCollector` усилен лимитами:
+- максимум файлов на отправку;
+- лимит на размер одного файла;
+- лимит на суммарный payload;
+- порядок файлов детерминирован (sorted) для стабильного поведения.
+
+Почему так:
+1. До фикса можно было получить “зависшую кнопку” без обратной связи.
+2. Для очень больших курсов/решений отсутствовали предохранители против oversized payload.
+
+5. Hardening загрузки и sync:
+1. `TaskManager.openTask()`:
+- `getTaskDetails` и `getTaskTemplate` теперь ограничены timeout.
+2. Фоновый prefetch lesson materials:
+- добавлен лимит на число уроков за один refresh cycle, чтобы не создавать burst-нагрузку на больших курсах.
+3. `TaskManager.loadRemainingCourseTasks()`:
+- больше не перезаписывает user-selected курс эвристикой после фоновой догрузки.
+4. `SyncService.startAutoSync()`:
+- добавлен guard от повторного запуска автосинк-цикла.
+
+Почему так:
+1. Это убирает часть причин долгих “подвисаний” и непредсказуемых переключений курса.
+2. Guard от повторного автоцикла предотвращает избыточные сетевые и CPU-циклы.
+
+6. Local run path в PyCharm:
+1. Добавлен `PythonRunConfigurationProvider`:
+- для задач `PYTHON` создается Python Run Configuration через runtime-reflection API PyCharm;
+- выставляются script path и рабочая директория задачи.
+2. Если Python run-конфиг не может быть создан:
+- пользователь получает controlled ошибку с причиной;
+- fallback-поведение не приводит к падению ToolWindow.
+
+Почему так:
+1. Ранее run/debug всегда сваливался в unsupported-provider даже для Python.
+2. Это возвращает рабочий локальный запуск для целевого сценария PyCharm + Python.
+
+7. UI/auth consistency:
+1. В `PlatformToolWindowPanel` при переходе в unauthorized состояние дополнительно очищается `CurrentTaskService`, чтобы не оставался stale task-context.
+
+8. Технические файлы изменений:
+1. `src/main/kotlin/com/leonovcare/plugin/api/HttpPlatformApiClient.kt`
+2. `src/main/kotlin/com/leonovcare/plugin/api/PlatformEndpointMapping.kt`
+3. `src/main/kotlin/com/leonovcare/plugin/cache/PluginCacheStorage.kt`
+4. `src/main/kotlin/com/leonovcare/plugin/cache/CourseCache.kt`
+5. `src/main/kotlin/com/leonovcare/plugin/cache/TaskCache.kt`
+6. `src/main/kotlin/com/leonovcare/plugin/cache/LessonCache.kt`
+7. `src/main/kotlin/com/leonovcare/plugin/settings/PlatformSettings.kt`
+8. `src/main/kotlin/com/leonovcare/plugin/submission/SubmissionFileCollector.kt`
+9. `src/main/kotlin/com/leonovcare/plugin/submission/SubmissionService.kt`
+10. `src/main/kotlin/com/leonovcare/plugin/run/TaskRunConfigurationService.kt`
+11. `src/main/kotlin/com/leonovcare/plugin/util/PluginRuntimeInfo.kt`
+12. `src/main/kotlin/com/leonovcare/plugin/task/TaskManager.kt`
+13. `src/main/kotlin/com/leonovcare/plugin/sync/SyncService.kt`
+14. `src/main/kotlin/com/leonovcare/plugin/ui/PlatformToolWindowPanel.kt`
+15. `src/main/resources/messages/PlatformBundle.properties`
+16. `src/main/resources/messages/PlatformBundle_ru.properties`
+
+9. Тесты:
+1. `./gradlew test` — PASS.
+2. `./gradlew buildPlugin` — PASS.
+3. Добавлены/обновлены unit-tests:
+- `HttpPlatformApiClientTest` (fallback mark-in-progress);
+- `HttpPlatformApiClientLanguageTest` (status mapping from tasks-catalog);
+- `SubmissionFileCollectorTest` (too-many-files guard).

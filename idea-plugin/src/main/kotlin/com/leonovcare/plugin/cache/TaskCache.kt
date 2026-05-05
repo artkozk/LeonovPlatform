@@ -11,18 +11,35 @@ import com.leonovcare.plugin.settings.PlatformSettings
 class TaskCache {
     private val mapper = jacksonObjectMapper()
     private val settings = PlatformSettings.getInstance()
+    private val cacheFileName = "tasks-by-course.json"
 
     fun getTasksByCourse(): Map<String, List<Task>> {
-        val json = settings.mutableState().tasksCacheJson
-        if (json.isBlank()) return emptyMap()
-        return runCatching { mapper.readValue<Map<String, List<Task>>>(json) }.getOrDefault(emptyMap())
+        val fileJson = PluginCacheStorage.readJson(cacheFileName)
+        if (!fileJson.isNullOrBlank()) {
+            return runCatching { mapper.readValue<Map<String, List<Task>>>(fileJson) }.getOrDefault(emptyMap())
+        }
+
+        val legacyJson = settings.mutableState().tasksCacheJson
+        if (legacyJson.isBlank()) return emptyMap()
+
+        val parsed = runCatching { mapper.readValue<Map<String, List<Task>>>(legacyJson) }.getOrDefault(emptyMap())
+        if (parsed.isNotEmpty() && PluginCacheStorage.writeJson(cacheFileName, legacyJson)) {
+            settings.mutableState().tasksCacheJson = ""
+        }
+        return parsed
     }
 
     fun saveTasksByCourse(tasksByCourse: Map<String, List<Task>>) {
-        settings.mutableState().tasksCacheJson = mapper.writeValueAsString(tasksByCourse)
+        val json = mapper.writeValueAsString(tasksByCourse)
+        if (PluginCacheStorage.writeJson(cacheFileName, json)) {
+            settings.mutableState().tasksCacheJson = ""
+        } else {
+            settings.mutableState().tasksCacheJson = json
+        }
     }
 
     fun clear() {
+        PluginCacheStorage.delete(cacheFileName)
         settings.mutableState().tasksCacheJson = ""
     }
 

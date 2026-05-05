@@ -11,15 +11,31 @@ import com.leonovcare.plugin.settings.PlatformSettings
 class LessonCache {
     private val mapper = jacksonObjectMapper()
     private val settings = PlatformSettings.getInstance()
+    private val cacheFileName = "lessons-by-id.json"
 
     fun getLessonsById(): Map<String, LessonMaterial> {
-        val json = settings.mutableState().lessonsCacheJson
-        if (json.isBlank()) return emptyMap()
-        return runCatching { mapper.readValue<Map<String, LessonMaterial>>(json) }.getOrDefault(emptyMap())
+        val fileJson = PluginCacheStorage.readJson(cacheFileName)
+        if (!fileJson.isNullOrBlank()) {
+            return runCatching { mapper.readValue<Map<String, LessonMaterial>>(fileJson) }.getOrDefault(emptyMap())
+        }
+
+        val legacyJson = settings.mutableState().lessonsCacheJson
+        if (legacyJson.isBlank()) return emptyMap()
+
+        val parsed = runCatching { mapper.readValue<Map<String, LessonMaterial>>(legacyJson) }.getOrDefault(emptyMap())
+        if (parsed.isNotEmpty() && PluginCacheStorage.writeJson(cacheFileName, legacyJson)) {
+            settings.mutableState().lessonsCacheJson = ""
+        }
+        return parsed
     }
 
     fun saveLessonsById(lessonsById: Map<String, LessonMaterial>) {
-        settings.mutableState().lessonsCacheJson = mapper.writeValueAsString(lessonsById)
+        val json = mapper.writeValueAsString(lessonsById)
+        if (PluginCacheStorage.writeJson(cacheFileName, json)) {
+            settings.mutableState().lessonsCacheJson = ""
+        } else {
+            settings.mutableState().lessonsCacheJson = json
+        }
     }
 
     fun upsert(lesson: LessonMaterial) {
@@ -35,6 +51,7 @@ class LessonCache {
     }
 
     fun clear() {
+        PluginCacheStorage.delete(cacheFileName)
         settings.mutableState().lessonsCacheJson = ""
     }
 

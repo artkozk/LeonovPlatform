@@ -1,6 +1,7 @@
 package com.leonovcare.plugin.submission
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
@@ -30,5 +31,18 @@ class SubmissionFileCollectorTest {
         assertEquals(1, files.size)
         assertEquals("src/Solution.java", files.first().path)
         assertTrue(files.first().content.contains("Solution"))
+    }
+
+    @Test
+    fun `collect fails on too many files`() {
+        val root = Files.createTempDirectory("submission-files-limit-test")
+        Files.createDirectories(root.resolve("src"))
+        repeat(251) { index ->
+            Files.writeString(root.resolve("src/file-$index.py"), "print($index)")
+        }
+
+        assertThrows(IllegalStateException::class.java) {
+            SubmissionFileCollector().collect(root)
+        }
     }
 }
