@@ -844,6 +844,79 @@ GENERIC_BATCH_TITLES = {
     "NULL",
 }
 
+UNIVERSAL_PRACTICE_TITLES = {
+    "Контрольный артефакт",
+    "Мини-проект",
+    "SQL-файл",
+    "Git state",
+    "Команда",
+    "Ошибка",
+    "Проверка",
+    "README",
+}
+
+SQL_CONTEXT_TOKENS = [
+    "sql",
+    "sqlite",
+    "clickhouse",
+    "olap",
+    "индекс",
+    "explain",
+    "транзакц",
+    "изоляц",
+    "блокиров",
+    "схем",
+    "баз",
+    "postgres",
+    "ddl",
+    "dml",
+    "join",
+    "select",
+    "where",
+    "group by",
+    "having",
+    "cte",
+    "оконн",
+]
+
+def is_sql_context_lesson(lesson):
+    joined = f"{lesson.get('title', '')} {lesson.get('id', '')} {' '.join(lesson.get('roadmap_topics', []))}".lower()
+    return any(token in joined for token in SQL_CONTEXT_TOKENS)
+
+def global_course_quality_issues(course):
+    issues = []
+    stats = Counter()
+    title_counts = Counter()
+    for _, lesson, step in iter_steps(course):
+        if step["type"] not in {"practice", "project"}:
+            continue
+        stats["hands_on_checked"] += 1
+        title = step.get("title", "")
+        body = step.get("body_markdown", "")
+        checker = step.get("checker") or {}
+        checker_type = checker.get("type", "")
+        title_counts[title] += 1
+        if title in UNIVERSAL_PRACTICE_TITLES:
+            issues.append(f"universal practice/project title still present: {lesson['id']} / {step['id']} / {title}")
+        if checker_type == "sql_query" and not is_sql_context_lesson(lesson):
+            issues.append(f"sql_query outside SQL-like context: {lesson['id']} / {step['id']}")
+        if ("git" in lesson["title"].lower() or "github" in lesson["title"].lower()) and checker_type == "ide_plugin" and not checker.get("git_checks"):
+            issues.append(f"Git/GitHub ide_plugin task without git_checks: {step['id']}")
+        if step["type"] == "project" and checker_type == "ide_plugin":
+            if not checker.get("required_files") or not checker.get("commands"):
+                issues.append(f"IDE project lacks required_files/commands: {step['id']}")
+        if len(body) < 350:
+            issues.append(f"practice/project body shorter than 350 chars: {step['id']}")
+        if "собери проверяемый артефакт" in body.lower() or "проверяемый артефакт" in body.lower():
+            issues.append(f"generic artifact wording in body: {step['id']}")
+    repeated_titles = [(title, count) for title, count in title_counts.items() if count > 5]
+    for title, count in repeated_titles:
+        issues.append(f"practice/project title repeated more than 5 times: {title} ({count})")
+    stats["titles_repeated_over_5"] = len(repeated_titles)
+    stats["sql_outside_context"] = sum(1 for issue in issues if issue.startswith("sql_query outside"))
+    stats["short_bodies"] = sum(1 for issue in issues if issue.startswith("practice/project body shorter"))
+    return issues, stats
+
 def batch_quality_issues(course):
     issues = []
     stats = Counter()
@@ -1055,6 +1128,8 @@ def validate(write_reports=True):
     errors.extend(theory_pair_issues)
     theory_code_issues, theory_code_stats, theory_code_examples = theory_code_audit(course)
     errors.extend(theory_code_issues)
+    global_issues, global_stats = global_course_quality_issues(course)
+    errors.extend(global_issues)
     batch_issues, batch_stats = batch_quality_issues(course)
     errors.extend(batch_issues)
     expected = manifest_rows(course)
@@ -1070,7 +1145,7 @@ def validate(write_reports=True):
             bad = [r for r in csv.DictReader(fh) if r.get("status") in BAD_COVERAGE]
         if bad:
             errors.append(f"coverage bad status: {len(bad)}")
-    result = {"status": "PASS" if not errors else "FAIL", "errors": errors, "stats": stats, "first30_issues": first30_issues, "first10_pedagogy": first10_pedagogy, "max_structural_solution": max_structural_solution, "max_structural_ai": max_structural_ai, "duplicate_practice_bodies": len(duplicate_practice_bodies), "duplicate_normalized_practice_bodies": len(duplicate_normalized_practice_bodies), "duplicate_solutions": len(repeated_solutions), "theory_stats": theory_stats, "theory_pair_stats": theory_pair_stats, "theory_pair_examples": theory_pair_examples, "theory_code_stats": theory_code_stats, "theory_code_examples": theory_code_examples, "batch_stats": batch_stats, "batch_issues": batch_issues}
+    result = {"status": "PASS" if not errors else "FAIL", "errors": errors, "stats": stats, "first30_issues": first30_issues, "first10_pedagogy": first10_pedagogy, "max_structural_solution": max_structural_solution, "max_structural_ai": max_structural_ai, "duplicate_practice_bodies": len(duplicate_practice_bodies), "duplicate_normalized_practice_bodies": len(duplicate_normalized_practice_bodies), "duplicate_solutions": len(repeated_solutions), "theory_stats": theory_stats, "theory_pair_stats": theory_pair_stats, "theory_pair_examples": theory_pair_examples, "theory_code_stats": theory_code_stats, "theory_code_examples": theory_code_examples, "global_stats": global_stats, "global_issues": global_issues, "batch_stats": batch_stats, "batch_issues": batch_issues}
     if write_reports:
         write_reports_fn(course, result)
     return result
@@ -1080,6 +1155,7 @@ def write_reports_fn(course, result):
     theory_stats = result.get("theory_stats", {})
     theory_pair_stats = result.get("theory_pair_stats", {})
     theory_code_stats = result.get("theory_code_stats", {})
+    global_stats = result.get("global_stats", {})
     batch_stats = result.get("batch_stats", {})
     total_lessons = sum(1 for _ in iter_lessons(course))
     total_steps = stats["steps"]
@@ -1128,6 +1204,12 @@ def write_reports_fn(course, result):
         f"- banned padding phrase hits: {theory_code_stats.get('banned_padding_phrase_hits', 0)}",
         f"- topic-specific example failures: {theory_code_stats.get('topic_specific_example_failures', 0)}",
         "",
+        "## Global Hands-On Gates",
+        f"- hands-on checked: {global_stats.get('hands_on_checked', 0)}",
+        f"- repeated practice/project titles over 5: {global_stats.get('titles_repeated_over_5', 0)}",
+        f"- sql_query outside SQL-like context: {global_stats.get('sql_outside_context', 0)}",
+        f"- practice/project body shorter than 350: {global_stats.get('short_bodies', 0)}",
+        "",
         "## First 10 Pedagogy Gates",
         f"- theory chars by lesson: {first10_theory_lengths}",
         f"- future knowledge violations: {len(result.get('first30_issues', []))}",
@@ -1173,6 +1255,9 @@ def write_reports_fn(course, result):
         "- first 30 lessons pedagogy gates passed: 30/30",
         "- manifest match: True",
         "- coverage bad statuses: 0",
+        f"- repeated practice/project titles > 5: {global_stats.get('titles_repeated_over_5', 0)}",
+        f"- sql_query outside SQL-like context: {global_stats.get('sql_outside_context', 0)}",
+        f"- practice/project bodies < 350 chars: {global_stats.get('short_bodies', 0)}",
         f"- theory steps checked: {theory_stats.get('checked', 0)}",
         f"- generic theory hits: {theory_stats.get('generic_hits', 0)}",
         f"- topic-contract theory failures: {theory_stats.get('topic_failures', 0)}",

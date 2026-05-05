@@ -892,3 +892,11 @@ Observed validation status:
 - import migration validator: PASS;
 - backend Go tests: PASS;
 - frontend build: PASS, with the existing Vite large chunk warning only.
+
+## Python v18 Git/CLI Batch Import Update - 2026-05-05
+
+Current behavior: the Python v18 strict pedagogy materials are regenerated from `материалы/v18_STRICT_PEDAGOGY/course_import.json` into migration `031_reseed_python_zero_v18_no_duplicate_tasks.sql`. The import migration now normalizes pytest checker metadata to `pytest_code` and removes legacy nested `test_code` keys before storing the source policy.
+
+Why this is necessary: the platform import validator rejects mixed checker schemas because old and new pytest key names make downstream execution ambiguous. Keeping only `pytest_code` gives the backend one stable field for pytest execution and makes the generated migration easier to audit.
+
+This update also tightens course-material gates around Git/CLI lessons and SQL checker context. Git IDE-plugin tasks must prove real repository state with `git_checks`; SQL checkers are only valid in SQL-like lessons. This prevents generic artifacts from passing as course work.

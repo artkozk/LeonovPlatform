@@ -10,15 +10,15 @@
 - steps: 1960
 - tasks (practice + project): 1146
 - quiz steps: 307
-- executable tests (python_stdout + sql_query): 565
-- stepTypeCounts: {"theory":338,"test":307,"practice":825,"project":321,"summary":169}
-- checkerCounts: {"quiz_single":307,"python_stdout":45,"ide_plugin":405,"python_pytest":355,"sql_query":221,"http_api":120}
+- executable tests (python_stdout + sql_query): 397
+- stepTypeCounts: {"theory":338,"test":307,"practice":769,"project":377,"summary":169}
+- checkerCounts: {"quiz_single":307,"python_stdout":45,"ide_plugin":471,"python_pytest":369,"sql_query":137,"http_api":124}
 
 ## Migration Structure Stats
 - block type tags: 1960
 - task policy tags: 1146
-- testcase expected tags: 565
-- checker_type counts in SQL: {"python_stdout":45,"python_pytest":355,"sql_query":221,"http_api":120,"ide_plugin":405}
+- testcase expected tags: 397
+- checker_type counts in SQL: {"python_stdout":45,"python_pytest":369,"sql_query":137,"http_api":124,"ide_plugin":471}
 - has pytest_code key: true
 - has legacy test_code key: false
 - has transformed http_api tests[]: true

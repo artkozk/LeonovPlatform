@@ -16,6 +16,9 @@ PASS/FAIL: PASS
 - first 30 lessons pedagogy gates passed: 30/30
 - manifest match: True
 - coverage bad statuses: 0
+- repeated practice/project titles > 5: 0
+- sql_query outside SQL-like context: 0
+- practice/project bodies < 350 chars: 0
 - theory steps checked: 338
 - generic theory hits: 0
 - topic-contract theory failures: 0

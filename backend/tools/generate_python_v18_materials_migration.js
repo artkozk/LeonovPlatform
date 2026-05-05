@@ -161,6 +161,18 @@ function convertSQLChecks(publicTests, hiddenTests) {
   }));
 }
 
+function convertPytestAuxTests(tests) {
+  return ensureArray(tests).map((item) => {
+    if (!item || typeof item !== 'object') return item;
+    const converted = { ...item };
+    if (converted.test_code !== undefined && converted.pytest_code === undefined) {
+      converted.pytest_code = sanitizeMultilineText(converted.test_code);
+    }
+    delete converted.test_code;
+    return converted;
+  });
+}
+
 function convertChecker(step, checker, checkerType) {
   if (checkerType === 'python_stdout') {
     return {
@@ -190,8 +202,8 @@ function convertChecker(step, checker, checkerType) {
         .map((item) => normalizeSpaces(item))
         .filter(Boolean),
       pytest_code: sanitizeMultilineText(checker.pytest_code || checker.test_code || ''),
-      public_tests: ensureArray(checker.public_tests),
-      hidden_tests: ensureArray(checker.hidden_tests),
+      public_tests: convertPytestAuxTests(checker.public_tests),
+      hidden_tests: convertPytestAuxTests(checker.hidden_tests),
     };
   }
 
