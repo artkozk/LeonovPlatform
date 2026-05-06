@@ -795,10 +795,10 @@
 3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,4,Выбор полей: SQL: SELECT,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,5,Условие отбора: SQL: SELECT,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,6,Пустое значение: SQL: SELECT,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,7,Связанные строки: SQL: SELECT,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,4,Список активных клиентов: SQL: SELECT,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,5,Каталог в наличии: SQL: SELECT,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,6,Книги с автором: SQL: SELECT,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,7,Курсы backend: SQL: SELECT,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,8,SQL сценарий: SQL: SELECT,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",1,SQL: SELECT,10,Итоговый результат: SQL: SELECT,project,ide_plugin,110,2,30
@@ -806,10 +806,10 @@
 3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,4,Условие отбора: SQL: WHERE,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,5,Пустое значение: SQL: WHERE,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,6,Связанные строки: SQL: WHERE,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,7,LEFT JOIN,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,4,Оплаченные заказы: SQL: WHERE,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,5,Дорогие книги: SQL: WHERE,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,6,Прогресс выше половины: SQL: WHERE,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,7,Открытые обращения: SQL: WHERE,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,8,SQL сценарий: SQL: WHERE,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",2,SQL: WHERE,10,Итоговый результат: SQL: WHERE,project,ide_plugin,110,2,30
@@ -817,10 +817,10 @@
 3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,4,Выбор полей: SQL: ORDER BY и LIMIT,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,5,Условие отбора: SQL: ORDER BY и LIMIT,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,6,Пустое значение: SQL: ORDER BY и LIMIT,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,7,Связанные строки: SQL: ORDER BY и LIMIT,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,4,Топ товаров по цене: SQL: ORDER BY и LIMIT,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,5,Старые книги: SQL: ORDER BY и LIMIT,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,6,Лидеры прогресса: SQL: ORDER BY и LIMIT,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,7,Срочные обращения: SQL: ORDER BY и LIMIT,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,8,SQL сценарий: SQL: ORDER BY и LIMIT,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",3,SQL: ORDER BY и LIMIT,10,Итоговый результат: SQL: ORDER BY и LIMIT,project,ide_plugin,110,2,30
@@ -828,10 +828,10 @@
 3,"Модуль 3. SQL, базы данных и сети",4,"SQL: LIKE, IN, BETWEEN, NULL",1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",4,"SQL: LIKE, IN, BETWEEN, NULL",2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",4,"SQL: LIKE, IN, BETWEEN, NULL",3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",4,"SQL: LIKE, IN, BETWEEN, NULL",4,"Условие отбора: SQL: LIKE, IN, BETWEEN, NULL",practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",4,"SQL: LIKE, IN, BETWEEN, NULL",5,"Пустое значение: SQL: LIKE, IN, BETWEEN, NULL",practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",4,"SQL: LIKE, IN, BETWEEN, NULL",6,"Связанные строки: SQL: LIKE, IN, BETWEEN, NULL",practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",4,"SQL: LIKE, IN, BETWEEN, NULL",7,LEFT JOIN,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",4,"SQL: LIKE, IN, BETWEEN, NULL",4,"Поиск товара: SQL: LIKE, IN, BETWEEN, NULL",practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",4,"SQL: LIKE, IN, BETWEEN, NULL",5,"Книги по периоду: SQL: LIKE, IN, BETWEEN, NULL",practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",4,"SQL: LIKE, IN, BETWEEN, NULL",6,"Студенты без города: SQL: LIKE, IN, BETWEEN, NULL",practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",4,"SQL: LIKE, IN, BETWEEN, NULL",7,"Тикеты набора статусов: SQL: LIKE, IN, BETWEEN, NULL",practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",4,"SQL: LIKE, IN, BETWEEN, NULL",8,"SQL сценарий: SQL: LIKE, IN, BETWEEN, NULL",project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",4,"SQL: LIKE, IN, BETWEEN, NULL",9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",4,"SQL: LIKE, IN, BETWEEN, NULL",10,"Итоговый результат: SQL: LIKE, IN, BETWEEN, NULL",project,ide_plugin,110,2,30
@@ -839,10 +839,10 @@
 3,"Модуль 3. SQL, базы данных и сети",5,SQL: агрегаты,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",5,SQL: агрегаты,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",5,SQL: агрегаты,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",5,SQL: агрегаты,4,Выбор полей: SQL: агрегаты,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",5,SQL: агрегаты,5,Условие отбора: SQL: агрегаты,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",5,SQL: агрегаты,6,Пустое значение: SQL: агрегаты,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",5,SQL: агрегаты,7,Связанные строки: SQL: агрегаты,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",5,SQL: агрегаты,4,Сумма заказов по пользователю: SQL: агрегаты,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",5,SQL: агрегаты,5,Книги по авторам: SQL: агрегаты,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",5,SQL: агрегаты,6,Средний прогресс по курсу: SQL: агрегаты,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",5,SQL: агрегаты,7,Минуты по обращениям: SQL: агрегаты,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",5,SQL: агрегаты,8,SQL сценарий: SQL: агрегаты,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",5,SQL: агрегаты,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",5,SQL: агрегаты,10,Итоговый результат: SQL: агрегаты,project,ide_plugin,110,2,30
@@ -850,10 +850,10 @@
 3,"Модуль 3. SQL, базы данных и сети",6,SQL: GROUP BY,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",6,SQL: GROUP BY,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",6,SQL: GROUP BY,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",6,SQL: GROUP BY,4,Выбор полей: SQL: GROUP BY,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",6,SQL: GROUP BY,5,Условие отбора: SQL: GROUP BY,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",6,SQL: GROUP BY,6,Пустое значение: SQL: GROUP BY,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",6,SQL: GROUP BY,7,Связанные строки: SQL: GROUP BY,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",6,SQL: GROUP BY,4,Сумма заказов по пользователю: SQL: GROUP BY,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",6,SQL: GROUP BY,5,Книги по авторам: SQL: GROUP BY,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",6,SQL: GROUP BY,6,Средний прогресс по курсу: SQL: GROUP BY,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",6,SQL: GROUP BY,7,Минуты по обращениям: SQL: GROUP BY,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",6,SQL: GROUP BY,8,SQL сценарий: SQL: GROUP BY,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",6,SQL: GROUP BY,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",6,SQL: GROUP BY,10,Итоговый результат: SQL: GROUP BY,project,ide_plugin,110,2,30
@@ -861,10 +861,10 @@
 3,"Модуль 3. SQL, базы данных и сети",7,SQL: HAVING,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",7,SQL: HAVING,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",7,SQL: HAVING,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",7,SQL: HAVING,4,Выбор полей: SQL: HAVING,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",7,SQL: HAVING,5,Условие отбора: SQL: HAVING,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",7,SQL: HAVING,6,Пустое значение: SQL: HAVING,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",7,SQL: HAVING,7,Связанные строки: SQL: HAVING,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",7,SQL: HAVING,4,Пользователи с двумя заказами: SQL: HAVING,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",7,SQL: HAVING,5,Авторы с книгами: SQL: HAVING,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",7,SQL: HAVING,6,Курсы с активностью: SQL: HAVING,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",7,SQL: HAVING,7,Тикеты с несколькими ответами: SQL: HAVING,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",7,SQL: HAVING,8,SQL сценарий: SQL: HAVING,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",7,SQL: HAVING,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",7,SQL: HAVING,10,Итоговый результат: SQL: HAVING,project,ide_plugin,110,2,30
@@ -872,9 +872,9 @@
 3,"Модуль 3. SQL, базы данных и сети",8,SQL: INNER JOIN,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",8,SQL: INNER JOIN,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",8,SQL: INNER JOIN,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",8,SQL: INNER JOIN,4,Связанные строки: SQL: INNER JOIN,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",8,SQL: INNER JOIN,5,LEFT JOIN,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",8,SQL: INNER JOIN,6,Агрегат,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",8,SQL: INNER JOIN,4,Заказы с именами: SQL: INNER JOIN,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",8,SQL: INNER JOIN,5,Книги и авторы: SQL: INNER JOIN,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",8,SQL: INNER JOIN,6,Студенты и курсы: SQL: INNER JOIN,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",8,SQL: INNER JOIN,7,SQL сценарий: SQL: INNER JOIN,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",8,SQL: INNER JOIN,8,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",8,SQL: INNER JOIN,9,Итоговый результат: SQL: INNER JOIN,project,ide_plugin,110,2,30
@@ -882,9 +882,9 @@
 3,"Модуль 3. SQL, базы данных и сети",9,SQL: LEFT JOIN,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",9,SQL: LEFT JOIN,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",9,SQL: LEFT JOIN,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",9,SQL: LEFT JOIN,4,Связанные строки: SQL: LEFT JOIN,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",9,SQL: LEFT JOIN,5,LEFT JOIN,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",9,SQL: LEFT JOIN,6,Агрегат: SQL: LEFT JOIN,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",9,SQL: LEFT JOIN,4,Пользователи без потери строк: SQL: LEFT JOIN,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",9,SQL: LEFT JOIN,5,Авторы без книг: SQL: LEFT JOIN,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",9,SQL: LEFT JOIN,6,Курсы без записей: SQL: LEFT JOIN,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",9,SQL: LEFT JOIN,7,SQL сценарий: SQL: LEFT JOIN,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",9,SQL: LEFT JOIN,8,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",9,SQL: LEFT JOIN,9,Итоговый результат: SQL: LEFT JOIN,project,ide_plugin,110,2,30
@@ -892,9 +892,9 @@
 3,"Модуль 3. SQL, базы данных и сети",10,SQL: self join,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",10,SQL: self join,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",10,SQL: self join,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",10,SQL: self join,4,Связанные строки: SQL: self join,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",10,SQL: self join,5,LEFT JOIN,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",10,SQL: self join,6,Агрегат: SQL: self join,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",10,SQL: self join,4,Подзадачи: SQL: self join,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",10,SQL: self join,5,Связанные обращения: SQL: self join,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",10,SQL: self join,6,Парные задачи проекта: SQL: self join,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",10,SQL: self join,7,SQL сценарий: SQL: self join,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",10,SQL: self join,8,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",10,SQL: self join,9,Итоговый результат: SQL: self join,project,ide_plugin,110,2,30
@@ -902,10 +902,10 @@
 3,"Модуль 3. SQL, базы данных и сети",11,SQL: подзапросы,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",11,SQL: подзапросы,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",11,SQL: подзапросы,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",11,SQL: подзапросы,4,Выбор полей: SQL: подзапросы,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",11,SQL: подзапросы,5,Условие отбора: SQL: подзапросы,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",11,SQL: подзапросы,6,Пустое значение: SQL: подзапросы,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",11,SQL: подзапросы,7,Связанные строки: SQL: подзапросы,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",11,SQL: подзапросы,4,Заказы выше среднего: SQL: подзапросы,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",11,SQL: подзапросы,5,Книги дороже средней: SQL: подзапросы,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",11,SQL: подзапросы,6,Лучше среднего прогресса: SQL: подзапросы,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",11,SQL: подзапросы,7,Долгие ответы: SQL: подзапросы,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",11,SQL: подзапросы,8,SQL сценарий: SQL: подзапросы,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",11,SQL: подзапросы,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",11,SQL: подзапросы,10,Итоговый результат: SQL: подзапросы,project,ide_plugin,110,2,30
@@ -913,10 +913,10 @@
 3,"Модуль 3. SQL, базы данных и сети",12,SQL: CTE,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",12,SQL: CTE,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",12,SQL: CTE,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",12,SQL: CTE,4,CTE,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",12,SQL: CTE,5,Условие отбора: SQL: CTE,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",12,SQL: CTE,6,Агрегат: SQL: CTE,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",12,SQL: CTE,7,Связанные строки: SQL: CTE,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",12,SQL: CTE,4,Paid orders CTE: SQL: CTE,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",12,SQL: CTE,5,Open tasks CTE: SQL: CTE,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",12,SQL: CTE,6,Backend enrollments CTE: SQL: CTE,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",12,SQL: CTE,7,Priority tickets CTE: SQL: CTE,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",12,SQL: CTE,8,SQL сценарий: SQL: CTE,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",12,SQL: CTE,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",12,SQL: CTE,10,Итоговый результат: SQL: CTE,project,ide_plugin,110,2,30
@@ -924,10 +924,10 @@
 3,"Модуль 3. SQL, базы данных и сети",13,SQL: оконные функции,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",13,SQL: оконные функции,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",13,SQL: оконные функции,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",13,SQL: оконные функции,4,Окно,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",13,SQL: оконные функции,5,Агрегат: SQL: оконные функции,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",13,SQL: оконные функции,6,CTE,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",13,SQL: оконные функции,7,Связанные строки: SQL: оконные функции,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",13,SQL: оконные функции,4,Ранг заказов пользователя: SQL: оконные функции,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",13,SQL: оконные функции,5,Ранг книг по цене: SQL: оконные функции,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",13,SQL: оконные функции,6,Ранг прогресса: SQL: оконные функции,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",13,SQL: оконные функции,7,Ранг тикетов агента: SQL: оконные функции,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",13,SQL: оконные функции,8,SQL сценарий: SQL: оконные функции,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",13,SQL: оконные функции,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",13,SQL: оконные функции,10,Итоговый результат: SQL: оконные функции,project,ide_plugin,110,2,30
@@ -935,10 +935,10 @@
 3,"Модуль 3. SQL, базы данных и сети",14,"SQL: INSERT, UPDATE, DELETE",1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",14,"SQL: INSERT, UPDATE, DELETE",2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",14,"SQL: INSERT, UPDATE, DELETE",3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",14,"SQL: INSERT, UPDATE, DELETE",4,"Выбор полей: SQL: INSERT, UPDATE, DELETE",practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",14,"SQL: INSERT, UPDATE, DELETE",5,"Условие отбора: SQL: INSERT, UPDATE, DELETE",practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",14,"SQL: INSERT, UPDATE, DELETE",6,"Пустое значение: SQL: INSERT, UPDATE, DELETE",practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",14,"SQL: INSERT, UPDATE, DELETE",7,"Связанные строки: SQL: INSERT, UPDATE, DELETE",practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",14,"SQL: INSERT, UPDATE, DELETE",4,"Новый товар: SQL: INSERT, UPDATE, DELETE",practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",14,"SQL: INSERT, UPDATE, DELETE",5,"Закрыть задачу: SQL: INSERT, UPDATE, DELETE",practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",14,"SQL: INSERT, UPDATE, DELETE",6,"Оплатить запись: SQL: INSERT, UPDATE, DELETE",practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",14,"SQL: INSERT, UPDATE, DELETE",7,"Назначить тикет: SQL: INSERT, UPDATE, DELETE",practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",14,"SQL: INSERT, UPDATE, DELETE",8,"SQL сценарий: SQL: INSERT, UPDATE, DELETE",project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",14,"SQL: INSERT, UPDATE, DELETE",9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",14,"SQL: INSERT, UPDATE, DELETE",10,"Итоговый результат: SQL: INSERT, UPDATE, DELETE",project,ide_plugin,110,2,30
@@ -946,10 +946,10 @@
 3,"Модуль 3. SQL, базы данных и сети",15,SQL: constraints,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",15,SQL: constraints,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",15,SQL: constraints,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",15,SQL: constraints,4,Выбор полей: SQL: constraints,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",15,SQL: constraints,5,Условие отбора: SQL: constraints,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",15,SQL: constraints,6,Пустое значение: SQL: constraints,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",15,SQL: constraints,7,Связанные строки: SQL: constraints,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",15,SQL: constraints,4,Таблица аудита: SQL: constraints,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",15,SQL: constraints,5,Уникальный email: SQL: constraints,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",15,SQL: constraints,6,Черновик курсов: SQL: constraints,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",15,SQL: constraints,7,Очередь импорта: SQL: constraints,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",15,SQL: constraints,8,SQL сценарий: SQL: constraints,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",15,SQL: constraints,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",15,SQL: constraints,10,Итоговый результат: SQL: constraints,project,ide_plugin,110,2,30
@@ -957,10 +957,10 @@
 3,"Модуль 3. SQL, базы данных и сети",16,SQL: нормализация,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",16,SQL: нормализация,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",16,SQL: нормализация,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",16,SQL: нормализация,4,Выбор полей: SQL: нормализация,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",16,SQL: нормализация,5,Условие отбора: SQL: нормализация,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",16,SQL: нормализация,6,Пустое значение: SQL: нормализация,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",16,SQL: нормализация,7,Связанные строки: SQL: нормализация,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",16,SQL: нормализация,4,Список активных клиентов: SQL: нормализация,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",16,SQL: нормализация,5,Каталог в наличии: SQL: нормализация,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",16,SQL: нормализация,6,Книги с автором: SQL: нормализация,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",16,SQL: нормализация,7,Курсы backend: SQL: нормализация,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",16,SQL: нормализация,8,SQL сценарий: SQL: нормализация,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",16,SQL: нормализация,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",16,SQL: нормализация,10,Итоговый результат: SQL: нормализация,project,ide_plugin,110,2,30
@@ -968,10 +968,10 @@
 3,"Модуль 3. SQL, базы данных и сети",17,SQL: transactions и ACID,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",17,SQL: transactions и ACID,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",17,SQL: transactions и ACID,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",17,SQL: transactions и ACID,4,Rollback,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",17,SQL: transactions и ACID,5,Commit,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",17,SQL: transactions и ACID,6,Условие отбора: SQL: transactions и ACID,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",17,SQL: transactions и ACID,7,Агрегат: SQL: transactions и ACID,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",17,SQL: transactions и ACID,4,Rollback статуса: SQL: transactions и ACID,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",17,SQL: transactions и ACID,5,Commit оплаты: SQL: transactions и ACID,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",17,SQL: transactions и ACID,6,Rollback прогресса: SQL: transactions и ACID,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",17,SQL: transactions и ACID,7,Commit назначения: SQL: transactions и ACID,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",17,SQL: transactions и ACID,8,SQL сценарий: SQL: transactions и ACID,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",17,SQL: transactions и ACID,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",17,SQL: transactions и ACID,10,Итоговый результат: SQL: transactions и ACID,project,ide_plugin,110,2,30
@@ -979,10 +979,10 @@
 3,"Модуль 3. SQL, базы данных и сети",18,"SQL: изоляция, блокировки, индексы",1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",18,"SQL: изоляция, блокировки, индексы",2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",18,"SQL: изоляция, блокировки, индексы",3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",18,"SQL: изоляция, блокировки, индексы",4,Explain,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",18,"SQL: изоляция, блокировки, индексы",5,"Условие отбора: SQL: изоляция, блокировки, индексы",practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",18,"SQL: изоляция, блокировки, индексы",6,"Связанные строки: SQL: изоляция, блокировки, индексы",practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",18,"SQL: изоляция, блокировки, индексы",7,"Агрегат: SQL: изоляция, блокировки, индексы",practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",18,"SQL: изоляция, блокировки, индексы",4,"Индекс статуса задач: SQL: изоляция, блокировки, индексы",practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",18,"SQL: изоляция, блокировки, индексы",5,"Индекс заказов: SQL: изоляция, блокировки, индексы",practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",18,"SQL: изоляция, блокировки, индексы",6,"Индекс тикетов: SQL: изоляция, блокировки, индексы",practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",18,"SQL: изоляция, блокировки, индексы",7,"Индекс прогресса: SQL: изоляция, блокировки, индексы",practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",18,"SQL: изоляция, блокировки, индексы",8,"SQL сценарий: SQL: изоляция, блокировки, индексы",project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",18,"SQL: изоляция, блокировки, индексы",9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",18,"SQL: изоляция, блокировки, индексы",10,"Итоговый результат: SQL: изоляция, блокировки, индексы",project,ide_plugin,110,2,30
@@ -990,10 +990,10 @@
 3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,4,Выбор полей: SQLite: файл базы,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,5,Условие отбора: SQLite: файл базы,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,6,Пустое значение: SQLite: файл базы,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,7,Связанные строки: SQLite: файл базы,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,4,Список активных клиентов: SQLite: файл базы,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,5,Каталог в наличии: SQLite: файл базы,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,6,Книги с автором: SQLite: файл базы,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,7,Курсы backend: SQLite: файл базы,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,8,SQL сценарий: SQLite: файл базы,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",19,SQLite: файл базы,10,Итоговый результат: SQLite: файл базы,project,ide_plugin,110,2,30
@@ -1001,10 +1001,10 @@
 3,"Модуль 3. SQL, базы данных и сети",20,SQLite: sqlite3 CLI,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",20,SQLite: sqlite3 CLI,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",20,SQLite: sqlite3 CLI,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",20,SQLite: sqlite3 CLI,4,Выбор полей: SQLite: sqlite3 CLI,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",20,SQLite: sqlite3 CLI,5,Условие отбора: SQLite: sqlite3 CLI,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",20,SQLite: sqlite3 CLI,6,Пустое значение: SQLite: sqlite3 CLI,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",20,SQLite: sqlite3 CLI,7,Связанные строки: SQLite: sqlite3 CLI,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",20,SQLite: sqlite3 CLI,4,Список активных клиентов: SQLite: sqlite3 CLI,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",20,SQLite: sqlite3 CLI,5,Каталог в наличии: SQLite: sqlite3 CLI,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",20,SQLite: sqlite3 CLI,6,Книги с автором: SQLite: sqlite3 CLI,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",20,SQLite: sqlite3 CLI,7,Курсы backend: SQLite: sqlite3 CLI,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",20,SQLite: sqlite3 CLI,8,SQL сценарий: SQLite: sqlite3 CLI,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",20,SQLite: sqlite3 CLI,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",20,SQLite: sqlite3 CLI,10,Итоговый результат: SQLite: sqlite3 CLI,project,ide_plugin,110,2,30
@@ -1012,10 +1012,10 @@
 3,"Модуль 3. SQL, базы данных и сети",21,SQLite: DDL и constraints,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",21,SQLite: DDL и constraints,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",21,SQLite: DDL и constraints,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",21,SQLite: DDL и constraints,4,Выбор полей: SQLite: DDL и constraints,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",21,SQLite: DDL и constraints,5,Условие отбора: SQLite: DDL и constraints,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",21,SQLite: DDL и constraints,6,Пустое значение: SQLite: DDL и constraints,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",21,SQLite: DDL и constraints,7,Связанные строки: SQLite: DDL и constraints,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",21,SQLite: DDL и constraints,4,Таблица аудита: SQLite: DDL и constraints,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",21,SQLite: DDL и constraints,5,Уникальный email: SQLite: DDL и constraints,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",21,SQLite: DDL и constraints,6,Черновик курсов: SQLite: DDL и constraints,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",21,SQLite: DDL и constraints,7,Очередь импорта: SQLite: DDL и constraints,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",21,SQLite: DDL и constraints,8,SQL сценарий: SQLite: DDL и constraints,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",21,SQLite: DDL и constraints,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",21,SQLite: DDL и constraints,10,Итоговый результат: SQLite: DDL и constraints,project,ide_plugin,110,2,30
@@ -1023,10 +1023,10 @@
 3,"Модуль 3. SQL, базы данных и сети",22,SQLite: CRUD,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",22,SQLite: CRUD,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",22,SQLite: CRUD,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",22,SQLite: CRUD,4,Выбор полей: SQLite: CRUD,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",22,SQLite: CRUD,5,Условие отбора: SQLite: CRUD,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",22,SQLite: CRUD,6,Пустое значение: SQLite: CRUD,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",22,SQLite: CRUD,7,Связанные строки: SQLite: CRUD,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",22,SQLite: CRUD,4,Новый товар: SQLite: CRUD,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",22,SQLite: CRUD,5,Закрыть задачу: SQLite: CRUD,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",22,SQLite: CRUD,6,Оплатить запись: SQLite: CRUD,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",22,SQLite: CRUD,7,Назначить тикет: SQLite: CRUD,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",22,SQLite: CRUD,8,SQL сценарий: SQLite: CRUD,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",22,SQLite: CRUD,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",22,SQLite: CRUD,10,Итоговый результат: SQLite: CRUD,project,ide_plugin,110,2,30
@@ -1034,10 +1034,10 @@
 3,"Модуль 3. SQL, базы данных и сети",23,SQLite: transactions и PRAGMA,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",23,SQLite: transactions и PRAGMA,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",23,SQLite: transactions и PRAGMA,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",23,SQLite: transactions и PRAGMA,4,Rollback,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",23,SQLite: transactions и PRAGMA,5,Commit,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",23,SQLite: transactions и PRAGMA,6,Условие отбора: SQLite: transactions и PRAGMA,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",23,SQLite: transactions и PRAGMA,7,Агрегат: SQLite: transactions и PRAGMA,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",23,SQLite: transactions и PRAGMA,4,Rollback статуса: SQLite: transactions и PRAGMA,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",23,SQLite: transactions и PRAGMA,5,Commit оплаты: SQLite: transactions и PRAGMA,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",23,SQLite: transactions и PRAGMA,6,Rollback прогресса: SQLite: transactions и PRAGMA,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",23,SQLite: transactions и PRAGMA,7,Commit назначения: SQLite: transactions и PRAGMA,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",23,SQLite: transactions и PRAGMA,8,SQL сценарий: SQLite: transactions и PRAGMA,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",23,SQLite: transactions и PRAGMA,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",23,SQLite: transactions и PRAGMA,10,Итоговый результат: SQLite: transactions и PRAGMA,project,ide_plugin,110,2,30
@@ -1045,10 +1045,10 @@
 3,"Модуль 3. SQL, базы данных и сети",24,sqlite3 через Python,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",24,sqlite3 через Python,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",24,sqlite3 через Python,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",24,sqlite3 через Python,4,Выбор полей: sqlite3 через Python,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",24,sqlite3 через Python,5,Условие отбора: sqlite3 через Python,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",24,sqlite3 через Python,6,Пустое значение: sqlite3 через Python,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",24,sqlite3 через Python,7,Связанные строки: sqlite3 через Python,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",24,sqlite3 через Python,4,Список активных клиентов: sqlite3 через Python,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",24,sqlite3 через Python,5,Каталог в наличии: sqlite3 через Python,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",24,sqlite3 через Python,6,Книги с автором: sqlite3 через Python,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",24,sqlite3 через Python,7,Курсы backend: sqlite3 через Python,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",24,sqlite3 через Python,8,SQL сценарий: sqlite3 через Python,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",24,sqlite3 через Python,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",24,sqlite3 через Python,10,Итоговый результат: sqlite3 через Python,project,ide_plugin,110,2,30
@@ -1056,10 +1056,10 @@
 3,"Модуль 3. SQL, базы данных и сети",25,SQLite repository и проекты,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",25,SQLite repository и проекты,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",25,SQLite repository и проекты,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",25,SQLite repository и проекты,4,Выбор полей: SQLite repository и проекты,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",25,SQLite repository и проекты,5,Условие отбора: SQLite repository и проекты,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",25,SQLite repository и проекты,6,Пустое значение: SQLite repository и проекты,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",25,SQLite repository и проекты,7,Связанные строки: SQLite repository и проекты,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",25,SQLite repository и проекты,4,Список активных клиентов: SQLite repository и проекты,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",25,SQLite repository и проекты,5,Каталог в наличии: SQLite repository и проекты,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",25,SQLite repository и проекты,6,Книги с автором: SQLite repository и проекты,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",25,SQLite repository и проекты,7,Курсы backend: SQLite repository и проекты,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",25,SQLite repository и проекты,8,SQL сценарий: SQLite repository и проекты,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",25,SQLite repository и проекты,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",25,SQLite repository и проекты,10,Итоговый результат: SQLite repository и проекты,project,ide_plugin,110,2,30
@@ -1067,10 +1067,10 @@
 3,"Модуль 3. SQL, базы данных и сети",26,NoSQL: документы,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",26,NoSQL: документы,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",26,NoSQL: документы,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",26,NoSQL: документы,4,Выбор полей: NoSQL: документы,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",26,NoSQL: документы,5,Условие отбора: NoSQL: документы,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",26,NoSQL: документы,6,Пустое значение: NoSQL: документы,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",26,NoSQL: документы,7,Связанные строки: NoSQL: документы,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",26,NoSQL: документы,4,Список активных клиентов: NoSQL: документы,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",26,NoSQL: документы,5,Каталог в наличии: NoSQL: документы,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",26,NoSQL: документы,6,Книги с автором: NoSQL: документы,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",26,NoSQL: документы,7,Курсы backend: NoSQL: документы,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",26,NoSQL: документы,8,SQL сценарий: NoSQL: документы,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",26,NoSQL: документы,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",26,NoSQL: документы,10,Итоговый результат: NoSQL: документы,project,ide_plugin,110,2,30
@@ -1091,10 +1091,10 @@
 3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,4,Выбор полей: ClickHouse и OLAP,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,5,Условие отбора: ClickHouse и OLAP,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,6,Пустое значение: ClickHouse и OLAP,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,7,Связанные строки: ClickHouse и OLAP,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,4,Список активных клиентов: ClickHouse и OLAP,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,5,Каталог в наличии: ClickHouse и OLAP,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,6,Книги с автором: ClickHouse и OLAP,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,7,Курсы backend: ClickHouse и OLAP,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,8,SQL сценарий: ClickHouse и OLAP,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",28,ClickHouse и OLAP,10,Итоговый результат: ClickHouse и OLAP,project,ide_plugin,110,2,30
@@ -1167,10 +1167,10 @@
 3,"Модуль 3. SQL, базы данных и сети",34,Проектирование схемы,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",34,Проектирование схемы,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",34,Проектирование схемы,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",34,Проектирование схемы,4,Выбор полей: Проектирование схемы,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",34,Проектирование схемы,5,Условие отбора: Проектирование схемы,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",34,Проектирование схемы,6,Пустое значение: Проектирование схемы,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",34,Проектирование схемы,7,Связанные строки: Проектирование схемы,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",34,Проектирование схемы,4,Таблица аудита: Проектирование схемы,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",34,Проектирование схемы,5,Уникальный email: Проектирование схемы,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",34,Проектирование схемы,6,Черновик курсов: Проектирование схемы,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",34,Проектирование схемы,7,Очередь импорта: Проектирование схемы,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",34,Проектирование схемы,8,SQL сценарий: Проектирование схемы,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",34,Проектирование схемы,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",34,Проектирование схемы,10,Итоговый результат: Проектирование схемы,project,ide_plugin,110,2,30
@@ -1178,10 +1178,10 @@
 3,"Модуль 3. SQL, базы данных и сети",35,Индексы и EXPLAIN,1,Что это,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",35,Индексы и EXPLAIN,2,Минимальный пример,theory,,40,2,18
 3,"Модуль 3. SQL, базы данных и сети",35,Индексы и EXPLAIN,3,Понимание,test,quiz_single,40,2,12
-3,"Модуль 3. SQL, базы данных и сети",35,Индексы и EXPLAIN,4,Explain,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",35,Индексы и EXPLAIN,5,Условие отбора: Индексы и EXPLAIN,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",35,Индексы и EXPLAIN,6,Связанные строки: Индексы и EXPLAIN,practice,sql_query,85,2,22
-3,"Модуль 3. SQL, базы данных и сети",35,Индексы и EXPLAIN,7,Агрегат: Индексы и EXPLAIN,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",35,Индексы и EXPLAIN,4,Индекс статуса задач: Индексы и EXPLAIN,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",35,Индексы и EXPLAIN,5,Индекс заказов: Индексы и EXPLAIN,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",35,Индексы и EXPLAIN,6,Индекс тикетов: Индексы и EXPLAIN,practice,sql_query,85,2,22
+3,"Модуль 3. SQL, базы данных и сети",35,Индексы и EXPLAIN,7,Индекс прогресса: Индексы и EXPLAIN,practice,sql_query,85,2,22
 3,"Модуль 3. SQL, базы данных и сети",35,Индексы и EXPLAIN,8,SQL сценарий: Индексы и EXPLAIN,project,ide_plugin,130,2,45
 3,"Модуль 3. SQL, базы данных и сети",35,Индексы и EXPLAIN,9,Закрепление,test,quiz_single,40,2,12
 3,"Модуль 3. SQL, базы данных и сети",35,Индексы и EXPLAIN,10,Итоговый результат: Индексы и EXPLAIN,project,ide_plugin,110,2,30
@@ -1393,10 +1393,10 @@
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy engine/session,1,Что это,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy engine/session,2,Минимальный пример,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy engine/session,3,Понимание,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy engine/session,4,Выбор полей: SQLAlchemy engine/session,practice,sql_query,85,2,22
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy engine/session,5,Условие отбора: SQLAlchemy engine/session,practice,sql_query,85,2,22
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy engine/session,6,Пустое значение: SQLAlchemy engine/session,practice,sql_query,85,2,22
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy engine/session,7,Связанные строки: SQLAlchemy engine/session,practice,sql_query,85,2,22
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy engine/session,4,Список активных клиентов: SQLAlchemy engine/session,practice,sql_query,85,2,22
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy engine/session,5,Каталог в наличии: SQLAlchemy engine/session,practice,sql_query,85,2,22
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy engine/session,6,Книги с автором: SQLAlchemy engine/session,practice,sql_query,85,2,22
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy engine/session,7,Курсы backend: SQLAlchemy engine/session,practice,sql_query,85,2,22
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy engine/session,8,SQL сценарий: SQLAlchemy engine/session,project,ide_plugin,130,2,45
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy engine/session,9,Закрепление,test,quiz_single,40,2,12
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",16,SQLAlchemy engine/session,10,Итоговый результат: SQLAlchemy engine/session,project,ide_plugin,110,2,30
@@ -1404,10 +1404,10 @@
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy models,1,Что это,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy models,2,Минимальный пример,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy models,3,Понимание,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy models,4,Выбор полей: SQLAlchemy models,practice,sql_query,85,2,22
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy models,5,Условие отбора: SQLAlchemy models,practice,sql_query,85,2,22
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy models,6,Пустое значение: SQLAlchemy models,practice,sql_query,85,2,22
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy models,7,Связанные строки: SQLAlchemy models,practice,sql_query,85,2,22
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy models,4,Таблица аудита: SQLAlchemy models,practice,sql_query,85,2,22
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy models,5,Уникальный email: SQLAlchemy models,practice,sql_query,85,2,22
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy models,6,Черновик курсов: SQLAlchemy models,practice,sql_query,85,2,22
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy models,7,Очередь импорта: SQLAlchemy models,practice,sql_query,85,2,22
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy models,8,SQL сценарий: SQLAlchemy models,project,ide_plugin,130,2,45
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy models,9,Закрепление,test,quiz_single,40,2,12
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",17,SQLAlchemy models,10,Итоговый результат: SQLAlchemy models,project,ide_plugin,110,2,30
@@ -1415,10 +1415,10 @@
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy relationships,1,Что это,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy relationships,2,Минимальный пример,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy relationships,3,Понимание,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy relationships,4,Выбор полей: SQLAlchemy relationships,practice,sql_query,85,2,22
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy relationships,5,Условие отбора: SQLAlchemy relationships,practice,sql_query,85,2,22
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy relationships,6,Пустое значение: SQLAlchemy relationships,practice,sql_query,85,2,22
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy relationships,7,Связанные строки: SQLAlchemy relationships,practice,sql_query,85,2,22
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy relationships,4,Список активных клиентов: SQLAlchemy relationships,practice,sql_query,85,2,22
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy relationships,5,Каталог в наличии: SQLAlchemy relationships,practice,sql_query,85,2,22
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy relationships,6,Книги с автором: SQLAlchemy relationships,practice,sql_query,85,2,22
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy relationships,7,Курсы backend: SQLAlchemy relationships,practice,sql_query,85,2,22
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy relationships,8,SQL сценарий: SQLAlchemy relationships,project,ide_plugin,130,2,45
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy relationships,9,Закрепление,test,quiz_single,40,2,12
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",18,SQLAlchemy relationships,10,Итоговый результат: SQLAlchemy relationships,project,ide_plugin,110,2,30
@@ -1426,10 +1426,10 @@
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,SQLAlchemy transactions,1,Что это,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,SQLAlchemy transactions,2,Минимальный пример,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,SQLAlchemy transactions,3,Понимание,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,SQLAlchemy transactions,4,Rollback,practice,sql_query,85,2,22
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,SQLAlchemy transactions,5,Commit,practice,sql_query,85,2,22
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,SQLAlchemy transactions,6,Условие отбора: SQLAlchemy transactions,practice,sql_query,85,2,22
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,SQLAlchemy transactions,7,Агрегат: SQLAlchemy transactions,practice,sql_query,85,2,22
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,SQLAlchemy transactions,4,Rollback статуса: SQLAlchemy transactions,practice,sql_query,85,2,22
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,SQLAlchemy transactions,5,Commit оплаты: SQLAlchemy transactions,practice,sql_query,85,2,22
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,SQLAlchemy transactions,6,Rollback прогресса: SQLAlchemy transactions,practice,sql_query,85,2,22
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,SQLAlchemy transactions,7,Commit назначения: SQLAlchemy transactions,practice,sql_query,85,2,22
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,SQLAlchemy transactions,8,SQL сценарий: SQLAlchemy transactions,project,ide_plugin,130,2,45
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,SQLAlchemy transactions,9,Закрепление,test,quiz_single,40,2,12
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",19,SQLAlchemy transactions,10,Итоговый результат: SQLAlchemy transactions,project,ide_plugin,110,2,30
@@ -1485,12 +1485,12 @@
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,1,Что это,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,2,Минимальный пример,theory,,40,2,18
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,3,Понимание,test,quiz_single,40,2,12
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,4,GET /users/me: Integration tests,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,4,GET /users/me: Integration checks,practice,http_api,90,2,24
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,5,POST /auth/login,practice,http_api,90,2,24
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,6,GET /reports,practice,http_api,90,2,24
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,7,GET /metrics,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,8,GET /health: Integration tests,practice,http_api,90,2,24
-4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,9,GET /tasks/{task_id}: Integration tests,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,8,GET /health: Integration checks,practice,http_api,90,2,24
+4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,9,GET /tasks/{task_id}: Integration checks,practice,http_api,90,2,24
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,10,API-минипроект: Integration tests,project,ide_plugin,140,2,50
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,11,Закрепление,test,quiz_single,40,2,12
 4,"Модуль 4. FastAPI, инфраструктура и тестирование",24,Integration tests,12,Итоговый результат: Integration tests,project,ide_plugin,110,2,30
@@ -1786,10 +1786,10 @@
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Финальный проект: схема БД,1,Что это,theory,,40,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Финальный проект: схема БД,2,Минимальный пример,theory,,40,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Финальный проект: схема БД,3,Понимание,test,quiz_single,40,2,12
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Финальный проект: схема БД,4,Выбор полей: схема БД,practice,sql_query,85,2,22
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Финальный проект: схема БД,5,Условие отбора: схема БД,practice,sql_query,85,2,22
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Финальный проект: схема БД,6,Пустое значение: схема БД,practice,sql_query,85,2,22
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Финальный проект: схема БД,7,Связанные строки: схема БД,practice,sql_query,85,2,22
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Финальный проект: схема БД,4,Таблица аудита: Финальный проект: схема БД,practice,sql_query,85,2,22
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Финальный проект: схема БД,5,Уникальный email: Финальный проект: схема БД,practice,sql_query,85,2,22
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Финальный проект: схема БД,6,Черновик курсов: Финальный проект: схема БД,practice,sql_query,85,2,22
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Финальный проект: схема БД,7,Очередь импорта: Финальный проект: схема БД,practice,sql_query,85,2,22
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Финальный проект: схема БД,8,Проверочный сценарий: схема БД,project,ide_plugin,130,2,45
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Финальный проект: схема БД,9,Закрепление,test,quiz_single,40,2,12
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",17,Финальный проект: схема БД,10,Итоговый результат: схема БД,project,ide_plugin,110,2,30
@@ -1830,10 +1830,10 @@
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: SQLAlchemy models,1,Что это,theory,,40,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: SQLAlchemy models,2,Минимальный пример,theory,,40,2,18
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: SQLAlchemy models,3,Понимание,test,quiz_single,40,2,12
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: SQLAlchemy models,4,Выбор полей: SQLAlchemy models,practice,sql_query,85,2,22
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: SQLAlchemy models,5,Условие отбора: SQLAlchemy models,practice,sql_query,85,2,22
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: SQLAlchemy models,6,Пустое значение: SQLAlchemy models,practice,sql_query,85,2,22
-5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: SQLAlchemy models,7,Связанные строки: SQLAlchemy models,practice,sql_query,85,2,22
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: SQLAlchemy models,4,Таблица аудита: Финальный проект: SQLAlchemy models,practice,sql_query,85,2,22
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: SQLAlchemy models,5,Уникальный email: Финальный проект: SQLAlchemy models,practice,sql_query,85,2,22
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: SQLAlchemy models,6,Черновик курсов: Финальный проект: SQLAlchemy models,practice,sql_query,85,2,22
+5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: SQLAlchemy models,7,Очередь импорта: Финальный проект: SQLAlchemy models,practice,sql_query,85,2,22
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: SQLAlchemy models,8,Проверочный сценарий: SQLAlchemy models,project,ide_plugin,130,2,45
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: SQLAlchemy models,9,Закрепление,test,quiz_single,40,2,12
 5,"Модуль 5. AI-интеграция, деплой и финальный проект",21,Финальный проект: SQLAlchemy models,10,Итоговый результат: SQLAlchemy models,project,ide_plugin,110,2,30

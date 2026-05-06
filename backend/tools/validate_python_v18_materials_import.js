@@ -2,8 +2,8 @@ const fs = require('fs');
 const path = require('path');
 
 const INPUT_PATH = path.resolve(__dirname, '../../материалы/v18_STRICT_PEDAGOGY/course_import.json');
-const MIGRATION_PATH = path.resolve(__dirname, '../migrations/032_reseed_python_zero_v18_final_gate_quality.sql');
-const REPORT_PATH = path.resolve(__dirname, '../../docs/operations/PYTHON_V18_STRICT_PEDAGOGY_IMPORT_VALIDATION_2026_05_06_FINAL_GATE_QUALITY.md');
+const MIGRATION_PATH = path.resolve(__dirname, '../migrations/033_reseed_python_zero_v18_coursewide_diversity.sql');
+const REPORT_PATH = path.resolve(__dirname, '../../docs/operations/PYTHON_V18_STRICT_PEDAGOGY_IMPORT_VALIDATION_2026_05_06_COURSEWIDE_DIVERSITY.md');
 
 function readJSON(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -97,7 +97,7 @@ function main() {
     .map(([name]) => name);
 
   const reportLines = [
-    '# Python v18 Strict Pedagogy Import Validation — 2026-05-06 Final Gate Quality',
+    '# Python v18 Strict Pedagogy Import Validation — 2026-05-06 Coursewide Diversity',
     '',
     '## Source Inputs',
     `- materials json: \`${INPUT_PATH}\``,

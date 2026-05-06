@@ -407,3 +407,78 @@
 4. Проверить агрегаты курса: `5|169|1960`.
 5. На staging открыть исправленные уроки: `mypy и контракты`, `Файлы и pathlib`, `pytest: fixtures`, `Healthcheck`, `AI API request`, `RAG chunks`.
 6. Массовый запуск разрешать только после ручной staging-регрессии IDE-plugin проектов и hidden checks.
+
+## 11. Дополнение 2026-05-06: coursewide diversity reseed
+
+После `032` был выполнен дополнительный аудит по требованию не оставлять однообразные задания и не подменять тему урока универсальным текстом. Формальная схема уже проходила, но ручная проверка выявляла методические риски: Git-урок со словом `индекс` мог получать SQL-работу, Docker/infra-уроки местами выглядели как Python-задачи, ORM session повторяла одинаковый pytest-шаблон, а часть теории в поздних уроках всё ещё содержала универсальный `normalize_title` вместо доменного примера.
+
+Что работает сейчас:
+
+1. Создан coursewide diversity pass:
+   - `coursewide_diversity_pass.py`;
+   - `coursewide_diversity_report.md`.
+2. Практики и проекты разведены по ролям:
+   - acceptance;
+   - deliverable;
+   - negative path;
+   - review;
+   - final handoff;
+   - lab.
+3. Исправлена доменная маршрутизация заданий:
+   - Git остаётся Git даже в уроке `Git: индекс и история`;
+   - Docker, Compose, CI/CD, VPS, SSL, health/logs/exec/networks/secrets уходят в infra;
+   - SQLAlchemy, session, repository, Unit of Work и Alembic получают ORM/DB-контекст;
+   - ранние AI-уроки не превращаются в FastAPI только из-за слова API.
+4. Переписаны оставшиеся повторяющиеся группы:
+   - ORM session lifecycle / rollback / repository read / commit boundary;
+   - OOP abstraction repository / Unit of Work boundary;
+   - `Экзамен 3` DB-практики;
+   - final project Alembic practice gates;
+   - теория с `normalize_title` в Git, CLI, infra, HTTP, ORM, AI и gate-уроках.
+5. Создана новая миграция:
+   - `033_reseed_python_zero_v18_coursewide_diversity.sql`.
+
+Почему это отдельная миграция:
+
+1. `032` уже применял слой final gate quality.
+2. `033` меняет методическое содержание и тексты заданий без изменения схемы приложения.
+3. Отдельная миграция позволяет ревьюеру сверить именно снятие однообразия и теоретических generic-примеров.
+
+Актуальные метрики после `033`:
+
+1. modules: 5;
+2. lessons: 169;
+3. lesson blocks: 1960;
+4. tasks (practice + project): 1146;
+5. practice steps: 769;
+6. project steps: 377;
+7. quiz steps: 307;
+8. questions: 921;
+9. estimated hours: 642.5;
+10. checker counts: python_stdout 45, python_pytest 369, sql_query 137, http_api 124, ide_plugin 471;
+11. repeated practice/project intro groups over 2: 0;
+12. body leaks for `normalize_title`, `tests`, generic SQL placeholders: 0.
+
+Проверки после правки:
+
+1. `python материалы/v18_STRICT_PEDAGOGY/validate_course.py` — PASS.
+2. `coursewide_diversity_report.md` — repeated intro groups over 3: none.
+3. Локальный аудит practice/project intros — groups over 2: 0.
+4. `node backend/tools/generate_python_v18_materials_migration.js` — создан `033`.
+5. `node backend/tools/validate_python_v18_materials_import.js` — PASS против `033`.
+
+Операционная инструкция теперь использует `033`:
+
+1. Запушить commit с миграцией `033`.
+2. Развернуть release на сервер.
+3. Проверить запись `033_reseed_python_zero_v18_coursewide_diversity` в `schema_migrations`.
+4. Проверить агрегаты курса: `5|169|1960|1146`.
+5. На staging открыть выборку:
+   - первые 10 уроков модуля 1;
+   - `Git: индекс и история`;
+   - `Database session`;
+   - `Repository и unit of work`;
+   - `Экзамен 3`;
+   - `Финальный проект: Alembic migrations`;
+   - `VPS, безопасность, домен, SSL`.
+6. Массовый запуск всё ещё требует ручной staging-регрессии IDE-plugin проектов, потому что автоматические проверки подтверждают структуру и качество текста, но не заменяют реальный запуск плагина на выборке проектов.
