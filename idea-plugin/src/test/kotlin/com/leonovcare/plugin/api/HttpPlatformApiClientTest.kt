@@ -225,6 +225,61 @@ class HttpPlatformApiClientTest {
         assertEquals("task-1", bootstrap.tasks.first().id)
     }
 
+    @Test
+    fun `course tasks fall back to lesson fanout when catalog endpoint is unavailable`() {
+        startServer { exchange ->
+            when (exchange.requestURI.path) {
+                "/courses/course-1/tasks-catalog" -> respond(exchange, 404, """{"error":"not found"}""")
+                "/courses/course-1" -> respond(
+                    exchange,
+                    200,
+                    """{"course":{"id":"course-1","title":"Course"},"lessons":[{"id":"lesson-1","title":"Lesson 1","moduleTitle":"Module 1"}]}""",
+                )
+                "/lessons/lesson-1" -> respond(
+                    exchange,
+                    200,
+                    """{"lesson":{"id":"lesson-1","title":"Lesson 1","moduleTitle":"Module 1"},"tasks":[{"id":"task-1","title":"Task 1","language":"python","status":"NEW","type":"console","order":1}]}""",
+                )
+                else -> respond(exchange, 404, """{"error":"unknown"}""")
+            }
+        }
+
+        val client = HttpPlatformApiClient(baseUrl())
+        val tasks = runBlocking { client.getCourseTasks("token", "course-1") }
+
+        assertEquals(1, tasks.size)
+        assertEquals("task-1", tasks.first().id)
+        assertEquals("course-1", tasks.first().courseId)
+    }
+
+    @Test
+    fun `course tasks do not fanout on non-compat catalog failure`() {
+        val courseEndpointHits = AtomicInteger(0)
+        val lessonEndpointHits = AtomicInteger(0)
+
+        startServer { exchange ->
+            when (exchange.requestURI.path) {
+                "/courses/course-1/tasks-catalog" -> respond(exchange, 500, """{"error":"boom"}""")
+                "/courses/course-1" -> {
+                    courseEndpointHits.incrementAndGet()
+                    respond(exchange, 200, """{"course":{"id":"course-1"},"lessons":[]}""")
+                }
+                "/lessons/lesson-1" -> {
+                    lessonEndpointHits.incrementAndGet()
+                    respond(exchange, 200, """{"lesson":{"id":"lesson-1"},"tasks":[]}""")
+                }
+                else -> respond(exchange, 404, """{"error":"unknown"}""")
+            }
+        }
+
+        val client = HttpPlatformApiClient(baseUrl())
+        assertThrows(ServerErrorException::class.java) {
+            runBlocking { client.getCourseTasks("token", "course-1") }
+        }
+        assertEquals(0, courseEndpointHits.get())
+        assertEquals(0, lessonEndpointHits.get())
+    }
+
     private fun startServer(handler: (HttpExchange) -> Unit) {
         server = HttpServer.create(InetSocketAddress(0), 0)
         server?.createContext("/") { exchange -> handler(exchange) }

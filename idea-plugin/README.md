@@ -611,3 +611,54 @@ cd idea-plugin
 1. Swing HTML parser в IDE ограничен и не поддерживает часть CSS-синтаксиса браузерного уровня, поэтому безопасный subset обязателен для стабильного рендера.
 2. `FileEditorManager` и close/open editor operations являются UI API и должны вызываться только на EDT.
 3. Доступ к PSI/VFS document-объектам вне read-action приводит к thread-assert и нестабильной работе AI-подсказок.
+
+## 2026-05-06 — Network storm and empty-task-panel resilience hotfix (v0.2.4)
+
+### Проблема
+
+1. При входе в аккаунт на больших курсах backend получал burst из множества запросов.
+2. В `idea.log` регулярно фиксировались таймауты `Failed to load selected course tasks ... Timed out waiting for 12000 ms`.
+3. В пользовательском UX это проявлялось как “задания не открываются / теория пустая”, хотя список задач в левой колонке уже отображался.
+
+### Что изменено
+
+1. Изменена стратегия fallback для загрузки задач курса в `HttpPlatformApiClient.getCourseTasks(...)`:
+- раньше fallback в lesson-fanout включался практически на любую ошибку каталога;
+- теперь lesson-fanout включается только если endpoint каталога действительно отсутствует (`404/405/501`);
+- при `5xx`/network timeout ошибка возвращается наверх без тяжелого fanout.
+
+2. В `TaskManager` усилен контроль таймаутов и нагрузки:
+- `requestTimeoutMillis` увеличен до `25s` (раньше `12s`), чтобы не обрывать валидные, но более тяжелые ответы;
+- лимит prefetch lesson-материалов снижен (`8` за refresh вместо `24`);
+- убрана фоновая тотальная догрузка всех остальных курсов в рамках одного refresh-цикла;
+- добавлена lazy on-demand догрузка задач при выборе курса (`selectCourse(...)`), с anti-dup guard и TTL по свежести.
+
+3. Усилен open-task path:
+- добавлен дополнительный fallback поиска файла через `refreshAndFindFileByPath(...)`;
+- если основной файл задачи не найден или invalid в VFS, теперь выбрасывается явная ошибка (вместо silent-no-open);
+- в `TaskManager.openTask(...)` добавлено подробное логирование причин отказа открытия задачи.
+
+### Почему сделано именно так
+
+1. Главный риск был архитектурный: при сетевой деградации каталога клиент запускал более дорогой сценарий (fanout по урокам), что усугубляло деградацию и перегружало backend.
+2. Разделение “endpoint unavailable” и “временная/серверная ошибка” убирает каскадную эскалацию нагрузки.
+3. Lazy-load по выбранному курсу сохраняет отзывчивость UI и устраняет ненужные запросы при старте.
+4. Явные ошибки открытия файла лучше silent-состояния, когда у пользователя пустая правая панель без диагностического сигнала.
+
+### Файлы
+
+1. `src/main/kotlin/com/leonovcare/plugin/task/TaskManager.kt`
+2. `src/main/kotlin/com/leonovcare/plugin/api/HttpPlatformApiClient.kt`
+3. `src/test/kotlin/com/leonovcare/plugin/api/HttpPlatformApiClientTest.kt`
+4. `build.gradle.kts` (версия плагина `0.2.4`)
+
+### Проверка
+
+1. `cd idea-plugin && ./gradlew.bat test` — unit tests, включая новые проверки fallback-поведения каталога.
+2. `cd idea-plugin && ./gradlew.bat buildPlugin` — сборка zip артефакта.
+3. Установить zip `leonovcare-idea-plugin-0.2.4.zip` в PyCharm и перезапустить IDE.
+4. Smoke-проверка:
+- вход в аккаунт;
+- открытие задачи из списка;
+- проверка появления материалов урока/задачи в правой панели;
+- проверка отсутствия burst lesson-fanout в Network при обычном login/open flow.

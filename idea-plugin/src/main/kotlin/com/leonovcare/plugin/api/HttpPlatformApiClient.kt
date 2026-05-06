@@ -134,17 +134,29 @@ class HttpPlatformApiClient(
     }
 
     override suspend fun getCourseTasks(token: String, courseId: String): List<Task> {
-        try {
-            return getCourseTasksFromCatalog(token, courseId)
+        return try {
+            getCourseTasksFromCatalog(token, courseId)
         } catch (ex: ApiException) {
             if (ex.statusCode == 401 || ex.statusCode == 403) {
                 throw ex
             }
-            logger.warn("Catalog endpoint failed for course=$courseId, fallback to lesson fanout: ${ex.statusCode} ${ex.message}")
+            if (ex.statusCode in listOf(404, 405, 501)) {
+                logger.warn(
+                    "Catalog endpoint unavailable for course=$courseId " +
+                        "(${ex.statusCode} ${ex.message}), fallback to lesson fanout"
+                )
+                getCourseTasksFromLessonFanout(token, courseId)
+            } else {
+                logger.warn("Catalog endpoint failed for course=$courseId: ${ex.statusCode} ${ex.message}")
+                throw ex
+            }
+        } catch (ex: NetworkException) {
+            logger.warn("Catalog endpoint failed for course=$courseId: ${ex.message}")
+            throw ex
         } catch (ex: Exception) {
-            logger.warn("Catalog endpoint failed for course=$courseId, fallback to lesson fanout: ${ex.message}")
+            logger.warn("Catalog endpoint failed for course=$courseId: ${ex.message}")
+            throw ex
         }
-        return getCourseTasksFromLessonFanout(token, courseId)
     }
 
     private suspend fun getCourseTasksFromCatalog(token: String, courseId: String): List<Task> {

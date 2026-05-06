@@ -62,9 +62,10 @@ class TaskManager(private val project: Project) {
     private val lessonCache = LessonCache.getInstance()
 
     private val lessonCacheTtlMillis = TimeUnit.HOURS.toMillis(8)
-    private val requestTimeoutMillis = TimeUnit.SECONDS.toMillis(12)
+    private val requestTimeoutMillis = TimeUnit.SECONDS.toMillis(25)
     private val startupBootstrapTimeoutMillis = TimeUnit.MILLISECONDS.toMillis(4500)
-    private val maxLessonPrefetchPerRefresh = 24
+    private val maxLessonPrefetchPerRefresh = 8
+    private val courseRefreshTtlMillis = TimeUnit.MINUTES.toMillis(3)
     private val refreshMutex = Mutex()
 
     @Volatile
@@ -76,6 +77,8 @@ class TaskManager(private val project: Project) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val stateFlow = MutableStateFlow(TaskManagerState())
     private val openingTaskIds = ConcurrentHashMap.newKeySet<String>()
+    private val refreshingCourseIds = ConcurrentHashMap.newKeySet<String>()
+    private val courseRefreshedAtEpochMillis = ConcurrentHashMap<String, Long>()
 
     fun state(): StateFlow<TaskManagerState> = stateFlow.asStateFlow()
 
@@ -204,6 +207,7 @@ class TaskManager(private val project: Project) {
                                 ).tasks
                                 tasksByCourse[selectedCourseId] = normalizeTasks(mergedSelected)
                                 taskCache.saveTasksByCourse(tasksByCourse)
+                                courseRefreshedAtEpochMillis[selectedCourseId] = System.currentTimeMillis()
                             }
                         }
 
@@ -224,15 +228,6 @@ class TaskManager(private val project: Project) {
                         maybeAutoOpenStartupTask(
                             startupTask = finalSelection.startupTask,
                             selectedCourseTasks = finalSelection.selectedCourseTasks,
-                        )
-
-                        loadRemainingCourseTasks(
-                            token = token,
-                            client = client,
-                            courses = courses,
-                            selectedCourseId = finalSelection.selectedCourseId,
-                            cachedTasksByCourse = cachedTasksByCourse,
-                            tasksByCourse = tasksByCourse,
                         )
 
                         val startupAfterBackground = resolveStartupSelection(
@@ -259,53 +254,62 @@ class TaskManager(private val project: Project) {
         }
     }
 
-    private suspend fun loadRemainingCourseTasks(
-        token: String,
-        client: PlatformApiClient,
-        courses: List<Course>,
-        selectedCourseId: String?,
-        cachedTasksByCourse: Map<String, List<Task>>,
-        tasksByCourse: MutableMap<String, List<Task>>,
-    ) {
-        if (courses.isEmpty()) return
-
-        var updated = false
-        for (course in courses) {
-            if (course.id == selectedCourseId) continue
-
-            val remoteTasks = runCatching {
-                withTimeout(requestTimeoutMillis) {
-                    client.getCourseTasks(token, course.id)
-                }
-            }.onFailure { ex ->
-                logger.warn("Failed to load course tasks (${course.id}): ${ex.message}")
-            }.getOrNull() ?: continue
-
-            val merged = SyncStatusMerger.merge(
-                existingTasks = cachedTasksByCourse[course.id].orEmpty(),
-                remoteTasks = remoteTasks,
-            ).tasks
-            tasksByCourse[course.id] = normalizeTasks(merged)
-            updated = true
-        }
-
-        if (!updated) return
-
-        taskCache.saveTasksByCourse(tasksByCourse)
-        val selectedNow = stateFlow.value.selectedCourseId ?: settings.mutableState().selectedCourseId
-        if (selectedNow != null) {
-            settings.mutableState().selectedCourseId = selectedNow
-            stateFlow.value = stateFlow.value.copy(
-                selectedCourseId = selectedNow,
-                tasks = normalizeTasks(tasksByCourse[selectedNow].orEmpty()),
-            )
-        }
-    }
-
     fun selectCourse(courseId: String) {
         settings.mutableState().selectedCourseId = courseId
         val tasks = normalizeTasks(taskCache.getTasksByCourse()[courseId].orEmpty())
         stateFlow.value = stateFlow.value.copy(selectedCourseId = courseId, tasks = tasks)
+        refreshCourseTasksIfNeeded(courseId = courseId, force = tasks.isEmpty())
+    }
+
+    private fun refreshCourseTasksIfNeeded(courseId: String, force: Boolean) {
+        if (authService.token() == null) return
+        val now = System.currentTimeMillis()
+        val lastRefreshedAt = courseRefreshedAtEpochMillis[courseId] ?: 0L
+        val cachedTasks = normalizeTasks(taskCache.getTasksByCourse()[courseId].orEmpty())
+        val freshEnough = now - lastRefreshedAt < courseRefreshTtlMillis
+        if (!force && cachedTasks.isNotEmpty() && freshEnough) {
+            return
+        }
+        if (!refreshingCourseIds.add(courseId)) {
+            return
+        }
+
+        scope.launch {
+            runCatching {
+                authService.withAuthorizedToken { token ->
+                    val client = apiFactory.client()
+                    val remoteTasks = withTimeout(requestTimeoutMillis) {
+                        client.getCourseTasks(token, courseId)
+                    }
+                    val tasksByCourse = normalizeTasksByCourse(taskCache.getTasksByCourse()).toMutableMap()
+                    val merged = SyncStatusMerger.merge(
+                        existingTasks = tasksByCourse[courseId].orEmpty(),
+                        remoteTasks = remoteTasks,
+                    ).tasks
+                    tasksByCourse[courseId] = normalizeTasks(merged)
+                    taskCache.saveTasksByCourse(tasksByCourse)
+                    courseRefreshedAtEpochMillis[courseId] = System.currentTimeMillis()
+
+                    if (stateFlow.value.selectedCourseId == courseId) {
+                        stateFlow.value = stateFlow.value.copy(
+                            tasks = tasksByCourse[courseId].orEmpty(),
+                            errorMessage = null,
+                            offlineMode = false,
+                        )
+                    }
+                }
+            }.onFailure { ex ->
+                logger.warn("Failed to refresh course tasks on demand ($courseId): ${ex.message}")
+                if (stateFlow.value.selectedCourseId == courseId && stateFlow.value.tasks.isEmpty()) {
+                    stateFlow.value = stateFlow.value.copy(
+                        errorMessage = ex.message ?: "Failed to load tasks",
+                        offlineMode = true,
+                    )
+                }
+            }.also {
+                refreshingCourseIds.remove(courseId)
+            }
+        }
     }
 
     fun openTask(
@@ -361,10 +365,15 @@ class TaskManager(private val project: Project) {
                     }
 
                     val localFile = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(result.mainFile)
+                        ?: LocalFileSystem.getInstance().refreshAndFindFileByPath(
+                            result.mainFile.toString().replace('\\', '/')
+                        )
+                        ?: throw IllegalStateException("Unable to locate task file in IDE file system: ${result.mainFile}")
                     runOnEdtSync {
-                        if (localFile != null && localFile.isValid) {
-                            FileEditorManager.getInstance(project).openFile(localFile, true)
+                        if (!localFile.isValid) {
+                            throw IllegalStateException("Task file became invalid before opening: ${result.mainFile}")
                         }
+                        FileEditorManager.getInstance(project).openFile(localFile, true)
                     }
 
                     val context = CurrentTaskContext(
@@ -387,7 +396,10 @@ class TaskManager(private val project: Project) {
                             }
                     }
                 }
-            }.onFailure { onError(it) }
+            }.onFailure {
+                logger.warn("Failed to open task (${task.id}): ${it.message}", it)
+                onError(it)
+            }
              .also { openingTaskIds.remove(task.id) }
         }
     }
