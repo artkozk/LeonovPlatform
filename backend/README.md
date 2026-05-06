@@ -532,6 +532,20 @@ REPORT_TASK_GAPS=1 node backend/tools/generate_full_course_v4_migration.js
 2. Разрешение ограничено структурными проверками, чтобы не превратить IDE checker в произвольный shell executor.
 3. Явный `IDE_CHECKER_ALLOWED_COMMANDS` остаётся главным gate для запускаемых команд, а built-in слой закрывает только безопасные проверки файловой структуры.
 
+## Python pytest checker file contract (2026-05-06, v2.67)
+
+1. Для `checker_type=python_pytest` backend теперь определяет стартовый файл по checker-коду.
+2. Если pytest-код импортирует `solution`:
+- `GET /tasks/:taskID` и `GET /tasks/:taskID/template` используют `solution.py`;
+- worker/API preview при необходимости создаёт `solution.py` из отправленного sourceCode.
+3. Если в checker явно задан `required_files[]`, он остаётся приоритетнее автоматического `solution.py`.
+
+Почему сделано именно так:
+
+1. Pytest-задачи курса проверяют функции через `from solution import ...`, поэтому шаблон `main.py` создавал неверный контракт для студента и плагина.
+2. Runtime fallback нужен для уже открытых task workspace: если у студента остался старый `main.py`, проверка всё равно собирает ожидаемый `solution.py` во временном sandbox.
+3. Это не раскрывает эталон: используется только код, отправленный студентом, а `solution_code` по-прежнему нужен только внутренней проверке и reference endpoint после accepted submission.
+
 ## Production memory safety baseline (2026-04-30, v2.63)
 
 1. На production включен swap:

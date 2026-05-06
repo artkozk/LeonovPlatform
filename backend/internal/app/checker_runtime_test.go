@@ -45,6 +45,25 @@ func TestInferMainFilePathFromSourcePolicy(t *testing.T) {
 	}
 }
 
+func TestInferMainFilePathFromSourcePolicy_PytestSolutionModule(t *testing.T) {
+	policy := `{"checker_type":"python_pytest","checker":{"pytest_code":"from solution import greet\n\ndef test_greet():\n    assert greet('Ann') == 'Hi Ann'\n"}}`
+	if got := inferMainFilePathFromSourcePolicy(policy, "python"); got != "solution.py" {
+		t.Fatalf("expected solution.py for pytest checker importing solution, got %q", got)
+	}
+}
+
+func TestPythonPytestImportsModule(t *testing.T) {
+	if !pythonPytestImportsModule("import inspect, solution\n", "solution") {
+		t.Fatalf("expected comma import to be detected")
+	}
+	if !pythonPytestImportsModule("from solution import greet\n", "solution") {
+		t.Fatalf("expected from import to be detected")
+	}
+	if pythonPytestImportsModule("from app import solution\n", "solution") {
+		t.Fatalf("expected unrelated import to be ignored")
+	}
+}
+
 func TestNormalizeCommandForAllowlist(t *testing.T) {
 	got := normalizeCommandForAllowlist("  PyTest   -q  ")
 	if got != "pytest -q" {

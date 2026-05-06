@@ -371,3 +371,48 @@
 - `sql_query`;
 - `http_api`;
 - reference solution после accepted submission.
+
+## 14. Python pytest checker file contract fix (2026-05-06, phase 7)
+
+### 14.1 Observed production symptom
+
+1. После установки Docker sandbox и фикса IDE read-only allowlist acceptance дошёл до `python_pytest`.
+2. Корректное решение задачи `Функции / Приветствие` падало на preview:
+- `compile_error`;
+- `ModuleNotFoundError: No module named 'solution'`.
+3. Причина была не в решении студента: локальный эталон содержит `def greet(...)`, а checker-код курса импортирует `from solution import greet`.
+
+### 14.2 Root cause analysis
+
+1. Backend template inference для `python_pytest` по умолчанию отдавал `main.py`.
+2. Большинство pytest-checker задач курса импортируют именно модуль `solution`, например:
+- `from solution import greet`;
+- `import inspect, solution`.
+3. При сдаче через плагин пользователь писал код в `main.py`, а hidden/public tests импортировали `solution.py`, которого не существовало.
+
+### 14.3 Implemented fix
+
+1. В `inferMainFilePathFromSourcePolicy(...)` добавлена ветка для `checker_type=python_pytest`:
+- если `required_files[]` задан, он остаётся главным источником пути;
+- если pytest-код импортирует `solution`, main file path становится `solution.py`.
+2. В `evaluatePythonPytestChecker(...)` добавлен compatibility fallback:
+- если тесты импортируют `solution`, backend гарантирует наличие `solution.py`;
+- если старый task workspace уже отправил `main.py`, sourceCode копируется в `solution.py` только для проверки;
+- существующий `solution.py` из files не перезаписывается.
+3. Добавлены unit tests:
+- `TestInferMainFilePathFromSourcePolicy_PytestSolutionModule`;
+- `TestPythonPytestImportsModule`.
+
+### 14.4 Why this architecture
+
+1. Исправление сделано в платформенном runtime, потому что проблема является contract mismatch между checker tests и template inference, а не единичной ошибкой одного урока.
+2. Новые открытия задач получают правильный файл `solution.py`.
+3. Старые task-директории учеников с `main.py` не ломаются: worker создаёт совместимый модуль на время проверки.
+
+### 14.5 Verification
+
+1. Backend focused tests: `backend go test ./internal/app` — PASS.
+2. После деплоя phase 7 нужно повторить acceptance для:
+- `python_pytest` preview + submission;
+- `http_api` preview + submission;
+- reference solution после accepted submission.

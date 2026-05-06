@@ -538,17 +538,79 @@ func inferMainFilePathFromSourcePolicy(sourcePolicyRaw, language string) string 
 	if len(policy.Checker) == 0 {
 		return defaultPath
 	}
-	var checker struct {
-		RequiredFiles []string `json:"required_files"`
-	}
-	if err := json.Unmarshal(policy.Checker, &checker); err == nil {
-		for _, file := range checker.RequiredFiles {
-			if strings.TrimSpace(file) != "" {
-				return file
+	if policy.CheckerType == "python_pytest" {
+		var checker checkerPythonPytest
+		if err := json.Unmarshal(policy.Checker, &checker); err == nil {
+			for _, file := range checker.RequiredFiles {
+				if strings.TrimSpace(file) != "" {
+					return file
+				}
+			}
+			if pythonPytestImportsModule(checker.PytestCode, "solution") {
+				return "solution.py"
+			}
+		}
+	} else {
+		var checker struct {
+			RequiredFiles []string `json:"required_files"`
+		}
+		if err := json.Unmarshal(policy.Checker, &checker); err == nil {
+			for _, file := range checker.RequiredFiles {
+				if strings.TrimSpace(file) != "" {
+					return file
+				}
 			}
 		}
 	}
 	return defaultPath
+}
+
+func pythonPytestImportsModule(testCode, moduleName string) bool {
+	module := strings.TrimSpace(moduleName)
+	if module == "" {
+		return false
+	}
+	for _, rawLine := range strings.Split(testCode, "\n") {
+		line := strings.TrimSpace(rawLine)
+		if strings.HasPrefix(line, "from "+module+" import ") {
+			return true
+		}
+		if !strings.HasPrefix(line, "import ") {
+			continue
+		}
+		imports := strings.TrimSpace(strings.TrimPrefix(line, "import "))
+		for _, part := range strings.Split(imports, ",") {
+			fields := strings.Fields(strings.TrimSpace(part))
+			if len(fields) > 0 && fields[0] == module {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func ensurePythonModuleFile(workspace, moduleName, sourceCode string) error {
+	source := strings.TrimSpace(sourceCode)
+	if source == "" {
+		return nil
+	}
+	module := strings.TrimSpace(moduleName)
+	if module == "" || strings.ContainsAny(module, `/\.`) {
+		return nil
+	}
+	path := module + ".py"
+	normalized, err := normalizePathForWorkspace(path)
+	if err != nil {
+		return err
+	}
+	fullPath := filepath.Join(workspace, filepath.FromSlash(normalized))
+	if _, statErr := os.Stat(fullPath); statErr == nil {
+		return nil
+	}
+	if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(fullPath, []byte(sourceCode), 0o644)
 }
 
 func inferTemplateFilesFromSourcePolicy(sourcePolicyRaw, language string) []string {
@@ -738,6 +800,11 @@ func (a *App) evaluatePythonPytestChecker(sourceCode string, files []submissionF
 	preferredFile := selectPreferredTaskFile(files, checker.RequiredFiles)
 	if err := ensureDefaultSourceFile(workspace, sourceCode, preferredFile); err != nil {
 		return judge.Result{Status: "failed", CompileOutput: err.Error(), RunLog: "failed to prepare source file"}
+	}
+	if pythonPytestImportsModule(checker.PytestCode, "solution") {
+		if err := ensurePythonModuleFile(workspace, "solution", sourceCode); err != nil {
+			return judge.Result{Status: "failed", CompileOutput: err.Error(), RunLog: "failed to prepare solution module"}
+		}
 	}
 
 	pytestStub := `class raises:
