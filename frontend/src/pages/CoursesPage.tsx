@@ -1,4 +1,4 @@
-﻿import { Check, ChevronRight, Plus } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { getCourse, listCourses } from "../api/client";
@@ -474,11 +474,6 @@ export function CoursesPage() {
                   </button>
                 );
               })}
-
-              <button type="button" className="course-add-row" disabled>
-                <Plus size={16} strokeWidth={2} />
-                Добавить курс
-              </button>
             </div>
           ) : null}
         </aside>
@@ -589,5 +584,3 @@ export function CoursesPage() {
     </div>
   );
 }
-
-

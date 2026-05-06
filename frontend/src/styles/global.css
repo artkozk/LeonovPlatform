@@ -3161,21 +3161,6 @@ textarea:focus-visible {
   overflow: hidden;
 }
 
-.course-add-row {
-  height: 52px;
-  border-radius: 14px;
-  border: 1px dashed #c7d3e4;
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
 .course-module-card {
   border: 1px solid var(--border);
   border-radius: 18px;
