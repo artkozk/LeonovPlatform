@@ -320,19 +320,6 @@ export function BillingPage() {
         })}
       </section>
 
-      <section className="surface">
-        <div className="section-head">
-          <div>
-            <h2>Платёжная информация</h2>
-            <p>Оплата и активация подписки подтверждаются сервером.</p>
-          </div>
-          <span className="badge badge-neutral">Server verified</span>
-        </div>
-        <p className="text-muted">
-          Если webhook задержался, billing-страница автоматически синхронизирует статус платежа через API.
-        </p>
-      </section>
-
       {message && <div className="status-box">{message}</div>}
     </div>
   );
