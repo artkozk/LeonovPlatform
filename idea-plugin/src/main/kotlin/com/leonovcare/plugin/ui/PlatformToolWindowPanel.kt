@@ -69,6 +69,7 @@ class PlatformToolWindowPanel(private val project: Project) {
             return@TaskListPanel
         }
 
+        statementPanel.showLoading(task.title)
         taskManager.openTask(
             task = task,
             overwriteExistingEditableFiles = false,
@@ -77,7 +78,12 @@ class PlatformToolWindowPanel(private val project: Project) {
                     statementPanel.setTaskDetails(context.details, context.lessonMaterial)
                 }
             },
-            onError = { ex -> PlatformNotifications.taskError(project, ex.message ?: "Ошибка открытия задачи") },
+            onError = { ex ->
+                SwingUtilities.invokeLater {
+                    statementPanel.showError(ex.message ?: "Ошибка открытия задачи")
+                }
+                PlatformNotifications.taskError(project, ex.message ?: "Ошибка открытия задачи")
+            },
         )
     }
 

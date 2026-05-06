@@ -10,10 +10,18 @@ object MarkdownHtmlRenderer {
     private val boldRegex = Regex("\\*\\*(.+?)\\*\\*")
     private val inlineCodeRegex = Regex("`([^`]+)`")
 
-    fun render(markdown: String): String {
+    fun render(
+        markdown: String,
+        textColorHex: String = "#d8dee9",
+        backgroundColorHex: String = "#2b2d30",
+    ): String {
         val source = markdown.replace("\r\n", "\n").replace("\r", "\n").trim()
         if (source.isBlank()) {
-            return htmlDocument("<p class='muted'>Нет материалов для отображения.</p>")
+            return htmlDocument(
+                body = "<p class='muted'>Нет материалов для отображения.</p>",
+                textColorHex = textColorHex,
+                backgroundColorHex = backgroundColorHex,
+            )
         }
 
         val html = StringBuilder()
@@ -126,7 +134,11 @@ object MarkdownHtmlRenderer {
             html.append("</code></pre>")
         }
 
-        return htmlDocument(html.toString())
+        return htmlDocument(
+            body = html.toString(),
+            textColorHex = textColorHex,
+            backgroundColorHex = backgroundColorHex,
+        )
     }
 
     private fun formatInline(value: String): String {
@@ -136,18 +148,29 @@ object MarkdownHtmlRenderer {
         return escaped
     }
 
-    private fun htmlDocument(body: String): String {
+    private fun htmlDocument(
+        body: String,
+        textColorHex: String,
+        backgroundColorHex: String,
+    ): String {
         return """
             <html>
             <head>
               <style>
-                body { font-family: "Segoe UI", "Noto Sans", sans-serif; font-size: 13px; line-height: 1.45; margin: 10px; }
+                body {
+                  font-family: "Segoe UI", "Noto Sans", sans-serif;
+                  font-size: 13px;
+                  line-height: 1.45;
+                  margin: 10px;
+                  color: $textColorHex;
+                  background-color: $backgroundColorHex;
+                }
                 h1, h2, h3, h4, h5, h6 { margin: 12px 0 6px; }
                 p { margin: 6px 0; }
                 ul, ol { margin: 6px 0 8px 18px; padding: 0; }
-                blockquote { margin: 8px 0; padding: 6px 10px; border-left: 3px solid #6c7380; background: rgba(120,120,120,0.08); }
-                code { font-family: Consolas, "JetBrains Mono", monospace; background: rgba(120,120,120,0.12); padding: 1px 4px; border-radius: 3px; }
-                pre { font-family: Consolas, "JetBrains Mono", monospace; background: rgba(120,120,120,0.12); padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; }
+                blockquote { margin: 8px 0; padding: 6px 10px; border-left: 3px solid #6c7380; background: rgba(120,120,120,0.14); }
+                code { font-family: Consolas, "JetBrains Mono", monospace; background: rgba(120,120,120,0.2); padding: 1px 4px; border-radius: 3px; }
+                pre { font-family: Consolas, "JetBrains Mono", monospace; background: rgba(120,120,120,0.2); padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; }
                 pre code { background: transparent; padding: 0; }
                 .muted { opacity: 0.75; }
               </style>
@@ -157,4 +180,3 @@ object MarkdownHtmlRenderer {
         """.trimIndent()
     }
 }
-

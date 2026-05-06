@@ -59,9 +59,9 @@ class TaskManager(private val project: Project) {
     private val lessonCache = LessonCache.getInstance()
 
     private val lessonCacheTtlMillis = TimeUnit.HOURS.toMillis(8)
-    private val requestTimeoutMillis = TimeUnit.SECONDS.toMillis(8)
+    private val requestTimeoutMillis = TimeUnit.SECONDS.toMillis(12)
     private val startupBootstrapTimeoutMillis = TimeUnit.MILLISECONDS.toMillis(4500)
-    private val maxLessonPrefetchPerRefresh = 120
+    private val maxLessonPrefetchPerRefresh = 24
     private val refreshMutex = Mutex()
 
     @Volatile
@@ -238,6 +238,7 @@ class TaskManager(private val project: Project) {
                         ).startupTask
                         prefetchLessonMaterialsInBackground(
                             tasksByCourse = tasksByCourse,
+                            selectedCourseId = finalSelection.selectedCourseId,
                             startupTask = startupAfterBackground,
                         )
                     }
@@ -369,6 +370,7 @@ class TaskManager(private val project: Project) {
 
     private fun prefetchLessonMaterialsInBackground(
         tasksByCourse: Map<String, List<Task>>,
+        selectedCourseId: String?,
         startupTask: Task?,
     ) {
         scope.launch {
@@ -377,15 +379,14 @@ class TaskManager(private val project: Project) {
                     val client = apiFactory.client()
                     val existingLessons = lessonCache.getLessonsById().toMutableMap()
 
-                    val orderedTasks = tasksByCourse.values
-                        .asSequence()
-                        .flatten()
-                        .toList()
+                    val selectedCourseTasks = selectedCourseId
+                        ?.let { tasksByCourse[it].orEmpty() }
+                        .orEmpty()
                         .let(::normalizeTasks)
 
                     val orderedLessonIds = linkedSetOf<String>()
                     startupTask?.lessonId?.let { orderedLessonIds.add(it) }
-                    orderedTasks.mapNotNullTo(orderedLessonIds) { it.lessonId }
+                    selectedCourseTasks.mapNotNullTo(orderedLessonIds) { it.lessonId }
 
                     var updated = 0
                     var fetchedCount = 0

@@ -218,3 +218,35 @@
 
 1. `frontend npm.cmd test` — PASS.
 2. `frontend npm.cmd run build` — PASS.
+
+## 11. Plugin statement panel hotfix (2026-05-06, phase 4)
+
+### 11.1 Observed production symptom
+
+1. В tool window список задач загружался, но правая панель материалов оставалась визуально пустой.
+2. При открытии шагов возникали ошибки загрузки из-за конкуренции с фоновым prefetch и короткого сетевого таймаута.
+
+### 11.2 Root causes
+
+1. Агрессивный prefetch lesson-material выполнялся на большой выборке уроков (до 120 за refresh), что создавало лишние параллельные запросы и повышало риск таймаутов на открытии задачи.
+2. Для HTML-рендера statement panel не был зафиксирован контрастный foreground/background стиль; при темной теме содержимое могло быть практически невидимым.
+3. При ошибке `openTask` UI показывал notification, но не заполнял правую панель явным текстом ошибки.
+
+### 11.3 Implemented fix
+
+1. В `idea-plugin/src/main/kotlin/com/leonovcare/plugin/task/TaskManager.kt`:
+- `requestTimeoutMillis` увеличен до `12s`;
+- `maxLessonPrefetchPerRefresh` снижен до `24`;
+- prefetch ограничен только задачами выбранного курса + startup lesson, вместо fan-out по всем курсам.
+2. В `idea-plugin/src/main/kotlin/com/leonovcare/plugin/ui/TaskStatementPanel.kt`:
+- добавлены theme-aware foreground/background для `JEditorPane`;
+- добавлены состояния `showLoading(...)` и `showError(...)`.
+3. В `idea-plugin/src/main/kotlin/com/leonovcare/plugin/ui/MarkdownHtmlRenderer.kt`:
+- HTML шаблон получает явные `color` и `background-color`.
+4. В `idea-plugin/src/main/kotlin/com/leonovcare/plugin/ui/PlatformToolWindowPanel.kt`:
+- при выборе задачи сразу показывается loading-состояние;
+- при ошибке открытия задачи правая панель заполняется явным error-текстом.
+
+### 11.4 Verification
+
+1. `idea-plugin ./gradlew.bat test --console=plain` — PASS.
