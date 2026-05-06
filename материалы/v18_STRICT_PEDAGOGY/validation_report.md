@@ -46,7 +46,7 @@ final status: PASS
 - theory chars by lesson: {'Первый код': 2532, 'Ввод и числа': 2376, 'Строки': 2156, 'bool и None': 2120, 'Условия': 2105, 'Типы и память': 2064, 'Циклы': 2003, 'Списки': 2021, 'Функции': 1903, 'Кортежи': 2401}
 - future knowledge violations: 0
 - pedagogy issues: 0
-- course_preview.md chars: 1926695
+- course_preview.md chars: 1931780
 - ide_plugin_spec.md chars: 6737
 
 ## Target Batch Gates

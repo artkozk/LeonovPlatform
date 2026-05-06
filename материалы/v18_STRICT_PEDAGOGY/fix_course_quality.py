@@ -56,6 +56,10 @@ def save_course(course: dict) -> None:
     COURSE_FILE.write_text(json.dumps(course, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def strip_trailing_whitespace(text: str) -> str:
+    return "\n".join(line.rstrip() for line in text.splitlines())
+
+
 def iter_steps(course: dict):
     for module in course["course"]["modules"]:
         for lesson in module["lessons"]:
@@ -819,8 +823,8 @@ def update_reports(course: dict) -> None:
             for step in lesson["steps"]:
                 preview += [f"### {step['order']}. {step['title']} [{step['type']}]", "", step.get("body_markdown", ""), ""]
         course_map.append("")
-    (ROOT / "course_preview.md").write_text("\n".join(preview), encoding="utf-8")
-    (ROOT / "course_map.md").write_text("\n".join(course_map), encoding="utf-8")
+    (ROOT / "course_preview.md").write_text(strip_trailing_whitespace("\n".join(preview)) + "\n", encoding="utf-8")
+    (ROOT / "course_map.md").write_text(strip_trailing_whitespace("\n".join(course_map)) + "\n", encoding="utf-8")
 
 
 def independent_audit(course: dict) -> dict:
@@ -860,6 +864,21 @@ def write_quality_audit(audit: dict) -> None:
         lines.append("- none")
     status = "PASS" if not audit["bad_patterns"] and audit["sql_schema_count"] >= 4 and audit["project_artifact"] == 0 else "FAIL"
     lines += ["", "## Final Status", f"- {status}"]
+    lines += [
+        "",
+        "## Final gate quality pass",
+        "- Дата прохода: 2026-05-06.",
+        "- Исправляющий скрипт: `final_project_gate_pass.py`.",
+        "- Причина: финальные проектные gate не должны выглядеть как SQL-задачи, если студент сдаёт ТЗ, API contract, Git workflow, Docker, CI/CD, Deploy или Final defense.",
+        "- Что исправлено: формулировки `SQL сценарий`, SQL-вопросы в quiz и старые ссылки на учебный запрос к таблице `users` внутри финального проекта.",
+        "- Как работает сейчас: каждый финальный gate требует конкретную сдачу, команду или критерий проверки, pass/fail и отрицательный путь.",
+        "- Почему это важно: студент видит, что он строит backend-проект по этапам, а не выполняет повторяющиеся отчётные файлы с чужим SQL-контекстом.",
+        "",
+        "## Import delivery",
+        "- Новая production-safe миграция: `backend/migrations/032_reseed_python_zero_v18_final_gate_quality.sql`.",
+        "- Старые миграции `026`-`031` не переписывались, потому что они могли быть уже применены.",
+        "- Импортная проверка миграции: `docs/operations/PYTHON_V18_STRICT_PEDAGOGY_IMPORT_VALIDATION_2026_05_06_FINAL_GATE_QUALITY.md`.",
+    ]
     (ROOT / "strict_quality_audit.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 

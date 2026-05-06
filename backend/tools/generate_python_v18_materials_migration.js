@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const INPUT_PATH = path.resolve(__dirname, '../../материалы/v18_STRICT_PEDAGOGY/course_import.json');
-const OUT_PATH = path.resolve(__dirname, '../migrations/031_reseed_python_zero_v18_no_duplicate_tasks.sql');
+const OUT_PATH = path.resolve(__dirname, '../migrations/032_reseed_python_zero_v18_final_gate_quality.sql');
 const COURSE_SLUG = 'python-zero';
 
 const SUPPORTED_CHECKERS = new Set([
@@ -631,9 +631,9 @@ function buildBlockSeedValues(modulePosition, lessonPosition, lesson) {
 
 function buildMigrationSql(course) {
   let sql = '';
-  sql += '-- 031_reseed_python_zero_v18_no_duplicate_tasks.sql\n';
+  sql += '-- 032_reseed_python_zero_v18_final_gate_quality.sql\n';
   sql += '-- Generated from materials/v18_STRICT_PEDAGOGY/course_import.json\n';
-  sql += '-- Purpose: reseed python-zero from the v18 strict pedagogy package after semantic duplicate cleanup.\n';
+  sql += '-- Purpose: reseed python-zero from the v18 strict pedagogy package after final gate quality cleanup.\n';
   sql += `-- Generated at: ${new Date().toISOString()}\n\n`;
 
   sql += "ALTER TABLE tasks DROP CONSTRAINT IF EXISTS chk_tasks_language;\n";
@@ -841,7 +841,7 @@ function summarize(course) {
 function main() {
   const raw = JSON.parse(readText(INPUT_PATH));
   const course = prepareCourse(raw);
-  const migrationSQL = buildMigrationSql(course);
+  const migrationSQL = buildMigrationSql(course).replace(/\n+$/, '\n');
   fs.writeFileSync(OUT_PATH, migrationSQL, 'utf8');
 
   const stats = summarize(course);
