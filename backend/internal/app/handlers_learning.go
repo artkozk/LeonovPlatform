@@ -843,7 +843,7 @@ func (a *App) RunTask(c *gin.Context) {
 	rows, err := a.DB.Query(c.Request.Context(), `
 		SELECT input_data, expected_output
 		FROM task_test_cases
-		WHERE task_id = $1
+		WHERE task_id = $1 AND is_hidden = FALSE
 		ORDER BY position ASC
 	`, taskID)
 	if err != nil {
@@ -866,7 +866,7 @@ func (a *App) RunTask(c *gin.Context) {
 		return
 	}
 
-	result := a.evaluateTaskByPolicy(language, source, nil, tests, sourcePolicyRaw, solutionCode)
+	result := a.evaluateTaskByPolicy(language, source, nil, tests, publicRunPreviewSourcePolicy(sourcePolicyRaw), solutionCode)
 	result = normalizeRunPreviewResult(result)
 	c.JSON(http.StatusOK, gin.H{
 		"status":        result.Status,
@@ -1446,6 +1446,7 @@ func buildRunPreviewTestsPayload(tests []judge.TestResult) []gin.H {
 			"index":  test.Index,
 			"passed": test.Passed,
 			"error":  trimTextForClient(test.Error, 1000),
+			"input":  trimTextForClient(test.Input, 1000),
 			"actual": trimTextForClient(test.Actual, 1000),
 		})
 	}

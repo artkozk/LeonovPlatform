@@ -44,9 +44,9 @@ func TestBuildRunPreviewTestsPayload(t *testing.T) {
 		{
 			Index:    1,
 			Passed:   false,
-			Input:    "hidden input",
+			Input:    "17\n",
 			Expected: "secret expected",
-			Actual:   "42",
+			Actual:   "Нельзя\n",
 			Error:    "wrong",
 		},
 	}
@@ -57,8 +57,8 @@ func TestBuildRunPreviewTestsPayload(t *testing.T) {
 	if _, ok := payload[0]["expected"]; ok {
 		t.Fatalf("preview payload must not include expected")
 	}
-	if _, ok := payload[0]["input"]; ok {
-		t.Fatalf("preview payload must not include input")
+	if got := payload[0]["input"]; got != "17" {
+		t.Fatalf("preview payload must include public stdin, got %#v", got)
 	}
 }
 

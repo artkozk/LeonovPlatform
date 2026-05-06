@@ -472,3 +472,40 @@
 2. `node backend/tools/generate_python_v18_materials_migration.js` — regenerated migration `035_reseed_python_zero_v18_http_api_alignment.sql`.
 3. `node backend/tools/validate_python_v18_materials_import.js` — PASS.
 4. Backend focused tests: `backend go test ./internal/app` — PASS.
+
+## 16. Run preview stdin visibility fix (2026-05-06, phase 9)
+
+### 16.1 Observed production symptom
+
+1. В редакторе решения Python-код с `input()` выполнялся корректно: вывод зависел от первого тестового ввода.
+2. При этом блок `Консоль (первый тест)` показывал `stdin: (пусто)`.
+3. Для студента это выглядело как сломанный stdin, хотя judge фактически передавал входные данные в процесс Python.
+
+### 16.2 Root cause analysis
+
+1. `RunTask` получал тесты и запускал код с входными данными.
+2. После выполнения `buildRunPreviewTestsPayload(...)` удалял поле `input` из ответа API.
+3. Такое поведение было закреплено unit-тестом как защита от раскрытия скрытых тестов, но оно было слишком грубым: публичный preview-тест тоже терял stdin.
+4. Из-за этого frontend честно отображал `(пусто)`, потому что `runResult.tests[0].input` отсутствовал в JSON.
+
+### 16.3 Implemented fix
+
+1. Для `/run` добавлен отдельный preview-contract:
+- `publicRunPreviewSourcePolicy(...)` оставляет в checker-политике только тесты с публичной видимостью;
+- fallback-загрузка из `task_test_cases` теперь берёт только `is_hidden = FALSE`;
+- `buildRunPreviewTestsPayload(...)` возвращает `input` публичного preview-теста и по-прежнему не возвращает `expected`.
+2. Скрытые тесты остаются в полном checker/source policy и используются при обычной отправке решения на проверку.
+3. Обновлены unit-тесты:
+- preview payload теперь обязан возвращать public stdin;
+- preview source policy не должен пропускать hidden stdin в запуск по кнопке `Запустить код`.
+
+### 16.4 Why this architecture
+
+1. `stdin` нужен в preview, потому что студент должен видеть, на каком открытом примере запустился код.
+2. `expected` не возвращается в preview payload, чтобы интерфейс не превращал кнопку запуска в подсказку полного ответа.
+3. Фильтрация hidden-тестов сделана до выполнения preview, а не только при сериализации ответа. Так backend не выполняет скрытые проверки в режиме `Запустить код` и не рискует случайно раскрыть hidden-входы через stdout/stderr.
+
+### 16.5 Verification
+
+1. Backend focused tests нужно запускать после правки: `backend go test ./internal/app`.
+2. Production smoke после деплоя должен проверить задачу с `input()`: ответ `/run` обязан содержать `tests[0].input`, а `tests[0].expected` обязан отсутствовать.

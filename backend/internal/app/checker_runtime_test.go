@@ -57,6 +57,35 @@ func TestInferMainFilePathFromSourcePolicy_PytestSolutionModule(t *testing.T) {
 	}
 }
 
+func TestPublicRunPreviewSourcePolicyKeepsOnlyPublicPythonStdoutTests(t *testing.T) {
+	policy := `{
+		"language":"python",
+		"checker_type":"python_stdout",
+		"checker":{
+			"type":"python_stdout",
+			"tests":[
+				{"input":"17\n","expected_stdout":"Нельзя\n","visibility":"public"},
+				{"input":"99\n","expected_stdout":"Можно\n","visibility":"hidden"}
+			]
+		}
+	}`
+
+	previewPolicy := parseTaskSourcePolicy(publicRunPreviewSourcePolicy(policy))
+	var checker checkerPythonStdout
+	if err := json.Unmarshal(previewPolicy.Checker, &checker); err != nil {
+		t.Fatal(err)
+	}
+	if len(checker.Tests) != 1 {
+		t.Fatalf("expected one public preview test, got %d", len(checker.Tests))
+	}
+	if checker.Tests[0].Input != "17\n" {
+		t.Fatalf("expected public stdin to be preserved, got %q", checker.Tests[0].Input)
+	}
+	if strings.EqualFold(checker.Tests[0].Visibility, "hidden") {
+		t.Fatalf("hidden checker test leaked into run preview")
+	}
+}
+
 func TestPythonPytestImportsModule(t *testing.T) {
 	if !pythonPytestImportsModule("import inspect, solution\n", "solution") {
 		t.Fatalf("expected comma import to be detected")

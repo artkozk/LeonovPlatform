@@ -520,6 +520,77 @@ func parseTaskSourcePolicy(sourcePolicyRaw string) taskSourcePolicyEnvelope {
 	return envelope
 }
 
+func publicRunPreviewSourcePolicy(sourcePolicyRaw string) string {
+	policy := parseTaskSourcePolicy(sourcePolicyRaw)
+	if policy.CheckerType == "" || len(policy.Checker) == 0 {
+		return sourcePolicyRaw
+	}
+
+	var envelope map[string]interface{}
+	if err := json.Unmarshal([]byte(sourcePolicyRaw), &envelope); err != nil {
+		return sourcePolicyRaw
+	}
+
+	switch policy.CheckerType {
+	case "python_stdout":
+		var checker checkerPythonStdout
+		if err := json.Unmarshal(policy.Checker, &checker); err != nil {
+			return sourcePolicyRaw
+		}
+		filtered := checker.Tests[:0]
+		for _, test := range checker.Tests {
+			if isPublicRunPreviewVisibility(test.Visibility) {
+				filtered = append(filtered, test)
+			}
+		}
+		checker.Tests = filtered
+		envelope["checker"] = checker
+	case "sql_query":
+		var checker checkerSQLQuery
+		if err := json.Unmarshal(policy.Checker, &checker); err != nil {
+			return sourcePolicyRaw
+		}
+		filtered := checker.Checks[:0]
+		for _, check := range checker.Checks {
+			if isPublicRunPreviewVisibility(check.Visibility) {
+				filtered = append(filtered, check)
+			}
+		}
+		checker.Checks = filtered
+		envelope["checker"] = checker
+	case "http_api":
+		var checker checkerHTTPAPI
+		if err := json.Unmarshal(policy.Checker, &checker); err != nil {
+			return sourcePolicyRaw
+		}
+		filtered := checker.Tests[:0]
+		for _, test := range checker.Tests {
+			if isPublicRunPreviewVisibility(test.Visibility) {
+				filtered = append(filtered, test)
+			}
+		}
+		checker.Tests = filtered
+		envelope["checker"] = checker
+	default:
+		return sourcePolicyRaw
+	}
+
+	raw, err := json.Marshal(envelope)
+	if err != nil {
+		return sourcePolicyRaw
+	}
+	return string(raw)
+}
+
+func isPublicRunPreviewVisibility(visibility string) bool {
+	switch strings.ToLower(strings.TrimSpace(visibility)) {
+	case "", "public", "sample", "visible":
+		return true
+	default:
+		return false
+	}
+}
+
 func inferTaskTypeFromSourcePolicy(sourcePolicyRaw string) string {
 	switch parseTaskSourcePolicy(sourcePolicyRaw).CheckerType {
 	case "ide_plugin":
