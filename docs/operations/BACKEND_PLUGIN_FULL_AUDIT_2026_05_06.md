@@ -416,3 +416,59 @@
 - `python_pytest` preview + submission;
 - `http_api` preview + submission;
 - reference solution после accepted submission.
+
+## 15. HTTP API checker contract fix and v18 material alignment (2026-05-06, phase 8)
+
+### 15.1 Observed production symptom
+
+1. После фикса Docker sandbox и pytest-file contract acceptance дошёл до `http_api`.
+2. Корректное решение для `GET /users/me` возвращало:
+- `{"email": "me@example.com", "role": "student"}`.
+3. Checker ожидал только:
+- `{"email": "me@example.com"}`.
+4. Runtime сравнивал JSON как strict exact equality и возвращал `wrong_answer`, хотя исходный курс задавал `expected_json_subset`.
+
+### 15.2 Root cause analysis
+
+1. Генератор migration для v18 переносил `expected_json_subset` в поле `expected_json`, теряя семантику subset.
+2. Backend `checkerHTTPAPI` не сохранял поля `expected_json_subset`, `expected_json_type`, `headers` и `visibility` при marshal/unmarshal тестов.
+3. Python runner внутри `evaluateHTTPAPIChecker` был слишком узким для курса:
+- exact path matching не поддерживал `/items/{item_id}` и query string;
+- `HTTPException` всегда считался ошибкой, даже если checker ожидал 404/400;
+- не было stub-модулей для `pydantic.BaseModel`, `Field`, `fastapi.status`, `Response`, `APIRouter.include_router`;
+- method mismatch не мог дать ожидаемый 405.
+4. В самих v18 материалах были несколько contract mismatch:
+- `mock-access` в эталоне при ожидаемом `token`;
+- `requests_total` в эталоне при ожидаемом `requests`;
+- 4 HTTP-задачи CRUD-проекта имели текст вместо исполняемого FastAPI-эталона;
+- hidden 401 для `GET /users/me` не соответствовал показанному эталону без auth-dependency.
+
+### 15.3 Implemented fix
+
+1. Backend runtime:
+- `checkerHTTPAPI` теперь сохраняет `expected_json_subset`, `expected_json_type`, `headers`, `visibility`;
+- runner поддерживает subset-сравнение JSON;
+- legacy `expected_json` с object-значением также сравнивается как subset, чтобы уже импортированные v18 политики не ломали эталоны;
+- добавлены path params, query params, method-not-allowed 405, ожидаемые `HTTPException`, basic validation 422;
+- добавлены stubs для `FastAPI`, `APIRouter`, `Depends`, `Response`, `status`, `BaseModel`, `Field`.
+2. Material generator:
+- `convertHTTPTests(...)` больше не превращает `expected_json_subset` в exact `expected_json`;
+- сохраняются `expected_json_type`, `headers` и `visibility`.
+3. v18 course source:
+- исправлены HTTP эталоны для token/metrics;
+- добавлены исполняемые FastAPI reference solutions и starter templates для 4 CRUD HTTP tasks;
+- hidden `GET /users/me` выровнен с текущим учебным контрактом без auth dependency.
+
+### 15.4 Why this architecture
+
+1. Ошибка была одновременно в runtime contract и в нескольких material records, поэтому точечный фикс одного задания не решал бы проблему курса.
+2. Subset-сравнение соответствует исходной схеме курса: студент может вернуть дополнительные безопасные поля, если обязательный контракт соблюдён.
+3. Lightweight runner остаётся sandboxed и не ставит реальные FastAPI/Pydantic зависимости в контейнер; stubs покрывают учебный subset API, который нужен для задач курса.
+4. Материалы обновлены в JSON-источнике и затем регенерированы в SQL migration `035_reseed_python_zero_v18_http_api_alignment.sql`, чтобы reviewer видел одинаковый контракт в course source и platform import.
+
+### 15.5 Verification
+
+1. `python материалы/v18_STRICT_PEDAGOGY/validate_course.py` — PASS.
+2. `node backend/tools/generate_python_v18_materials_migration.js` — regenerated migration `035_reseed_python_zero_v18_http_api_alignment.sql`.
+3. `node backend/tools/validate_python_v18_materials_import.js` — PASS.
+4. Backend focused tests: `backend go test ./internal/app` — PASS.

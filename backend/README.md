@@ -546,6 +546,19 @@ REPORT_TASK_GAPS=1 node backend/tools/generate_full_course_v4_migration.js
 2. Runtime fallback нужен для уже открытых task workspace: если у студента остался старый `main.py`, проверка всё равно собирает ожидаемый `solution.py` во временном sandbox.
 3. Это не раскрывает эталон: используется только код, отправленный студентом, а `solution_code` по-прежнему нужен только внутренней проверке и reference endpoint после accepted submission.
 
+## HTTP API checker subset and FastAPI-stub contract (2026-05-06, v2.68)
+
+Current behavior: `http_api` checkers support `expected_json_subset`, `expected_json_type`, path params, query params, 405 method checks, expected `HTTPException` statuses, and the FastAPI/Pydantic subset used by the course (`FastAPI`, `APIRouter`, `Depends`, `Response`, `status`, `BaseModel`, `Field`). Object-shaped legacy `expected_json` values are treated as subset expectations so already-imported v18 policies keep accepting correct reference solutions that return additional safe fields.
+
+Why this exists: the v18 course authoring schema used `expected_json_subset`, but the older migration generator flattened that into `expected_json`, and the runner compared it as exact JSON. That made correct solutions fail when they returned an allowed extra field, for example `role` in `GET /users/me`. The runner now matches the course contract instead of forcing a stricter contract that the materials did not ask for.
+
+The lightweight FastAPI/Pydantic stubs are deliberately local to the checker sandbox. They are not a production web server replacement; they only execute the route functions and validation patterns needed by educational tasks without installing extra dependencies into the sandbox image. If future course tasks start using a wider FastAPI surface, extend the stub and add a regression test before importing those tasks.
+
+Material alignment done with this runtime change:
+- v18 generator now preserves `expected_json_subset`, `expected_json_type`, `headers`, and `visibility`;
+- HTTP reference solutions for token/metrics and CRUD project endpoints were corrected in the JSON source and regenerated into migration `035_reseed_python_zero_v18_http_api_alignment.sql`;
+- hidden `GET /users/me` checks now match the current lesson contract instead of requiring auth behavior that the reference solution does not implement.
+
 ## Production memory safety baseline (2026-04-30, v2.63)
 
 1. На production включен swap:

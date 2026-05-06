@@ -1,6 +1,11 @@
 package app
 
-import "testing"
+import (
+	"encoding/json"
+	"os/exec"
+	"strings"
+	"testing"
+)
 
 func TestEncodeDecodeSubmissionSourceBundleRoundTrip(t *testing.T) {
 	files := []submissionFilePayload{
@@ -61,6 +66,81 @@ func TestPythonPytestImportsModule(t *testing.T) {
 	}
 	if pythonPytestImportsModule("from app import solution\n", "solution") {
 		t.Fatalf("expected unrelated import to be ignored")
+	}
+}
+
+func TestHTTPAPICheckerPreservesExpectedJSONFields(t *testing.T) {
+	raw := []byte(`{
+		"type":"http_api",
+		"tests":[{
+			"method":"GET",
+			"path":"/items?limit=10",
+			"expected_status":200,
+			"expected_json_subset":{"status":"ok"},
+			"expected_json_type":"object",
+			"headers":{"Authorization":"Bearer token"},
+			"visibility":"hidden"
+		}]
+	}`)
+	var checker checkerHTTPAPI
+	if err := json.Unmarshal(raw, &checker); err != nil {
+		t.Fatal(err)
+	}
+	out, err := json.Marshal(checker.Tests)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(out)
+	for _, want := range []string{`"expected_json_subset"`, `"expected_json_type"`, `"headers"`, `"visibility"`} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("expected serialized tests to preserve %s, got %s", want, text)
+		}
+	}
+}
+
+func TestEvaluateHTTPAPICheckerSupportsFastAPIContracts(t *testing.T) {
+	if _, err := exec.LookPath("docker"); err != nil {
+		t.Skip("docker is not available")
+	}
+	if err := exec.Command("docker", "info").Run(); err != nil {
+		t.Skip("docker daemon is not available")
+	}
+
+	source := `from fastapi import FastAPI, HTTPException, status
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class TaskIn(BaseModel):
+    title: str
+
+@app.get("/items/{item_id}")
+def get_item(item_id: int, limit: int = 10):
+    if item_id != 1:
+        raise HTTPException(status_code=404, detail="not found")
+    return {"id": item_id, "limit": limit, "extra": "ok"}
+
+@app.post("/tasks", status_code=status.HTTP_201_CREATED)
+def create_task(payload: TaskIn):
+    return {"id": 1, "title": payload.title, "done": False}
+`
+	checker := json.RawMessage(`{
+		"type":"http_api",
+		"timeout_sec":12,
+		"tests":[
+			{"method":"GET","path":"/items/1?limit=20","expected_status":200,"expected_json_subset":{"id":1,"limit":20}},
+			{"method":"GET","path":"/items/2","expected_status":404},
+			{"method":"POST","path":"/tasks","json":{"title":"Buy milk"},"expected_status":201,"expected_json":{"title":"Buy milk"}},
+			{"method":"POST","path":"/tasks","json":{},"expected_status":422}
+		]
+	}`)
+
+	result := (&App{}).evaluateHTTPAPIChecker(source, nil, checker)
+	if result.Status != "accepted" {
+		t.Fatalf("expected accepted, got %s: %s", result.Status, result.RunLog)
+	}
+	if result.Score != 100 {
+		t.Fatalf("expected score 100, got %d", result.Score)
 	}
 }
 

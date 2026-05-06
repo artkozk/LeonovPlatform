@@ -1,7 +1,7 @@
--- 033_reseed_python_zero_v18_coursewide_diversity.sql
+-- 035_reseed_python_zero_v18_http_api_alignment.sql
 -- Generated from materials/v18_STRICT_PEDAGOGY/course_import.json
--- Purpose: reseed python-zero from the v18 strict pedagogy package after coursewide diversity and theory cleanup.
--- Generated at: 2026-05-06T13:10:41.754Z
+-- Purpose: reseed python-zero from the v18 strict pedagogy package after HTTP API checker/runtime alignment.
+-- Generated at: 2026-05-06T13:15:45.209Z
 
 ALTER TABLE tasks DROP CONSTRAINT IF EXISTS chk_tasks_language;
 ALTER TABLE tasks ADD CONSTRAINT chk_tasks_language CHECK (language IN ('java', 'python', 'python3', 'py', 'sql'));

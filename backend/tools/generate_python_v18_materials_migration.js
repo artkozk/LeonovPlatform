@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const INPUT_PATH = path.resolve(__dirname, '../../материалы/v18_STRICT_PEDAGOGY/course_import.json');
-const OUT_PATH = path.resolve(__dirname, '../migrations/033_reseed_python_zero_v18_coursewide_diversity.sql');
+const OUT_PATH = path.resolve(__dirname, '../migrations/035_reseed_python_zero_v18_http_api_alignment.sql');
 const COURSE_SLUG = 'python-zero';
 
 const SUPPORTED_CHECKERS = new Set([
@@ -138,16 +138,24 @@ function toTestsWithVisibility(publicTests, hiddenTests) {
 
 function convertHTTPTests(publicTests, hiddenTests) {
   return toTestsWithVisibility(publicTests, hiddenTests).map((item) => {
-    const expectedJson =
-      item.expected_json !== undefined ? item.expected_json : item.expected_json_subset !== undefined ? item.expected_json_subset : null;
-    return {
+    const converted = {
       method: normalizeSpaces(item.method).toUpperCase() || 'GET',
       path: String(item.path ?? ''),
+      headers: item.headers && typeof item.headers === 'object' ? item.headers : {},
       json: item.json ?? null,
       expected_status: toInt(item.expected_status, 200),
-      expected_json: expectedJson,
       visibility: normalizeSpaces(item.visibility).toLowerCase() === 'public' ? 'public' : 'hidden',
     };
+    if (item.expected_json !== undefined) {
+      converted.expected_json = item.expected_json;
+    }
+    if (item.expected_json_subset !== undefined) {
+      converted.expected_json_subset = item.expected_json_subset;
+    }
+    if (item.expected_json_type !== undefined) {
+      converted.expected_json_type = normalizeSpaces(item.expected_json_type);
+    }
+    return converted;
   });
 }
 
@@ -631,9 +639,9 @@ function buildBlockSeedValues(modulePosition, lessonPosition, lesson) {
 
 function buildMigrationSql(course) {
   let sql = '';
-  sql += '-- 033_reseed_python_zero_v18_coursewide_diversity.sql\n';
+  sql += '-- 035_reseed_python_zero_v18_http_api_alignment.sql\n';
   sql += '-- Generated from materials/v18_STRICT_PEDAGOGY/course_import.json\n';
-  sql += '-- Purpose: reseed python-zero from the v18 strict pedagogy package after coursewide diversity and theory cleanup.\n';
+  sql += '-- Purpose: reseed python-zero from the v18 strict pedagogy package after HTTP API checker/runtime alignment.\n';
   sql += `-- Generated at: ${new Date().toISOString()}\n\n`;
 
   sql += "ALTER TABLE tasks DROP CONSTRAINT IF EXISTS chk_tasks_language;\n";

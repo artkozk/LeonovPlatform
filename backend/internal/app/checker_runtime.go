@@ -77,11 +77,15 @@ type checkerHTTPAPI struct {
 	Framework  string `json:"framework"`
 	TimeoutSec int    `json:"timeout_sec"`
 	Tests      []struct {
-		Method         string      `json:"method"`
-		Path           string      `json:"path"`
-		JSON           interface{} `json:"json"`
-		ExpectedStatus int         `json:"expected_status"`
-		ExpectedJSON   interface{} `json:"expected_json"`
+		Method             string            `json:"method"`
+		Path               string            `json:"path"`
+		Headers            map[string]string `json:"headers"`
+		JSON               interface{}       `json:"json"`
+		ExpectedStatus     int               `json:"expected_status"`
+		ExpectedJSON       interface{}       `json:"expected_json"`
+		ExpectedJSONSubset interface{}       `json:"expected_json_subset"`
+		ExpectedJSONType   string            `json:"expected_json_type"`
+		Visibility         string            `json:"visibility"`
 	} `json:"tests"`
 }
 
@@ -961,6 +965,11 @@ import pathlib
 import sys
 import traceback
 import types
+from typing import Union, get_args, get_origin
+from urllib.parse import parse_qs, unquote, urlsplit
+
+class RequestValidationError(Exception):
+    pass
 
 class HTTPException(Exception):
     def __init__(self, status_code=500, detail=None):
@@ -968,30 +977,94 @@ class HTTPException(Exception):
         self.status_code = status_code
         self.detail = detail
 
+class Response:
+    def __init__(self, content=None, status_code=200):
+        self.content = content
+        self.status_code = status_code
+
+class _Status:
+    HTTP_200_OK = 200
+    HTTP_201_CREATED = 201
+    HTTP_202_ACCEPTED = 202
+    HTTP_204_NO_CONTENT = 204
+    HTTP_400_BAD_REQUEST = 400
+    HTTP_401_UNAUTHORIZED = 401
+    HTTP_403_FORBIDDEN = 403
+    HTTP_404_NOT_FOUND = 404
+    HTTP_409_CONFLICT = 409
+    HTTP_422_UNPROCESSABLE_ENTITY = 422
+    HTTP_500_INTERNAL_SERVER_ERROR = 500
+
+status = _Status()
+
+def clean_path(value):
+    text = str(value or "")
+    if text == "":
+        return ""
+    if not text.startswith("/"):
+        text = "/" + text
+    if len(text) > 1 and text.endswith("/"):
+        text = text[:-1]
+    return text
+
+def join_paths(*parts):
+    out = ""
+    for part in parts:
+        piece = str(part or "")
+        if piece == "":
+            continue
+        if out.endswith("/") and piece.startswith("/"):
+            out += piece[1:]
+        elif not out.endswith("/") and not piece.startswith("/"):
+            out += "/" + piece
+        else:
+            out += piece
+    return clean_path(out) or "/"
+
 class FastAPI:
-    def __init__(self):
+    def __init__(self, **_kwargs):
         self._routes = []
-    def _route(self, method, path):
+        self.prefix = clean_path(_kwargs.get("prefix", ""))
+    def _route(self, method, path, **kwargs):
         def decorator(func):
-            self._routes.append({"method": method.upper(), "path": path, "func": func})
+            self._routes.append({
+                "method": method.upper(),
+                "path": clean_path(path) or "/",
+                "func": func,
+                "status_code": int(kwargs.get("status_code", 200) or 200),
+            })
             return func
         return decorator
-    def get(self, path, **_kwargs):
-        return self._route("GET", path)
-    def post(self, path, **_kwargs):
-        return self._route("POST", path)
-    def put(self, path, **_kwargs):
-        return self._route("PUT", path)
-    def delete(self, path, **_kwargs):
-        return self._route("DELETE", path)
-    def patch(self, path, **_kwargs):
-        return self._route("PATCH", path)
+    def get(self, path, **kwargs):
+        return self._route("GET", path, **kwargs)
+    def post(self, path, **kwargs):
+        return self._route("POST", path, **kwargs)
+    def put(self, path, **kwargs):
+        return self._route("PUT", path, **kwargs)
+    def delete(self, path, **kwargs):
+        return self._route("DELETE", path, **kwargs)
+    def patch(self, path, **kwargs):
+        return self._route("PATCH", path, **kwargs)
+    def include_router(self, router, prefix="", **_kwargs):
+        base = join_paths(prefix, getattr(router, "prefix", ""))
+        for route in getattr(router, "_routes", []):
+            self._routes.append({
+                "method": route.get("method", "GET"),
+                "path": join_paths(base, route.get("path", "")),
+                "func": route.get("func"),
+                "status_code": int(route.get("status_code", 200) or 200),
+            })
 
 class APIRouter(FastAPI):
-    pass
+    def __init__(self, prefix="", **kwargs):
+        super().__init__(prefix=prefix, **kwargs)
+
+class _Depends:
+    def __init__(self, dependency=None):
+        self.dependency = dependency
 
 def Depends(value=None):
-    return value
+    return _Depends(value)
 
 def Query(default=None, **_kwargs):
     return default
@@ -1002,15 +1075,142 @@ def Path(default=None, **_kwargs):
 def Body(default=None, **_kwargs):
     return default
 
+class _Missing:
+    pass
+
+MISSING = _Missing()
+
+class FieldInfo:
+    def __init__(self, default=MISSING, **kwargs):
+        self.default = default
+        self.kwargs = kwargs
+
+def Field(default=MISSING, **kwargs):
+    return FieldInfo(default, **kwargs)
+
+class BaseModel:
+    def __init__(self, **data):
+        annotations = getattr(self.__class__, "__annotations__", {})
+        for name, annotation in annotations.items():
+            field_cfg = getattr(self.__class__, name, MISSING)
+            if name in data:
+                value = data[name]
+            elif isinstance(field_cfg, FieldInfo):
+                if field_cfg.default is MISSING:
+                    raise RequestValidationError(f"missing field {name}")
+                value = field_cfg.default
+            elif field_cfg is not MISSING:
+                value = field_cfg
+            else:
+                raise RequestValidationError(f"missing field {name}")
+            value = convert_value(value, annotation)
+            validate_field_constraints(name, value, field_cfg)
+            setattr(self, name, value)
+        for name, value in data.items():
+            if name not in annotations:
+                setattr(self, name, value)
+    def model_dump(self):
+        return dict(self.__dict__)
+    def dict(self):
+        return self.model_dump()
+
+def is_basemodel_type(annotation):
+    try:
+        return inspect.isclass(annotation) and issubclass(annotation, BaseModel)
+    except TypeError:
+        return False
+
+def basemodel_type_from_annotation(annotation):
+    if is_basemodel_type(annotation):
+        return annotation
+    origin = get_origin(annotation)
+    if origin in (Union, getattr(types, "UnionType", None)):
+        for item in get_args(annotation):
+            if is_basemodel_type(item):
+                return item
+    return None
+
+def convert_value(value, annotation):
+    if annotation is inspect._empty or annotation is None:
+        return value
+    if isinstance(annotation, str):
+        return value
+    origin = get_origin(annotation)
+    if origin in (Union, getattr(types, "UnionType", None)):
+        last_error = None
+        for item in get_args(annotation):
+            if item is type(None) and value is None:
+                return None
+            if item is type(None):
+                continue
+            try:
+                return convert_value(value, item)
+            except RequestValidationError as exc:
+                last_error = exc
+        if last_error is not None:
+            raise last_error
+        return value
+    if origin in (list, tuple, set):
+        if origin is list and not isinstance(value, list):
+            raise RequestValidationError(f"invalid list value {value!r}")
+        if origin is tuple and not isinstance(value, tuple):
+            raise RequestValidationError(f"invalid tuple value {value!r}")
+        if origin is set and not isinstance(value, set):
+            raise RequestValidationError(f"invalid set value {value!r}")
+        args = get_args(annotation)
+        if origin is list and args:
+            return [convert_value(item, args[0]) for item in value]
+        return value
+    if annotation is str:
+        return str(value)
+    if annotation is int:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            raise RequestValidationError(f"invalid int value {value!r}")
+    if annotation is float:
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            raise RequestValidationError(f"invalid float value {value!r}")
+    if annotation is bool:
+        if isinstance(value, bool):
+            return value
+        text = str(value).lower()
+        if text in ("true", "1", "yes", "on"):
+            return True
+        if text in ("false", "0", "no", "off"):
+            return False
+        raise RequestValidationError(f"invalid bool value {value!r}")
+    return value
+
+def validate_field_constraints(name, value, field_cfg):
+    if not isinstance(field_cfg, FieldInfo):
+        return
+    opts = field_cfg.kwargs
+    if "min_length" in opts and value is not None and len(value) < int(opts["min_length"]):
+        raise RequestValidationError(f"{name} is too short")
+    if "ge" in opts and value < opts["ge"]:
+        raise RequestValidationError(f"{name} is too small")
+    if "le" in opts and value > opts["le"]:
+        raise RequestValidationError(f"{name} is too large")
+
 fastapi_mod = types.ModuleType("fastapi")
 fastapi_mod.FastAPI = FastAPI
 fastapi_mod.APIRouter = APIRouter
 fastapi_mod.HTTPException = HTTPException
+fastapi_mod.Response = Response
 fastapi_mod.Depends = Depends
 fastapi_mod.Query = Query
 fastapi_mod.Path = Path
 fastapi_mod.Body = Body
+fastapi_mod.status = status
 sys.modules["fastapi"] = fastapi_mod
+
+pydantic_mod = types.ModuleType("pydantic")
+pydantic_mod.BaseModel = BaseModel
+pydantic_mod.Field = Field
+sys.modules["pydantic"] = pydantic_mod
 
 result = {"status": "accepted", "compile_output": "", "run_log": "", "tests": []}
 
@@ -1050,48 +1250,148 @@ with open("__lc_http_tests.json", "r", encoding="utf-8") as f:
     checks = json.load(f)
 
 def normalize_payload(value):
+    if isinstance(value, Response):
+        return {} if value.content is None else value.content
     if hasattr(value, "model_dump"):
         return value.model_dump()
     if hasattr(value, "dict"):
         return value.dict()
     return value
 
+def split_request_path(raw_path):
+    parsed = urlsplit(str(raw_path or ""))
+    request_path = clean_path(parsed.path or "/")
+    query = {key: values[-1] for key, values in parse_qs(parsed.query, keep_blank_values=True).items()}
+    return request_path, query
+
+def match_route_path(route_path, request_path):
+    route_parts = [part for part in clean_path(route_path).split("/") if part]
+    request_parts = [part for part in clean_path(request_path).split("/") if part]
+    if len(route_parts) != len(request_parts):
+        return None
+    params = {}
+    for route_part, request_part in zip(route_parts, request_parts):
+        if route_part.startswith("{") and route_part.endswith("}"):
+            params[route_part[1:-1]] = unquote(request_part)
+            continue
+        if route_part != request_part:
+            return None
+    return params
+
+def resolve_dependency(default):
+    dependency = default.dependency
+    if dependency is None:
+        return None
+    if callable(dependency):
+        return dependency()
+    return dependency
+
+def build_call_kwargs(fn, path_params, query_params, payload):
+    kwargs = {}
+    sig = inspect.signature(fn)
+    for name, param in sig.parameters.items():
+        annotation = param.annotation
+        default = param.default
+        model_type = basemodel_type_from_annotation(annotation)
+        if name in path_params:
+            kwargs[name] = convert_value(path_params[name], annotation)
+            continue
+        elif name in query_params:
+            kwargs[name] = convert_value(query_params[name], annotation)
+            continue
+        elif isinstance(default, _Depends):
+            kwargs[name] = resolve_dependency(default)
+            continue
+        elif isinstance(payload, dict) and model_type is not None:
+            kwargs[name] = model_type(**payload)
+            continue
+        elif isinstance(payload, dict) and name in payload:
+            kwargs[name] = convert_value(payload[name], annotation)
+            continue
+        elif default is not inspect._empty:
+            kwargs[name] = default
+            continue
+        elif model_type is not None:
+            kwargs[name] = model_type(**(payload if isinstance(payload, dict) else {}))
+            continue
+        else:
+            raise RequestValidationError(f"missing parameter {name}")
+    return kwargs
+
+def subset_match(actual, expected):
+    if isinstance(expected, dict):
+        if not isinstance(actual, dict):
+            return False
+        for key, expected_value in expected.items():
+            if key not in actual or not subset_match(actual[key], expected_value):
+                return False
+        return True
+    if isinstance(expected, list):
+        return actual == expected
+    return actual == expected
+
+def json_type_matches(actual, expected_type):
+    kind = str(expected_type or "").lower()
+    if kind in ("array", "list"):
+        return isinstance(actual, list)
+    if kind in ("object", "dict"):
+        return isinstance(actual, dict)
+    if kind in ("string", "str"):
+        return isinstance(actual, str)
+    if kind in ("number", "int", "float"):
+        return isinstance(actual, (int, float)) and not isinstance(actual, bool)
+    if kind in ("boolean", "bool"):
+        return isinstance(actual, bool)
+    if kind in ("null", "none"):
+        return actual is None
+    return True
+
 for test in checks:
     method = str(test.get("method", "GET")).upper()
     path = str(test.get("path", ""))
+    request_path, query_params = split_request_path(path)
     expected_status = int(test.get("expected_status", 200) or 200)
     expected_json = test.get("expected_json")
+    expected_json_subset = test.get("expected_json_subset")
+    expected_json_type = test.get("expected_json_type")
 
-    route = next((r for r in app._routes if str(r.get("method", "")).upper() == method and str(r.get("path", "")) == path), None)
+    route = None
+    path_params = {}
+    for candidate in app._routes:
+        if str(candidate.get("method", "")).upper() != method:
+            continue
+        matched_params = match_route_path(candidate.get("path", ""), request_path)
+        if matched_params is not None:
+            route = candidate
+            path_params = matched_params
+            break
     item = {"name": f"{method} {path}", "passed": True, "error": "", "actual": ""}
 
     if route is None:
-        item["passed"] = False
-        item["error"] = "route not found"
-        result["status"] = "wrong_answer"
+        path_exists = any(match_route_path(candidate.get("path", ""), request_path) is not None for candidate in app._routes)
+        actual_status = 405 if path_exists else 404
+        item["actual"] = json.dumps({"detail": "method not allowed" if path_exists else "not found"}, ensure_ascii=False)
+        if actual_status != expected_status:
+            item["passed"] = False
+            item["error"] = "method not allowed" if path_exists else "route not found"
+            result["status"] = "wrong_answer"
         result["tests"].append(item)
         continue
 
     fn = route.get("func")
     try:
         payload = test.get("json")
-        if isinstance(payload, dict):
-            kwargs = {}
-            sig = inspect.signature(fn)
-            for name, param in sig.parameters.items():
-                if name in payload:
-                    kwargs[name] = payload[name]
-                elif param.default is inspect._empty:
-                    kwargs[name] = None
-            response = fn(**kwargs)
-        else:
-            response = fn()
+        kwargs = build_call_kwargs(fn, path_params, query_params, payload)
+        response = fn(**kwargs)
 
         if inspect.isawaitable(response):
             response = asyncio.run(response)
 
-        status_code = 200
+        status_code = int(route.get("status_code", 200) or 200)
         body = response
+        if isinstance(response, Response):
+            status_code = response.status_code
+            body = response.content
         if isinstance(response, tuple) and len(response) == 2 and isinstance(response[1], int):
             body = response[0]
             status_code = response[1]
@@ -1102,7 +1402,16 @@ for test in checks:
         if status_code != expected_status:
             item["passed"] = False
             item["error"] = f"expected status {expected_status}, got {status_code}"
-        elif expected_json is not None and normalized_body != expected_json:
+        elif expected_json_type and not json_type_matches(normalized_body, expected_json_type):
+            item["passed"] = False
+            item["error"] = f"expected json type {expected_json_type}, got {type(normalized_body).__name__}"
+        elif expected_json_subset is not None and not subset_match(normalized_body, expected_json_subset):
+            item["passed"] = False
+            item["error"] = f"expected json subset {expected_json_subset}, got {normalized_body}"
+        elif expected_json is not None and isinstance(expected_json, dict) and not subset_match(normalized_body, expected_json):
+            item["passed"] = False
+            item["error"] = f"expected json subset {expected_json}, got {normalized_body}"
+        elif expected_json is not None and not isinstance(expected_json, dict) and normalized_body != expected_json:
             item["passed"] = False
             item["error"] = f"expected json {expected_json}, got {normalized_body}"
 
@@ -1110,9 +1419,32 @@ for test in checks:
             result["status"] = "wrong_answer"
 
     except HTTPException as exc:
-        item["passed"] = False
-        item["error"] = f"HTTPException status={getattr(exc, 'status_code', '?')} detail={getattr(exc, 'detail', '')}"
-        result["status"] = "wrong_answer"
+        status_code = int(getattr(exc, "status_code", 500) or 500)
+        normalized_body = {"detail": getattr(exc, "detail", None)}
+        item["actual"] = json.dumps(normalized_body, ensure_ascii=False)
+        if status_code != expected_status:
+            item["passed"] = False
+            item["error"] = f"expected status {expected_status}, got {status_code}"
+        elif expected_json_subset is not None and not subset_match(normalized_body, expected_json_subset):
+            item["passed"] = False
+            item["error"] = f"expected json subset {expected_json_subset}, got {normalized_body}"
+        elif expected_json is not None and isinstance(expected_json, dict) and not subset_match(normalized_body, expected_json):
+            item["passed"] = False
+            item["error"] = f"expected json subset {expected_json}, got {normalized_body}"
+        elif expected_json is not None and not isinstance(expected_json, dict) and normalized_body != expected_json:
+            item["passed"] = False
+            item["error"] = f"expected json {expected_json}, got {normalized_body}"
+        if not item["passed"] and result["status"] == "accepted":
+            result["status"] = "wrong_answer"
+    except RequestValidationError as exc:
+        status_code = 422
+        normalized_body = {"detail": str(exc) or "validation error"}
+        item["actual"] = json.dumps(normalized_body, ensure_ascii=False)
+        if status_code != expected_status:
+            item["passed"] = False
+            item["error"] = f"expected status {expected_status}, got {status_code}"
+        if not item["passed"] and result["status"] == "accepted":
+            result["status"] = "wrong_answer"
     except Exception:
         item["passed"] = False
         item["error"] = traceback.format_exc()
