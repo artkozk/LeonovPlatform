@@ -7,6 +7,7 @@ const authRoute = "/auth";
 const CACHE_TTL_FAST_MS = 3_000;
 const CACHE_TTL_SHORT_MS = 10_000;
 const CACHE_TTL_PROFILE_MS = 5_000;
+const REQUEST_TIMEOUT_MS = 15_000;
 
 type CachedEntry = {
   expiresAt: number;
@@ -24,6 +25,7 @@ const inFlightGet = new Map<string, Promise<unknown>>();
 
 export const http = axios.create({
   baseURL: API_URL,
+  timeout: REQUEST_TIMEOUT_MS,
 });
 
 http.interceptors.request.use((config) => {
@@ -144,7 +146,7 @@ async function refreshAccessToken(): Promise<string | null> {
   }
 
   try {
-    const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
+    const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken }, { timeout: REQUEST_TIMEOUT_MS });
     const nextAccess = String(data?.accessToken ?? "");
     const nextRefresh = String(data?.refreshToken ?? "");
     if (!nextAccess || !nextRefresh) {

@@ -4,6 +4,25 @@ import { UserProfile } from "../api/types";
 
 let bootstrapPromise: Promise<UserProfile | null> | null = null;
 
+function resolveAuthError(error: any, fallback: string) {
+  const responseError = error?.response?.data?.error;
+  if (typeof responseError === "string" && responseError.trim() !== "") {
+    return responseError;
+  }
+
+  const code = String(error?.code ?? "").toUpperCase();
+  if (code === "ECONNABORTED") {
+    return "Сервер долго не отвечает. Проверьте подключение к платформе и повторите попытку.";
+  }
+
+  const message = String(error?.message ?? "").toLowerCase();
+  if (message.includes("network error") || message.includes("failed to fetch")) {
+    return "Не удаётся подключиться к серверу авторизации. Проверьте интернет/VPN и адрес платформы.";
+  }
+
+  return fallback;
+}
+
 type AuthStore = {
   user: UserProfile | null;
   loading: boolean;
@@ -59,7 +78,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
       const profile = await apiMe();
       set({ user: profile, loading: false, error: null });
     } catch (e: any) {
-      set({ loading: false, error: e?.response?.data?.error ?? "Не удалось выполнить вход" });
+      set({ loading: false, error: resolveAuthError(e, "Не удалось выполнить вход") });
     }
   },
 
@@ -70,7 +89,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
       const profile = await apiMe();
       set({ user: profile, loading: false, error: null });
     } catch (e: any) {
-      set({ loading: false, error: e?.response?.data?.error ?? "Не удалось создать аккаунт" });
+      set({ loading: false, error: resolveAuthError(e, "Не удалось создать аккаунт") });
     }
   },
 
