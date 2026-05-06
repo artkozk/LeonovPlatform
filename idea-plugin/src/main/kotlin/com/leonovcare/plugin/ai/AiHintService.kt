@@ -4,6 +4,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.application.ReadAction
 import com.leonovcare.plugin.api.AiHintResponse
 import com.leonovcare.plugin.api.PlatformApiClientFactory
 import com.leonovcare.plugin.auth.AuthService
@@ -74,9 +75,11 @@ class AiHintService(private val project: Project) {
         }
         val vFile = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(normalized)
         if (vFile != null) {
-            val document = FileDocumentManager.getInstance().getDocument(vFile)
-            if (document != null) {
-                return document.text
+            val documentText = ReadAction.compute<String?, RuntimeException> {
+                FileDocumentManager.getInstance().getDocument(vFile)?.text
+            }
+            if (documentText != null) {
+                return documentText
             }
         }
         if (Files.exists(normalized)) {

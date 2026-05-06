@@ -761,21 +761,7 @@ func isEquivalentOutput(actual, expected string) bool {
 }
 
 func (j *javaEngine) runDockerCommand(ctx context.Context, workspace, image string, command []string, stdin string) (string, error, bool) {
-	workspaceMount := filepath.ToSlash(workspace) + ":/workspace"
-	args := []string{
-		"run",
-		"--rm",
-		"--network", "none",
-		"--memory", "256m",
-		"--cpus", "1.0",
-		"--pids-limit", "128",
-		"--read-only",
-		"--tmpfs", "/tmp:size=64m",
-		"-v", workspaceMount,
-		"-w", "/workspace",
-		image,
-	}
-	args = append(args, command...)
+	args := buildDockerRunArgs(workspace, image, command, strings.TrimSpace(stdin) != "")
 
 	cmd := exec.CommandContext(ctx, "docker", args...)
 	if stdin != "" {
@@ -800,4 +786,26 @@ func (j *javaEngine) runDockerCommand(ctx context.Context, workspace, image stri
 		return combined, err, false
 	}
 	return strings.TrimSpace(stdout.String()), nil, false
+}
+
+func buildDockerRunArgs(workspace, image string, command []string, interactive bool) []string {
+	workspaceMount := filepath.ToSlash(workspace) + ":/workspace"
+	args := []string{
+		"run",
+		"--rm",
+		"--network", "none",
+		"--memory", "256m",
+		"--cpus", "1.0",
+		"--pids-limit", "128",
+		"--read-only",
+		"--tmpfs", "/tmp:size=64m",
+		"-v", workspaceMount,
+		"-w", "/workspace",
+	}
+	if interactive {
+		args = append(args, "-i")
+	}
+	args = append(args, image)
+	args = append(args, command...)
+	return args
 }

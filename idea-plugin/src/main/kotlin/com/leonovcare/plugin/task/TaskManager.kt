@@ -1,6 +1,8 @@
 package com.leonovcare.plugin.task
 
 import com.intellij.openapi.application.ApplicationNamesInfo
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.fileEditor.FileEditorManager
@@ -353,12 +355,16 @@ class TaskManager(private val project: Project) {
                         previousContext != null &&
                         previousContext.taskDir != result.taskDirectory
                     ) {
-                        closeEditorsUnder(previousContext.taskDir)
+                        runOnEdtSync {
+                            closeEditorsUnder(previousContext.taskDir)
+                        }
                     }
 
                     val localFile = LocalFileSystem.getInstance().refreshAndFindFileByNioFile(result.mainFile)
-                    if (localFile != null) {
-                        FileEditorManager.getInstance(project).openFile(localFile, true)
+                    runOnEdtSync {
+                        if (localFile != null && localFile.isValid) {
+                            FileEditorManager.getInstance(project).openFile(localFile, true)
+                        }
                     }
 
                     val context = CurrentTaskContext(
@@ -661,6 +667,23 @@ class TaskManager(private val project: Project) {
                 editorManager.closeFile(file)
             }
         }
+    }
+
+    private fun runOnEdtSync(block: () -> Unit) {
+        if (project.isDisposed) return
+        val app = ApplicationManager.getApplication()
+        if (app.isDispatchThread) {
+            block()
+            return
+        }
+        app.invokeAndWait(
+            {
+                if (!project.isDisposed) {
+                    block()
+                }
+            },
+            ModalityState.any(),
+        )
     }
 
     companion object {

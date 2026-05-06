@@ -153,6 +153,9 @@ object MarkdownHtmlRenderer {
         textColorHex: String,
         backgroundColorHex: String,
     ): String {
+        val quoteBackgroundHex = "#3a3d42"
+        val codeBackgroundHex = "#3f434a"
+        val mutedTextHex = "#9ba3af"
         return """
             <html>
             <head>
@@ -168,11 +171,11 @@ object MarkdownHtmlRenderer {
                 h1, h2, h3, h4, h5, h6 { margin: 12px 0 6px; }
                 p { margin: 6px 0; }
                 ul, ol { margin: 6px 0 8px 18px; padding: 0; }
-                blockquote { margin: 8px 0; padding: 6px 10px; border-left: 3px solid #6c7380; background: rgba(120,120,120,0.14); }
-                code { font-family: Consolas, "JetBrains Mono", monospace; background: rgba(120,120,120,0.2); padding: 1px 4px; border-radius: 3px; }
-                pre { font-family: Consolas, "JetBrains Mono", monospace; background: rgba(120,120,120,0.2); padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; }
-                pre code { background: transparent; padding: 0; }
-                .muted { opacity: 0.75; }
+                blockquote { margin: 8px 0; padding: 6px 10px; border-left: 3px solid #6c7380; background-color: $quoteBackgroundHex; }
+                code { font-family: Consolas, "JetBrains Mono", monospace; background-color: $codeBackgroundHex; padding: 1px 4px; }
+                pre { font-family: Consolas, "JetBrains Mono", monospace; background-color: $codeBackgroundHex; padding: 10px; white-space: pre; }
+                pre code { background-color: $codeBackgroundHex; padding: 0; }
+                .muted { color: $mutedTextHex; }
               </style>
             </head>
             <body>$body</body>

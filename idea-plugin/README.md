@@ -582,3 +582,32 @@ cd idea-plugin
 
 1. `src/main/kotlin/com/leonovcare/plugin/submission/SubmissionService.kt`.
 2. `src/main/kotlin/com/leonovcare/plugin/api/HttpPlatformApiClient.kt`.
+
+## 2026-05-06 — Stability hotfix: statement render crash + EDT/read-action correctness
+
+### Что было проблемой
+
+1. При открытии задачи часть пользователей получала `IDE error occurred`, а правая панель с материалами оставалась пустой.
+2. В `idea.log` фиксировались:
+- `NullPointerException` в Swing HTML/CSS parser во время `TaskStatementPanel.setTaskDetails(...)`;
+- `Assert: must be called on EDT` при `FileEditorManager.openFile(...)` из `TaskManager.openTask(...)`;
+- `Read access is allowed from inside read-action only` в `AiHintService.readPathPreferDocument(...)`.
+
+### Что изменено
+
+1. Упрощен CSS в `MarkdownHtmlRenderer` под ограничения Swing HTML:
+- убраны проблемные значения (`rgba(...)`, `opacity`, `overflow-x`, `border-radius`);
+- использованы безопасные `background-color`/`color` в hex.
+
+2. UI-операции editor manager переведены в EDT:
+- в `TaskManager.openTask(...)` добавлен `runOnEdtSync(...)`;
+- `openFile(...)` и `closeEditorsUnder(...)` выполняются только на EDT.
+
+3. Чтение текста из editor document переведено в read-action:
+- в `AiHintService.readPathPreferDocument(...)` чтение через `FileDocumentManager.getDocument(...)` обернуто в `ReadAction.compute(...)`.
+
+### Почему сделано именно так
+
+1. Swing HTML parser в IDE ограничен и не поддерживает часть CSS-синтаксиса браузерного уровня, поэтому безопасный subset обязателен для стабильного рендера.
+2. `FileEditorManager` и close/open editor operations являются UI API и должны вызываться только на EDT.
+3. Доступ к PSI/VFS document-объектам вне read-action приводит к thread-assert и нестабильной работе AI-подсказок.

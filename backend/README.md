@@ -976,3 +976,24 @@ This update also tightens course-material gates around Git/CLI lessons and SQL c
 - endpoint `in-progress` закрывает compatibility-gap между API и IDE plugin, убирая 404 fallback-шторм;
 - хранение open-progress дает корректный пользовательский статус до первой отправки решения;
 - auto-migrate уменьшает риск частичного обновления, когда runtime обновлен, а schema — нет.
+
+## Актуализация от 2026-05-06: Python stdin в docker judge (runtime EOF fix)
+
+1. Что было проблемой:
+- для Python console-задач (`checker_type=python_stdout`) при `JUDGE_MODE=auto` и доступном Docker backend запускал проверки в `evaluatePythonDocker`;
+- в docker runtime входные данные тестов (`test.input`) не попадали в процесс Python;
+- эффект в UI: даже корректный код с `input()` падал с `EOFError: EOF when reading a line` на каждом тесте.
+
+2. Корневая причина:
+- в `internal/judge/java.go` метод `runDockerCommand(...)` создавал `docker run` без флага `-i`;
+- stdin привязывался к процессу Go (`cmd.Stdin`), но Docker без `-i` не пробрасывал поток внутрь контейнера.
+
+3. Что изменено:
+- добавлен builder аргументов `buildDockerRunArgs(...)`;
+- при наличии непустого `stdin` в `runDockerCommand(...)` теперь добавляется `-i` в `docker run`;
+- добавлен тест-контракт `TestBuildDockerRunArgsAddsInteractiveFlagForStdin`;
+- добавлен интеграционный guard-test `TestPythonEngineDockerModePassesStdinToContainer` (auto-skip при недоступном docker daemon).
+
+4. Почему сделано именно так:
+- флаг `-i` нужен только когда реально есть stdin, чтобы не менять поведение остальных sandbox-запусков без ввода;
+- выделение builder-а в отдельную функцию фиксирует контракт на уровне unit-теста и снижает риск регрессии при следующих изменениях sandbox-аргументов.

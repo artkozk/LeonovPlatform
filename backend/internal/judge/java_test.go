@@ -149,6 +149,25 @@ func TestDockerModeFallsBackToLocalWhenDockerUnavailable(t *testing.T) {
 	}
 }
 
+func TestPythonEngineDockerModePassesStdinToContainer(t *testing.T) {
+	if !dockerBinaryAvailable() {
+		t.Skip("docker binary is not available")
+	}
+	if !dockerDaemonAvailableForTests() {
+		t.Skip("docker daemon is not available")
+	}
+
+	engine := NewJavaEngine(3, "docker")
+	source := `price = int(input())
+print(price - price // 10)
+`
+
+	res := engine.EvaluatePython(source, []TestCase{{Input: "1000\n", Expected: "900"}})
+	if res.Status != "accepted" {
+		t.Fatalf("expected accepted, got %s; compile=%q run=%q", res.Status, res.CompileOutput, res.RunLog)
+	}
+}
+
 func TestDetectPythonBinaryFromCandidatesSkipsBrokenAlias(t *testing.T) {
 	dir := t.TempDir()
 	var brokenName string
@@ -196,4 +215,24 @@ func TestDetectPythonBinaryFromCandidatesSkipsBrokenAlias(t *testing.T) {
 func hasWorkingBinary(binary string, versionArg string) bool {
 	cmd := exec.Command(binary, versionArg)
 	return cmd.Run() == nil
+}
+
+func dockerDaemonAvailableForTests() bool {
+	cmd := exec.Command("docker", "info")
+	return cmd.Run() == nil
+}
+
+func TestBuildDockerRunArgsAddsInteractiveFlagForStdin(t *testing.T) {
+	argsWithStdin := buildDockerRunArgs("/tmp/workspace", "python:3.12-alpine", []string{"python3", "main.py"}, true)
+	argsWithoutStdin := buildDockerRunArgs("/tmp/workspace", "python:3.12-alpine", []string{"python3", "main.py"}, false)
+
+	joinedWithStdin := strings.Join(argsWithStdin, " ")
+	joinedWithoutStdin := strings.Join(argsWithoutStdin, " ")
+
+	if !strings.Contains(joinedWithStdin, " -i ") {
+		t.Fatalf("expected docker args to include -i for stdin: %s", joinedWithStdin)
+	}
+	if strings.Contains(joinedWithoutStdin, " -i ") {
+		t.Fatalf("did not expect docker args to include -i without stdin: %s", joinedWithoutStdin)
+	}
 }
