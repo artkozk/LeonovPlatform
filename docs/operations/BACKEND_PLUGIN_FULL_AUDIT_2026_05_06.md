@@ -307,3 +307,67 @@
 - `GET /healthz` -> `200`;
 - `GET /readyz` -> `200`;
 - повторные открытия задач не должны генерировать fallback-шторм `progress/*` с `404`.
+
+## 13. Python v18 platform acceptance and IDE checker allowlist fix (2026-05-06, phase 6)
+
+### 13.1 Observed production symptom
+
+1. Acceptance smoke для опубликованного курса `python-zero` подтвердил корректный импорт:
+- 5 модулей;
+- 169 уроков;
+- 1960 lesson blocks;
+- 1146 задач в plugin bootstrap/tasks-catalog;
+- первый урок первого модуля — `Первый код`.
+2. Student-safe проверки API прошли:
+- `GET /tasks/:taskID` не отдаёт `solution_code`;
+- `GET /tasks/:taskID/template` отдаёт стартовые файлы без эталона;
+- `GET /tasks/:taskID/reference-solution` возвращает `403` до accepted submission;
+- quiz payload в `GET /lessons/:lessonID` не содержит `correctOptionId`.
+3. При фактической сдаче project-задачи через `/submissions` production checker блокировал команды из курса:
+- `test -s main.py`;
+- `test -s README.md`;
+- `grep -E "python|main.py|вывод|команда" README.md`.
+4. Из-за этого корректная IDE-plugin сдача получала `wrong_answer`, хотя required files были на месте.
+
+### 13.2 Root cause analysis
+
+1. В production `evaluateIDEPluginChecker` пропускает shell-команды только через `ideCheckerCommandAllowedInProduction`.
+2. Явный `IDE_CHECKER_ALLOWED_COMMANDS` исторически разрешал только pytest-команды.
+3. Курс v18 использует много read-only структурных проверок `test -s` и `grep -E`, чтобы не запускать произвольный код, а проверять наличие файла и обязательных маркеров.
+4. Эти команды безопасны при двух условиях:
+- путь должен быть относительным и не выходить из workspace;
+- команда не должна содержать shell chaining, redirection, command substitution или traversal.
+
+### 13.3 Implemented fix
+
+1. В `backend/internal/app/checker_runtime.go` добавлен безопасный built-in пропуск read-only IDE commands:
+- `test -s <relative-path>`;
+- `grep -E <pattern> <relative-path>`.
+2. Проверка не заменяет общий allowlist и не открывает произвольный shell:
+- `python main.py` остаётся заблокированным при явном `IDE_CHECKER_ALLOWED_COMMANDS`;
+- `test -s ../secret.txt` блокируется;
+- `grep -E "ok" README.md; cat /etc/passwd` блокируется;
+- пути проходят через `normalizePathForWorkspace`.
+3. В `backend/internal/app/checker_runtime_test.go` добавлены regression tests на разрешённые read-only команды и на заблокированные traversal/injection сценарии.
+
+### 13.4 Why this architecture
+
+1. Read-only команды нужны именно для project/IDE задач: они проверяют структуру сдачи и наличие обязательных маркеров без запуска произвольного student shell.
+2. Фикс сделан в backend runtime, а не через массовую замену материалов, потому что проблема была в production security gate, а не в одном конкретном уроке.
+3. Явный allowlist продолжает ограничивать исполняемые команды; новый built-in слой добавляет только безопасные структурные проверки, которые уже являются частью контракта курса.
+
+### 13.5 Verification
+
+1. Backend focused tests: `backend go test ./internal/app` — PASS.
+2. Runtime acceptance до фикса:
+- import counts: PASS;
+- student-safe task/template/reference API: PASS;
+- `python_stdout` submission: PASS;
+- `ide_plugin` submission: FAIL из-за blocked command.
+3. После деплоя phase 6 acceptance нужно повторить для:
+- `python_stdout`;
+- `ide_plugin`;
+- `python_pytest`;
+- `sql_query`;
+- `http_api`;
+- reference solution после accepted submission.

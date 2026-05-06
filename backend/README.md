@@ -513,6 +513,25 @@ REPORT_TASK_GAPS=1 node backend/tools/generate_full_course_v4_migration.js
 1. Это устраняет риск частичной недоступности API из-за конфликтов bind на одном порту.
 2. Сохраняется практическая польза для запуска на поток учеников за счет параллельной обработки проверок в worker-процессах.
 
+## IDE checker production allowlist policy (2026-05-06, v2.66)
+
+1. `IDE_CHECKER_ALLOWED_COMMANDS` по-прежнему задаёт явный список исполняемых команд для production IDE-checker.
+2. Дополнительно backend всегда разрешает только две read-only структурные команды:
+- `test -s <relative-path>`;
+- `grep -E <pattern> <relative-path>`.
+3. Эти команды нужны для course/project задач, где плагин проверяет наличие обязательных файлов и маркеров в README, check-файлах, Dockerfile или исходниках.
+4. Ограничения безопасности:
+- путь обязан быть относительным и проходить `normalizePathForWorkspace`;
+- `../`, абсолютные пути и Windows volume paths запрещены;
+- shell chaining, redirection, command substitution и multiline commands запрещены;
+- произвольные команды вроде `bash -lc ...` и `python main.py` не становятся разрешёнными автоматически при явном allowlist.
+
+Почему сделано именно так:
+
+1. Project-задачи курса используют read-only checks как часть IDE-plugin контракта, поэтому production backend должен принимать их без ручного расширения env на каждую задачу.
+2. Разрешение ограничено структурными проверками, чтобы не превратить IDE checker в произвольный shell executor.
+3. Явный `IDE_CHECKER_ALLOWED_COMMANDS` остаётся главным gate для запускаемых команд, а built-in слой закрывает только безопасные проверки файловой структуры.
+
 ## Production memory safety baseline (2026-04-30, v2.63)
 
 1. На production включен swap:

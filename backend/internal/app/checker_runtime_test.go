@@ -59,11 +59,23 @@ func TestIDECheckerCommandAllowedInProduction(t *testing.T) {
 	if !a.ideCheckerCommandAllowedInProduction("pytest") {
 		t.Fatalf("expected pytest to be allowlisted")
 	}
+	if !a.ideCheckerCommandAllowedInProduction("test -s main.py") {
+		t.Fatalf("expected read-only file existence check to be allowed")
+	}
+	if !a.ideCheckerCommandAllowedInProduction(`grep -E "python|main.py|вывод|команда" README.md`) {
+		t.Fatalf("expected read-only grep check to be allowed")
+	}
 	if a.ideCheckerCommandAllowedInProduction("python main.py") {
 		t.Fatalf("expected command to be blocked by explicit allowlist")
 	}
 	if a.ideCheckerCommandAllowedInProduction("bash -lc whoami") {
 		t.Fatalf("unexpected non-allowlisted command")
+	}
+	if a.ideCheckerCommandAllowedInProduction("test -s ../secret.txt") {
+		t.Fatalf("path traversal in test command must be blocked")
+	}
+	if a.ideCheckerCommandAllowedInProduction(`grep -E "ok" README.md; cat /etc/passwd`) {
+		t.Fatalf("shell injection in grep command must be blocked")
 	}
 }
 
@@ -76,6 +88,12 @@ func TestIDECheckerCommandAllowedInProductionDefaultSafeSet(t *testing.T) {
 	}
 	if !a.ideCheckerCommandAllowedInProduction("printf '2026\\n' | python main.py") {
 		t.Fatalf("expected safe printf->python command to be allowed")
+	}
+	if !a.ideCheckerCommandAllowedInProduction("test -s src/app.py") {
+		t.Fatalf("expected safe test -s command to be allowed")
+	}
+	if !a.ideCheckerCommandAllowedInProduction(`grep -E "def|return|print|class" src/app.py`) {
+		t.Fatalf("expected safe grep -E command to be allowed")
 	}
 	if a.ideCheckerCommandAllowedInProduction("python main.py; rm -rf /") {
 		t.Fatalf("dangerous command must be blocked")

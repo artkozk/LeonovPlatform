@@ -383,10 +383,93 @@ func isSafePrintfPipeToPython(command string) bool {
 	return isSimplePythonOrPytestCommand(right)
 }
 
+func isSafeReadOnlyIDECheckerCommand(command string) bool {
+	trimmed := strings.TrimSpace(command)
+	if trimmed == "" {
+		return false
+	}
+	lower := strings.ToLower(trimmed)
+	if strings.Contains(lower, "&&") ||
+		strings.Contains(lower, "||") ||
+		strings.Contains(lower, ";") ||
+		strings.Contains(lower, "`") ||
+		strings.Contains(lower, "$(") ||
+		strings.Contains(lower, "\n") ||
+		strings.Contains(lower, "\r") ||
+		strings.Contains(lower, ">") ||
+		strings.Contains(lower, "<") {
+		return false
+	}
+
+	fields := strings.Fields(trimmed)
+	if len(fields) == 3 && fields[0] == "test" && fields[1] == "-s" {
+		_, err := normalizePathForWorkspace(fields[2])
+		return err == nil
+	}
+
+	if !strings.HasPrefix(lower, "grep -e ") {
+		return false
+	}
+	_, target, ok := splitSafeGrepECommand(trimmed)
+	if !ok {
+		return false
+	}
+	_, err := normalizePathForWorkspace(target)
+	return err == nil
+}
+
+func splitSafeGrepECommand(command string) (string, string, bool) {
+	rest := strings.TrimSpace(command)
+	fields := strings.Fields(rest)
+	if len(fields) < 4 || fields[0] != "grep" || !strings.EqualFold(fields[1], "-E") {
+		return "", "", false
+	}
+	rest = strings.TrimSpace(strings.TrimPrefix(rest, "grep"))
+	rest = strings.TrimSpace(strings.TrimPrefix(rest, "-E"))
+	if rest == "" {
+		return "", "", false
+	}
+
+	var pattern string
+	switch rest[0] {
+	case '"', '\'':
+		quote := rest[0]
+		end := strings.IndexByte(rest[1:], quote)
+		if end < 0 {
+			return "", "", false
+		}
+		pattern = rest[1 : end+1]
+		rest = strings.TrimSpace(rest[end+2:])
+	default:
+		parts := strings.Fields(rest)
+		if len(parts) != 2 {
+			return "", "", false
+		}
+		pattern = parts[0]
+		rest = parts[1]
+	}
+
+	if strings.TrimSpace(pattern) == "" || len([]rune(pattern)) > 512 {
+		return "", "", false
+	}
+	if strings.ContainsAny(pattern, "&;`<>") || strings.Contains(pattern, "$(") {
+		return "", "", false
+	}
+	targetFields := strings.Fields(rest)
+	if len(targetFields) != 1 {
+		return "", "", false
+	}
+	return pattern, targetFields[0], true
+}
+
 func (a *App) ideCheckerCommandAllowedInProduction(command string) bool {
 	normalized := normalizeCommandForAllowlist(command)
 	if normalized == "" {
 		return false
+	}
+
+	if isSafeReadOnlyIDECheckerCommand(command) {
+		return true
 	}
 
 	allowlistRaw := strings.TrimSpace(a.Cfg.IDECheckerAllowedCommands)
