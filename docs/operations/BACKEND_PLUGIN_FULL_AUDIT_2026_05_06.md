@@ -250,3 +250,60 @@
 ### 11.4 Verification
 
 1. `idea-plugin ./gradlew.bat test --console=plain` — PASS.
+
+## 12. Plugin/backend request-storm and blank-materials stabilization (2026-05-06, phase 5)
+
+### 12.1 Observed production symptom
+
+1. После логина и открытия задач плагин отправлял повторные серии запросов:
+- дубли `GET /api/v1/tasks/:taskID`;
+- дубли `GET /api/v1/tasks/:taskID/template`;
+- цепочки `POST /api/v1/tasks/:taskID/progress/*` с постоянным `404`.
+2. В результате правая панель могла долго оставаться в состоянии загрузки/пустой зоны, а в логах IDE и backend появлялся выраженный шум.
+
+### 12.2 Root cause analysis
+
+1. `TaskManager.openTask` выполнял `markTaskInProgress(...)` **до** вызова `onOpened(...)`, поэтому UI-обновление задерживалось на сетевой хвост.
+2. Плагин не отсеивал конкурентные дубли открытия одной и той же задачи.
+3. `HttpPlatformApiClient.markTaskInProgress` пробовал fallback-цепочку endpoint-ов при каждом вызове и при `404` не отключал probing.
+4. `PlatformApiClientFactory` создавал новый `HttpPlatformApiClient` на каждый вызов, поэтому capability-cache не мог сохраняться между операциями.
+5. На backend отсутствовал endpoint `POST /tasks/:taskID/progress/in-progress`, поэтому client fallback неизбежно попадал в `404`.
+
+### 12.3 Implemented fix
+
+1. `idea-plugin/src/main/kotlin/com/leonovcare/plugin/task/TaskManager.kt`:
+- добавлена дедупликация `openTask` по `taskId` (concurrent in-flight guard);
+- если задача уже открыта и overwrite не нужен, используется текущий context без повторного network/file цикла;
+- `onOpened(context)` вызывается до `markTaskInProgress`, чтобы UI показывал материалы сразу;
+- `markTaskInProgress` запускается только для `NEW` задач и не блокирует показ контента.
+2. `idea-plugin/src/main/kotlin/com/leonovcare/plugin/api/HttpPlatformApiClient.kt`:
+- добавлен discovery-cache рабочего progress endpoint;
+- при полном `404/405/501` по всем кандидатам probing отключается для сессии клиента;
+- повторные вызовы не шлют лишние fallback-запросы.
+3. `idea-plugin/src/main/kotlin/com/leonovcare/plugin/api/PlatformApiClientFactory.kt`:
+- фабрика переиспользует один `HttpPlatformApiClient` на текущий `apiBaseUrl`, чтобы capability-cache и HTTP connection reuse реально работали.
+4. Backend:
+- добавлен endpoint `POST /api/v1/tasks/:taskID/progress/in-progress`;
+- endpoint записывает факт открытия задачи в `user_task_open_progress`;
+- `GetPluginBootstrap` и `GetCourseTasksCatalog` учитывают `user_task_open_progress` вместе с submissions при вычислении статуса `IN_PROGRESS`;
+- `ResetTaskProgress` очищает и submissions, и open-progress запись;
+- добавлена миграция `backend/migrations/034_plugin_task_open_progress.sql`;
+- в `App.New` активирован auto-migrate путь через `internal/db.ApplyMigrations(...)` (используется advisory lock), чтобы новые миграции гарантированно применялись при старте.
+
+### 12.4 Why this architecture
+
+1. Сдвиг `onOpened` перед progress-mark убирает UI latency без изменения бизнес-логики.
+2. Дедупликация по `taskId` устраняет конкурентные двойные открытия и уменьшает нагрузку на backend и файловую подсистему IDE.
+3. Capability-cache + singleton client дают предсказуемое поведение: либо один рабочий endpoint, либо controlled disable, без постоянного 404 probing.
+4. Backend endpoint и отдельная таблица open-progress дают наблюдаемую и восстанавливаемую модель статуса `IN_PROGRESS` до первой отправки решения.
+5. Автомиграции при старте устраняют риск частичного деплоя схемы при обновлении runtime.
+
+### 12.5 Verification
+
+1. IDE plugin unit-tests: `idea-plugin ./gradlew.bat test --console=plain`.
+2. IDE plugin artifact build: `idea-plugin ./gradlew.bat clean buildPlugin --console=plain`.
+3. Backend tests: `backend go test ./...`.
+4. Server runtime smoke:
+- `GET /healthz` -> `200`;
+- `GET /readyz` -> `200`;
+- повторные открытия задач не должны генерировать fallback-шторм `progress/*` с `404`.

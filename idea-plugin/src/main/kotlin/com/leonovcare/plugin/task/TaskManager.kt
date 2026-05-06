@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 data class TaskManagerState(
@@ -72,6 +73,7 @@ class TaskManager(private val project: Project) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val stateFlow = MutableStateFlow(TaskManagerState())
+    private val openingTaskIds = ConcurrentHashMap.newKeySet<String>()
 
     fun state(): StateFlow<TaskManagerState> = stateFlow.asStateFlow()
 
@@ -314,6 +316,15 @@ class TaskManager(private val project: Project) {
             onError(IllegalStateException("Authorization is required to open task"))
             return
         }
+        val existingContext = currentTaskService.getCurrentTask()
+        if (!overwriteExistingEditableFiles && existingContext?.task?.id == task.id) {
+            onOpened(existingContext)
+            return
+        }
+        if (!openingTaskIds.add(task.id)) {
+            logger.info("Skipping duplicate openTask request for task=${task.id}")
+            return
+        }
         val courseId = stateFlow.value.selectedCourseId ?: task.courseId
 
         scope.launch {
@@ -361,10 +372,17 @@ class TaskManager(private val project: Project) {
                     currentTaskService.setCurrentTask(context)
 
                     settings.mutableState().currentTaskId = task.id
-                    client.markTaskInProgress(token, task.id)
                     onOpened(context)
+
+                    if (task.status == TaskStatus.NEW && previousContext?.task?.id != task.id) {
+                        runCatching { client.markTaskInProgress(token, task.id) }
+                            .onFailure { ex ->
+                                logger.warn("Failed to mark task in progress (${task.id}): ${ex.message}")
+                            }
+                    }
                 }
             }.onFailure { onError(it) }
+             .also { openingTaskIds.remove(task.id) }
         }
     }
 

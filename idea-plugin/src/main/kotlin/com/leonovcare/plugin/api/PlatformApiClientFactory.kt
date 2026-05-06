@@ -8,13 +8,27 @@ import com.leonovcare.plugin.settings.PlatformSettings
 class PlatformApiClientFactory {
 
     private val settings = PlatformSettings.getInstance()
+    @Volatile
+    private var cachedBaseUrl: String? = null
+    @Volatile
+    private var cachedHttpClient: HttpPlatformApiClient? = null
 
+    @Synchronized
     fun client(): PlatformApiClient {
         val state = settings.mutableState()
         return if (state.mockModeEnabled) {
             MockPlatformApiClient()
         } else {
-            HttpPlatformApiClient(state.apiBaseUrl)
+            val baseUrl = state.apiBaseUrl.trim()
+            val existing = cachedHttpClient
+            if (existing != null && cachedBaseUrl == baseUrl) {
+                existing
+            } else {
+                HttpPlatformApiClient(baseUrl).also {
+                    cachedBaseUrl = baseUrl
+                    cachedHttpClient = it
+                }
+            }
         }
     }
 

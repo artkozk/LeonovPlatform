@@ -278,7 +278,7 @@ func (a *App) GetPluginBootstrap(c *gin.Context) {
 	items := make([]taskCatalogItem, 0)
 	if selectedCourseID != "" {
 		rows, err := a.DB.Query(c.Request.Context(), `
-			WITH user_task_progress AS (
+			WITH submission_progress AS (
 				SELECT
 					s.task_id,
 					BOOL_OR(s.status = 'accepted') AS solved,
@@ -286,6 +286,21 @@ func (a *App) GetPluginBootstrap(c *gin.Context) {
 				FROM submissions s
 				WHERE s.user_id = $2
 				GROUP BY s.task_id
+			),
+			open_progress AS (
+				SELECT
+					otp.task_id,
+					TRUE AS opened
+				FROM user_task_open_progress otp
+				WHERE otp.user_id = $2
+			),
+			user_task_progress AS (
+				SELECT
+					COALESCE(sp.task_id, op.task_id) AS task_id,
+					COALESCE(sp.solved, FALSE) AS solved,
+					COALESCE(sp.attempted, FALSE) OR COALESCE(op.opened, FALSE) AS attempted
+				FROM submission_progress sp
+				FULL OUTER JOIN open_progress op ON op.task_id = sp.task_id
 			)
 			SELECT
 				t.id,
@@ -447,7 +462,7 @@ func (a *App) GetCourseTasksCatalog(c *gin.Context) {
 	}
 
 	rows, err := a.DB.Query(c.Request.Context(), `
-		WITH user_task_progress AS (
+		WITH submission_progress AS (
 			SELECT
 				s.task_id,
 				BOOL_OR(s.status = 'accepted') AS solved,
@@ -455,6 +470,21 @@ func (a *App) GetCourseTasksCatalog(c *gin.Context) {
 			FROM submissions s
 			WHERE s.user_id = $2
 			GROUP BY s.task_id
+		),
+		open_progress AS (
+			SELECT
+				otp.task_id,
+				TRUE AS opened
+			FROM user_task_open_progress otp
+			WHERE otp.user_id = $2
+		),
+		user_task_progress AS (
+			SELECT
+				COALESCE(sp.task_id, op.task_id) AS task_id,
+				COALESCE(sp.solved, FALSE) AS solved,
+				COALESCE(sp.attempted, FALSE) OR COALESCE(op.opened, FALSE) AS attempted
+			FROM submission_progress sp
+			FULL OUTER JOIN open_progress op ON op.task_id = sp.task_id
 		)
 		SELECT
 			t.id,

@@ -900,3 +900,33 @@ Current behavior: the Python v18 strict pedagogy materials are regenerated from 
 Why this is necessary: the platform import validator rejects mixed checker schemas because old and new pytest key names make downstream execution ambiguous. Keeping only `pytest_code` gives the backend one stable field for pytest execution and makes the generated migration easier to audit.
 
 This update also tightens course-material gates around Git/CLI lessons and SQL checker context. Git IDE-plugin tasks must prove real repository state with `git_checks`; SQL checkers are only valid in SQL-like lessons. This prevents generic artifacts from passing as course work.
+
+## Актуализация от 2026-05-06: IDE progress endpoint + anti-storm stabilization
+
+1. Что было проблемой:
+- при открытии задач из IDE plugin backend получал повторяющиеся серии:
+  - `GET /api/v1/tasks/:taskID` (дубли),
+  - `GET /api/v1/tasks/:taskID/template` (дубли),
+  - `POST /api/v1/tasks/:taskID/progress/*` с `404` на каждом fallback пути;
+- в UI это проявлялось как задержка показа материалов и шум ошибок/логов.
+
+2. Что изменено в backend:
+- добавлен endpoint `POST /api/v1/tasks/:taskID/progress/in-progress`;
+- добавлена таблица `user_task_open_progress` (миграция `034_plugin_task_open_progress.sql`) для фиксации факта открытия задачи пользователем;
+- вычисление task-status в:
+  - `GET /api/v1/plugin/bootstrap`,
+  - `GET /api/v1/courses/:courseID/tasks-catalog`
+  теперь учитывает и `submissions`, и `user_task_open_progress`:
+  - `SOLVED` если есть accepted submission;
+  - `IN_PROGRESS` если есть попытки submission **или** запись об открытии;
+  - иначе `NEW`;
+- `POST /api/v1/tasks/:taskID/progress/reset` теперь дополнительно очищает запись из `user_task_open_progress`.
+
+3. Что изменено в lifecycle сервера:
+- в `internal/app.New` активирован `AUTO_MIGRATE` путь через `internal/db.ApplyMigrations(...)`;
+- при старте процесса миграции применяются автоматически с advisory lock, чтобы schema обновлялась консистентно при деплое.
+
+4. Почему сделано именно так:
+- endpoint `in-progress` закрывает compatibility-gap между API и IDE plugin, убирая 404 fallback-шторм;
+- хранение open-progress дает корректный пользовательский статус до первой отправки решения;
+- auto-migrate уменьшает риск частичного обновления, когда runtime обновлен, а schema — нет.

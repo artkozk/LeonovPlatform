@@ -30,6 +30,12 @@ class HttpPlatformApiClient(
 
     private val httpClient: HttpClient = HttpClient.newBuilder().build()
 
+    @Volatile
+    private var discoveredTaskProgressPath: String? = null
+
+    @Volatile
+    private var taskProgressEndpointUnsupported: Boolean = false
+
     override suspend fun getCurrentUser(token: String): UserProfile {
         val node = requestNode("GET", endpoints.me, token, retrySafe = true)
         val firstName = node.path("firstName").asText("").trim()
@@ -559,6 +565,10 @@ class HttpPlatformApiClient(
     }
 
     override suspend fun markTaskInProgress(token: String, taskId: String): Boolean {
+        if (taskProgressEndpointUnsupported) {
+            return false
+        }
+
         val primaryPath = endpoint(endpoints.taskProgressInProgress, "taskId" to taskId)
         val fallbackPaths = listOf(
             "/tasks/$taskId/progress/start",
@@ -567,26 +577,66 @@ class HttpPlatformApiClient(
             "/tasks/$taskId/start",
         )
 
-        val candidates = listOf(primaryPath) + fallbackPaths
-        for (path in candidates) {
-            val success = runCatching {
-                requestNode("POST", path, token, "{}")
-                true
-            }.onFailure { ex ->
-                if (ex is ApiException && ex.statusCode in listOf(404, 405, 501)) {
-                    logger.info("Mark in progress endpoint is unavailable: $path (${ex.statusCode})")
-                } else if (ex is ApiException && ex.statusCode in listOf(401, 403)) {
-                    throw ex
-                } else {
-                    logger.warn("Failed to mark task in progress via $path: ${ex.message}")
-                }
-            }.getOrElse { false }
-
-            if (success) {
-                return true
+        val preferredPath = discoveredTaskProgressPath
+        if (preferredPath != null) {
+            when (tryMarkTaskInProgressPath(token = token, path = preferredPath, logUnavailable = false)) {
+                MarkTaskInProgressAttempt.SUCCESS -> return true
+                MarkTaskInProgressAttempt.UNAVAILABLE -> discoveredTaskProgressPath = null
+                MarkTaskInProgressAttempt.FAILED -> return false
             }
         }
+
+        val candidates = listOf(primaryPath) + fallbackPaths
+        var unavailableCount = 0
+        for (path in candidates) {
+            when (tryMarkTaskInProgressPath(token = token, path = path, logUnavailable = true)) {
+                MarkTaskInProgressAttempt.SUCCESS -> {
+                    discoveredTaskProgressPath = path
+                    taskProgressEndpointUnsupported = false
+                    return true
+                }
+                MarkTaskInProgressAttempt.UNAVAILABLE -> unavailableCount++
+                MarkTaskInProgressAttempt.FAILED -> continue
+            }
+        }
+
+        if (unavailableCount == candidates.size) {
+            taskProgressEndpointUnsupported = true
+            logger.info("Task progress endpoint is unavailable on backend, disabling in-progress probing for this client session")
+        }
+
         return false
+    }
+
+    private enum class MarkTaskInProgressAttempt {
+        SUCCESS,
+        UNAVAILABLE,
+        FAILED,
+    }
+
+    private suspend fun tryMarkTaskInProgressPath(
+        token: String,
+        path: String,
+        logUnavailable: Boolean,
+    ): MarkTaskInProgressAttempt {
+        return runCatching {
+            requestNode("POST", path, token, "{}")
+            MarkTaskInProgressAttempt.SUCCESS
+        }.onFailure { ex ->
+            if (ex is ApiException && ex.statusCode in listOf(401, 403)) {
+                throw ex
+            }
+        }.getOrElse { ex ->
+            if (ex is ApiException && ex.statusCode in listOf(404, 405, 501)) {
+                if (logUnavailable) {
+                    logger.info("Mark in progress endpoint is unavailable: $path (${ex.statusCode})")
+                }
+                MarkTaskInProgressAttempt.UNAVAILABLE
+            } else {
+                logger.warn("Failed to mark task in progress via $path: ${ex.message}")
+                MarkTaskInProgressAttempt.FAILED
+            }
+        }
     }
 
     private suspend fun requestNode(

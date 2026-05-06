@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.net.InetSocketAddress
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 class HttpPlatformApiClientTest {
 
@@ -140,6 +142,54 @@ class HttpPlatformApiClientTest {
         val client = HttpPlatformApiClient(baseUrl())
         val result = runBlocking { client.markTaskInProgress("token", "task-1") }
         assertTrue(result)
+    }
+
+    @Test
+    fun `mark task in progress remembers discovered endpoint`() {
+        val counters = ConcurrentHashMap<String, AtomicInteger>()
+
+        startServer { exchange ->
+            counters.computeIfAbsent(exchange.requestURI.path) { AtomicInteger(0) }.incrementAndGet()
+            when (exchange.requestURI.path) {
+                "/tasks/task-1/progress/in-progress" -> respond(exchange, 404, """{"error":"not found"}""")
+                "/tasks/task-1/progress/start" -> respond(exchange, 200, """{"ok":true}""")
+                else -> respond(exchange, 404, """{"error":"unknown"}""")
+            }
+        }
+
+        val client = HttpPlatformApiClient(baseUrl())
+        val first = runBlocking { client.markTaskInProgress("token", "task-1") }
+        val second = runBlocking { client.markTaskInProgress("token", "task-1") }
+
+        assertTrue(first)
+        assertTrue(second)
+        assertEquals(1, counters["/tasks/task-1/progress/in-progress"]?.get())
+        assertEquals(2, counters["/tasks/task-1/progress/start"]?.get())
+        assertNull(counters["/tasks/task-1/progress"])
+        assertNull(counters["/tasks/task-1/in-progress"])
+        assertNull(counters["/tasks/task-1/start"])
+    }
+
+    @Test
+    fun `mark task in progress disables probing after full 404 discovery`() {
+        val counters = ConcurrentHashMap<String, AtomicInteger>()
+
+        startServer { exchange ->
+            counters.computeIfAbsent(exchange.requestURI.path) { AtomicInteger(0) }.incrementAndGet()
+            respond(exchange, 404, """{"error":"not found"}""")
+        }
+
+        val client = HttpPlatformApiClient(baseUrl())
+        val first = runBlocking { client.markTaskInProgress("token", "task-1") }
+        val second = runBlocking { client.markTaskInProgress("token", "task-1") }
+
+        assertFalse(first)
+        assertFalse(second)
+        assertEquals(1, counters["/tasks/task-1/progress/in-progress"]?.get())
+        assertEquals(1, counters["/tasks/task-1/progress/start"]?.get())
+        assertEquals(1, counters["/tasks/task-1/progress"]?.get())
+        assertEquals(1, counters["/tasks/task-1/in-progress"]?.get())
+        assertEquals(1, counters["/tasks/task-1/start"]?.get())
     }
 
     @Test

@@ -160,6 +160,54 @@ func (a *App) GetTaskReferenceSolution(c *gin.Context) {
 	})
 }
 
+func (a *App) MarkTaskInProgress(c *gin.Context) {
+	uctx, ok := userFromContext(c)
+	if !ok {
+		unauthorized(c, "unauthorized")
+		return
+	}
+
+	taskID := c.Param("taskID")
+	ctx := c.Request.Context()
+
+	var exists bool
+	if err := a.DB.QueryRow(ctx, `
+		SELECT EXISTS(
+			SELECT 1
+			FROM tasks t
+			JOIN lessons l ON l.id = t.lesson_id
+			JOIN modules m ON m.id = l.module_id
+			JOIN courses crs ON crs.id = m.course_id
+			WHERE t.id = $1
+			  AND t.is_published = TRUE
+			  AND l.is_published = TRUE
+			  AND crs.is_published = TRUE
+		)
+	`, taskID).Scan(&exists); err != nil {
+		internalServerError(c, err)
+		return
+	}
+	if !exists {
+		notFound(c, "task not found")
+		return
+	}
+
+	if _, err := a.DB.Exec(ctx, `
+		INSERT INTO user_task_open_progress(user_id, task_id, opened_at, updated_at)
+		VALUES($1, $2, NOW(), NOW())
+		ON CONFLICT(user_id, task_id)
+		DO UPDATE SET opened_at = EXCLUDED.opened_at, updated_at = EXCLUDED.updated_at
+	`, uctx.ID, taskID); err != nil {
+		internalServerError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "in_progress",
+		"taskId": taskID,
+	})
+}
+
 func (a *App) ResetTaskProgress(c *gin.Context) {
 	uctx, ok := userFromContext(c)
 	if !ok {
@@ -211,6 +259,15 @@ func (a *App) ResetTaskProgress(c *gin.Context) {
 		return
 	}
 
+	openProgressTag, err := tx.Exec(ctx, `
+		DELETE FROM user_task_open_progress
+		WHERE user_id = $1 AND task_id = $2
+	`, uctx.ID, taskID)
+	if err != nil {
+		internalServerError(c, err)
+		return
+	}
+
 	var xp int
 	if err := tx.QueryRow(ctx, `
 		SELECT COALESCE(SUM(points), 0)
@@ -250,6 +307,7 @@ func (a *App) ResetTaskProgress(c *gin.Context) {
 		"status":             "reset",
 		"removedSubmissions": submissionsTag.RowsAffected(),
 		"removedXPEvents":    xpTag.RowsAffected(),
+		"removedOpenEntries": openProgressTag.RowsAffected(),
 	})
 }
 

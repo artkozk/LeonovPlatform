@@ -83,6 +83,7 @@ func (a *App) Router() *gin.Engine {
 			authed.POST("/tasks/:taskID/submissions", a.CreateSubmission)
 			authed.POST("/tasks/:taskID/style-check", a.TaskStyleCheck)
 			authed.GET("/tasks/:taskID/reference-solution", a.GetTaskReferenceSolution)
+			authed.POST("/tasks/:taskID/progress/in-progress", a.MarkTaskInProgress)
 			authed.POST("/tasks/:taskID/progress/reset", a.ResetTaskProgress)
 			authed.GET("/submissions/:submissionID", a.GetSubmission)
 			authed.POST("/sync", a.SyncTasksState)
