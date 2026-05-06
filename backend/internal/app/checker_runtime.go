@@ -155,8 +155,14 @@ func normalizePathForWorkspace(pathRaw string) (string, error) {
 	if candidate == "" {
 		return "", errors.New("path is empty")
 	}
+	if hasWindowsDrivePrefix(candidate) {
+		return "", errors.New("absolute volume path is not allowed")
+	}
 	cleaned := filepath.ToSlash(filepath.Clean(candidate))
 	if vol := filepath.VolumeName(cleaned); vol != "" {
+		return "", errors.New("absolute volume path is not allowed")
+	}
+	if hasWindowsDrivePrefix(cleaned) {
 		return "", errors.New("absolute volume path is not allowed")
 	}
 	if strings.HasPrefix(cleaned, "../") || cleaned == ".." {
@@ -166,6 +172,17 @@ func normalizePathForWorkspace(pathRaw string) (string, error) {
 		return "", errors.New("absolute path is not allowed")
 	}
 	return cleaned, nil
+}
+
+func hasWindowsDrivePrefix(path string) bool {
+	if len(path) < 2 {
+		return false
+	}
+	first := path[0]
+	if !((first >= 'a' && first <= 'z') || (first >= 'A' && first <= 'Z')) {
+		return false
+	}
+	return path[1] == ':'
 }
 
 func writeFilesToWorkspace(workspace string, files []submissionFilePayload) error {
