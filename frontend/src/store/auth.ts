@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { clearTokens, getAccessToken, login as apiLogin, me as apiMe, register as apiRegister } from "../api/client";
 import { UserProfile } from "../api/types";
 
+let bootstrapPromise: Promise<UserProfile | null> | null = null;
+
 type AuthStore = {
   user: UserProfile | null;
   loading: boolean;
@@ -28,7 +30,21 @@ export const useAuthStore = create<AuthStore>((set) => ({
     if (!getAccessToken()) return;
     set({ loading: true, error: null });
     try {
-      const profile = await apiMe();
+      if (!bootstrapPromise) {
+        bootstrapPromise = apiMe()
+          .then((profile) => profile as UserProfile)
+          .catch(() => null)
+          .finally(() => {
+            bootstrapPromise = null;
+          });
+      }
+
+      const profile = await bootstrapPromise;
+      if (!profile) {
+        clearTokens();
+        set({ user: null, loading: false, error: null });
+        return;
+      }
       set({ user: profile, loading: false, error: null });
     } catch {
       clearTokens();

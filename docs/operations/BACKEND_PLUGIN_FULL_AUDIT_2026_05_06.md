@@ -190,3 +190,31 @@
 1. `go test ./...` — PASS.
 2. `go vet ./...` — PASS.
 3. `idea-plugin ./gradlew.bat test --console=plain` — PASS.
+
+## 10. Login/API fan-out optimization pass (2026-05-06, phase 3)
+
+### 10.1 Problem statement
+
+1. В UI мог наблюдаться шум из повторных одинаковых GET-запросов при быстром mount/remount (включая dev StrictMode) и при переходах после логина.
+2. Это не всегда означает backend-bug, но создает лишнюю нагрузку и визуально выглядит как “шторм запросов”.
+
+### 10.2 What was changed
+
+1. В `frontend/src/api/client.ts` добавлен централизованный слой:
+- in-flight deduplication для одинаковых GET (`inFlightGet`);
+- короткий TTL-кэш для read endpoints (`readCache`) с управляемыми TTL.
+2. Кэш применяется только к idempotent-read endpoint’ам (`/me`, `/courses`, `/courses/:id`, `/lessons/:id`, `/tasks/:id`, `/me/submission-history`, `/leaderboard`, `/plans`, `/subscription`, `admin metrics` и т.д.).
+3. Для polling endpoint’а `/submissions/:submissionID` кэш **не включался**, чтобы не ломать live-статус проверки.
+4. При `saveTokens` и `clearTokens` read-кэш очищается принудительно, чтобы исключить stale-данные между сессиями/пользователями.
+5. В `frontend/src/store/auth.ts` добавлена дедупликация `bootstrap` через `bootstrapPromise`, чтобы повторный вызов `apiMe` не раздувал сетевой трафик.
+
+### 10.3 Why it is implemented this way
+
+1. Dedupe + TTL дают эффект сразу на всех экранах без переписывания каждого компонента.
+2. Это снижает нагрузку на backend и убирает “ложные” пики в DevTools без изменения бизнес-логики.
+3. Разделение на cacheable-read и non-cacheable-polling сохраняет корректность статусов задач и очередей.
+
+### 10.4 Verification
+
+1. `frontend npm.cmd test` — PASS.
+2. `frontend npm.cmd run build` — PASS.

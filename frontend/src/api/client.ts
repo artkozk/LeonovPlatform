@@ -4,6 +4,23 @@ import { API_URL, LoginPayload, RegisterPayload } from "./types";
 const tokenKey = "lc_access_token";
 const refreshKey = "lc_refresh_token";
 const authRoute = "/auth";
+const CACHE_TTL_FAST_MS = 3_000;
+const CACHE_TTL_SHORT_MS = 10_000;
+const CACHE_TTL_PROFILE_MS = 5_000;
+
+type CachedEntry = {
+  expiresAt: number;
+  data: unknown;
+};
+
+type CachedGetOptions = {
+  params?: Record<string, unknown>;
+  ttlMs?: number;
+  cacheKey?: string;
+};
+
+const readCache = new Map<string, CachedEntry>();
+const inFlightGet = new Map<string, Promise<unknown>>();
 
 export const http = axios.create({
   baseURL: API_URL,
@@ -17,14 +34,97 @@ http.interceptors.request.use((config) => {
   return config;
 });
 
+function clearReadCaches() {
+  readCache.clear();
+  inFlightGet.clear();
+}
+
+function serializeParamValue(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(serializeParamValue).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, nested]) => `${key}:${serializeParamValue(nested)}`)
+      .join(",")}}`;
+  }
+  return String(value);
+}
+
+function buildGetCacheKey(url: string, params?: Record<string, unknown>): string {
+  if (!params) return url;
+  const serializedParams = Object.entries(params)
+    .filter(([, value]) => value !== undefined && value !== null)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, value]) => `${key}=${serializeParamValue(value)}`)
+    .join("&");
+  return serializedParams ? `${url}?${serializedParams}` : url;
+}
+
+function getCachedValue<T>(cacheKey: string): T | null {
+  const now = Date.now();
+  const entry = readCache.get(cacheKey);
+  if (!entry) return null;
+  if (entry.expiresAt <= now) {
+    readCache.delete(cacheKey);
+    return null;
+  }
+  return entry.data as T;
+}
+
+function setCachedValue(cacheKey: string, data: unknown, ttlMs: number) {
+  if (ttlMs <= 0) return;
+  readCache.set(cacheKey, {
+    data,
+    expiresAt: Date.now() + ttlMs,
+  });
+}
+
+async function cachedGet<T>(url: string, options?: CachedGetOptions): Promise<T> {
+  const params = options?.params;
+  const ttlMs = options?.ttlMs ?? 0;
+  const cacheKey = options?.cacheKey ?? buildGetCacheKey(url, params);
+
+  if (ttlMs > 0) {
+    const cached = getCachedValue<T>(cacheKey);
+    if (cached !== null) {
+      return cached;
+    }
+  }
+
+  const inFlight = inFlightGet.get(cacheKey);
+  if (inFlight) {
+    return inFlight as Promise<T>;
+  }
+
+  const request = http
+    .get(url, { params })
+    .then((response) => {
+      const data = response.data as T;
+      if (ttlMs > 0) {
+        setCachedValue(cacheKey, data, ttlMs);
+      }
+      return data;
+    })
+    .finally(() => {
+      inFlightGet.delete(cacheKey);
+    });
+
+  inFlightGet.set(cacheKey, request);
+  return request;
+}
+
 export function saveTokens(accessToken: string, refreshToken: string) {
   localStorage.setItem(tokenKey, accessToken);
   localStorage.setItem(refreshKey, refreshToken);
+  clearReadCaches();
 }
 
 export function clearTokens() {
   localStorage.removeItem(tokenKey);
   localStorage.removeItem(refreshKey);
+  clearReadCaches();
 }
 
 export function getAccessToken() {
@@ -128,28 +228,24 @@ export async function login(payload: LoginPayload) {
 }
 
 export async function me() {
-  const { data } = await http.get("/me");
-  return data;
+  return cachedGet("/me", { ttlMs: CACHE_TTL_PROFILE_MS });
 }
 
 export async function listCourses() {
-  const { data } = await http.get("/courses");
-  return data.items as Array<Record<string, unknown>>;
+  const data = await cachedGet<{ items: Array<Record<string, unknown>> }>("/courses", { ttlMs: CACHE_TTL_SHORT_MS });
+  return data.items;
 }
 
 export async function getCourse(courseId: string) {
-  const { data } = await http.get(`/courses/${courseId}`);
-  return data;
+  return cachedGet(`/courses/${courseId}`, { ttlMs: CACHE_TTL_SHORT_MS });
 }
 
 export async function getCourseTasksCatalog(courseId: string) {
-  const { data } = await http.get(`/courses/${courseId}/tasks-catalog`);
-  return data;
+  return cachedGet(`/courses/${courseId}/tasks-catalog`, { ttlMs: CACHE_TTL_SHORT_MS });
 }
 
 export async function getLesson(lessonId: string) {
-  const { data } = await http.get(`/lessons/${lessonId}`);
-  return data;
+  return cachedGet(`/lessons/${lessonId}`, { ttlMs: CACHE_TTL_SHORT_MS });
 }
 
 export async function checkLessonQuiz(lessonId: string, blockId: string, answers: Record<string, string>) {
@@ -158,8 +254,7 @@ export async function checkLessonQuiz(lessonId: string, blockId: string, answers
 }
 
 export async function getTask(taskId: string) {
-  const { data } = await http.get(`/tasks/${taskId}`);
-  return data;
+  return cachedGet(`/tasks/${taskId}`, { ttlMs: CACHE_TTL_SHORT_MS });
 }
 
 export async function submitTask(taskId: string, sourceCode: string) {
@@ -183,28 +278,27 @@ export async function getSubmission(submissionId: string) {
 }
 
 export async function submissionHistory() {
-  const { data } = await http.get("/me/submission-history");
+  const data = await cachedGet<{ items: unknown[] }>("/me/submission-history", { ttlMs: CACHE_TTL_FAST_MS });
   return data.items;
 }
 
 export async function leaderboard() {
-  const { data } = await http.get("/leaderboard");
+  const data = await cachedGet<{ items: unknown[] }>("/leaderboard", { ttlMs: CACHE_TTL_FAST_MS });
   return data.items;
 }
 
 export async function achievements() {
-  const { data } = await http.get("/me/achievements");
+  const data = await cachedGet<{ items: unknown[] }>("/me/achievements", { ttlMs: CACHE_TTL_FAST_MS });
   return data.items;
 }
 
 export async function plans() {
-  const { data } = await http.get("/plans");
+  const data = await cachedGet<{ items: unknown[] }>("/plans", { ttlMs: CACHE_TTL_SHORT_MS });
   return data.items;
 }
 
 export async function subscription() {
-  const { data } = await http.get("/subscription");
-  return data;
+  return cachedGet("/subscription", { ttlMs: CACHE_TTL_FAST_MS });
 }
 
 export async function checkout(planCode: string) {
@@ -218,15 +312,15 @@ export async function cancelSubscription() {
 }
 
 export async function subscriptionPaymentStatus(paymentId: string, sync = false) {
-  const { data } = await http.get(`/subscription/payments/${paymentId}`, {
-    params: sync ? { sync: true } : undefined,
-  });
-  return data;
+  if (sync) {
+    const { data } = await http.get(`/subscription/payments/${paymentId}`, { params: { sync: true } });
+    return data;
+  }
+  return cachedGet(`/subscription/payments/${paymentId}`, { ttlMs: CACHE_TTL_FAST_MS });
 }
 
 export async function adminMetrics() {
-  const { data } = await http.get("/admin/metrics/overview");
-  return data;
+  return cachedGet("/admin/metrics/overview", { ttlMs: CACHE_TTL_FAST_MS });
 }
 
 export async function adminExportCSV(from?: string, to?: string) {
