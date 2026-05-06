@@ -261,3 +261,60 @@ curl -fsS -H "Authorization: Bearer <token>" http://127.0.0.1:8510/api/v1/course
 1. Проверить, что после рестарта worker незавершенные payload остаются в `processing` и не теряются.
 2. Проверить, что requeue происходит при recoverable error и ограничивается `SUBMISSION_MAX_ATTEMPTS`.
 3. Проверить, что reconciler поднимает зависшие `queued` записи обратно в Redis main queue.
+
+## 9. Backend + IDEA plugin full audit regression gate (append-only, 2026-05-06)
+
+### 9.1 Auth fail-closed regression
+
+1. Проверить, что protected endpoint не пропускает запрос при неконсистентном user context:
+- если пользователь не найден по `claims.UserID`, middleware должен вернуть `401`, а не продолжать запрос.
+2. Проверить, что при DB-ошибке чтения user context middleware возвращает `500`, а не `free`-fallback.
+
+### 9.2 Submission queue anti-duplication regression
+
+1. Для `queued` submissions reconciler не должен безусловно добавлять payload повторно в Redis.
+2. Перед `RPUSH` должна выполняться проверка присутствия payload в:
+- `mainQueue`;
+- `processingQueue`.
+3. Критерий PASS: при повторных циклах reconciler объем очереди не растет за счет дубликатов одного и того же `submissionId`.
+
+### 9.3 Checker command/path hardening regression
+
+1. Unit checks (backend):
+```bash
+cd backend
+go test ./internal/app -run "TestIDECheckerCommandAllowedInProductionDefaultSafeSet|TestNormalizePathForWorkspaceRejectsAbsoluteVolumePath"
+```
+2. Ожидаемое:
+- `python main.py & whoami` блокируется;
+- `python main.py | cat` блокируется;
+- volume path (`C:/...`) отклоняется.
+
+### 9.4 IDEA plugin lesson material rendering regression
+
+1. Unit checks (plugin):
+```bash
+cd idea-plugin
+./gradlew.bat test --console=plain
+```
+2. Проверка по `LessonMaterialFormatterTest`:
+- итоговый markdown содержит lesson theory + lesson blocks;
+- содержит отдельный раздел `Практическое задание`;
+- fallback без lesson не ломает отображение statement.
+
+### 9.5 Full command set после изменений
+
+1. Backend:
+```bash
+cd backend
+go test ./...
+go vet ./...
+```
+2. IDEA plugin:
+```bash
+cd idea-plugin
+./gradlew.bat check --console=plain
+./gradlew.bat test --console=plain
+```
+3. Примечание:
+- `go test -race` в текущем Windows-окружении требует `gcc` для CGO; без него шаг считается environment-blocked и фиксируется в release notes.

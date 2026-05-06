@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -34,7 +35,7 @@ func (a *App) RunSubmissionWorker(ctx context.Context) error {
 	}
 
 	a.Log.Info("submission worker started", "queue", mainQueue, "processingQueue", processingQueue)
-	go a.runSubmissionQueueReconciler(ctx, mainQueue)
+	go a.runSubmissionQueueReconciler(ctx, mainQueue, processingQueue)
 
 	for {
 		select {
@@ -93,7 +94,7 @@ func (a *App) ackSubmissionProcessingPayload(ctx context.Context, processingQueu
 	return nil
 }
 
-func (a *App) runSubmissionQueueReconciler(ctx context.Context, queue string) {
+func (a *App) runSubmissionQueueReconciler(ctx context.Context, queue, processingQueue string) {
 	interval := a.Cfg.SubmissionReconcileInterval
 	if interval <= 0 {
 		interval = 30 * time.Second
@@ -106,14 +107,14 @@ func (a *App) runSubmissionQueueReconciler(ctx context.Context, queue string) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if err := a.reconcileQueuedSubmissions(ctx, queue); err != nil && ctx.Err() == nil {
+			if err := a.reconcileQueuedSubmissions(ctx, queue, processingQueue); err != nil && ctx.Err() == nil {
 				a.Log.Warn("submission queue reconciler failed", "error", err)
 			}
 		}
 	}
 }
 
-func (a *App) reconcileQueuedSubmissions(ctx context.Context, queue string) error {
+func (a *App) reconcileQueuedSubmissions(ctx context.Context, queue, processingQueue string) error {
 	limit := a.Cfg.SubmissionReconcileBatch
 	if limit <= 0 {
 		limit = 200
@@ -148,12 +149,42 @@ func (a *App) reconcileQueuedSubmissions(ctx context.Context, queue string) erro
 
 	values := make([]interface{}, 0, len(jobs))
 	for _, payload := range jobs {
+		inMainQueue, err := a.submissionQueueContainsPayload(ctx, queue, payload)
+		if err != nil {
+			return fmt.Errorf("check queue payload in main queue: %w", err)
+		}
+		if inMainQueue {
+			continue
+		}
+
+		inProcessingQueue, err := a.submissionQueueContainsPayload(ctx, processingQueue, payload)
+		if err != nil {
+			return fmt.Errorf("check queue payload in processing queue: %w", err)
+		}
+		if inProcessingQueue {
+			continue
+		}
+
 		values = append(values, payload)
+	}
+	if len(values) == 0 {
+		return nil
 	}
 	if err := a.Redis.RPush(ctx, queue, values...).Err(); err != nil {
 		return fmt.Errorf("requeue queued submissions: %w", err)
 	}
 	return nil
+}
+
+func (a *App) submissionQueueContainsPayload(ctx context.Context, queue, payload string) (bool, error) {
+	_, err := a.Redis.LPos(ctx, queue, payload, redis.LPosArgs{}).Result()
+	if err == nil {
+		return true, nil
+	}
+	if errors.Is(err, redis.Nil) {
+		return false, nil
+	}
+	return false, err
 }
 
 func (a *App) processSubmissionByID(ctx context.Context, submissionID string) error {

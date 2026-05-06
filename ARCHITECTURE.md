@@ -129,3 +129,39 @@
 - dark CSS tokens больше не участвуют в активной сборке.
 4. Backend оставляет `user_settings.theme` и `PATCH /me/settings` как compatibility layer для старых клиентов, но нормализует значение темы в `light`.
 5. Так сделано, чтобы не ломать контракт `GET /me` и историческую схему БД, но убрать из продукта визуально слабую и неиспользуемую ветку dark-mode.
+
+## 12. Full backend/plugin hardening (2026-05-06)
+
+1. Проведен полный аудит backend + IDEA plugin по контуру:
+- auth;
+- submission queue;
+- checker security;
+- отображение lesson материалов в plugin UI;
+- автотесты backend/plugin.
+
+2. Закрытые архитектурные риски:
+- `authMiddleware` переведен в fail-closed режим:
+  - при `pgx.ErrNoRows` -> `401 invalid access token`;
+  - при ошибке чтения user context -> `500 failed to resolve user context`;
+  - запрос не проходит дальше при ошибке чтения пользователя.
+- submission reconciler получил защиту от дублей payload:
+  - перед `RPUSH` проверяется наличие payload в `mainQueue` и `processingQueue`;
+  - при наличии payload повторная постановка пропускается.
+- checker runtime усилен:
+  - блокируются опасные shell separators (`&`, `|`, `>`, `<` и др.);
+  - добавлен запрет volume path (`C:/...`) через `filepath.VolumeName`.
+
+3. Улучшение plugin UX материалов:
+- `LessonMaterialFormatter.buildTaskAndLessonText` теперь рендерит полный lesson-context:
+  - `Теория`;
+  - `Шаги урока`;
+  - отдельный блок `Практическое задание` с требованиями.
+
+4. Почему это сделано именно так:
+- auth должен быть fail-closed, иначе защищенные endpoint’ы уязвимы при ошибках user lookup;
+- очередь submissions должна быть устойчива к деградации воркера без бесконечного размножения одинаковых jobs;
+- checker policy-команды должны иметь строгий production gate против command chaining;
+- plugin должен отображать весь учебный контекст, иначе пользователь теряет pedagogical continuity внутри IDE.
+
+5. Подробный протокол аудита:
+- [docs/operations/BACKEND_PLUGIN_FULL_AUDIT_2026_05_06.md](C:/prog/Comercial/LeonovCarePlatform/docs/operations/BACKEND_PLUGIN_FULL_AUDIT_2026_05_06.md)

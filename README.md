@@ -1100,3 +1100,17 @@ cd idea-plugin
 3. Практический эффект:
 - стартовое ожидание заметно короче на больших каталогах;
 - исчезает впечатление «зависшего» окна при частично медленных API-ответах.
+
+## Backend + plugin full audit hardening (2026-05-06)
+
+1. Проведен полный аудит backend и IDEA plugin с фокусом на архитектуру, безопасность и сценарии учебного потока.
+2. Закрыты критичные точки:
+- auth middleware переведен в fail-closed (нет bypass при ошибке user lookup);
+- reconciler очереди сабмитов получил анти-дублирование payload;
+- checker runtime усилен против опасных shell separators и volume-path;
+- plugin выводит полный lesson-context (теория + шаги + практическое задание).
+3. Добавлены regression-тесты:
+- backend: checker command/path hardening;
+- plugin: `LessonMaterialFormatter` на полноту отображения материалов.
+4. Подробный протокол, команды, причины и ограничения:
+- [docs/operations/BACKEND_PLUGIN_FULL_AUDIT_2026_05_06.md](C:/prog/Comercial/LeonovCarePlatform/docs/operations/BACKEND_PLUGIN_FULL_AUDIT_2026_05_06.md)

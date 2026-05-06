@@ -2,6 +2,7 @@ package app
 
 import (
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 const userContextKey = "user_ctx"
@@ -145,6 +147,14 @@ func (a *App) authMiddleware() gin.HandlerFunc {
 			LEFT JOIN plans p ON p.id = s.plan_id
 			WHERE u.id = $1
 		`, claims.UserID).Scan(&isBlocked, &ctx.PlanCode); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, APIError{Error: "invalid access token"})
+				return
+			}
+			c.AbortWithStatusJSON(http.StatusInternalServerError, APIError{Error: "failed to resolve user context"})
+			return
+		}
+		if strings.TrimSpace(ctx.PlanCode) == "" {
 			ctx.PlanCode = "free"
 		}
 		if isBlocked {

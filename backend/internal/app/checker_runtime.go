@@ -156,6 +156,9 @@ func normalizePathForWorkspace(pathRaw string) (string, error) {
 		return "", errors.New("path is empty")
 	}
 	cleaned := filepath.ToSlash(filepath.Clean(candidate))
+	if vol := filepath.VolumeName(cleaned); vol != "" {
+		return "", errors.New("absolute volume path is not allowed")
+	}
 	if strings.HasPrefix(cleaned, "../") || cleaned == ".." {
 		return "", errors.New("path escapes workspace")
 	}
@@ -323,7 +326,7 @@ func containsDangerousShellTokens(command string) bool {
 	if lower == "" {
 		return true
 	}
-	for _, token := range []string{"&&", "||", ";", "`", "$(", ">|", ">>", "<", "\n", "\r"} {
+	for _, token := range []string{"&&", "||", "&", "|", ";", "`", "$(", ">", "<", "\n", "\r"} {
 		if strings.Contains(lower, token) {
 			return true
 		}

@@ -7,28 +7,42 @@ object LessonMaterialFormatter {
 
     fun buildTaskAndLessonText(details: TaskDetails?, lesson: LessonMaterial?): String {
         if (details == null) return ""
-        if (lesson == null) return details.statement.body.trim()
+        val sections = mutableListOf<String>()
 
-        val buffer = StringBuilder()
-        val moduleTitle = lesson.moduleTitle.trim()
-        val lessonTitle = lesson.title.trim()
-        if (moduleTitle.isNotBlank()) {
-            buffer.appendLine("**Модуль:** $moduleTitle")
+        if (lesson != null) {
+            val lessonMarkdown = buildLessonMarkdown(lesson).trim()
+            if (lessonMarkdown.isNotBlank()) {
+                sections += lessonMarkdown
+            }
         }
-        if (lessonTitle.isNotBlank()) {
-            buffer.appendLine("**Урок:** $lessonTitle")
-        }
-        if (buffer.isNotEmpty()) {
-            buffer.appendLine()
-            buffer.appendLine("---")
-            buffer.appendLine()
+
+        val taskSection = StringBuilder()
+        val taskTitle = details.title.trim()
+        if (taskTitle.isNotBlank()) {
+            taskSection.appendLine("## Практическое задание: $taskTitle")
+        } else {
+            taskSection.appendLine("## Практическое задание")
         }
 
         val statement = details.statement.body.trim()
         if (statement.isNotBlank()) {
-            buffer.appendLine(statement)
+            taskSection.appendLine()
+            taskSection.appendLine(statement)
         }
-        return buffer.toString().trim()
+
+        val requirements = details.statement.requirements
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+        if (requirements.isNotEmpty()) {
+            taskSection.appendLine()
+            taskSection.appendLine("### Что нужно сделать")
+            requirements.forEachIndexed { index, item ->
+                taskSection.appendLine("${index + 1}. $item")
+            }
+        }
+
+        sections += taskSection.toString().trim()
+        return sections.joinToString("\n\n---\n\n").trim()
     }
 
     fun buildLessonMarkdown(lesson: LessonMaterial): String {

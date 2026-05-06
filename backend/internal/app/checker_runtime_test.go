@@ -80,6 +80,12 @@ func TestIDECheckerCommandAllowedInProductionDefaultSafeSet(t *testing.T) {
 	if a.ideCheckerCommandAllowedInProduction("python main.py; rm -rf /") {
 		t.Fatalf("dangerous command must be blocked")
 	}
+	if a.ideCheckerCommandAllowedInProduction("python main.py & whoami") {
+		t.Fatalf("windows command separator must be blocked")
+	}
+	if a.ideCheckerCommandAllowedInProduction("python main.py | cat") {
+		t.Fatalf("arbitrary pipe must be blocked")
+	}
 }
 
 func TestInferTemplateFilesFromSourcePolicy(t *testing.T) {
@@ -109,5 +115,12 @@ func TestEvaluateTaskByPolicyRejectsSourcePolicyViolation(t *testing.T) {
 	}
 	if result.CompileOutput != "Нельзя печатать 20 напрямую." {
 		t.Fatalf("unexpected violation message: %q", result.CompileOutput)
+	}
+}
+
+func TestNormalizePathForWorkspaceRejectsAbsoluteVolumePath(t *testing.T) {
+	_, err := normalizePathForWorkspace("C:/Windows/System32/drivers/etc/hosts")
+	if err == nil {
+		t.Fatalf("expected Windows volume path to be rejected")
 	}
 }
