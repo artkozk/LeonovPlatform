@@ -1114,3 +1114,20 @@ cd idea-plugin
 - plugin: `LessonMaterialFormatter` на полноту отображения материалов.
 4. Подробный протокол, команды, причины и ограничения:
 - [docs/operations/BACKEND_PLUGIN_FULL_AUDIT_2026_05_06.md](C:/prog/Comercial/LeonovCarePlatform/docs/operations/BACKEND_PLUGIN_FULL_AUDIT_2026_05_06.md)
+
+## Backend hardening phase 2 (2026-05-06)
+
+1. Дополнительно закрыты риски:
+- JWT parsing теперь принимает только `HS256`;
+- auth endpoint’ы (`register/login/forgot-password`) используют единый `normalizeEmail(trim+lowercase)`;
+- security-критичные numeric env параметры клампятся на безопасные значения и не могут быть случайно отключены через `<=0`.
+
+2. Почему это важно:
+- signing policy больше не зависит от `alg` в token header;
+- убраны edge-case ошибки в auth при e-mail с пробелами/регистром;
+- снижен риск production misconfiguration, ослабляющей лимиты безопасности.
+
+3. Подтверждение:
+1. `go test ./...` — PASS.
+2. `go vet ./...` — PASS.
+3. `./gradlew.bat test --console=plain` (idea-plugin) — PASS.

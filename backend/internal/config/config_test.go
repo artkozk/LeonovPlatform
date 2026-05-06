@@ -35,3 +35,35 @@ func TestLoad_UsesExplicitIDECheckerAllowlist(t *testing.T) {
 	}
 }
 
+func TestLoad_ClampsSecurityCriticalNumericConfig(t *testing.T) {
+	setRequiredEnv(t)
+	t.Setenv("MAX_REQUEST_BODY_BYTES", "-1")
+	t.Setenv("MAX_SUBMISSION_SOURCE_BYTES", "0")
+	t.Setenv("AUTH_RATE_LIMIT_PER_MINUTE", "-5")
+	t.Setenv("AI_HINT_RATE_LIMIT_PER_MINUTE", "0")
+	t.Setenv("WEBHOOK_RATE_LIMIT_PER_MINUTE", "-120")
+	t.Setenv("CARDLINK_BILL_TTL_SECONDS", "0")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() returned error: %v", err)
+	}
+	if cfg.MaxRequestBodyBytes != 16*1024*1024 {
+		t.Fatalf("expected max request body default clamp, got %d", cfg.MaxRequestBodyBytes)
+	}
+	if cfg.MaxSubmissionSourceBytes != 8*1024*1024 {
+		t.Fatalf("expected max submission source default clamp, got %d", cfg.MaxSubmissionSourceBytes)
+	}
+	if cfg.AuthRateLimitPerMinute != 60 {
+		t.Fatalf("expected auth rate limit clamp, got %d", cfg.AuthRateLimitPerMinute)
+	}
+	if cfg.AIHintRateLimitPerMinute != 20 {
+		t.Fatalf("expected ai hint rate limit clamp, got %d", cfg.AIHintRateLimitPerMinute)
+	}
+	if cfg.WebhookRateLimitPerMinute != 120 {
+		t.Fatalf("expected webhook rate limit clamp, got %d", cfg.WebhookRateLimitPerMinute)
+	}
+	if cfg.CardlinkBillTTLSeconds != 1800 {
+		t.Fatalf("expected cardlink bill ttl clamp, got %d", cfg.CardlinkBillTTLSeconds)
+	}
+}

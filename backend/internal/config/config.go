@@ -113,6 +113,7 @@ func Load() (Config, error) {
 		GoogleClientID:                os.Getenv("GOOGLE_CLIENT_ID"),
 		ExposeDemoTokens:              getBoolOr("EXPOSE_DEMO_TOKENS", false),
 	}
+	cfg = applySecurityDefaults(cfg)
 
 	if cfg.DBURL == "" {
 		return cfg, fmt.Errorf("DATABASE_URL is required")
@@ -166,4 +167,38 @@ func getDurationOr(k string, v time.Duration) time.Duration {
 		return v
 	}
 	return d
+}
+
+func applySecurityDefaults(cfg Config) Config {
+	if cfg.HTTPPort <= 0 {
+		cfg.HTTPPort = 8080
+	}
+	if cfg.MaxRequestBodyBytes <= 0 {
+		cfg.MaxRequestBodyBytes = 16 * 1024 * 1024
+	}
+	if cfg.MaxSubmissionSourceBytes <= 0 {
+		cfg.MaxSubmissionSourceBytes = 8 * 1024 * 1024
+	}
+	if cfg.SubmissionMaxAttempts <= 0 {
+		cfg.SubmissionMaxAttempts = 30
+	}
+	if cfg.SubmissionReconcileBatch <= 0 {
+		cfg.SubmissionReconcileBatch = 200
+	}
+	if cfg.JavaTimeoutSeconds <= 0 {
+		cfg.JavaTimeoutSeconds = 4
+	}
+	if cfg.AuthRateLimitPerMinute <= 0 {
+		cfg.AuthRateLimitPerMinute = 60
+	}
+	if cfg.AIHintRateLimitPerMinute <= 0 {
+		cfg.AIHintRateLimitPerMinute = 20
+	}
+	if cfg.WebhookRateLimitPerMinute <= 0 {
+		cfg.WebhookRateLimitPerMinute = 120
+	}
+	if cfg.CardlinkBillTTLSeconds <= 0 {
+		cfg.CardlinkBillTTLSeconds = 1800
+	}
+	return cfg
 }

@@ -49,7 +49,7 @@ func (a *App) Register(c *gin.Context) {
 		return
 	}
 
-	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
+	req.Email = normalizeEmail(req.Email)
 	req.FirstName = strings.TrimSpace(req.FirstName)
 	req.LastName = strings.TrimSpace(req.LastName)
 	req.Nickname = normalizeNickname(req.Nickname)
@@ -178,6 +178,7 @@ func (a *App) Login(c *gin.Context) {
 		badRequest(c, err)
 		return
 	}
+	req.Email = normalizeEmail(req.Email)
 
 	var userID, passHash, role, planCode string
 	var isBlocked, isVerified bool
@@ -187,7 +188,7 @@ func (a *App) Login(c *gin.Context) {
 		LEFT JOIN subscriptions s ON s.user_id=u.id AND s.status='active' AND (s.ends_at IS NULL OR s.ends_at > NOW())
 		LEFT JOIN plans p ON p.id=s.plan_id
 		WHERE u.email=$1
-	`, strings.ToLower(req.Email)).Scan(&userID, &passHash, &role, &isBlocked, &isVerified, &planCode)
+	`, req.Email).Scan(&userID, &passHash, &role, &isBlocked, &isVerified, &planCode)
 	if err != nil {
 		unauthorized(c, "invalid credentials")
 		return
@@ -347,9 +348,10 @@ func (a *App) ForgotPassword(c *gin.Context) {
 		badRequest(c, err)
 		return
 	}
+	req.Email = normalizeEmail(req.Email)
 
 	var userID string
-	err := a.DB.QueryRow(c.Request.Context(), `SELECT id FROM users WHERE email=$1`, strings.ToLower(req.Email)).Scan(&userID)
+	err := a.DB.QueryRow(c.Request.Context(), `SELECT id FROM users WHERE email=$1`, req.Email).Scan(&userID)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 		return
@@ -481,6 +483,10 @@ func normalizeNickname(raw string) string {
 		nick = string(runes[:32])
 	}
 	return nick
+}
+
+func normalizeEmail(raw string) string {
+	return strings.TrimSpace(strings.ToLower(raw))
 }
 
 func generatePublicID() string {

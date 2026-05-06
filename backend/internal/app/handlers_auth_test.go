@@ -24,3 +24,10 @@ func TestNormalizeNicknameTruncatesByRunes(t *testing.T) {
 		t.Fatalf("nickname must be truncated to 32 runes, got %d in %q", len([]rune(got)), got)
 	}
 }
+
+func TestNormalizeEmailTrimsAndLowercases(t *testing.T) {
+	got := normalizeEmail("  USER@Example.COM  ")
+	if got != "user@example.com" {
+		t.Fatalf("unexpected normalized email: %q", got)
+	}
+}

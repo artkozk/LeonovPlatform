@@ -148,3 +148,45 @@
 1. Критичные security/architecture пробелы по auth fail-open, queue duplication и checker command/path hardening закрыты.
 2. UX-дефект отображения учебных материалов в plugin закрыт.
 3. Автотесты backend и plugin проходят, изменения документированы и готовы к deploy-процедуре.
+
+## 9. Additional hardening pass (2026-05-06, phase 2)
+
+### 9.1 JWT signing policy hardening
+
+1. Что было:
+- `ParseToken` принимал любой HMAC-алгоритм из заголовка токена.
+2. Что сделано:
+- в `backend/internal/security/jwt.go` добавлена строгая проверка `HS256` перед валидацией подписи.
+3. Почему это важно:
+- исключает algorithm-downgrade/agility и фиксирует единый ожидаемый signing policy.
+4. Тест:
+- `TestParseTokenRejectsUnexpectedSigningMethod` в `backend/internal/security/jwt_test.go`.
+
+### 9.2 Auth input normalization hardening
+
+1. Что было:
+- login/forgot-password не использовали единую нормализацию email с trim.
+2. Что сделано:
+- введен `normalizeEmail(...)`;
+- применен в `Register`, `Login`, `ForgotPassword`.
+3. Почему это важно:
+- убирает edge-case ошибки из-за пробелов и повышает предсказуемость auth-flow.
+4. Тест:
+- `TestNormalizeEmailTrimsAndLowercases` в `backend/internal/app/handlers_auth_test.go`.
+
+### 9.3 Security defaults against unsafe numeric env overrides
+
+1. Что было:
+- отрицательные/нулевые значения env могли отключать ограничения (например body limits и rate limits).
+2. Что сделано:
+- в `backend/internal/config/config.go` добавен `applySecurityDefaults(...)` с клампом security-критичных параметров.
+3. Почему это важно:
+- защищает production от случайной или некорректной конфигурации, которая ослабляет защитные лимиты.
+4. Тест:
+- `TestLoad_ClampsSecurityCriticalNumericConfig` в `backend/internal/config/config_test.go`.
+
+### 9.4 Verification status
+
+1. `go test ./...` — PASS.
+2. `go vet ./...` — PASS.
+3. `idea-plugin ./gradlew.bat test --console=plain` — PASS.

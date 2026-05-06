@@ -165,3 +165,26 @@
 
 5. Подробный протокол аудита:
 - [docs/operations/BACKEND_PLUGIN_FULL_AUDIT_2026_05_06.md](C:/prog/Comercial/LeonovCarePlatform/docs/operations/BACKEND_PLUGIN_FULL_AUDIT_2026_05_06.md)
+
+## 13. Full backend/plugin hardening phase 2 (2026-05-06)
+
+1. JWT policy:
+- `ParseToken` принимает только `HS256`;
+- токены с иным `alg` отклоняются как невалидные.
+
+2. Auth input normalization:
+- регистрация, логин и восстановление пароля используют общий `normalizeEmail`;
+- исключается разное поведение endpoint’ов при `email` с пробелами/регистром.
+
+3. Security defaults for env:
+- добавлен `applySecurityDefaults` в config layer;
+- при `<=0` значениях клампятся:
+  - request/source body limits;
+  - rate-limit thresholds;
+  - worker retry/reconcile параметры;
+  - Cardlink bill TTL.
+
+4. Почему сделано именно так:
+- signing policy должен быть явно фиксирован, а не зависеть от `alg` в user-controlled заголовке;
+- auth-flow должен иметь одинаковую нормализацию e-mail на всех входах;
+- production не должен терять защитные лимиты из-за ошибочного env.

@@ -318,3 +318,35 @@ cd idea-plugin
 ```
 3. Примечание:
 - `go test -race` в текущем Windows-окружении требует `gcc` для CGO; без него шаг считается environment-blocked и фиксируется в release notes.
+
+## 10. Hardening phase 2 regression gate (append-only, 2026-05-06)
+
+### 10.1 JWT signing method policy
+
+1. Проверка:
+```bash
+cd backend
+go test ./internal/security -run TestParseTokenRejectsUnexpectedSigningMethod
+```
+2. Ожидаемое:
+- токен с `HS512` (или другим отличным от `HS256`) отвергается.
+
+### 10.2 Auth email normalization
+
+1. Проверка:
+```bash
+cd backend
+go test ./internal/app -run TestNormalizeEmailTrimsAndLowercases
+```
+2. Ожидаемое:
+- e-mail нормализуется в `trim + lowercase` и используется единообразно в auth endpoint’ах.
+
+### 10.3 Unsafe env numeric overrides
+
+1. Проверка:
+```bash
+cd backend
+go test ./internal/config -run TestLoad_ClampsSecurityCriticalNumericConfig
+```
+2. Ожидаемое:
+- отрицательные/нулевые значения security-критичных параметров не отключают ограничения, а клампятся на безопасные defaults.
