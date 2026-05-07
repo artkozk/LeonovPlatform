@@ -39,6 +39,7 @@ function normalizedStatus(raw?: string) {
   const value = String(raw ?? "").trim().toLowerCase();
   if (value === "accepted") return "accepted";
   if (value === "queued") return "queued";
+  if (value === "processing") return "in_progress";
   if (value === "wrong_answer" || value === "compile_error" || value === "runtime_error" || value === "time_limit" || value === "failed") {
     return "needs_fix";
   }

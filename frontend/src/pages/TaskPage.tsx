@@ -1,7 +1,7 @@
 import Editor from "@monaco-editor/react";
 import Markdown from "react-markdown";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { getSubmission, getTask, runTask, submitTask, taskHint } from "../api/client";
 import { analyzePythonStyleHints } from "../lib/codeStyleHints";
 import { getEditorLanguageLabel, getEditorLanguageMode } from "../lib/editorLanguage";
@@ -93,10 +93,20 @@ function ruError(raw?: string): string {
   return raw ?? "Произошла ошибка. Повторите действие.";
 }
 
+function normalizeSubmissionStatus(status?: string): string {
+  return String(status ?? "").trim().toLowerCase();
+}
+
+function isSubmissionPendingStatus(status?: string): boolean {
+  const value = normalizeSubmissionStatus(status);
+  return value === "queued" || value === "processing";
+}
+
 function ruSubmissionStatus(status?: string): string {
-  const value = (status ?? "").trim().toLowerCase();
+  const value = normalizeSubmissionStatus(status);
   if (value === "ran") return "Код выполнен";
   if (value === "queued") return "В очереди";
+  if (value === "processing") return "Проверяется";
   if (value === "accepted") return "Принято";
   if (value === "wrong_answer") return "Неверный ответ";
   if (value === "compile_error") return "Ошибка компиляции";
@@ -107,16 +117,17 @@ function ruSubmissionStatus(status?: string): string {
 }
 
 function submissionBadge(status?: string) {
-  const value = String(status ?? "").toLowerCase();
+  const value = normalizeSubmissionStatus(status);
   if (value === "ran") return "badge badge-success";
   if (value === "accepted") return "badge badge-success";
+  if (value === "processing") return "badge badge-warning";
   if (value === "queued") return "badge badge-warning";
   if (value === "wrong_answer" || value === "compile_error" || value === "runtime_error" || value === "time_limit" || value === "failed") return "badge badge-error";
   return "badge badge-neutral";
 }
 
 function submissionOutcomeHint(status?: string): { text: string; className: string } | null {
-  const value = String(status ?? "").toLowerCase();
+  const value = normalizeSubmissionStatus(status);
   if (value === "wrong_answer" || value === "compile_error" || value === "runtime_error" || value === "time_limit") {
     return {
       text: "Это ошибка в вашем коде, а не в системе проверки. Исправьте решение по логу и отправьте снова.",
@@ -134,6 +145,7 @@ function submissionOutcomeHint(status?: string): { text: string; className: stri
 
 export function TaskPage() {
   const { taskId } = useParams();
+  const [searchParams] = useSearchParams();
   const user = useAuthStore((s) => s.user);
 
   const [task, setTask] = useState<TaskEntity | null>(null);
@@ -152,6 +164,7 @@ export function TaskPage() {
   const decorationIDsRef = useRef<string[]>([]);
   const editorLayoutCleanupRef = useRef<(() => void) | null>(null);
   const taskDraftStorageKey = useMemo(() => buildTaskDraftStorageKey(user?.id, taskId), [user?.id, taskId]);
+  const submissionIdFromQuery = useMemo(() => String(searchParams.get("submissionId") ?? "").trim(), [searchParams]);
 
   const loadTask = useCallback(async (currentTaskId: string) => {
     setTaskLoading(true);
@@ -194,6 +207,28 @@ export function TaskPage() {
     void loadTask(taskId);
   }, [taskId, loadTask]);
 
+  useEffect(() => {
+    if (!taskId || !submissionIdFromQuery) return;
+
+    let cancelled = false;
+
+    async function loadSubmissionFromQuery() {
+      try {
+        const current = await getSubmission(submissionIdFromQuery);
+        if (!cancelled) {
+          setSubmission(current);
+        }
+      } catch {
+        // ignore invalid/expired query submission id; task page remains usable
+      }
+    }
+
+    void loadSubmissionFromQuery();
+    return () => {
+      cancelled = true;
+    };
+  }, [taskId, submissionIdFromQuery]);
+
   async function onRun() {
     if (!taskId) return;
 
@@ -227,7 +262,7 @@ export function TaskPage() {
         const current = await getSubmission(queued.submissionId);
         setSubmission(current);
 
-        if (current.status !== "queued") {
+        if (!isSubmissionPendingStatus(current?.status)) {
           setPolling(false);
           return;
         }

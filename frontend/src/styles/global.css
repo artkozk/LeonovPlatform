@@ -3423,6 +3423,10 @@ textarea:focus-visible {
   border-bottom: 1px solid var(--border-soft);
 }
 
+.checks-history-row-link {
+  cursor: pointer;
+}
+
 .checks-history-row:last-child {
   border-bottom: 0;
 }

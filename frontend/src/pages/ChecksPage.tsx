@@ -1,5 +1,6 @@
-﻿import { ChevronRight, FileCode2, Inbox } from "lucide-react";
+import { ChevronRight, FileCode2, Inbox } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { submissionHistory } from "../api/client";
 
 type SubmissionItem = {
@@ -21,6 +22,7 @@ function statusLabel(status?: string) {
   const value = normalizeStatus(status);
   if (value === "accepted") return "Принято";
   if (value === "queued") return "В очереди";
+  if (value === "processing") return "Проверяется";
   if (value === "failed") return "Сбой проверки";
   return "Нужна правка";
 }
@@ -29,6 +31,7 @@ function statusClass(status?: string) {
   const value = normalizeStatus(status);
   if (value === "accepted") return "badge badge-success";
   if (value === "queued") return "badge badge-warning";
+  if (value === "processing") return "badge badge-warning";
   if (value === "wrong_answer" || value === "compile_error" || value === "runtime_error" || value === "time_limit" || value === "failed") {
     return "badge badge-error";
   }
@@ -44,6 +47,7 @@ function shortResult(status?: string) {
   const value = normalizeStatus(status);
   if (value === "accepted") return "Решение принято автопроверкой";
   if (value === "queued") return "Отправка ожидает выполнения";
+  if (value === "processing") return "Проверка выполняется на сервере";
   if (value === "compile_error") return "Найдены ошибки компиляции";
   if (value === "runtime_error") return "Ошибка во время выполнения";
   if (value === "wrong_answer") return "Результат не совпал с эталоном";
@@ -76,7 +80,12 @@ export function ChecksPage() {
 
   const visibleItems = useMemo(() => {
     if (filter === "all") return items;
-    if (filter === "queued") return items.filter((item) => normalizeStatus(item.status) === "queued");
+    if (filter === "queued") {
+      return items.filter((item) => {
+        const status = normalizeStatus(item.status);
+        return status === "queued" || status === "processing";
+      });
+    }
     if (filter === "accepted") return items.filter((item) => normalizeStatus(item.status) === "accepted");
     return items.filter((item) => isNeedsFix(item.status));
   }, [items, filter]);
@@ -121,7 +130,12 @@ export function ChecksPage() {
         {!loading && visibleItems.length > 0 && (
           <div className="checks-history-list">
             {visibleItems.map((item) => (
-              <div key={item.id} className="checks-history-row">
+              <Link
+                key={item.id}
+                to={item.taskId ? `/tasks/${item.taskId}?submissionId=${item.id}` : "/tasks"}
+                className="checks-history-row checks-history-row-link"
+                aria-label={`Открыть задачу: ${item.taskTitle}`}
+              >
                 <div className="checks-main">
                   <span className="checks-task-icon" aria-hidden="true">
                     <FileCode2 size={16} strokeWidth={1.9} />
@@ -138,7 +152,7 @@ export function ChecksPage() {
                   {item.createdAt ? <span className="checks-date">{new Date(item.createdAt).toLocaleString("ru-RU")}</span> : null}
                   <ChevronRight size={16} strokeWidth={2} aria-hidden="true" />
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
