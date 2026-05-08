@@ -7,7 +7,10 @@ const authRoute = "/auth";
 const CACHE_TTL_FAST_MS = 3_000;
 const CACHE_TTL_SHORT_MS = 10_000;
 const CACHE_TTL_PROFILE_MS = 5_000;
+const CACHE_TTL_MATERIALS_MS = 6 * 60 * 60 * 1_000;
 const REQUEST_TIMEOUT_MS = 15_000;
+const PERSISTED_GET_CACHE_PREFIX = "lc_get_cache_v1::";
+const MAX_PERSISTED_ENTRY_SIZE_BYTES = 350_000;
 
 type CachedEntry = {
   expiresAt: number;
@@ -18,6 +21,7 @@ type CachedGetOptions = {
   params?: Record<string, unknown>;
   ttlMs?: number;
   cacheKey?: string;
+  persist?: boolean;
 };
 
 const readCache = new Map<string, CachedEntry>();
@@ -39,6 +43,66 @@ http.interceptors.request.use((config) => {
 function clearReadCaches() {
   readCache.clear();
   inFlightGet.clear();
+}
+
+function clearPersistedReadCaches() {
+  if (typeof window === "undefined") return;
+  try {
+    const keysToDelete: string[] = [];
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index);
+      if (key?.startsWith(PERSISTED_GET_CACHE_PREFIX)) {
+        keysToDelete.push(key);
+      }
+    }
+    keysToDelete.forEach((key) => localStorage.removeItem(key));
+  } catch {
+    // ignore storage access issues
+  }
+}
+
+function buildPersistentCacheStorageKey(cacheKey: string): string {
+  return `${PERSISTED_GET_CACHE_PREFIX}${encodeURIComponent(cacheKey)}`;
+}
+
+function readPersistentCacheValue<T>(cacheKey: string): T | null {
+  if (typeof window === "undefined") return null;
+  const storageKey = buildPersistentCacheStorageKey(cacheKey);
+
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CachedEntry;
+    if (!parsed || typeof parsed.expiresAt !== "number" || !("data" in parsed)) {
+      localStorage.removeItem(storageKey);
+      return null;
+    }
+    if (parsed.expiresAt <= Date.now()) {
+      localStorage.removeItem(storageKey);
+      return null;
+    }
+    readCache.set(cacheKey, parsed);
+    return parsed.data as T;
+  } catch {
+    return null;
+  }
+}
+
+function writePersistentCacheValue(cacheKey: string, data: unknown, ttlMs: number) {
+  if (ttlMs <= 0 || typeof window === "undefined") return;
+
+  const payload = {
+    data,
+    expiresAt: Date.now() + ttlMs,
+  };
+
+  try {
+    const serialized = JSON.stringify(payload);
+    if (serialized.length > MAX_PERSISTED_ENTRY_SIZE_BYTES) return;
+    localStorage.setItem(buildPersistentCacheStorageKey(cacheKey), serialized);
+  } catch {
+    // ignore quota/storage errors; in-memory cache still works
+  }
 }
 
 function serializeParamValue(value: unknown): string {
@@ -87,11 +151,18 @@ async function cachedGet<T>(url: string, options?: CachedGetOptions): Promise<T>
   const params = options?.params;
   const ttlMs = options?.ttlMs ?? 0;
   const cacheKey = options?.cacheKey ?? buildGetCacheKey(url, params);
+  const persist = options?.persist ?? false;
 
   if (ttlMs > 0) {
     const cached = getCachedValue<T>(cacheKey);
     if (cached !== null) {
       return cached;
+    }
+    if (persist) {
+      const persisted = readPersistentCacheValue<T>(cacheKey);
+      if (persisted !== null) {
+        return persisted;
+      }
     }
   }
 
@@ -106,6 +177,9 @@ async function cachedGet<T>(url: string, options?: CachedGetOptions): Promise<T>
       const data = response.data as T;
       if (ttlMs > 0) {
         setCachedValue(cacheKey, data, ttlMs);
+        if (persist) {
+          writePersistentCacheValue(cacheKey, data, ttlMs);
+        }
       }
       return data;
     })
@@ -127,6 +201,7 @@ export function clearTokens() {
   localStorage.removeItem(tokenKey);
   localStorage.removeItem(refreshKey);
   clearReadCaches();
+  clearPersistedReadCaches();
 }
 
 export function getAccessToken() {
@@ -234,20 +309,23 @@ export async function me() {
 }
 
 export async function listCourses() {
-  const data = await cachedGet<{ items: Array<Record<string, unknown>> }>("/courses", { ttlMs: CACHE_TTL_SHORT_MS });
+  const data = await cachedGet<{ items: Array<Record<string, unknown>> }>("/courses", {
+    ttlMs: CACHE_TTL_MATERIALS_MS,
+    persist: true,
+  });
   return data.items;
 }
 
 export async function getCourse(courseId: string) {
-  return cachedGet(`/courses/${courseId}`, { ttlMs: CACHE_TTL_SHORT_MS });
+  return cachedGet(`/courses/${courseId}`, { ttlMs: CACHE_TTL_MATERIALS_MS, persist: true });
 }
 
 export async function getCourseTasksCatalog(courseId: string) {
-  return cachedGet(`/courses/${courseId}/tasks-catalog`, { ttlMs: CACHE_TTL_SHORT_MS });
+  return cachedGet(`/courses/${courseId}/tasks-catalog`, { ttlMs: CACHE_TTL_MATERIALS_MS, persist: true });
 }
 
 export async function getLesson(lessonId: string) {
-  return cachedGet(`/lessons/${lessonId}`, { ttlMs: CACHE_TTL_SHORT_MS });
+  return cachedGet(`/lessons/${lessonId}`, { ttlMs: CACHE_TTL_MATERIALS_MS, persist: true });
 }
 
 export async function checkLessonQuiz(lessonId: string, blockId: string, answers: Record<string, string>) {
@@ -256,7 +334,7 @@ export async function checkLessonQuiz(lessonId: string, blockId: string, answers
 }
 
 export async function getTask(taskId: string) {
-  return cachedGet(`/tasks/${taskId}`, { ttlMs: CACHE_TTL_SHORT_MS });
+  return cachedGet(`/tasks/${taskId}`, { ttlMs: CACHE_TTL_MATERIALS_MS, persist: true });
 }
 
 export async function submitTask(taskId: string, sourceCode: string) {
