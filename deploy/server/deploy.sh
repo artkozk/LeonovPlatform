@@ -2,6 +2,7 @@
 set -euo pipefail
 
 APP_ROOT="${APP_ROOT:-/opt/leonovcare-platform/current}"
+ENV_FILE="${ENV_FILE:-$APP_ROOT/backend/.env}"
 SKIP_DB_BACKUP="${SKIP_DB_BACKUP:-false}"
 DB_BACKUP_DIR="${DB_BACKUP_DIR:-/opt/leonovcare-platform/backups/db}"
 HEALTHCHECK_URL="${HEALTHCHECK_URL:-http://127.0.0.1:8510/healthz}"
@@ -20,6 +21,42 @@ require_cmd npm
 require_cmd go
 require_cmd pm2
 require_cmd curl
+
+read_env_value() {
+  local key="$1"
+  local file="$2"
+  if [ ! -f "$file" ]; then
+    return 1
+  fi
+  awk -F= -v wanted="$key" '
+    $1 == wanted {
+      value = substr($0, index($0, "=") + 1)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+      if ((value ~ /^".*"$/) || (value ~ /^'\''.*'\''$/)) {
+        value = substr(value, 2, length(value) - 2)
+      }
+      print value
+      exit
+    }
+  ' "$file"
+}
+
+export_if_missing() {
+  local key="$1"
+  local current_value="${!key:-}"
+  if [ -n "$current_value" ]; then
+    return 0
+  fi
+  local loaded_value
+  loaded_value="$(read_env_value "$key" "$ENV_FILE" || true)"
+  if [ -n "$loaded_value" ]; then
+    export "${key}=${loaded_value}"
+  fi
+}
+
+export_if_missing DATABASE_URL
+export_if_missing JWT_ACCESS_SECRET
+export_if_missing JWT_REFRESH_SECRET
 
 NODE_MAJOR="$(node -p "process.versions.node.split('.')[0]")"
 NODE_MINOR="$(node -p "process.versions.node.split('.')[1]")"
