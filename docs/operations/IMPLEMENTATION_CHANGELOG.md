@@ -3370,3 +3370,59 @@
 1. `cd frontend && npm.cmd run test -- --run` — PASS.
 2. `cd frontend && npm.cmd run build` — PASS.
 3. `cd frontend && npm.cmd run lint` — PASS по ошибкам (есть существующие non-blocking warnings `@typescript-eslint/no-explicit-any` и `react-hooks/exhaustive-deps`, они были в проекте до этой правки и не относятся к данному fix).
+
+## 2026-05-08 — Full remediation: deploy hardening, CI quality gate, smoke contract alignment
+
+### Добавлено/исправлено
+
+1. Deploy hardening:
+- `deploy/server/deploy.sh` обновлен:
+  - pre-deploy DB backup gate;
+  - обязательная сборка `leonovcare-migrator`;
+  - отдельный миграционный шаг до рестарта процессов;
+  - post-deploy `healthz/readyz` gate;
+  - env-флаги `SKIP_DB_BACKUP`, `DB_BACKUP_DIR`, `HEALTHCHECK_URL`, `READYCHECK_URL`.
+
+2. DB backup automation:
+- добавлен `deploy/server/backup-db.sh` (`pg_dump | gzip` + retention cleanup);
+- добавлены systemd unit/timer:
+  - `deploy/server/systemd/leonovcare-db-backup.service`;
+  - `deploy/server/systemd/leonovcare-db-backup.timer`.
+
+3. Backend config alignment:
+- `AUTO_MIGRATE` default изменен на `false` в `backend/internal/config/config.go`;
+- добавлен тест `TestLoad_DefaultAutoMigrateIsDisabled`;
+- `.env.example` синхронизирован:
+  - `AUTO_MIGRATE=false`;
+  - `AUTO_SEED=false`;
+  - `IDE_CHECKER_ALLOWED_COMMANDS=`.
+
+4. Smoke contract alignment:
+- `tests/smoke.sh` переведен на текущий payload регистрации:
+  - `firstName`, `lastName`, `nickname`, `email`, `password`;
+- добавлены шаги:
+  - login/token проверка;
+  - `courses -> tasks-catalog -> submission`.
+
+5. Frontend runtime + dependency security:
+- убран fallback API на `localhost`;
+- fallback строится от текущего host/production contour;
+- обновлены зависимости до безопасного набора:
+  - `vite@^6.4.2`
+  - `vitest@^4.1.5`
+  - `@vitejs/plugin-react@^5.1.0`
+  - `overrides.dompurify=^3.4.0`
+- обновлен `package-lock.json`.
+
+6. CI quality gate:
+- добавлен GitHub Actions workflow:
+  - backend: `go test` + `go vet` + build;
+  - frontend: `npm ci` + test + lint + build;
+  - idea-plugin: `gradle test` + `buildPlugin`.
+
+### Почему сделано именно так
+
+1. Разделение миграций и runtime-старта убирает скрытые изменения схемы при рестартах.
+2. Backup gate делает rollback данных технически выполнимым в каждой поставке.
+3. CI gate переводит quality checks в обязательное условие релиза, а не в ручную проверку.
+4. Обновление smoke и frontend fallback устраняет контрактный дрейф и снижает риск ложных post-deploy PASS.

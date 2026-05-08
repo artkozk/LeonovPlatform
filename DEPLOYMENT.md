@@ -487,3 +487,43 @@ pm2 env <api_id> | grep IDE_CHECKER_ALLOWED_COMMANDS
 1. Открыть `/auth`, выполнить login/register с корректными данными и убедиться, что flow завершается успешно.
 2. Симулировать недоступность API (например, временно заблокировать порт backend) и убедиться, что через ~15 секунд появляется понятная ошибка вместо вечного `Подождите...`.
 3. Проверить, что после network-failure кнопка снова активна, а состояние `loading` сбрасывается.
+
+## 19. Full remediation release flow (append-only, 2026-05-08)
+
+### 19.1 Что изменено в deploy-процессе
+
+1. Перед build/migrate запускается обязательный backup БД (`pg_dump` + `gzip`).
+2. Миграции выполняются только отдельным шагом через `leonovcare-migrator`.
+3. После рестарта PM2 выполняется gate `healthz + readyz`.
+4. Добавлены явные флаги deploy-интерфейса:
+- `SKIP_DB_BACKUP` (default `false`);
+- `DB_BACKUP_DIR` (default `/opt/leonovcare-platform/backups/db`).
+
+### 19.2 Новый канонический порядок команды деплоя
+
+```bash
+cd /opt/leonovcare-platform/current
+bash deploy/server/deploy.sh
+```
+
+Что делает скрипт по шагам:
+
+1. Проверяет наличие `node`, `npm`, `go`, `pm2`, `curl`.
+2. Проверяет минимальную версию Node (`>=20.19`).
+3. Выполняет pre-deploy backup БД (если `SKIP_DB_BACKUP!=true`).
+4. Собирает backend (`api`, `worker`, `migrator`) и выполняет миграции отдельным бинарем.
+5. Выполняет frontend `npm ci`, `npm run test`, `npm run build`.
+6. Перезапускает PM2-процессы LeonovCare.
+7. Проверяет `healthz` и `readyz`.
+
+### 19.3 Runtime defaults (production alignment)
+
+1. `AUTO_MIGRATE=false`
+2. `AUTO_SEED=false`
+3. `IDE_CHECKER_ALLOWED_COMMANDS=` (пусто по умолчанию)
+
+### 19.4 Почему это зафиксировано
+
+1. Migration step становится детерминированным и больше не выполняется “тихо” при старте приложения.
+2. Backup-гейт перед миграцией снижает риск необратимого инцидента данных.
+3. Явные health/ready проверки блокируют выпуск релиза при неполной готовности контура.

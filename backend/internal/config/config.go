@@ -74,7 +74,7 @@ func Load() (Config, error) {
 		JWTAccessTTL:                  getDurationOr("JWT_ACCESS_TTL", 15*time.Minute),
 		JWTRefreshTTL:                 getDurationOr("JWT_REFRESH_TTL", 24*time.Hour*30),
 		FrontendURL:                   getOr("FRONTEND_URL", "http://localhost:5173"),
-		EnableAutoMigrate:             getBoolOr("AUTO_MIGRATE", true),
+		EnableAutoMigrate:             getBoolOr("AUTO_MIGRATE", false),
 		EnableAutoSeed:                getBoolOr("AUTO_SEED", false),
 		SubmissionQueueName:           getOr("SUBMISSION_QUEUE", "submission_jobs"),
 		SubmissionProcessingQueueName: getOr("SUBMISSION_PROCESSING_QUEUE", "submission_jobs_processing"),

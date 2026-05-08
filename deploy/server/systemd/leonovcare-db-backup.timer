@@ -1,0 +1,11 @@
+[Unit]
+Description=Run LeonovCare DB backups on schedule
+
+[Timer]
+OnCalendar=*-*-* 03:20:00
+RandomizedDelaySec=10m
+Persistent=true
+Unit=leonovcare-db-backup.service
+
+[Install]
+WantedBy=timers.target

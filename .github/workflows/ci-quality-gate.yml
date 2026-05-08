@@ -1,0 +1,96 @@
+name: ci-quality-gate
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: backend-go
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: backend/go.mod
+          cache: true
+          cache-dependency-path: backend/go.sum
+
+      - name: Unit tests
+        run: go test ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Build api/worker/migrator
+        run: |
+          go build -o bin/leonovcare-api ./cmd/server
+          go build -o bin/leonovcare-worker ./cmd/worker
+          go build -o bin/leonovcare-migrator ./cmd/migrator
+
+  frontend:
+    name: frontend-node
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20.19.0
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Tests
+        run: npm run test
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  idea-plugin:
+    name: idea-plugin-gradle
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: idea-plugin
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Gradle cache
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Gradle tests
+        run: bash ./gradlew test --console=plain
+
+      - name: Build plugin artifact
+        run: bash ./gradlew buildPlugin --console=plain

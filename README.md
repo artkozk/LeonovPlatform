@@ -1151,3 +1151,29 @@ cd idea-plugin
 1. Это UI/state-fix асинхронного контура `queued -> processing -> final` и он не меняет backend-контракт judge.
 2. Явная обработка `processing` исключает ложные негативные verdict в интерфейсе.
 3. Кликабельная история сокращает путь пользователя до исправления решения и повторной отправки.
+
+## Full remediation rollout update (2026-05-08)
+
+1. В релизе зафиксирован новый канонический deploy-контур:
+- обязательный pre-migration DB backup;
+- отдельный migrator-шаг до рестарта runtime;
+- post-deploy `healthz/readyz` gate.
+
+2. Зафиксированы безопасные runtime-дефолты:
+- `AUTO_MIGRATE=false`;
+- `AUTO_SEED=false`;
+- `IDE_CHECKER_ALLOWED_COMMANDS` пустой по умолчанию.
+
+3. Обновлены smoke и frontend runtime-гейты:
+- `tests/smoke.sh` приведен к актуальному auth payload (`firstName/lastName/nickname`);
+- smoke включает цепочку `register -> login/token -> courses -> tasks-catalog -> submission`;
+- frontend больше не использует fallback на `localhost` в production runtime.
+
+4. Добавлены инфраструктурные и quality gate артефакты:
+- `deploy/server/backup-db.sh`;
+- `deploy/server/systemd/leonovcare-db-backup.service`;
+- `deploy/server/systemd/leonovcare-db-backup.timer`;
+- `.github/workflows/ci-quality-gate.yml` (backend/frontend/idea-plugin).
+
+5. Полный пошаговый протокол (append-only, с командами, результатами, rollback и статусом):
+- [docs/operations/REMEDIATION_FULL_AUDIT_2026_05_08.md](C:/prog/Comercial/LeonovCarePlatform/docs/operations/REMEDIATION_FULL_AUDIT_2026_05_08.md)

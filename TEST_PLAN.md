@@ -350,3 +350,78 @@ go test ./internal/config -run TestLoad_ClampsSecurityCriticalNumericConfig
 ```
 2. Ожидаемое:
 - отрицательные/нулевые значения security-критичных параметров не отключают ограничения, а клампятся на безопасные defaults.
+
+## 11. Full remediation release gate (append-only, 2026-05-08)
+
+### 11.1 Backend quality gate
+
+1. Обязательные команды:
+```bash
+cd backend
+go test ./...
+go vet ./...
+go build -o bin/leonovcare-api ./cmd/server
+go build -o bin/leonovcare-worker ./cmd/worker
+go build -o bin/leonovcare-migrator ./cmd/migrator
+```
+2. Критерий PASS:
+- тесты green;
+- `vet` без ошибок;
+- все три бинаря успешно собраны.
+
+### 11.2 Frontend quality gate
+
+1. Обязательные команды:
+```bash
+cd frontend
+npm ci
+npm run test
+npm run lint
+npm run build
+npm audit
+```
+2. Критерий PASS:
+- `npm audit` без `high/critical`;
+- moderate уязвимости закрыты обновлением зависимостей или явно зафиксированы как upstream-blocked риск.
+
+### 11.3 IDEA plugin quality gate
+
+1. Обязательные команды:
+```bash
+cd idea-plugin
+./gradlew.bat test --console=plain
+./gradlew.bat buildPlugin --console=plain
+```
+2. Критерий PASS:
+- тесты и сборка plugin-artifact проходят без ошибок.
+
+### 11.4 Обновлённый smoke-контракт после деплоя
+
+1. Обязательная цепочка:
+- `register(firstName,lastName,nickname,email,password)`
+- `login` и получение access token
+- `GET /courses`
+- `GET /courses/:courseID/tasks-catalog`
+- `POST /tasks/:taskID/submissions`
+
+2. Технический smoke-скрипт:
+- `tests/smoke.sh` синхронизирован с текущим auth-контрактом (без legacy `username`).
+
+3. Критерий PASS:
+- каждый шаг цепочки возвращает ожидаемый success-статус;
+- submit возвращает `submissionId` и не падает на контрактной ошибке.
+
+### 11.5 Production post-release gate
+
+1. Обязательные проверки:
+```bash
+curl -fsS http://127.0.0.1:8510/healthz
+curl -fsS http://127.0.0.1:8510/readyz
+pm2 status --no-color
+redis-cli LLEN submission_jobs
+redis-cli LLEN submission_jobs_processing
+```
+2. Критерий PASS:
+- процессы LeonovCare online и без restart-loop;
+- `healthz=200`, `readyz=200`;
+- очередь Redis не уходит в неограниченный рост.

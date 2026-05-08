@@ -35,6 +35,19 @@ func TestLoad_UsesExplicitIDECheckerAllowlist(t *testing.T) {
 	}
 }
 
+func TestLoad_DefaultAutoMigrateIsDisabled(t *testing.T) {
+	setRequiredEnv(t)
+	t.Setenv("AUTO_MIGRATE", "")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() returned error: %v", err)
+	}
+	if cfg.EnableAutoMigrate {
+		t.Fatalf("expected AUTO_MIGRATE default to be false")
+	}
+}
+
 func TestLoad_ClampsSecurityCriticalNumericConfig(t *testing.T) {
 	setRequiredEnv(t)
 	t.Setenv("MAX_REQUEST_BODY_BYTES", "-1")

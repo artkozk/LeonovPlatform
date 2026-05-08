@@ -1,0 +1,15 @@
+[Unit]
+Description=LeonovCare PostgreSQL backup
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Environment=APP_ROOT=/opt/leonovcare-platform/current
+Environment=DB_BACKUP_DIR=/opt/leonovcare-platform/backups/db
+Environment=BACKUP_RETENTION_DAYS=14
+ExecStart=/bin/bash /opt/leonovcare-platform/current/deploy/server/backup-db.sh
+
+[Install]
+WantedBy=multi-user.target

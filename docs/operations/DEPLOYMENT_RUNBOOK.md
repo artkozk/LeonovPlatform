@@ -1229,3 +1229,105 @@ pm2 status --no-color
 1. Часть frontend-зависимостей уже требует Node 20+, на Node 18 deploy становится нестабильным и рискованным.
 2. Ошибка в путях `go build` ломает backend deployment независимо от качества кода приложения.
 3. Явная preflight-проверка версии Node и deploy-script снижает вероятность «ложно-случайных» падений релизов.
+
+## 30. Дополнение от 2026-05-08 (канонический remediation rollout: migrator + DB backup + health gate)
+
+Этот блок добавлен как новый канонический порядок релиза. Предыдущие шаги в этом файле не удаляются и считаются историческими.
+
+### 30.1 Границы релиза (фиксированные ограничения)
+
+1. Прод-домен `leonovcare.ru` в этом релизе не переключается.
+2. Рабочий внешний контур остаётся:
+- frontend: `http://85.198.82.221:8511`
+- API: `http://85.198.82.221:8510/api/v1`
+
+### 30.2 Новый обязательный deploy flow
+
+1. Preflight-снимок перед изменениями:
+- `pm2 status --no-color`
+- `curl -fsS http://127.0.0.1:8510/healthz`
+- `curl -fsS http://127.0.0.1:8510/readyz`
+- `node -v && npm -v && go version`
+- `redis-cli LLEN submission_jobs` и `redis-cli LLEN submission_jobs_processing`
+- snapshot копии `backend/.env`, `deploy/server/deploy.sh`, `deploy/server/ecosystem.config.cjs`, релевантного nginx-конфига.
+
+2. Обновление кода в `/opt/leonovcare-platform/current`.
+
+3. Обязательный pre-migration backup БД:
+- deploy-скрипт вызывает `deploy/server/backup-db.sh` до сборки/миграций;
+- backup создаётся в gzip-формате;
+- имя совместимо с retention-политикой: `leonovcare_db_<UTC_TIMESTAMP>.sql.gz`.
+
+4. Сборка backend:
+- `go test ./...`
+- `go build -o bin/leonovcare-api ./cmd/server`
+- `go build -o bin/leonovcare-worker ./cmd/worker`
+- `go build -o bin/leonovcare-migrator ./cmd/migrator`
+
+5. Миграции только через отдельный шаг:
+- `./bin/leonovcare-migrator`
+- runtime `AUTO_MIGRATE` остаётся `false`, чтобы миграции не шли скрыто при старте API/worker.
+
+6. Frontend gate:
+- `npm ci`
+- `npm run test`
+- `npm run build`
+
+7. Рестарт процессов:
+- `pm2 delete leonovcare-api leonovcare-worker leonovcare-frontend || true`
+- `pm2 start deploy/server/ecosystem.config.cjs`
+- `pm2 save`
+
+8. Post-deploy gate:
+- `curl -fsS http://127.0.0.1:8510/healthz`
+- `curl -fsS http://127.0.0.1:8510/readyz`
+- API smoke: `register -> login/token -> courses -> tasks-catalog -> submission`.
+
+### 30.3 Новые флаги deploy-интерфейса
+
+1. `SKIP_DB_BACKUP`:
+- default `false`;
+- при `true` backup-шаг пропускается осознанно и это должно быть явно отражено в release-note.
+
+2. `DB_BACKUP_DIR`:
+- default `/opt/leonovcare-platform/backups/db`;
+- позволяет задавать явный путь хранения backup-файлов в конкретном контуре.
+
+3. `HEALTHCHECK_URL` и `READYCHECK_URL`:
+- позволяют явно переопределить post-deploy health/ready gate, если контур использует нестандартные адреса.
+
+### 30.4 Регулярные autobackup'ы БД (systemd)
+
+1. В репозитории добавлены unit-файлы:
+- `deploy/server/systemd/leonovcare-db-backup.service`
+- `deploy/server/systemd/leonovcare-db-backup.timer`
+
+2. На сервере установка:
+```bash
+cp /opt/leonovcare-platform/current/deploy/server/systemd/leonovcare-db-backup.service /etc/systemd/system/
+cp /opt/leonovcare-platform/current/deploy/server/systemd/leonovcare-db-backup.timer /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now leonovcare-db-backup.timer
+systemctl start leonovcare-db-backup.service
+systemctl list-timers --all | grep leonovcare-db-backup
+```
+
+3. Проверка:
+- в `DB_BACKUP_DIR` появляется новый `*.sql.gz`;
+- `systemctl status leonovcare-db-backup.timer` показывает `ACTIVE`.
+
+### 30.5 Rollback (обновлённый порядок)
+
+1. Остановить процессы LeonovCare в PM2.
+2. Вернуть предыдущую release-директорию/commit.
+3. Восстановить БД из pre-migration backup:
+```bash
+gunzip -c /opt/leonovcare-platform/backups/db/leonovcare_db_<timestamp>.sql.gz | psql "$DATABASE_URL"
+```
+4. Запустить deploy-flow заново и повторить `healthz/readyz` + smoke.
+
+Почему это добавлено:
+
+1. Отдельный migrator-шаг и pre-backup закрывают основной риск необратимого повреждения данных при неудачной миграции.
+2. Post-deploy gate (`healthz/readyz`) исключает переход трафика на полу-готовый инстанс.
+3. Явные флаги deploy-интерфейса делают поведение релиза проверяемым для ревью и аудита.
