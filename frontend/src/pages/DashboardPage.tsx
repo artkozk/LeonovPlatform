@@ -6,6 +6,7 @@ import { useAuthStore } from "../store/auth";
 
 type SubmissionItem = {
   id: string;
+  taskId?: string;
   taskTitle: string;
   score: number;
   status: string;
@@ -270,7 +271,12 @@ export function DashboardPage() {
           {!loading && history.length > 0 ? (
             <div className="clean-list">
               {history.slice(0, 5).map((item) => (
-                <div key={item.id} className="clean-list-row">
+                <Link
+                  key={item.id}
+                  to={item.taskId ? `/tasks/${item.taskId}?submissionId=${item.id}` : "/tasks"}
+                  className="clean-list-row clean-list-link"
+                  aria-label={`Открыть задачу: ${item.taskTitle}`}
+                >
                   <div className="clean-list-main">
                     <span className="clean-list-icon" aria-hidden="true">
                       <FileText size={15} strokeWidth={1.9} />
@@ -281,7 +287,7 @@ export function DashboardPage() {
                     </div>
                   </div>
                   <span className={submissionStatusClass(item.status)}>{submissionStatusLabel(item.status)}</span>
-                </div>
+                </Link>
               ))}
             </div>
           ) : null}
