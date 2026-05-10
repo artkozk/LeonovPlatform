@@ -31,3 +31,25 @@ func TestNormalizeEmailTrimsAndLowercases(t *testing.T) {
 		t.Fatalf("unexpected normalized email: %q", got)
 	}
 }
+
+func TestNormalizeAndValidateEmailAcceptsTrimmedInput(t *testing.T) {
+	got, err := normalizeAndValidateEmail("  USER@Example.COM  ")
+	if err != nil {
+		t.Fatalf("expected valid email, got error: %v", err)
+	}
+	if got != "user@example.com" {
+		t.Fatalf("unexpected normalized email: %q", got)
+	}
+}
+
+func TestNormalizeAndValidateEmailRejectsInvalidInput(t *testing.T) {
+	if _, err := normalizeAndValidateEmail("not-an-email"); err == nil {
+		t.Fatal("expected invalid email error")
+	}
+}
+
+func TestNormalizeAndValidateEmailRejectsDisplayNameFormat(t *testing.T) {
+	if _, err := normalizeAndValidateEmail("John Doe <john@example.com>"); err == nil {
+		t.Fatal("expected invalid email error for display name format")
+	}
+}

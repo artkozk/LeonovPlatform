@@ -3484,3 +3484,37 @@
 1. `cd frontend && npm.cmd run test` — PASS.
 2. `cd frontend && npm.cmd run build` — PASS.
 3. `cd frontend && npm.cmd run lint` — PASS по ошибкам (остаются уже существующие предупреждения линтера вне этого изменения).
+
+## 2026-05-10 — Auth full audit + email normalization order fix
+
+### Симптомы на production перед фиксом
+
+1. `POST /api/v1/auth/login` с email, содержащим пробелы по краям (`"  USER@EXAMPLE.COM  "`), возвращал `400` c validator-ошибкой по `email`.
+2. Регистрация с кириллическим nickname (`Иван Петров`) возвращала `400` и блокировала часть реального русскоязычного онбординга.
+
+### Что изменено
+
+1. `backend/internal/app/handlers_auth.go`:
+- для `register/login/forgot-password` email bind-поле переведено на `binding:"required"` вместо раннего `required,email`;
+- добавлен единый helper `normalizeAndValidateEmail`;
+- `Register`, `Login`, `ForgotPassword` теперь выполняют:
+  - bind;
+  - normalize (`trim + lowercase`);
+  - validate;
+  - бизнес-логику.
+
+2. `backend/internal/app/handlers_auth_test.go`:
+- добавлены regression-тесты на новый helper:
+  - `TestNormalizeAndValidateEmailAcceptsTrimmedInput`;
+  - `TestNormalizeAndValidateEmailRejectsInvalidInput`;
+  - `TestNormalizeAndValidateEmailRejectsDisplayNameFormat`.
+
+3. Документация:
+- добавлен подробный пошаговый отчёт `docs/operations/AUTH_FULL_AUDIT_2026_05_10.md`;
+- в `TEST_PLAN.md` добавлен отдельный auth regression gate (append-only, раздел 12).
+
+### Почему сделано именно так
+
+1. Root cause дефекта находился в порядке операций: validator срабатывал раньше нормализации.
+2. Единый helper убирает расхождение между auth endpoint’ами и снижает риск повторного регресса.
+3. Отдельный audit-документ фиксирует pre-fix и post-fix состояние с командами и аргументацией, чтобы reviewer видел причинно-следственную связь и практическую необходимость изменения.

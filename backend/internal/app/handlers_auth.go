@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/mail"
 	"strings"
 	"time"
 	"unicode"
@@ -17,7 +18,7 @@ import (
 )
 
 type registerRequest struct {
-	Email     string `json:"email" binding:"required,email"`
+	Email     string `json:"email" binding:"required"`
 	FirstName string `json:"firstName" binding:"required,min=1,max=64"`
 	LastName  string `json:"lastName" binding:"required,min=1,max=64"`
 	Nickname  string `json:"nickname" binding:"required,min=3,max=32"`
@@ -25,7 +26,7 @@ type registerRequest struct {
 }
 
 type loginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
+	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
@@ -49,7 +50,12 @@ func (a *App) Register(c *gin.Context) {
 		return
 	}
 
-	req.Email = normalizeEmail(req.Email)
+	normalizedEmail, err := normalizeAndValidateEmail(req.Email)
+	if err != nil {
+		badRequest(c, err)
+		return
+	}
+	req.Email = normalizedEmail
 	req.FirstName = strings.TrimSpace(req.FirstName)
 	req.LastName = strings.TrimSpace(req.LastName)
 	req.Nickname = normalizeNickname(req.Nickname)
@@ -178,11 +184,16 @@ func (a *App) Login(c *gin.Context) {
 		badRequest(c, err)
 		return
 	}
-	req.Email = normalizeEmail(req.Email)
+	normalizedEmail, err := normalizeAndValidateEmail(req.Email)
+	if err != nil {
+		badRequest(c, err)
+		return
+	}
+	req.Email = normalizedEmail
 
 	var userID, passHash, role, planCode string
 	var isBlocked, isVerified bool
-	err := a.DB.QueryRow(c.Request.Context(), `
+	err = a.DB.QueryRow(c.Request.Context(), `
 		SELECT u.id, u.password_hash, u.role, u.is_blocked, u.is_email_verified, COALESCE(p.code,'free')
 		FROM users u
 		LEFT JOIN subscriptions s ON s.user_id=u.id AND s.status='active' AND (s.ends_at IS NULL OR s.ends_at > NOW())
@@ -342,16 +353,21 @@ func (a *App) VerifyEmail(c *gin.Context) {
 
 func (a *App) ForgotPassword(c *gin.Context) {
 	var req struct {
-		Email string `json:"email" binding:"required,email"`
+		Email string `json:"email" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		badRequest(c, err)
 		return
 	}
-	req.Email = normalizeEmail(req.Email)
+	normalizedEmail, err := normalizeAndValidateEmail(req.Email)
+	if err != nil {
+		badRequest(c, err)
+		return
+	}
+	req.Email = normalizedEmail
 
 	var userID string
-	err := a.DB.QueryRow(c.Request.Context(), `SELECT id FROM users WHERE email=$1`, req.Email).Scan(&userID)
+	err = a.DB.QueryRow(c.Request.Context(), `SELECT id FROM users WHERE email=$1`, req.Email).Scan(&userID)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 		return
@@ -487,6 +503,19 @@ func normalizeNickname(raw string) string {
 
 func normalizeEmail(raw string) string {
 	return strings.TrimSpace(strings.ToLower(raw))
+}
+
+func normalizeAndValidateEmail(raw string) (string, error) {
+	email := normalizeEmail(raw)
+	if email == "" {
+		return "", fmt.Errorf("email must be a valid address")
+	}
+
+	parsed, err := mail.ParseAddress(email)
+	if err != nil || parsed.Address != email {
+		return "", fmt.Errorf("email must be a valid address")
+	}
+	return email, nil
 }
 
 func generatePublicID() string {

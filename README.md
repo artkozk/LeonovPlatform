@@ -1177,3 +1177,21 @@ cd idea-plugin
 
 5. Полный пошаговый протокол (append-only, с командами, результатами, rollback и статусом):
 - [docs/operations/REMEDIATION_FULL_AUDIT_2026_05_08.md](C:/prog/Comercial/LeonovCarePlatform/docs/operations/REMEDIATION_FULL_AUDIT_2026_05_08.md)
+
+## Актуализация от 2026-05-10: полный аудит auth и фиксация порядка email-нормализации
+
+1. На production воспроизведены и зафиксированы дефекты auth-потока:
+- `login` с email, содержащим пробелы по краям, возвращал `400` до нормализации;
+- регистрация с кириллическим nickname в части сценариев возвращала `400`.
+
+2. В backend auth-контуре выполнен фикс:
+- `register/login/forgot-password` переведены на единый flow `bind -> normalizeEmail(trim+lowercase) -> validate`;
+- добавлен helper `normalizeAndValidateEmail`;
+- добавлены regression-тесты для фиксации поведения.
+
+3. Подробный пошаговый отчёт аудита (pre-fix, root cause, изменения, команды проверки, post-deploy re-check):
+- [docs/operations/AUTH_FULL_AUDIT_2026_05_10.md](C:/prog/Comercial/LeonovCarePlatform/docs/operations/AUTH_FULL_AUDIT_2026_05_10.md)
+
+4. Почему это важно:
+- регистрация и вход являются критическим первым пользовательским путём;
+- ошибки нормализации/валидации на этом пути напрямую блокируют онбординг и создают ложное ощущение «сломанной платформы».

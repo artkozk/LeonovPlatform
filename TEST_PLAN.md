@@ -425,3 +425,44 @@ redis-cli LLEN submission_jobs_processing
 - процессы LeonovCare online и без restart-loop;
 - `healthz=200`, `readyz=200`;
 - очередь Redis не уходит в неограниченный рост.
+
+## 12. Auth normalization and nickname compatibility regression gate (append-only, 2026-05-10)
+
+### 12.1 Что проверяем
+
+1. Email normalization для auth endpoint’ов выполняется до итоговой валидации формата:
+- `register`;
+- `login`;
+- `forgot-password`.
+2. Регистрация с кириллическим nickname (`Иван Петров`) проходит и нормализуется в допустимый runtime-формат.
+3. Refresh token продолжает one-time semantics:
+- первый refresh успешен;
+- повторное использование старого refresh токена отвергается.
+
+### 12.2 Почему добавлено
+
+1. На production был воспроизведён дефект: `login` с email вида `\"  USER@EXAMPLE.COM  \"` возвращал `400` из-за ранней валидации до `trim/lowercase`.
+2. На production был воспроизведён дефект регистрации с кириллическим nickname, что блокировало часть реального русскоязычного онбординга.
+3. Эти сценарии нужно держать в release gate как отдельный обязательный блок, чтобы дефект не вернулся после последующих изменений auth-слоя.
+
+### 12.3 Минимальный набор проверок
+
+1. Unit/regression:
+```bash
+cd backend
+go test ./internal/app -run "TestNormalizeAndValidateEmail|TestNormalizeNickname"
+```
+
+2. Full backend regression:
+```bash
+cd backend
+go test ./...
+```
+
+3. Production API regression (после деплоя):
+- `POST /api/v1/auth/login` с email, содержащим ведущие/замыкающие пробелы, должен вернуть `200` и токены;
+- `POST /api/v1/auth/register` с nickname `Иван Петров` должен вернуть `201`;
+- `POST /api/v1/auth/refresh` должен возвращать `200` для первого refresh и `401 refresh session expired` для повторного использования старого токена.
+
+4. Подробный протокол проверки и причины фикса:
+- `docs/operations/AUTH_FULL_AUDIT_2026_05_10.md`.
