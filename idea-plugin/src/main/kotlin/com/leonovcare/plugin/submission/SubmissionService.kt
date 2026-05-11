@@ -40,6 +40,16 @@ class SubmissionService(private val project: Project) {
     private val submitRequestTimeoutMillis = 30_000L
     private val pollRequestTimeoutMillis = 20_000L
 
+    init {
+        scope.launch {
+            authService.state().collect { authState ->
+                if (!authState.authorized) {
+                    resultFlow.value = null
+                }
+            }
+        }
+    }
+
     fun latestResult(): StateFlow<SubmissionResult?> = resultFlow.asStateFlow()
 
     fun submitCurrentTask(onResult: (Result<SubmissionResult>) -> Unit) {

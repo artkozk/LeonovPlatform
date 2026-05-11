@@ -80,7 +80,27 @@ class TaskManager(private val project: Project) {
     private val refreshingCourseIds = ConcurrentHashMap.newKeySet<String>()
     private val courseRefreshedAtEpochMillis = ConcurrentHashMap<String, Long>()
 
+    init {
+        scope.launch {
+            authService.state().collect { authState ->
+                if (!authState.authorized) {
+                    resetState()
+                }
+            }
+        }
+    }
+
     fun state(): StateFlow<TaskManagerState> = stateFlow.asStateFlow()
+
+    private fun resetState() {
+        startupTaskAutoOpenInFlight = false
+        startupTaskAutoOpenedId = null
+        openingTaskIds.clear()
+        refreshingCourseIds.clear()
+        courseRefreshedAtEpochMillis.clear()
+        currentTaskService.clear()
+        stateFlow.value = TaskManagerState()
+    }
 
     fun initializeFromCache() {
         val courses = courseCache.getCourses()

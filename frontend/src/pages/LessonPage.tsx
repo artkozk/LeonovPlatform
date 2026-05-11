@@ -20,6 +20,7 @@ import { analyzePythonStyleHints } from "../lib/codeStyleHints";
 import { getEditorLanguageLabel, getEditorLanguageMode } from "../lib/editorLanguage";
 import { stabilizeMonacoLayout } from "../lib/stabilizeMonacoLayout";
 import { useAuthStore } from "../store/auth";
+import { buildLessonProgressKey } from "../utils/userScopedStorage";
 
 type LessonBlockQuizOption = {
   id: string;
@@ -487,7 +488,10 @@ export function LessonPage() {
   const decorationIDsRef = useRef<string[]>([]);
   const editorLayoutCleanupRef = useRef<(() => void) | null>(null);
 
-  const progressStorageKey = useMemo(() => (lessonId ? `lc_lesson_progress_${lessonId}` : ""), [lessonId]);
+  const progressStorageKey = useMemo(
+    () => (lessonId ? buildLessonProgressKey(user?.id, lessonId) : ""),
+    [user?.id, lessonId]
+  );
   const codeDraftsStorageKey = useMemo(() => buildLessonDraftsStorageKey(user?.id, lessonId), [user?.id, lessonId]);
 
   useEffect(() => {

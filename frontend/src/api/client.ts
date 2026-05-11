@@ -1,5 +1,6 @@
 import axios, { AxiosHeaders, InternalAxiosRequestConfig } from "axios";
 import { API_URL, LoginPayload, RegisterPayload } from "./types";
+import { clearAllUserScopedStorage } from "../utils/userScopedStorage";
 
 const tokenKey = "lc_access_token";
 const refreshKey = "lc_refresh_token";
@@ -202,6 +203,7 @@ export function clearTokens() {
   localStorage.removeItem(refreshKey);
   clearReadCaches();
   clearPersistedReadCaches();
+  clearAllUserScopedStorage();
 }
 
 export function getAccessToken() {

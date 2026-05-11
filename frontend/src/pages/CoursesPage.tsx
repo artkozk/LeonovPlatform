@@ -5,6 +5,8 @@ import { getCourse, listCourses } from "../api/client";
 import { CourseTrackIcon } from "../components/icons/CourseTrackIcon";
 import { resolveCourseIconKey } from "../lib/courseIconKey";
 import { getCourseDisplayTitle, getCourseShortDescription, getCourseShortTitle } from "../lib/coursePresentation";
+import { useAuthStore } from "../store/auth";
+import { buildCoursesScreenCacheKey, buildLessonProgressKey } from "../utils/userScopedStorage";
 
 type CourseSummary = {
   id: string;
@@ -48,10 +50,8 @@ type CoursesScreenCache = {
   savedAt: string;
 };
 
-const COURSES_SCREEN_CACHE_KEY = "lc_courses_screen_cache_v2_python_v10_hotfix";
-
-function readLessonProgress(lessonId: string, totalBlocksHint: number) {
-  const key = `lc_lesson_progress_${lessonId}`;
+function readLessonProgress(userId: string | undefined, lessonId: string, totalBlocksHint: number) {
+  const key = buildLessonProgressKey(userId, lessonId);
   let stored: Record<string, boolean> = {};
 
   try {
@@ -156,9 +156,9 @@ function normalizeCourseDetail(value: unknown): CourseDetail | null {
   return { course, lessons };
 }
 
-function readCoursesScreenCache(): CoursesScreenCache | null {
+function readCoursesScreenCache(userId: string | undefined): CoursesScreenCache | null {
   try {
-    const raw = localStorage.getItem(COURSES_SCREEN_CACHE_KEY);
+    const raw = localStorage.getItem(buildCoursesScreenCacheKey(userId));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as CoursesScreenCache;
     if (!parsed || typeof parsed !== "object") return null;
@@ -200,16 +200,17 @@ function readCoursesScreenCache(): CoursesScreenCache | null {
   }
 }
 
-function writeCoursesScreenCache(payload: CoursesScreenCache) {
+function writeCoursesScreenCache(userId: string | undefined, payload: CoursesScreenCache) {
   try {
-    localStorage.setItem(COURSES_SCREEN_CACHE_KEY, JSON.stringify(payload));
+    localStorage.setItem(buildCoursesScreenCacheKey(userId), JSON.stringify(payload));
   } catch {
     // ignore localStorage quota/access errors
   }
 }
 
 export function CoursesPage() {
-  const cachedScreen = useMemo(() => readCoursesScreenCache(), []);
+  const userId = useAuthStore((s) => s.user?.id);
+  const cachedScreen = useMemo(() => readCoursesScreenCache(userId), [userId]);
   const [courses, setCourses] = useState<CourseSummary[]>(() => cachedScreen?.courses ?? []);
   const [selectedCourse, setSelectedCourse] = useState<CourseDetail | null>(() => cachedScreen?.selectedCourse ?? null);
   const [courseDetails, setCourseDetails] = useState<Record<string, CourseDetail>>(() => {
@@ -241,13 +242,13 @@ export function CoursesPage() {
 
   useEffect(() => {
     if (courses.length === 0 && !selectedCourse && Object.keys(courseDetails).length === 0) return;
-    writeCoursesScreenCache({
+    writeCoursesScreenCache(userId, {
       courses,
       selectedCourse,
       courseDetails,
       savedAt: new Date().toISOString(),
     });
-  }, [courses, selectedCourse, courseDetails]);
+  }, [userId, courses, selectedCourse, courseDetails]);
 
   const openCourse = useCallback(async (courseId: string, options?: { silent?: boolean }) => {
     const cachedDetail = courseDetailsRef.current[courseId];
@@ -276,7 +277,7 @@ export function CoursesPage() {
 
       const lessonsWithProgress = normalized.lessons.map((lesson) => ({
         ...lesson,
-        ...readLessonProgress(lesson.id, lesson.totalBlocks),
+        ...readLessonProgress(userId, lesson.id, lesson.totalBlocks),
       }));
 
       const detail = { ...normalized, lessons: lessonsWithProgress };
@@ -295,7 +296,7 @@ export function CoursesPage() {
     } finally {
       setLoadingDetail(false);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     setCoursesLoading(initialCachedCourseCountRef.current === 0);

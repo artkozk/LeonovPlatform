@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getCourse, getLesson, listCourses, submissionHistory } from "../api/client";
 import { useAuthStore } from "../store/auth";
+import { buildLessonProgressKey } from "../utils/userScopedStorage";
 
 type SubmissionItem = {
   id: string;
@@ -118,7 +119,7 @@ export function DashboardPage() {
                 .filter((block: { id: string }) => block.id.length > 0)
             : [];
 
-          const progressKey = `lc_lesson_progress_${String(firstLesson.id)}`;
+          const progressKey = buildLessonProgressKey(user?.id, String(firstLesson.id));
           let completed: Record<string, boolean> = {};
           try {
             const raw = localStorage.getItem(progressKey);
@@ -152,7 +153,7 @@ export function DashboardPage() {
         }
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [user?.id]);
 
   const level = Number(user?.level ?? 1);
   const xp = Number(user?.xp ?? 0);

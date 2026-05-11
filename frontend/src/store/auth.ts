@@ -59,6 +59,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
       }
 
       const profile = await bootstrapPromise;
+      if (!getAccessToken()) {
+        set({ user: null, loading: false, error: null });
+        return;
+      }
       if (!profile) {
         clearTokens();
         set({ user: null, loading: false, error: null });
@@ -94,8 +98,9 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   logout: () => {
+    bootstrapPromise = null;
     clearTokens();
-    set({ user: null, error: null });
+    set({ user: null, error: null, loading: false });
   },
 
   refreshProfile: async () => {
