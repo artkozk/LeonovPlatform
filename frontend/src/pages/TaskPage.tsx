@@ -163,6 +163,7 @@ export function TaskPage() {
   const monacoRef = useRef<any>(null);
   const decorationIDsRef = useRef<string[]>([]);
   const editorLayoutCleanupRef = useRef<(() => void) | null>(null);
+  const submissionPollingAbortRef = useRef<boolean>(false);
   const taskDraftStorageKey = useMemo(() => buildTaskDraftStorageKey(user?.id, taskId), [user?.id, taskId]);
   const submissionIdFromQuery = useMemo(() => String(searchParams.get("submissionId") ?? "").trim(), [searchParams]);
 
@@ -252,6 +253,7 @@ export function TaskPage() {
     setSubmission(null);
     setRunResult(null);
     setToast("Решение отправлено в очередь проверки.");
+    submissionPollingAbortRef.current = false;
 
     try {
       const queued = await submitTask(taskId, code);
@@ -259,7 +261,9 @@ export function TaskPage() {
       let attempts = 0;
 
       while (attempts < 45) {
+        if (submissionPollingAbortRef.current) return;
         const current = await getSubmission(queued.submissionId);
+        if (submissionPollingAbortRef.current) return;
         setSubmission(current);
 
         if (!isSubmissionPendingStatus(current?.status)) {
@@ -274,6 +278,7 @@ export function TaskPage() {
       setPolling(false);
       setToast("Проверка заняла больше времени. Обновите страницу через несколько секунд.");
     } catch (error: any) {
+      if (submissionPollingAbortRef.current) return;
       setPolling(false);
       setToast(ruError(error?.response?.data?.error ?? "Не удалось отправить решение"));
     }
@@ -367,6 +372,12 @@ export function TaskPage() {
   useEffect(() => {
     applyStyleHintDecorations();
   }, [applyStyleHintDecorations]);
+
+  useEffect(() => {
+    return () => {
+      submissionPollingAbortRef.current = true;
+    };
+  }, []);
 
   useEffect(() => {
     return () => {

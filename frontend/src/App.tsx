@@ -1,5 +1,6 @@
 ﻿import { Navigate, Route, Routes } from "react-router-dom";
 import { AppLayout } from "./components/AppLayout";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminPage } from "./pages/AdminPage";
 import { AuthPage } from "./pages/AuthPage";
@@ -36,6 +37,7 @@ function AdminRoute() {
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/auth" element={<AuthPage />} />
@@ -53,5 +55,6 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
+    </ErrorBoundary>
   );
 }

@@ -149,6 +149,10 @@ func (a *App) ListCourses(c *gin.Context) {
 		}
 		out = append(out, item)
 	}
+	if err := rows.Err(); err != nil {
+		internalServerError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"items": out})
 }
 
@@ -728,7 +732,10 @@ func (a *App) GetTask(c *gin.Context) {
 			tests = append(tests, gin.H{"position": pos, "input": input, "expected": expected})
 		}
 	}
-
+	if err := rows.Err(); err != nil {
+		internalServerError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"task": task, "examples": tests})
 }
 
@@ -1183,6 +1190,10 @@ func (a *App) SubmissionHistory(c *gin.Context) {
 			"id": id, "taskId": taskID, "taskTitle": title, "status": status, "score": score, "createdAt": created,
 		})
 	}
+	if err := rows.Err(); err != nil {
+		internalServerError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"items": items})
 }
 
@@ -1215,6 +1226,10 @@ func (a *App) MyAchievements(c *gin.Context) {
 			return
 		}
 		items = append(items, gin.H{"code": code, "title": title, "description": desc, "unlockedAt": unlockedAt})
+	}
+	if err := rows.Err(); err != nil {
+		internalServerError(c, err)
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"items": items})
 }
@@ -1250,6 +1265,10 @@ func (a *App) Leaderboard(c *gin.Context) {
 			"level":     level,
 		})
 		rank++
+	}
+	if err := rows.Err(); err != nil {
+		internalServerError(c, err)
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"items": items})
 }
@@ -1324,6 +1343,10 @@ func (a *App) AdminMetricsExportCSV(c *gin.Context) {
 			return
 		}
 		_ = w.Write([]string{dt, strconv.Itoa(submissions), strconv.Itoa(accepted), strconv.Itoa(xp)})
+	}
+	if err := rows.Err(); err != nil {
+		_ = c.Error(err)
+		return
 	}
 	w.Flush()
 }
