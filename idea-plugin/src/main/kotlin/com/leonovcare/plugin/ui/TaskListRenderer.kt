@@ -27,14 +27,14 @@ class TaskListRenderer : ColoredListCellRenderer<TaskListEntry>() {
 
         val task = (value as? TaskListEntry.TaskItem)?.task ?: return
 
-        val statusText = when (task.status) {
-            TaskStatus.NEW -> "NEW"
-            TaskStatus.IN_PROGRESS -> "IN_PROGRESS"
-            TaskStatus.SOLVED -> "SOLVED"
-            TaskStatus.FAILED -> "FAILED"
-            TaskStatus.LOCKED -> "LOCKED"
-            TaskStatus.UNAVAILABLE -> "UNAVAILABLE"
-            TaskStatus.UNKNOWN -> "UNKNOWN"
+        val (statusIcon, statusText) = when (task.status) {
+            TaskStatus.NEW -> "○" to "Новая"
+            TaskStatus.IN_PROGRESS -> "◑" to "В работе"
+            TaskStatus.SOLVED -> "✓" to "Решено"
+            TaskStatus.FAILED -> "✗" to "Не сдано"
+            TaskStatus.LOCKED -> "🔒" to "Недоступно"
+            TaskStatus.UNAVAILABLE -> "—" to "Недоступно"
+            TaskStatus.UNKNOWN -> "?" to ""
         }
 
         val attrs = when (task.status) {
@@ -44,6 +44,8 @@ class TaskListRenderer : ColoredListCellRenderer<TaskListEntry>() {
         }
 
         append("    ${task.order}. ${task.title}", attrs)
-        append("  [$statusText]", SimpleTextAttributes.GRAYED_ATTRIBUTES)
+        if (statusText.isNotEmpty()) {
+            append("  $statusIcon $statusText", SimpleTextAttributes.GRAYED_ATTRIBUTES)
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.leonovcare.plugin.ui
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBLabel
@@ -24,6 +25,7 @@ import com.leonovcare.plugin.task.TaskStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.awt.BorderLayout
@@ -35,7 +37,7 @@ import javax.swing.JPanel
 import javax.swing.JSplitPane
 import javax.swing.SwingUtilities
 
-class PlatformToolWindowPanel(private val project: Project) {
+class PlatformToolWindowPanel(private val project: Project) : Disposable {
 
     private val authService = AuthService.getInstance()
     private val taskManager = TaskManager.getInstance(project)
@@ -432,5 +434,9 @@ class PlatformToolWindowPanel(private val project: Project) {
     private fun showCard(name: String) {
         val layout = root.layout as CardLayout
         layout.show(root, name)
+    }
+
+    override fun dispose() {
+        scope.cancel()
     }
 }

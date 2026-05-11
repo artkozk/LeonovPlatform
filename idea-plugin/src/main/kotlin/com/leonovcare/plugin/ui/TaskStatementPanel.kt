@@ -9,6 +9,7 @@ import com.leonovcare.plugin.task.LessonMaterialFormatter
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.FlowLayout
+import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JEditorPane
 import javax.swing.JPanel
@@ -36,41 +37,46 @@ class TaskStatementPanel(
         statementArea.font = UIUtil.getLabelFont()
         statementArea.isOpaque = true
 
-        val actions = JPanel(FlowLayout(FlowLayout.LEFT, 6, 0))
+        val actionsBox = JPanel()
+        actionsBox.layout = BoxLayout(actionsBox, BoxLayout.Y_AXIS)
 
+        val primaryRow = JPanel(FlowLayout(FlowLayout.LEFT, 4, 2))
         val runButton = JButton(PlatformBundle.message("button.run"))
         runButton.addActionListener { onRun() }
-        actions.add(runButton)
+        primaryRow.add(runButton)
 
         val debugButton = JButton(PlatformBundle.message("button.debug"))
         debugButton.addActionListener { onDebug() }
-        actions.add(debugButton)
+        primaryRow.add(debugButton)
 
         val submitButton = JButton(PlatformBundle.message("button.submit"))
         submitButton.addActionListener { onSubmit() }
-        actions.add(submitButton)
+        primaryRow.add(submitButton)
 
         val analyzeButton = JButton(PlatformBundle.message("button.analyze"))
         analyzeButton.addActionListener { onAnalyze() }
-        actions.add(analyzeButton)
+        primaryRow.add(analyzeButton)
 
         val aiHintButton = JButton(PlatformBundle.message("button.aiHint"))
         aiHintButton.addActionListener { onAiHint() }
-        actions.add(aiHintButton)
+        primaryRow.add(aiHintButton)
 
         val referenceButton = JButton(PlatformBundle.message("button.reference"))
         referenceButton.addActionListener { onReference() }
-        actions.add(referenceButton)
+        primaryRow.add(referenceButton)
 
+        val secondaryRow = JPanel(FlowLayout(FlowLayout.LEFT, 4, 2))
         val syncButton = JButton(PlatformBundle.message("button.sync"))
         syncButton.addActionListener { onSync() }
-        actions.add(syncButton)
+        secondaryRow.add(syncButton)
 
         val restoreButton = JButton(PlatformBundle.message("button.restore"))
         restoreButton.addActionListener { onRestore() }
-        actions.add(restoreButton)
+        secondaryRow.add(restoreButton)
 
-        root.add(actions, BorderLayout.NORTH)
+        actionsBox.add(primaryRow)
+        actionsBox.add(secondaryRow)
+        root.add(actionsBox, BorderLayout.NORTH)
         root.add(JBScrollPane(statementArea), BorderLayout.CENTER)
     }
 

@@ -6,12 +6,14 @@ import com.intellij.ui.components.JBTextField
 import com.leonovcare.plugin.api.Task
 import com.leonovcare.plugin.task.TaskStatus
 import java.awt.BorderLayout
+import java.awt.Component
 import java.awt.FlowLayout
 import java.awt.Point
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.AbstractAction
+import javax.swing.DefaultListCellRenderer
 import javax.swing.DefaultListModel
 import javax.swing.JButton
 import javax.swing.JComboBox
@@ -26,12 +28,12 @@ sealed interface TaskListEntry {
     data class TaskItem(val task: Task) : TaskListEntry
 }
 
-enum class TaskFilter {
-    ALL,
-    NEW,
-    IN_PROGRESS,
-    SOLVED,
-    UNAVAILABLE,
+enum class TaskFilter(val label: String) {
+    ALL("Все"),
+    NEW("Новые"),
+    IN_PROGRESS("В работе"),
+    SOLVED("Решённые"),
+    UNAVAILABLE("Недоступные"),
 }
 
 class TaskListPanel(
@@ -43,7 +45,17 @@ class TaskListPanel(
     private val model = DefaultListModel<TaskListEntry>()
     private val list = JList(model)
     private val searchField = JBTextField()
-    private val filterCombo = JComboBox(TaskFilter.entries.toTypedArray())
+    private val filterCombo = JComboBox(TaskFilter.entries.toTypedArray()).also { combo ->
+        combo.renderer = object : DefaultListCellRenderer() {
+            override fun getListCellRendererComponent(
+                list: JList<*>?, value: Any?, index: Int, isSelected: Boolean, cellHasFocus: Boolean,
+            ): Component {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
+                text = (value as? TaskFilter)?.label ?: value?.toString() ?: ""
+                return this
+            }
+        }
+    }
 
     private var allTasks: List<Task> = emptyList()
 
@@ -53,7 +65,7 @@ class TaskListPanel(
         list.addMouseListener(
             object : MouseAdapter() {
                 override fun mouseClicked(e: MouseEvent) {
-                    if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 1 && !e.isPopupTrigger) {
+                    if (e.button == MouseEvent.BUTTON1 && e.clickCount >= 2 && !e.isPopupTrigger) {
                         openTaskAtPoint(e.point)
                     }
                 }
