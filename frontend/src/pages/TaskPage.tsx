@@ -1,8 +1,9 @@
 import Editor from "@monaco-editor/react";
 import Markdown from "react-markdown";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { getSubmission, getTask, runTask, submitTask, taskHint } from "../api/client";
+import { useIsSmallViewport } from "../hooks/useIsSmallViewport";
 import { analyzePythonStyleHints } from "../lib/codeStyleHints";
 import { getEditorLanguageLabel, getEditorLanguageMode } from "../lib/editorLanguage";
 import { stabilizeMonacoLayout } from "../lib/stabilizeMonacoLayout";
@@ -147,6 +148,7 @@ export function TaskPage() {
   const { taskId } = useParams();
   const [searchParams] = useSearchParams();
   const user = useAuthStore((s) => s.user);
+  const isCodingLockedOnCurrentDevice = useIsSmallViewport(1024);
 
   const [task, setTask] = useState<TaskEntity | null>(null);
   const [code, setCode] = useState("");
@@ -434,6 +436,27 @@ export function TaskPage() {
         <section className="surface empty-state">
           <h3>Задача не найдена</h3>
           <p>Проверьте ссылку или откройте задачу из каталога.</p>
+        </section>
+      </div>
+    );
+  }
+
+  if (isCodingLockedOnCurrentDevice) {
+    return (
+      <div className="task-page page-stack">
+        <section className="surface coding-desktop-guard">
+          <span className="section-kicker">Только ПК</span>
+          <h1>Решение задач с кодом доступно с большого экрана</h1>
+          <p>На телефоне редактор и отправка отключены. Это сделано, чтобы вы не теряли прогресс из-за неудобного ввода.</p>
+          <div className="coding-desktop-guard-actions">
+            <Link to="/tasks" className="btn btn-primary">К списку задач</Link>
+            <Link to="/courses" className="btn btn-secondary">К курсам</Link>
+          </div>
+        </section>
+
+        <section className="surface markdown-content">
+          <h2>Условие задачи</h2>
+          <Markdown>{task.statementMd}</Markdown>
         </section>
       </div>
     );

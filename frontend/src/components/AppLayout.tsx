@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, LogOut, ShieldCheck } from "lucide-react";
+import { ChevronDown, LogOut, Menu, ShieldCheck, X } from "lucide-react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/auth";
 
@@ -26,6 +26,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
   const currentPlan = useMemo(() => `${user?.planCode?.toUpperCase() ?? "FREE"} • L${user?.level ?? 1}`, [user?.planCode, user?.level]);
@@ -37,6 +38,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setProfileMenuOpen(false);
+    setMobileNavOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -67,11 +69,22 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="workspace-shell">
       <header className="app-header">
         <div className="app-header-inner">
-          <Link className="app-brand" to="/dashboard" aria-label="Leonov Care">
-            <span className="app-brand-title">Leonov Care</span>
-          </Link>
+          <div className="app-header-top-row">
+            <Link className="app-brand" to="/dashboard" aria-label="Leonov Care" onClick={() => setMobileNavOpen(false)}>
+              <span className="app-brand-title">Leonov Care</span>
+            </Link>
+            <button
+              type="button"
+              className="app-mobile-menu-toggle"
+              aria-label={mobileNavOpen ? "Свернуть меню" : "Открыть меню"}
+              aria-expanded={mobileNavOpen}
+              onClick={() => setMobileNavOpen((prev) => !prev)}
+            >
+              {mobileNavOpen ? <X size={18} strokeWidth={2.2} /> : <Menu size={18} strokeWidth={2.2} />}
+            </button>
+          </div>
 
-          <nav className="app-nav" aria-label="Основная навигация">
+          <nav className={`app-nav ${mobileNavOpen ? "is-open" : ""}`} aria-label="Основная навигация">
             {menu.map((item) => {
               const active = item.isActive(location.pathname);
               return (
@@ -80,6 +93,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   to={item.to}
                   className={`app-nav-link ${active ? "active" : ""}`}
                   aria-current={active ? "page" : undefined}
+                  onClick={() => setMobileNavOpen(false)}
                 >
                   <span>{item.label}</span>
                 </NavLink>
@@ -87,7 +101,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          <div className="app-user-zone">
+          <div className={`app-user-zone ${mobileNavOpen ? "is-open" : ""}`}>
             <div className="app-user-meta">
               <span className="app-user-name">{displayName}</span>
               <span className="app-user-plan">{currentPlan}</span>
@@ -122,6 +136,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <button
               className="btn btn-ghost btn-sm"
               onClick={() => {
+                setMobileNavOpen(false);
                 logout();
                 navigate("/auth");
               }}

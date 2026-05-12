@@ -16,6 +16,7 @@ import Markdown from "react-markdown";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { checkLessonQuiz, getLesson, getSubmission, getTask, runTask, submitTask, taskHint } from "../api/client";
+import { useIsSmallViewport } from "../hooks/useIsSmallViewport";
 import { analyzePythonStyleHints } from "../lib/codeStyleHints";
 import { getEditorLanguageLabel, getEditorLanguageMode } from "../lib/editorLanguage";
 import { stabilizeMonacoLayout } from "../lib/stabilizeMonacoLayout";
@@ -452,6 +453,7 @@ function writeLessonDrafts(storageKey: string, drafts: Record<string, string>) {
 export function LessonPage() {
   const { lessonId } = useParams();
   const user = useAuthStore((s) => s.user);
+  const isCodingLockedOnCurrentDevice = useIsSmallViewport(1024);
 
   const [data, setData] = useState<any | null>(null);
   const [msg, setMsg] = useState("");
@@ -1209,7 +1211,19 @@ export function LessonPage() {
                     </div>
                   )}
 
-                  {!practiceLoading && practiceTask && (
+                  {!practiceLoading && practiceTask && isCodingLockedOnCurrentDevice && (
+                    <section className="surface coding-desktop-guard coding-desktop-guard-inline">
+                      <span className="section-kicker">Только ПК</span>
+                      <h3>Практика с кодом отключена на маленьком экране</h3>
+                      <p>Для шагов с редактором откройте урок на ноутбуке или ПК. Теория и квизы доступны на телефоне.</p>
+                      <div className="coding-desktop-guard-actions">
+                        <Link to="/courses" className="btn btn-primary">К курсам</Link>
+                        <Link to="/tasks" className="btn btn-secondary">К задачам</Link>
+                      </div>
+                    </section>
+                  )}
+
+                  {!practiceLoading && practiceTask && !isCodingLockedOnCurrentDevice && (
                     <>
                       <section className="lesson-practice-shell">
                         <div className="lesson-practice-summary">

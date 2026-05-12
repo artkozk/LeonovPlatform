@@ -207,6 +207,34 @@ textarea.code-editor {
   gap: 28px;
 }
 
+.app-header-top-row {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.app-mobile-menu-toggle {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.app-mobile-menu-toggle:hover {
+  border-color: var(--border-soft);
+  background: var(--surface-muted);
+  color: var(--text-primary);
+}
+
 .app-brand {
   min-width: 150px;
 }
@@ -764,6 +792,30 @@ textarea.code-editor {
   color: var(--text-secondary);
   display: grid;
   place-items: center;
+}
+
+.coding-desktop-guard {
+  display: grid;
+  gap: 14px;
+}
+
+.coding-desktop-guard h1,
+.coding-desktop-guard h3 {
+  margin: 0;
+}
+
+.coding-desktop-guard p {
+  max-width: 760px;
+}
+
+.coding-desktop-guard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.coding-desktop-guard-inline {
+  margin-top: 4px;
 }
 
 .status-box {
@@ -3544,39 +3596,75 @@ textarea:focus-visible {
   .app-header-inner {
     grid-template-columns: 1fr;
     align-items: start;
-    gap: 10px;
+    gap: 0;
     padding: 10px 0 12px;
   }
 
-  .app-brand,
+  .app-header-top-row {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .app-brand {
+    min-width: 0;
+  }
+
+  .app-mobile-menu-toggle {
+    display: inline-flex;
+  }
+
   .app-nav,
   .app-user-zone {
+    display: none;
     width: 100%;
   }
 
-  .app-nav {
+  .app-nav.is-open {
+    display: flex;
     justify-content: flex-start;
     gap: 8px;
     flex-wrap: wrap;
     overflow: visible;
+    margin-top: 10px;
   }
 
-  .app-user-zone {
-    justify-content: flex-start;
-    align-items: center;
-    gap: 8px 10px;
-    flex-wrap: wrap;
+  .app-user-zone.is-open {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 10px;
   }
 
-  .app-user-meta {
+  .app-user-zone.is-open .app-user-meta {
     width: 100%;
     justify-items: start;
   }
 
-  .app-user-name {
+  .app-user-zone.is-open .app-user-name {
     max-width: 100%;
     white-space: normal;
     line-height: 18px;
+  }
+
+  .app-user-zone.is-open .profile-menu {
+    width: 100%;
+  }
+
+  .app-user-zone.is-open .profile-menu-trigger {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .app-user-zone.is-open > .btn.btn-ghost {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .app-user-zone.is-open .profile-menu-panel {
+    position: static;
+    margin-top: 8px;
+    min-width: 0;
+    width: 100%;
   }
 
   .current-course-card {
@@ -3677,18 +3765,8 @@ textarea:focus-visible {
     padding: 0 10px;
   }
 
-  .profile-menu {
-    flex: 1 1 168px;
-  }
-
-  .profile-menu-trigger {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .app-user-zone > .btn.btn-ghost {
-    flex: 1 1 120px;
-    justify-content: center;
+  .app-user-zone.is-open .profile-menu-panel {
+    border-radius: 12px;
   }
 
   .current-course-card {
@@ -3774,6 +3852,16 @@ textarea:focus-visible {
 
   .tasks-filter-tabs {
     padding-top: 2px;
+  }
+
+  .coding-desktop-guard-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .coding-desktop-guard-actions .btn {
+    width: 100%;
   }
 }
 
