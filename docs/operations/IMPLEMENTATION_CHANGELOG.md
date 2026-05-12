@@ -3518,3 +3518,36 @@
 1. Root cause дефекта находился в порядке операций: validator срабатывал раньше нормализации.
 2. Единый helper убирает расхождение между auth endpoint’ами и снижает риск повторного регресса.
 3. Отдельный audit-документ фиксирует pre-fix и post-fix состояние с командами и аргументацией, чтобы reviewer видел причинно-следственную связь и практическую необходимость изменения.
+
+## 2026-05-12 — Mobile adaptation hotfix (dashboard/header production fix)
+
+### Симптомы на production перед фиксом
+
+1. На мобильном `dashboard` происходило наложение контента в карточке `Текущий курс`.
+2. В header часть пунктов навигации визуально обрезалась на узких экранах.
+3. User-zone (`имя`, `Профиль`, `Выйти`) конкурировал за ширину и выглядел неадаптивно на viewport порядка `360px`.
+
+### Что изменено
+
+1. `frontend/src/styles/global.css`:
+- в позднем `@media (max-width: 1080px)` добавлен финальный mobile-cascade для:
+  - `.app-header-inner`, `.app-nav`, `.app-user-zone`, `.app-user-meta`, `.app-user-name`;
+  - `.current-course-card` (принудительный single-column).
+- в `@media (max-width: 760px)` добавлена дополнительная компрессия mobile-типографики/контролов:
+  - `.app-nav-link`, `.app-user-plan`, `.profile-menu`, `.profile-menu-trigger`;
+  - `btn` в user-zone;
+  - `.current-course-main`, `.current-course-progress`, `.next-step-link`.
+- добавлен `@media (max-width: 420px)` для плотной раскладки пунктов навигации.
+
+2. Документация:
+- добавлен детальный отчёт `docs/operations/MOBILE_ADAPTATION_DASHBOARD_2026_05_12.md`;
+- добавлена актуализация в `README.md`.
+
+3. Проверка:
+- `cd frontend && npm.cmd run build` — PASS.
+
+### Почему сделано именно так
+
+1. Дефект был вызван не отсутствием мобильных правил, а порядком CSS-каскада (поздние desktop-правила перебивали ранние media overrides).
+2. Фикс на уровне поздних медиаправил устраняет причину без рефакторинга React-компонентов и снижает риск регрессии.
+3. Документация фиксирует связь «симптом -> root cause -> кодовый фикс -> проверка», чтобы reviewer видел необходимость изменения как production-critical, а не косметическую.

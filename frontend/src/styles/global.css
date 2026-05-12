@@ -3541,6 +3541,50 @@ textarea:focus-visible {
 }
 
 @media (max-width: 1080px) {
+  .app-header-inner {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 10px;
+    padding: 10px 0 12px;
+  }
+
+  .app-brand,
+  .app-nav,
+  .app-user-zone {
+    width: 100%;
+  }
+
+  .app-nav {
+    justify-content: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+
+  .app-user-zone {
+    justify-content: flex-start;
+    align-items: center;
+    gap: 8px 10px;
+    flex-wrap: wrap;
+  }
+
+  .app-user-meta {
+    width: 100%;
+    justify-items: start;
+  }
+
+  .app-user-name {
+    max-width: 100%;
+    white-space: normal;
+    line-height: 18px;
+  }
+
+  .current-course-card {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+
   .app-brand-title {
     font-size: 24px;
     line-height: 32px;
@@ -3621,8 +3665,63 @@ textarea:focus-visible {
     padding: 18px;
   }
 
+  .app-nav-link {
+    height: 38px;
+    padding: 0 12px;
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  .app-user-plan {
+    height: 26px;
+    padding: 0 10px;
+  }
+
+  .profile-menu {
+    flex: 1 1 168px;
+  }
+
+  .profile-menu-trigger {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .app-user-zone > .btn.btn-ghost {
+    flex: 1 1 120px;
+    justify-content: center;
+  }
+
   .current-course-card {
+    grid-template-columns: 1fr;
+    gap: 14px;
     padding: 20px;
+  }
+
+  .current-course-main h1 {
+    font-size: 28px;
+    line-height: 34px;
+    word-break: break-word;
+  }
+
+  .current-course-main p {
+    line-height: 22px;
+  }
+
+  .current-course-progress {
+    border-top: 1px solid var(--border-soft);
+    padding-top: 10px;
+  }
+
+  .next-step-link {
+    height: auto;
+    min-height: 44px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    align-items: flex-start;
+  }
+
+  .next-step-link span {
+    line-height: 18px;
   }
 
   .course-hero-card {
@@ -3675,6 +3774,20 @@ textarea:focus-visible {
 
   .tasks-filter-tabs {
     padding-top: 2px;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-nav-link {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .app-nav-link span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 .lesson-practice-inline-hints-toggle {
