@@ -100,3 +100,14 @@
 ## 5. История документа
 
 1. v1.0 (2026-05-13): первичный аудит похожих критичных багов после root-cause отчёта по исходным 7 инцидентам.
+
+## 6. Статус после remediation (v1.1, 2026-05-13)
+
+1. `Lesson submission polling` на `processing` закрыт (poll продолжает ожидание до финального статуса).
+2. `minScorePercent` в квизах закрыт backend-реализацией порога и согласованием контракта ответа.
+3. `Tasks page` больше не пересобирает статусы из `submissionHistory`, использует `tasks-catalog.status`.
+4. `Dashboard` больше не показывает фиктивный fallback progress; используется честный empty/error state.
+5. `Dashboard context` больше не берётся как «первый курс/урок» безусловно; контекст строится из серверных данных.
+6. `Auth lifecycle` смягчён для transient сбоев: session clear ограничен auth-invalid сценариями.
+7. Детали реализации/проверки:
+- `docs/operations/CANONICAL_PROGRESS_REMEDIATION_2026_05_13.md`.

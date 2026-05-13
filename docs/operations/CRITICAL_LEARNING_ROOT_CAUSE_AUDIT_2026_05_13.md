@@ -210,3 +210,24 @@
 ### 10.5 Обновлённый статус документа
 
 1. v1.1 (2026-05-13): добавлены дополнительные подтверждения по state-machine submission, каналам прогресса и auth lifecycle; гипотеза multi-tab refresh помечена отдельно как непроверенная.
+
+## 11. Статус после системного remediation (v2.0, 2026-05-13)
+
+### 11.1 Что закрыто системно
+
+1. Отсутствие единого source of truth для lesson progress закрыто canonical таблицей `user_lesson_block_progress`.
+2. Разрыв state-machine polling (`processing`) закрыт в lesson flow и worker-side completion sync.
+3. Разрыв контракта квизов по `minScorePercent` закрыт на backend parser/scoring уровне.
+4. Разрыв Tasks/Courses/Dashboard по источникам данных закрыт переходом на серверные статусы и агрегаты.
+5. Разрушение прогресса при transient auth/network инцидентах сокращено статусно-ориентированным lifecycle очистки сессии.
+6. Семантика streak переведена на модель календарных дней (`streak_last_active_day` + daily logic).
+
+### 11.2 Что осталось вне scope этого remediation
+
+1. Канальная адаптация project-контента (web vs IDE plugin) и onboarding-инструкции для нулевого пользователя.
+2. Унификация текста premium-сообщений на backend error-contract уровне.
+
+### 11.3 Подробная реализация и верификация
+
+1. Детальный этапный отчёт вынесен в:
+- `docs/operations/CANONICAL_PROGRESS_REMEDIATION_2026_05_13.md`.

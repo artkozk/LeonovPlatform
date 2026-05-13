@@ -3692,3 +3692,40 @@
 1. Пользовательский запрос был на поиск “таких же” глубинных проблем, а не на симптоматические частные кейсы.
 2. Подробный отдельный документ нужен для последующего системного remediation-плана и для ревью, чтобы не скатиться в точечные костыли.
 3. Разделение подтверждённых дефектов и вероятностных рисков сохраняет инженерную строгость и снижает риск ошибочного приоритезационного решения.
+
+## 2026-05-13 — Canonical progress remediation v2.0 (systemic fix, not symptom patch)
+
+### Что добавлено/изменено
+
+1. Введена canonical модель completion:
+- миграция `036_user_lesson_block_progress.sql`;
+- backend модуль `progress_model.go` для idempotent upsert и progress snapshot.
+2. Реализован endpoint `POST /lessons/:lessonID/blocks/:blockID/complete`.
+3. `GET /lessons/:lessonID` и `GET /courses/:courseID` переведены на серверные completion агрегаты.
+4. Worker принятых решений синхронизирован с completion моделью:
+- accepted submission фиксирует соответствующий lesson block completion.
+5. Квиз-контракт выровнен с контентом:
+- реализован `minScorePercent`;
+- quiz pass персистит completion;
+- ответ квиза расширен фактическими score-метриками.
+6. Tasks/Courses/Dashboard переведены на серверные статусы/агрегаты и честные состояния без фиктивного fallback-прогресса.
+7. Auth lifecycle устойчивость усилена:
+- сессия очищается только при auth-invalid (`401/403`) сценариях.
+8. Счётчики streak переведены на daily semantics:
+- миграция `037_user_streak_daily_semantics.sql`;
+- `streak_last_active_day`;
+- backend логика обновления/видимости streak.
+9. Добавлен подробный remediation-отчёт:
+- `docs/operations/CANONICAL_PROGRESS_REMEDIATION_2026_05_13.md`.
+10. Обновлён архитектурный обзор:
+- `docs/architecture/ARCHITECTURE_OVERVIEW.md`, секция 12.
+11. Актуализированы root-cause документы:
+- `docs/operations/CRITICAL_LEARNING_ROOT_CAUSE_AUDIT_2026_05_13.md`;
+- `docs/operations/CRITICAL_PLATFORM_SIMILAR_BUGS_AUDIT_2026_05_13.md`.
+
+### Почему реализовано именно так
+
+1. Ключевой дефект был архитектурным: дубли источников истины и рассинхрон контрактов, поэтому исправление сделано на уровне доменной модели и API, а не отдельных экранов.
+2. Перенос completion в backend и синхронизация worker/quiz/UI устраняют повторяемый класс ошибок “принято, но не отображено”.
+3. Отказ от фиктивных fallback-метрик устраняет ложные продуктовые сигналы и делает UX проверяемым.
+4. Подробная append-only документация зафиксировала причинно-следственную модель изменений для ревью и сопровождения.

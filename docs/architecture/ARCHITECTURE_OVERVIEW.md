@@ -106,3 +106,21 @@
 5. Текущая реализация `users.streak` в backend отражает серию accepted-submission подряд, а не календарную серию дней.
 6. Подробный разбор причин и следствий зафиксирован в:
 - `docs/operations/CRITICAL_LEARNING_ROOT_CAUSE_AUDIT_2026_05_13.md`.
+
+## 12. Актуализация от 2026-05-13: canonical progress model (после remediation)
+
+1. Историческая запись раздела 11 остаётся как фиксация состояния до исправления.
+2. Текущее целевое состояние после remediation:
+- completion lesson block хранится в БД в `user_lesson_block_progress`;
+- `GET /lessons/:lessonID` возвращает `progress` snapshot и `blocks[].completed`;
+- `GET /courses/:courseID` возвращает per-lesson `completedBlocks/totalBlocks/progressPercent`.
+3. Worker и quiz flow синхронизированы с canonical model:
+- accepted submission пишет completion через server-side upsert;
+- quiz pass фиксирует completion через тот же доменный модуль.
+4. Web UI (`Lesson/Courses/Dashboard/Tasks`) убран с localStorage completion и использует серверные статусы и агрегаты.
+5. Семантика streak нормализована:
+- streak считается как серия календарных дней активности;
+- добавлено поле `users.streak_last_active_day`;
+- stale streak не показывается как активный.
+6. Подробный поэтапный отчёт по симптомам, причинам и системным решениям:
+- `docs/operations/CANONICAL_PROGRESS_REMEDIATION_2026_05_13.md`.
