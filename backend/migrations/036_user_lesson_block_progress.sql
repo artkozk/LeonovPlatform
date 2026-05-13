@@ -34,19 +34,33 @@ INSERT INTO user_lesson_block_progress(
     created_at,
     updated_at
 )
+WITH accepted_block_submissions AS (
+    SELECT
+        s.user_id,
+        lb.lesson_id,
+        lb.id AS block_id,
+        s.id AS submission_id,
+        COALESCE(s.updated_at, s.created_at, NOW()) AS completed_at,
+        ROW_NUMBER() OVER (
+            PARTITION BY s.user_id, lb.id
+            ORDER BY COALESCE(s.updated_at, s.created_at, NOW()) DESC, s.id DESC
+        ) AS rn
+    FROM submissions s
+    JOIN lesson_blocks lb ON lb.task_id = s.task_id
+    WHERE s.status = 'accepted'
+)
 SELECT
-    s.user_id,
-    lb.lesson_id,
-    lb.id,
+    abs.user_id,
+    abs.lesson_id,
+    abs.block_id,
     'completed',
     'submission',
-    s.id,
-    COALESCE(s.updated_at, s.created_at, NOW()),
+    abs.submission_id,
+    abs.completed_at,
     NOW(),
     NOW()
-FROM submissions s
-JOIN lesson_blocks lb ON lb.task_id = s.task_id
-WHERE s.status = 'accepted'
+FROM accepted_block_submissions abs
+WHERE abs.rn = 1
 ON CONFLICT (user_id, block_id) DO UPDATE
 SET lesson_id = EXCLUDED.lesson_id,
     status = 'completed',
