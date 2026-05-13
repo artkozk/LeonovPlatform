@@ -162,3 +162,51 @@
 ## 9. История документа
 
 1. v1.0 (2026-05-13): первичный root-cause аудит по 7 критичным багам обучения, без внесения кодовых исправлений.
+
+## 10. Дополнительная верификация (v1.1, 2026-05-13)
+
+### 10.1 Подтверждённый дефект state-machine отправки в LessonPage
+
+1. `LessonPage` завершает polling, когда статус submission становится любым, кроме `queued`:
+- [LessonPage.tsx](C:\prog\Comercial\LeonovCarePlatform\frontend\src\pages\LessonPage.tsx:869).
+2. Worker штатно переводит статус `queued -> processing` до финализации проверки:
+- [worker.go](C:\prog\Comercial\LeonovCarePlatform\backend\internal\app\worker.go:251).
+3. Следствие:
+- на статусе `processing` LessonPage преждевременно прекращает ожидание;
+- `markBlockCompleted` вызывается только при немедленном `accepted` в рамках этого же цикла;
+- если финальный `accepted` приходит позже, галочка и локальный completion не фиксируются.
+4. Это объясняет класс симптомов “решение принято, но шаг/процент не обновились”.
+
+### 10.2 Подтверждённый разрыв каналов web и plugin для прогресса задач
+
+1. Backend имеет отдельные endpoint'ы progress-контракта (`in-progress`, `reset`, `sync`):
+- [router.go](C:\prog\Comercial\LeonovCarePlatform\backend\internal\app\router.go:89),
+- [handlers_plugin_contract.go](C:\prog\Comercial\LeonovCarePlatform\backend\internal\app\handlers_plugin_contract.go:163).
+2. Этот контур пишет в `user_task_open_progress` (таблица плагинного прогресса):
+- [034_plugin_task_open_progress.sql](C:\prog\Comercial\LeonovCarePlatform\backend\migrations\034_plugin_task_open_progress.sql:5).
+3. Web Lesson/Courses/Dashboard не используют этот контур и опираются на `localStorage` completion map.
+4. Следствие:
+- прогресс plugin-канала и прогресс web-канала не сводятся в единый источник истины;
+- визуальные статусы зависят от канала, в котором был выполнен шаг.
+
+### 10.3 Подтверждённый дефект агрессивной очистки progress при auth-сбоях
+
+1. При bootstrap любой неуспешный `apiMe` ведёт к `clearTokens()`:
+- [auth.ts](C:\prog\Comercial\LeonovCarePlatform\frontend\src\store\auth.ts:67),
+- [auth.ts](C:\prog\Comercial\LeonovCarePlatform\frontend\src\store\auth.ts:73).
+2. `clearTokens()` удаляет не только токены, но и user-scoped storage c lesson progress:
+- [client.ts](C:\prog\Comercial\LeonovCarePlatform\frontend\src\api\client.ts:201),
+- [userScopedStorage.ts](C:\prog\Comercial\LeonovCarePlatform\frontend\src\utils\userScopedStorage.ts:21).
+3. Следствие:
+- transient auth/network/bootstrap инцидент может вызвать “слёт прогресса” даже без ошибки пользователя.
+
+### 10.4 Гипотеза, требующая production-trace (не помечается как факт)
+
+1. Refresh token в backend одноразово ротируется (старый удаляется при refresh):
+- [handlers_auth.go](C:\prog\Comercial\LeonovCarePlatform\backend\internal\app\handlers_auth.go:273).
+2. При multi-tab сценариях одна вкладка может успеть обновить refresh token раньше другой; отстающая вкладка получит `401` на refresh и вызовет `forceAuthRedirect -> clearTokens`.
+3. Эта гипотеза не утверждается как основной факт по инциденту без production логов, но технически согласуется с observed-классом “прогресс исчез”.
+
+### 10.5 Обновлённый статус документа
+
+1. v1.1 (2026-05-13): добавлены дополнительные подтверждения по state-machine submission, каналам прогресса и auth lifecycle; гипотеза multi-tab refresh помечена отдельно как непроверенная.
