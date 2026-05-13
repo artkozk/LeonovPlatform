@@ -1,7 +1,7 @@
 import { Check, ChevronDown, ChevronRight, FileCode2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { getCourse, getCourseTasksCatalog, listCourses, submissionHistory } from "../api/client";
+import { getCourse, getCourseTasksCatalog, listCourses } from "../api/client";
 
 type CourseOption = {
   id: string;
@@ -18,11 +18,6 @@ type TaskCatalogItem = {
   lessonId: string;
   lessonTitle: string;
   moduleTitle: string;
-};
-
-type SubmissionItem = {
-  taskId?: string;
-  taskTitle: string;
   status: string;
 };
 
@@ -37,9 +32,9 @@ function classifyTaskType(task: TaskCatalogItem): "practice" | "tests" | "contro
 
 function normalizedStatus(raw?: string) {
   const value = String(raw ?? "").trim().toLowerCase();
-  if (value === "accepted") return "accepted";
-  if (value === "queued") return "queued";
-  if (value === "processing") return "in_progress";
+  if (value === "solved" || value === "accepted") return "accepted";
+  if (value === "in_progress" || value === "processing" || value === "queued") return "in_progress";
+  if (value === "new" || value === "idle") return "idle";
   if (value === "wrong_answer" || value === "compile_error" || value === "runtime_error" || value === "time_limit" || value === "failed") {
     return "needs_fix";
   }
@@ -48,33 +43,22 @@ function normalizedStatus(raw?: string) {
 
 function statusText(status: string) {
   if (status === "accepted") return "Принято";
-  if (status === "queued") return "В очереди";
-  if (status === "needs_fix") return "Нужна правка";
   if (status === "in_progress") return "В процессе";
+  if (status === "needs_fix") return "Нужна правка";
   return "Не начато";
 }
 
 function statusClass(status: string) {
   if (status === "accepted") return "badge badge-success";
-  if (status === "queued") return "badge badge-warning";
+  if (status === "in_progress") return "badge badge-warning";
   if (status === "needs_fix") return "badge badge-red";
-  if (status === "in_progress") return "badge badge-blue";
   return "badge badge-neutral";
-}
-
-function submissionTaskKey(taskId?: string, taskTitle?: string) {
-  const normalizedTaskId = String(taskId ?? "").trim();
-  if (normalizedTaskId) return `id:${normalizedTaskId}`;
-  const normalizedTitle = String(taskTitle ?? "").trim().toLowerCase();
-  if (normalizedTitle) return `title:${normalizedTitle}`;
-  return "";
 }
 
 export function TasksPage() {
   const [courses, setCourses] = useState<CourseOption[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [tasks, setTasks] = useState<TaskCatalogItem[]>([]);
-  const [history, setHistory] = useState<SubmissionItem[]>([]);
 
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<TaskTab>("all");
@@ -102,14 +86,6 @@ export function TasksPage() {
       })
       .finally(() => {
         setLoadingCourses(false);
-      });
-
-    submissionHistory()
-      .then((items) => {
-        setHistory((items ?? []) as SubmissionItem[]);
-      })
-      .catch(() => {
-        setHistory([]);
       });
   }, []);
 
@@ -140,6 +116,7 @@ export function TasksPage() {
             lessonId: String(task.lessonId ?? ""),
             lessonTitle: String(task.lessonTitle ?? "Урок"),
             moduleTitle: String(task.moduleTitle ?? "Модуль"),
+            status: normalizedStatus(task.status ?? task.taskStatus),
           }))
           .filter((task) => task.id);
 
@@ -179,26 +156,12 @@ export function TasksPage() {
     };
   }, [courseSelectOpen]);
 
-  const taskStatusMap = useMemo(() => {
-    const map = new Map<string, string>();
-    history.forEach((entry) => {
-      const key = submissionTaskKey(entry.taskId, entry.taskTitle);
-      if (!key) return;
-      if (!map.has(key)) {
-        map.set(key, normalizedStatus(entry.status));
-      }
-    });
-    return map;
-  }, [history]);
-
   const filteredTasks = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
     return tasks.filter((task) => {
       const taskType = classifyTaskType(task);
-      const taskKey = submissionTaskKey(task.id, task.title);
-      const fallbackKey = submissionTaskKey(undefined, task.title);
-      const rawStatus = taskStatusMap.get(taskKey) ?? taskStatusMap.get(fallbackKey) ?? "idle";
+      const rawStatus = task.status;
 
       const queryMatch =
         !normalizedQuery ||
@@ -211,12 +174,12 @@ export function TasksPage() {
         (tab === "practice" && taskType === "practice") ||
         (tab === "tests" && taskType === "tests") ||
         (tab === "control" && taskType === "control") ||
-        (tab === "queued" && rawStatus === "queued") ||
+        (tab === "queued" && rawStatus === "in_progress") ||
         (tab === "done" && rawStatus === "accepted");
 
       return queryMatch && tabMatch;
     });
-  }, [query, tab, tasks, taskStatusMap]);
+  }, [query, tab, tasks]);
 
   const selectedCourseTitle = useMemo(
     () => courses.find((course) => course.id === selectedCourseId)?.title ?? "Курс не выбран",
@@ -324,9 +287,7 @@ export function TasksPage() {
 
             {filteredTasks.map((task) => {
               const taskType = classifyTaskType(task);
-              const taskKey = submissionTaskKey(task.id, task.title);
-              const fallbackKey = submissionTaskKey(undefined, task.title);
-              const rawStatus = taskStatusMap.get(taskKey) ?? taskStatusMap.get(fallbackKey) ?? "idle";
+              const rawStatus = task.status;
               const textStatus = rawStatus === "idle" && taskType !== "practice" ? "Не начато" : statusText(rawStatus);
               const visualStatus = rawStatus === "idle" && taskType !== "practice" ? "idle" : rawStatus;
 

@@ -15,13 +15,12 @@ import {
 import Markdown from "react-markdown";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { checkLessonQuiz, getLesson, getSubmission, getTask, runTask, submitTask, taskHint } from "../api/client";
+import { checkLessonQuiz, completeLessonBlock, getLesson, getSubmission, getTask, runTask, submitTask, taskHint } from "../api/client";
 import { useIsSmallViewport } from "../hooks/useIsSmallViewport";
 import { analyzePythonStyleHints } from "../lib/codeStyleHints";
 import { getEditorLanguageLabel, getEditorLanguageMode } from "../lib/editorLanguage";
 import { stabilizeMonacoLayout } from "../lib/stabilizeMonacoLayout";
 import { useAuthStore } from "../store/auth";
-import { buildLessonProgressKey } from "../utils/userScopedStorage";
 
 type LessonBlockQuizOption = {
   id: string;
@@ -53,6 +52,14 @@ type LessonBlock = {
   taskId?: string;
   taskTitle?: string;
   quiz?: LessonBlockQuiz;
+  completed?: boolean;
+};
+
+type LessonProgress = {
+  completedBlockIds?: string[];
+  completedBlocks?: number;
+  totalBlocks?: number;
+  progressPercent?: number;
 };
 
 type TaskEntity = {
@@ -369,6 +376,7 @@ function ruSubmissionStatus(status?: string): string {
   const value = (status ?? "").trim().toLowerCase();
   if (value === "ran") return "Код выполнен";
   if (value === "queued") return "В очереди";
+  if (value === "processing") return "Проверяется";
   if (value === "accepted") return "Принято";
   if (value === "wrong_answer") return "Неверный ответ";
   if (value === "compile_error") return "Ошибка компиляции";
@@ -383,6 +391,7 @@ function statusBadge(status?: string) {
   if (value === "ran") return "badge badge-success";
   if (value === "accepted") return "badge badge-success";
   if (value === "queued") return "badge badge-warning";
+  if (value === "processing") return "badge badge-warning";
   if (value === "wrong_answer" || value === "compile_error" || value === "runtime_error" || value === "time_limit" || value === "failed") return "badge badge-error";
   return "badge badge-neutral";
 }
@@ -450,6 +459,28 @@ function writeLessonDrafts(storageKey: string, drafts: Record<string, string>) {
   }
 }
 
+function extractCompletedBlocksFromLessonPayload(payload: any): Record<string, boolean> {
+  const completed: Record<string, boolean> = {};
+
+  const completedFromProgress = Array.isArray(payload?.progress?.completedBlockIds)
+    ? payload.progress.completedBlockIds
+    : [];
+  completedFromProgress.forEach((item: unknown) => {
+    const blockID = String(item ?? "").trim();
+    if (blockID) completed[blockID] = true;
+  });
+
+  if (Array.isArray(payload?.blocks)) {
+    payload.blocks.forEach((block: any) => {
+      const blockID = String(block?.id ?? "").trim();
+      if (!blockID) return;
+      if (Boolean(block?.completed)) completed[blockID] = true;
+    });
+  }
+
+  return completed;
+}
+
 export function LessonPage() {
   const { lessonId } = useParams();
   const user = useAuthStore((s) => s.user);
@@ -490,33 +521,7 @@ export function LessonPage() {
   const decorationIDsRef = useRef<string[]>([]);
   const editorLayoutCleanupRef = useRef<(() => void) | null>(null);
 
-  const progressStorageKey = useMemo(
-    () => (lessonId ? buildLessonProgressKey(user?.id, lessonId) : ""),
-    [user?.id, lessonId]
-  );
   const codeDraftsStorageKey = useMemo(() => buildLessonDraftsStorageKey(user?.id, lessonId), [user?.id, lessonId]);
-
-  useEffect(() => {
-    if (!progressStorageKey) {
-      setCompletedBlocks({});
-      return;
-    }
-    try {
-      const raw = localStorage.getItem(progressStorageKey);
-      if (!raw) {
-        setCompletedBlocks({});
-        return;
-      }
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === "object") {
-        setCompletedBlocks(parsed as Record<string, boolean>);
-      } else {
-        setCompletedBlocks({});
-      }
-    } catch {
-      setCompletedBlocks({});
-    }
-  }, [progressStorageKey]);
 
   useEffect(() => {
     if (!codeDraftsStorageKey) {
@@ -526,18 +531,48 @@ export function LessonPage() {
     setCodeDrafts(readLessonDrafts(codeDraftsStorageKey));
   }, [codeDraftsStorageKey]);
 
+  const applyCompletedBlockIds = useCallback((completedBlockIds: LessonProgress["completedBlockIds"]) => {
+    if (!Array.isArray(completedBlockIds)) return;
+    const next: Record<string, boolean> = {};
+    completedBlockIds.forEach((item) => {
+      const blockID = String(item ?? "").trim();
+      if (!blockID) return;
+      next[blockID] = true;
+    });
+    setCompletedBlocks(next);
+  }, []);
+
   const markBlockCompleted = useCallback(
-    (blockID: string) => {
+    async (blockID: string, options?: { source?: string; submissionId?: string; silent?: boolean }) => {
+      if (!lessonId) return;
+      let wasCompleted = false;
       setCompletedBlocks((prev) => {
-        if (prev[blockID]) return prev;
-        const next = { ...prev, [blockID]: true };
-        if (progressStorageKey) {
-          localStorage.setItem(progressStorageKey, JSON.stringify(next));
-        }
-        return next;
+        wasCompleted = Boolean(prev[blockID]);
+        if (wasCompleted) return prev;
+        return { ...prev, [blockID]: true };
       });
+      try {
+        const payload = {
+          source: options?.source ?? "manual",
+          submissionId: options?.submissionId,
+        };
+        const response = await completeLessonBlock(lessonId, blockID, payload);
+        applyCompletedBlockIds(response?.progress?.completedBlockIds);
+      } catch (e: any) {
+        if (!wasCompleted) {
+          setCompletedBlocks((prev) => {
+            if (!prev[blockID]) return prev;
+            const next = { ...prev };
+            delete next[blockID];
+            return next;
+          });
+        }
+        if (!options?.silent) {
+          setPracticeMessage(ruError(e?.response?.data?.error ?? "Не удалось сохранить прогресс шага."));
+        }
+      }
     },
-    [progressStorageKey]
+    [applyCompletedBlockIds, lessonId]
   );
 
   useEffect(() => {
@@ -545,9 +580,18 @@ export function LessonPage() {
     setLoading(true);
     getLesson(lessonId)
       .then((d) => {
+        const completedFromServer = extractCompletedBlocksFromLessonPayload(d);
+        const rawBlocks = Array.isArray(d?.blocks) ? d.blocks : [];
+        const firstIncompleteIndex = rawBlocks.findIndex((block: any) => {
+          const blockID = String(block?.id ?? "").trim();
+          if (!blockID) return false;
+          return !completedFromServer[blockID];
+        });
+
         setData(d);
+        setCompletedBlocks(completedFromServer);
         setMsg("");
-        setActiveBlockIndex(0);
+        setActiveBlockIndex(firstIncompleteIndex >= 0 ? firstIncompleteIndex : 0);
         setQuizAnswers({});
         setQuizCheckState({});
         setQuizFailedQuestions({});
@@ -580,6 +624,7 @@ export function LessonPage() {
         taskId: block.taskId ? String(block.taskId) : undefined,
         taskTitle: block.taskTitle ? String(block.taskTitle) : undefined,
         quiz: block.quiz,
+        completed: Boolean(block.completed),
       }))
       .sort((a, b) => a.position - b.position);
   }, [data?.blocks]);
@@ -625,7 +670,7 @@ export function LessonPage() {
 
     const normalizedType = activeBlock.type.toLowerCase();
     if (normalizedType === "theory" || normalizedType === "summary") {
-      markBlockCompleted(activeBlock.id);
+      void markBlockCompleted(activeBlock.id, { source: "system", silent: true });
     }
 
     if (!activeBlock.taskId) {
@@ -699,6 +744,14 @@ export function LessonPage() {
     };
   }, [activeBlock, data?.lesson?.language, data?.lesson?.lang, markBlockCompleted]);
 
+  useEffect(() => {
+    const scrollContainer = document.querySelector<HTMLElement>(".lesson-step-content");
+    if (scrollContainer) {
+      scrollContainer.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [lessonId, activeBlockIndex]);
+
   const updatePracticeCode = useCallback(
     (next: string) => {
       setPracticeCode(next);
@@ -760,9 +813,8 @@ export function LessonPage() {
   );
   const sidebarProgressPercent = useMemo(() => {
     if (totalSteps <= 0) return 0;
-    const current = Math.max(1, Math.min(activeStepNumber, totalSteps));
-    return Math.round((current / totalSteps) * 100);
-  }, [activeStepNumber, totalSteps]);
+    return Math.round((completedStepsCount / totalSteps) * 100);
+  }, [completedStepsCount, totalSteps]);
 
   const shouldShowStyleHints = useMemo(() => {
     const submitAccepted = String(submitResult?.status ?? "").toLowerCase() === "accepted";
@@ -866,9 +918,14 @@ export function LessonPage() {
         const current = (await getSubmission(String(queued?.submissionId ?? ""))) as SubmissionResult;
         setSubmitResult(current);
 
-        if (String(current?.status ?? "").toLowerCase() !== "queued") {
-          if (String(current?.status ?? "").toLowerCase() === "accepted") {
-            markBlockCompleted(activeBlock.id);
+        const normalizedStatus = String(current?.status ?? "").toLowerCase();
+        if (normalizedStatus !== "queued" && normalizedStatus !== "processing") {
+          if (normalizedStatus === "accepted") {
+            await markBlockCompleted(activeBlock.id, {
+              source: "submission",
+              submissionId: String(current?.id ?? queued?.submissionId ?? ""),
+              silent: true,
+            });
           }
           setSubmitLoading(false);
           return;
@@ -918,7 +975,7 @@ export function LessonPage() {
       const failed = Array.isArray(response?.failedQuestionIds)
         ? response.failedQuestionIds.map((item: unknown) => String(item))
         : [];
-      const isCorrect = String(response?.status ?? "").toLowerCase() === "correct" && failed.length === 0;
+      const isCorrect = String(response?.status ?? "").toLowerCase() === "correct";
 
       setQuizCheckState((prev) => ({
         ...prev,
@@ -930,7 +987,7 @@ export function LessonPage() {
       }));
 
       if (isCorrect) {
-        markBlockCompleted(activeBlock.id);
+        applyCompletedBlockIds(response?.progress?.completedBlockIds);
       }
     } catch (e: any) {
       setPracticeMessage(ruError(e?.response?.data?.error ?? "Не удалось проверить тест."));

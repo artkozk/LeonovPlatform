@@ -6,7 +6,7 @@ import { CourseTrackIcon } from "../components/icons/CourseTrackIcon";
 import { resolveCourseIconKey } from "../lib/courseIconKey";
 import { getCourseDisplayTitle, getCourseShortDescription, getCourseShortTitle } from "../lib/coursePresentation";
 import { useAuthStore } from "../store/auth";
-import { buildCoursesScreenCacheKey, buildLessonProgressKey } from "../utils/userScopedStorage";
+import { buildCoursesScreenCacheKey } from "../utils/userScopedStorage";
 
 type CourseSummary = {
   id: string;
@@ -49,34 +49,6 @@ type CoursesScreenCache = {
   courseDetails: Record<string, CourseDetail>;
   savedAt: string;
 };
-
-function readLessonProgress(userId: string | undefined, lessonId: string, totalBlocksHint: number) {
-  const key = buildLessonProgressKey(userId, lessonId);
-  let stored: Record<string, boolean> = {};
-
-  try {
-    const raw = localStorage.getItem(key);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === "object") {
-        stored = parsed as Record<string, boolean>;
-      }
-    }
-  } catch {
-    stored = {};
-  }
-
-  const totalBlocks = Number.isFinite(totalBlocksHint) && totalBlocksHint > 0 ? totalBlocksHint : 0;
-  const completedFromStorage = Object.values(stored).reduce((count, done) => count + (done ? 1 : 0), 0);
-  const completedBlocks = Math.min(completedFromStorage, totalBlocks || completedFromStorage);
-  const progressPercent = totalBlocks > 0 ? Math.round((completedBlocks / totalBlocks) * 100) : 0;
-
-  return {
-    totalBlocks,
-    completedBlocks: Math.min(completedBlocks, totalBlocks),
-    progressPercent,
-  };
-}
 
 function normalizeOptionalString(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
@@ -125,7 +97,7 @@ function normalizeCourseLesson(value: unknown): CourseLesson | null {
   const id = typeof idRaw === "string" ? idRaw : typeof idRaw === "number" ? String(idRaw) : "";
   if (!id) return null;
 
-  const totalBlocksRaw = Number(item.totalBlocks ?? 0);
+  const totalBlocksRaw = Number(item.totalBlocks ?? item.blockCount ?? 0);
   const completedBlocksRaw = Number(item.completedBlocks ?? 0);
   const progressPercentRaw = Number(item.progressPercent ?? 0);
   const totalBlocks = Number.isFinite(totalBlocksRaw) && totalBlocksRaw > 0 ? totalBlocksRaw : 0;
@@ -264,23 +236,10 @@ export function CoursesPage() {
       const normalized: CourseDetail = {
         course: normalizeCourseSummary(data?.course),
         lessons: Array.isArray(data?.lessons)
-          ? data.lessons.map((lesson: any) => ({
-              id: String(lesson.id),
-              title: String(lesson.title ?? "Урок"),
-              moduleTitle: String(lesson.moduleTitle ?? "Модуль"),
-              totalBlocks: Number(lesson.blockCount ?? 0),
-              completedBlocks: 0,
-              progressPercent: 0,
-            }))
+          ? data.lessons.map(normalizeCourseLesson).filter((lesson): lesson is CourseLesson => Boolean(lesson))
           : [],
       };
-
-      const lessonsWithProgress = normalized.lessons.map((lesson) => ({
-        ...lesson,
-        ...readLessonProgress(userId, lesson.id, lesson.totalBlocks),
-      }));
-
-      const detail = { ...normalized, lessons: lessonsWithProgress };
+      const detail = normalized;
       setSelectedCourse(detail);
       setCourseDetails((prev) => {
         const next = { ...prev, [courseId]: detail };
@@ -296,7 +255,7 @@ export function CoursesPage() {
     } finally {
       setLoadingDetail(false);
     }
-  }, [userId]);
+  }, []);
 
   useEffect(() => {
     setCoursesLoading(initialCachedCourseCountRef.current === 0);

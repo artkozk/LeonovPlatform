@@ -319,19 +319,30 @@ export async function listCourses() {
 }
 
 export async function getCourse(courseId: string) {
-  return cachedGet(`/courses/${courseId}`, { ttlMs: CACHE_TTL_MATERIALS_MS, persist: true });
+  return cachedGet(`/courses/${courseId}`, { ttlMs: CACHE_TTL_FAST_MS });
 }
 
 export async function getCourseTasksCatalog(courseId: string) {
-  return cachedGet(`/courses/${courseId}/tasks-catalog`, { ttlMs: CACHE_TTL_MATERIALS_MS, persist: true });
+  return cachedGet(`/courses/${courseId}/tasks-catalog`, { ttlMs: CACHE_TTL_FAST_MS });
 }
 
 export async function getLesson(lessonId: string) {
-  return cachedGet(`/lessons/${lessonId}`, { ttlMs: CACHE_TTL_MATERIALS_MS, persist: true });
+  return cachedGet(`/lessons/${lessonId}`, { ttlMs: CACHE_TTL_FAST_MS });
 }
 
 export async function checkLessonQuiz(lessonId: string, blockId: string, answers: Record<string, string>) {
   const { data } = await http.post(`/lessons/${lessonId}/quiz-check`, { blockId, answers });
+  clearReadCaches();
+  return data;
+}
+
+export async function completeLessonBlock(
+  lessonId: string,
+  blockId: string,
+  payload?: { source?: string; submissionId?: string }
+) {
+  const { data } = await http.post(`/lessons/${lessonId}/blocks/${blockId}/complete`, payload ?? {});
+  clearReadCaches();
   return data;
 }
 
@@ -341,6 +352,7 @@ export async function getTask(taskId: string) {
 
 export async function submitTask(taskId: string, sourceCode: string) {
   const { data } = await http.post(`/tasks/${taskId}/submissions`, { sourceCode });
+  clearReadCaches();
   return data;
 }
 

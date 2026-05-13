@@ -1,9 +1,8 @@
-﻿import { ArrowRight, BookOpenText, Code2, FileText, Gauge, TimerReset, TrendingUp } from "lucide-react";
+import { ArrowRight, BookOpenText, Code2, FileText, Gauge, TimerReset, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getCourse, getLesson, listCourses, submissionHistory } from "../api/client";
 import { useAuthStore } from "../store/auth";
-import { buildLessonProgressKey } from "../utils/userScopedStorage";
 
 type SubmissionItem = {
   id: string;
@@ -11,6 +10,10 @@ type SubmissionItem = {
   taskTitle: string;
   score: number;
   status: string;
+  lessonId?: string;
+  lessonTitle?: string;
+  courseId?: string;
+  courseTitle?: string;
 };
 
 type CurrentCourseCard = {
@@ -20,6 +23,7 @@ type CurrentCourseCard = {
   nextStepTitle: string;
   stepCurrent: number;
   stepTotal: number;
+  completedSteps: number;
   progressPercent: number;
 };
 
@@ -27,6 +31,7 @@ function submissionStatusLabel(status?: string) {
   const value = String(status ?? "").trim().toLowerCase();
   if (value === "accepted") return "Принято";
   if (value === "queued") return "В очереди";
+  if (value === "processing") return "Проверяется";
   if (value === "wrong_answer") return "Нужна правка";
   if (value === "compile_error") return "Ошибка компиляции";
   if (value === "runtime_error") return "Ошибка выполнения";
@@ -38,23 +43,11 @@ function submissionStatusLabel(status?: string) {
 function submissionStatusClass(status?: string) {
   const value = String(status ?? "").trim().toLowerCase();
   if (value === "accepted") return "badge badge-success";
-  if (value === "queued") return "badge badge-warning";
+  if (value === "queued" || value === "processing") return "badge badge-warning";
   if (value === "wrong_answer" || value === "compile_error" || value === "runtime_error" || value === "time_limit" || value === "failed") {
     return "badge badge-error";
   }
   return "badge badge-neutral";
-}
-
-function buildFallbackCourse(): CurrentCourseCard {
-  return {
-    lessonId: "",
-    lessonTitle: "Урок 1. Первый код на Python",
-    moduleTitle: "Модуль 1. Базовый синтаксис",
-    nextStepTitle: "Практика: Периметр прямоугольника",
-    stepCurrent: 20,
-    stepTotal: 25,
-    progressPercent: 80,
-  };
 }
 
 function parseReviewTopic(status?: string) {
@@ -67,92 +60,157 @@ function parseReviewTopic(status?: string) {
   return "";
 }
 
+function extractCompletedBlockIds(payload: any): string[] {
+  const out = new Set<string>();
+
+  if (Array.isArray(payload?.progress?.completedBlockIds)) {
+    payload.progress.completedBlockIds.forEach((item: unknown) => {
+      const id = String(item ?? "").trim();
+      if (id) out.add(id);
+    });
+  }
+
+  if (Array.isArray(payload?.blocks)) {
+    payload.blocks.forEach((block: any) => {
+      const id = String(block?.id ?? "").trim();
+      if (!id) return;
+      if (Boolean(block?.completed)) out.add(id);
+    });
+  }
+
+  return Array.from(out);
+}
+
 export function DashboardPage() {
   const user = useAuthStore((s) => s.user);
 
   const [history, setHistory] = useState<SubmissionItem[]>([]);
-  const [currentCourse, setCurrentCourse] = useState<CurrentCourseCard>(buildFallbackCourse());
+  const [currentCourse, setCurrentCourse] = useState<CurrentCourseCard | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    setLoading(true);
-    setError("");
+    let cancelled = false;
 
-    Promise.allSettled([submissionHistory(), listCourses()])
-      .then(async ([historyResult, coursesResult]) => {
-        if (historyResult.status === "fulfilled") {
-          setHistory((historyResult.value ?? []) as SubmissionItem[]);
-        } else {
-          setHistory([]);
-          setError("Не удалось загрузить историю отправок.");
+    async function loadDashboard() {
+      setLoading(true);
+      setError("");
+      setCurrentCourse(null);
+
+      const [historyResult, coursesResult] = await Promise.allSettled([submissionHistory(), listCourses()]);
+      if (cancelled) return;
+
+      let nextHistory: SubmissionItem[] = [];
+      if (historyResult.status === "fulfilled") {
+        const raw = Array.isArray(historyResult.value) ? historyResult.value : [];
+        nextHistory = raw.map((item: any) => ({
+          id: String(item?.id ?? ""),
+          taskId: item?.taskId ? String(item.taskId) : undefined,
+          taskTitle: String(item?.taskTitle ?? "Задача"),
+          score: Number(item?.score ?? 0),
+          status: String(item?.status ?? ""),
+          lessonId: item?.lessonId ? String(item.lessonId) : undefined,
+          lessonTitle: item?.lessonTitle ? String(item.lessonTitle) : undefined,
+          courseId: item?.courseId ? String(item.courseId) : undefined,
+          courseTitle: item?.courseTitle ? String(item.courseTitle) : undefined,
+        }));
+      } else {
+        setError("Не удалось загрузить историю отправок.");
+      }
+      setHistory(nextHistory);
+
+      let contextCourseId = "";
+      let contextLessonId = "";
+      for (const item of nextHistory) {
+        if (item.courseId && item.lessonId) {
+          contextCourseId = item.courseId;
+          contextLessonId = item.lessonId;
+          break;
         }
+      }
 
-        if (coursesResult.status !== "fulfilled") {
-          setCurrentCourse(buildFallbackCourse());
-          setError((prev) => (prev ? `${prev} Не удалось загрузить текущий курс.` : "Не удалось загрузить текущий курс."));
+      if (!contextCourseId) {
+        if (coursesResult.status === "rejected") {
+          setError((prev) => (prev ? `${prev} Не удалось загрузить курсы.` : "Не удалось загрузить курсы."));
+        }
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const courseData = await getCourse(contextCourseId);
+        if (cancelled) return;
+
+        const lessons = Array.isArray(courseData?.lessons) ? courseData.lessons : [];
+        const selectedLesson =
+          lessons.find((lesson: any) => String(lesson?.id ?? "") === contextLessonId) ??
+          lessons.find((lesson: any) => Number(lesson?.progressPercent ?? 0) < 100) ??
+          lessons[0];
+
+        if (!selectedLesson?.id) {
+          setLoading(false);
           return;
         }
 
-        try {
-          const courses = (coursesResult.value ?? []) as Array<{ id: string }>;
-          const firstCourse = courses[0];
-          if (!firstCourse?.id) {
-            setCurrentCourse(buildFallbackCourse());
-            return;
-          }
+        const lessonData = await getLesson(String(selectedLesson.id));
+        if (cancelled) return;
 
-          const courseData = await getCourse(String(firstCourse.id));
-          const firstLesson = Array.isArray(courseData?.lessons) ? courseData.lessons[0] : null;
-          if (!firstLesson?.id) {
-            setCurrentCourse(buildFallbackCourse());
-            return;
-          }
+        const blocks = Array.isArray(lessonData?.blocks)
+          ? lessonData.blocks
+              .map((block: any, index: number) => ({
+                id: String(block?.id ?? ""),
+                title: String(block?.title ?? `Шаг ${index + 1}`),
+              }))
+              .filter((block: { id: string }) => block.id.length > 0)
+          : [];
 
-          const lessonData = await getLesson(String(firstLesson.id));
-          const blocks = Array.isArray(lessonData?.blocks)
-            ? lessonData.blocks
-                .map((block: any, index: number) => ({
-                  id: String(block.id ?? ""),
-                  title: String(block.title ?? `Шаг ${index + 1}`),
-                }))
-                .filter((block: { id: string }) => block.id.length > 0)
-            : [];
+        const completedBlockIds = new Set(extractCompletedBlockIds(lessonData));
+        const totalSteps = blocks.length;
+        const completedSteps = Number.isFinite(Number(lessonData?.progress?.completedBlocks))
+          ? Number(lessonData?.progress?.completedBlocks)
+          : blocks.filter((block: { id: string }) => completedBlockIds.has(block.id)).length;
+        const safeCompletedSteps = Math.max(0, Math.min(completedSteps, totalSteps));
+        const progressPercent = Number.isFinite(Number(lessonData?.progress?.progressPercent))
+          ? Math.max(0, Math.min(100, Number(lessonData?.progress?.progressPercent)))
+          : totalSteps > 0
+            ? Math.round((safeCompletedSteps / totalSteps) * 100)
+            : 0;
 
-          const progressKey = buildLessonProgressKey(user?.id, String(firstLesson.id));
-          let completed: Record<string, boolean> = {};
-          try {
-            const raw = localStorage.getItem(progressKey);
-            if (raw) {
-              const parsed = JSON.parse(raw);
-              if (parsed && typeof parsed === "object") {
-                completed = parsed as Record<string, boolean>;
-              }
-            }
-          } catch {
-            completed = {};
-          }
+        const firstIncompleteIndex = blocks.findIndex((block: { id: string }) => !completedBlockIds.has(block.id));
+        const stepCurrent =
+          totalSteps <= 0
+            ? 0
+            : firstIncompleteIndex >= 0
+              ? firstIncompleteIndex + 1
+              : totalSteps;
+        const nextStepTitle =
+          blocks[firstIncompleteIndex >= 0 ? firstIncompleteIndex : Math.max(0, blocks.length - 1)]?.title ??
+          "Продолжить урок";
 
-          const stepTotal = blocks.length || 25;
-          const completedCount = blocks.filter((block: { id: string }) => completed[block.id]).length;
-          const nextBlock = blocks.find((block: { id: string }) => !completed[block.id]);
-          const stepCurrent = Math.min(stepTotal, Math.max(1, completedCount + 1));
-          const progressPercent = stepTotal > 0 ? Math.round((completedCount / stepTotal) * 100) : 0;
-
-          setCurrentCourse({
-            lessonId: String(firstLesson.id),
-            lessonTitle: String(firstLesson.title ?? "Урок"),
-            moduleTitle: String(firstLesson.moduleTitle ?? "Модуль"),
-            nextStepTitle: String(nextBlock?.title ?? blocks[blocks.length - 1]?.title ?? "Продолжить урок"),
-            stepCurrent,
-            stepTotal,
-            progressPercent,
-          });
-        } catch {
-          setCurrentCourse(buildFallbackCourse());
+        setCurrentCourse({
+          lessonId: String(selectedLesson.id),
+          lessonTitle: String(selectedLesson.title ?? "Урок"),
+          moduleTitle: String(selectedLesson.moduleTitle ?? "Модуль"),
+          nextStepTitle,
+          stepCurrent,
+          stepTotal: totalSteps,
+          completedSteps: safeCompletedSteps,
+          progressPercent,
+        });
+      } catch {
+        setCurrentCourse(null);
+        setError((prev) => (prev ? `${prev} Не удалось загрузить текущий контекст обучения.` : "Не удалось загрузить текущий контекст обучения."));
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
         }
-      })
-      .finally(() => setLoading(false));
+      }
+    }
+
+    void loadDashboard();
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id]);
 
   const level = Number(user?.level ?? 1);
@@ -186,39 +244,57 @@ export function DashboardPage() {
 
   return (
     <div className="dashboard-page page-stack">
-      <section className="surface current-course-card">
-        <div className="current-course-main">
-          <span className="section-kicker">Текущий курс</span>
-          <h1>{currentCourse.lessonTitle}</h1>
-          <p>{currentCourse.moduleTitle}</p>
+      {currentCourse ? (
+        <section className="surface current-course-card">
+          <div className="current-course-main">
+            <span className="section-kicker">Текущий курс</span>
+            <h1>{currentCourse.lessonTitle}</h1>
+            <p>{currentCourse.moduleTitle}</p>
 
-          <div className="next-step-block">
-            <span>Следующий шаг</span>
-            {currentCourse.lessonId ? (
+            <div className="next-step-block">
+              <span>Следующий шаг</span>
               <Link to={`/lessons/${currentCourse.lessonId}`} className="next-step-link">
                 <Code2 size={16} strokeWidth={1.9} />
                 <span>{currentCourse.nextStepTitle}</span>
                 <ArrowRight size={16} strokeWidth={2} />
               </Link>
-            ) : (
-              <div className="next-step-link next-step-link-static">
-                <Code2 size={16} strokeWidth={1.9} />
-                <span>{currentCourse.nextStepTitle}</span>
-                <ArrowRight size={16} strokeWidth={2} />
-              </div>
-            )}
+            </div>
           </div>
-        </div>
 
-        <div className="current-course-progress">
-          <span className="badge badge-blue">Шаг {currentCourse.stepCurrent} из {currentCourse.stepTotal}</span>
-          <strong>Прогресс урока {currentCourse.progressPercent}%</strong>
-          <div className="progress-track" aria-hidden="true">
-            <span style={{ width: `${currentCourse.progressPercent}%` }} />
+          <div className="current-course-progress">
+            <span className="badge badge-blue">Шаг {currentCourse.stepCurrent} из {currentCourse.stepTotal}</span>
+            <strong>Прогресс урока {currentCourse.progressPercent}%</strong>
+            <div className="progress-track" aria-hidden="true">
+              <span style={{ width: `${currentCourse.progressPercent}%` }} />
+            </div>
+            <p>Осталось {Math.max(0, currentCourse.stepTotal - currentCourse.completedSteps)} шагов до завершения урока</p>
           </div>
-          <p>Осталось {Math.max(0, currentCourse.stepTotal - currentCourse.stepCurrent)} шагов до завершения урока</p>
-        </div>
-      </section>
+        </section>
+      ) : (
+        <section className="surface current-course-card">
+          <div className="current-course-main">
+            <span className="section-kicker">Текущий курс</span>
+            <h1>Контекст обучения не определён</h1>
+            <p>Платформа не будет показывать фиктивный прогресс. Начните или продолжите курс, чтобы сформировать актуальный контекст.</p>
+            <div className="next-step-block">
+              <span>Действие</span>
+              <Link to="/courses" className="next-step-link">
+                <Code2 size={16} strokeWidth={1.9} />
+                <span>Открыть обучение</span>
+                <ArrowRight size={16} strokeWidth={2} />
+              </Link>
+            </div>
+          </div>
+          <div className="current-course-progress">
+            <span className="badge badge-neutral">{loading ? "Загрузка" : "Нет данных"}</span>
+            <strong>Прогресс урока не рассчитан</strong>
+            <div className="progress-track" aria-hidden="true">
+              <span style={{ width: "0%" }} />
+            </div>
+            <p>Когда появится реальный прогресс, блок обновится автоматически.</p>
+          </div>
+        </section>
+      )}
 
       <section className="stats-grid">
         <article className="surface compact-stat-card">
