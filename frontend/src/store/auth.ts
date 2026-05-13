@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { clearTokens, getAccessToken, login as apiLogin, me as apiMe, register as apiRegister } from "../api/client";
 import { UserProfile } from "../api/types";
 
-let bootstrapPromise: Promise<UserProfile | null> | null = null;
+let bootstrapPromise: Promise<UserProfile> | null = null;
 
 function resolveAuthError(error: any, fallback: string) {
   const responseError = error?.response?.data?.error;
@@ -21,6 +21,11 @@ function resolveAuthError(error: any, fallback: string) {
   }
 
   return fallback;
+}
+
+function shouldClearAuthSession(error: any): boolean {
+  const status = Number(error?.response?.status ?? 0);
+  return status === 401 || status === 403;
 }
 
 type AuthStore = {
@@ -52,7 +57,6 @@ export const useAuthStore = create<AuthStore>((set) => ({
       if (!bootstrapPromise) {
         bootstrapPromise = apiMe()
           .then((profile) => profile as UserProfile)
-          .catch(() => null)
           .finally(() => {
             bootstrapPromise = null;
           });
@@ -63,15 +67,17 @@ export const useAuthStore = create<AuthStore>((set) => ({
         set({ user: null, loading: false, error: null });
         return;
       }
-      if (!profile) {
+      set({ user: profile, loading: false, error: null });
+    } catch (e: any) {
+      if (!getAccessToken() || shouldClearAuthSession(e)) {
         clearTokens();
         set({ user: null, loading: false, error: null });
         return;
       }
-      set({ user: profile, loading: false, error: null });
-    } catch {
-      clearTokens();
-      set({ user: null, loading: false, error: null });
+      set({
+        loading: false,
+        error: resolveAuthError(e, "Не удалось обновить сессию. Проверьте подключение и повторите позже."),
+      });
     }
   },
 
@@ -106,9 +112,14 @@ export const useAuthStore = create<AuthStore>((set) => ({
   refreshProfile: async () => {
     try {
       const profile = await apiMe();
-      set({ user: profile });
-    } catch {
-      set({ user: null });
+      set({ user: profile, error: null });
+    } catch (e: any) {
+      if (shouldClearAuthSession(e)) {
+        clearTokens();
+        set({ user: null, error: null });
+        return;
+      }
+      set({ error: resolveAuthError(e, "Не удалось обновить профиль.") });
     }
   },
 }));
