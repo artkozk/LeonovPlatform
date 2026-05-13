@@ -1331,3 +1331,55 @@ gunzip -c /opt/leonovcare-platform/backups/db/leonovcare_db_<timestamp>.sql.gz |
 1. Отдельный migrator-шаг и pre-backup закрывают основной риск необратимого повреждения данных при неудачной миграции.
 2. Post-deploy gate (`healthz/readyz`) исключает переход трафика на полу-готовый инстанс.
 3. Явные флаги deploy-интерфейса делают поведение релиза проверяемым для ревью и аудита.
+
+## 31. Дополнение от 2026-05-13 (жёсткая защита `leonovcare.ru` от привязки к LeonovCarePlatform)
+
+### 31.1 Статус и ограничение
+
+1. `leonovcare.ru` закреплён за другим сайтом и не является доменом LeonovCarePlatform.
+2. Любая привязка этого домена к текущему проекту считается критическим инцидентом.
+3. Рабочий контур LeonovCarePlatform остаётся отдельным (IP:порт или отдельный dev/stage-домен).
+
+### 31.2 Обязательный preflight перед deploy
+
+1. Проверить nginx-конфиг защищённого домена:
+```bash
+grep -nE "root |proxy_pass" /etc/nginx/sites-available/leonovcare.ru
+```
+2. Убедиться, что в выводе нет:
+- `/opt/leonovcare-platform/current/frontend/dist`
+- `127.0.0.1:8510`
+- `127.0.0.1:8511`
+
+### 31.3 Встроенная защита в deploy-script
+
+1. `deploy/server/deploy.sh` выполняет `enforce_domain_lock` до сборки backend/frontend и до миграций.
+2. Скрипт аварийно завершает деплой, если защищённый домен направлен на LeonovCarePlatform.
+3. Если конфиг защищённого домена отсутствует, deploy тоже блокируется (fail-closed).
+
+### 31.4 Recovery-порядок при нарушении правила
+
+1. Сохранить текущую проблемную версию:
+```bash
+cp /etc/nginx/sites-available/leonovcare.ru /etc/nginx/sites-available/leonovcare.ru.backup_before_restore_<timestamp>
+```
+2. Восстановить валидный backup-конфиг:
+```bash
+cp /etc/nginx/sites-available/leonovcare.ru.bak_<known_good_date> /etc/nginx/sites-available/leonovcare.ru
+```
+3. Проверить и перезагрузить nginx:
+```bash
+nginx -t
+systemctl reload nginx
+```
+4. Проверить внешний домен:
+```bash
+curl -k -I https://leonovcare.ru
+curl -k https://leonovcare.ru | head
+```
+
+### 31.5 Почему это добавлено
+
+1. Инцидент с доменом влияет на внешний боевой сайт и имеет приоритет выше обычного релизного риска.
+2. Двойной контур защиты (runbook + скриптовый guard) исключает повтор за счёт process + automation контроля.
+3. Явный recovery-путь ускоряет восстановление и снижает MTTR при повторном нарушении.

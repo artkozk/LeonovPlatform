@@ -7,6 +7,9 @@ SKIP_DB_BACKUP="${SKIP_DB_BACKUP:-false}"
 DB_BACKUP_DIR="${DB_BACKUP_DIR:-/opt/leonovcare-platform/backups/db}"
 HEALTHCHECK_URL="${HEALTHCHECK_URL:-http://127.0.0.1:8510/healthz}"
 READYCHECK_URL="${READYCHECK_URL:-http://127.0.0.1:8510/readyz}"
+DOMAIN_LOCK_ENABLED="${DOMAIN_LOCK_ENABLED:-true}"
+PROTECTED_DOMAIN="${PROTECTED_DOMAIN:-leonovcare.ru}"
+PROTECTED_DOMAIN_NGINX_CONFIG="${PROTECTED_DOMAIN_NGINX_CONFIG:-/etc/nginx/sites-available/leonovcare.ru}"
 
 require_cmd() {
   local cmd="$1"
@@ -21,6 +24,45 @@ require_cmd npm
 require_cmd go
 require_cmd pm2
 require_cmd curl
+
+enforce_domain_lock() {
+  if [[ "${DOMAIN_LOCK_ENABLED,,}" != "true" ]]; then
+    echo "Skipping domain lock check because DOMAIN_LOCK_ENABLED=false"
+    return 0
+  fi
+
+  if [ ! -f "$PROTECTED_DOMAIN_NGINX_CONFIG" ]; then
+    echo "FATAL: protected domain config not found at $PROTECTED_DOMAIN_NGINX_CONFIG."
+    echo "Refusing deploy because protected domain '$PROTECTED_DOMAIN' cannot be validated."
+    exit 1
+  fi
+
+  local forbidden_root="$APP_ROOT/frontend/dist"
+  local forbidden_api="127.0.0.1:8510"
+  local forbidden_frontend="127.0.0.1:8511"
+
+  if grep -Fq "$forbidden_root" "$PROTECTED_DOMAIN_NGINX_CONFIG"; then
+    echo "FATAL: protected domain '$PROTECTED_DOMAIN' points to '$forbidden_root'."
+    echo "Restore the main site on $PROTECTED_DOMAIN before deploying LeonovCarePlatform."
+    exit 1
+  fi
+
+  if grep -Fq "$forbidden_api" "$PROTECTED_DOMAIN_NGINX_CONFIG"; then
+    echo "FATAL: protected domain '$PROTECTED_DOMAIN' proxies API to '$forbidden_api'."
+    echo "Restore the main site on $PROTECTED_DOMAIN before deploying LeonovCarePlatform."
+    exit 1
+  fi
+
+  if grep -Fq "$forbidden_frontend" "$PROTECTED_DOMAIN_NGINX_CONFIG"; then
+    echo "FATAL: protected domain '$PROTECTED_DOMAIN' proxies frontend to '$forbidden_frontend'."
+    echo "Restore the main site on $PROTECTED_DOMAIN before deploying LeonovCarePlatform."
+    exit 1
+  fi
+
+  echo "Domain lock check passed for $PROTECTED_DOMAIN"
+}
+
+enforce_domain_lock
 
 read_env_value() {
   local key="$1"
