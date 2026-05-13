@@ -20,6 +20,11 @@ function humanAuthError(raw?: string) {
 export function AuthPage() {
   const navigate = useNavigate();
   const { login, register, loading, error, user } = useAuthStore();
+  // bootstrapped — флаг, что первая проверка сессии (GET /me) уже выполнена.
+  // Подробнее: docs/operations/AUTH_BOOTSTRAP_FLASH_FIX_2026_05_12.md.
+  // Нужен, чтобы залогиненный юзер, открывший /auth напрямую, не видел
+  // "вспышку" формы логина до того, как успеет сработать редирект на /dashboard.
+  const bootstrapped = useAuthStore((s) => s.bootstrapped);
 
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
@@ -33,6 +38,12 @@ export function AuthPage() {
       navigate("/dashboard");
     }
   }, [user, navigate]);
+
+  // Пока bootstrap ещё идёт — не рендерим форму. Обоснование: см.
+  // docs/operations/AUTH_BOOTSTRAP_FLASH_FIX_2026_05_12.md.
+  if (!bootstrapped) {
+    return null;
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
