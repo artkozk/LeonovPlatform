@@ -272,3 +272,12 @@
 ## 7. История документа
 
 1. v1.0 (2026-05-13): полный remediation-документ по canonical progress architecture, backend/frontend/API/data/test/UX изменениям.
+
+## 8. Актуализация по прод-деплою (v1.1, 2026-05-13)
+
+1. В первом прогоне деплоя выявлен системный дефект backfill в миграции `036`:
+- source-набор содержал повторные accepted записи на один `(user_id, block_id)`.
+2. SQL исправлен дедупликацией через `ROW_NUMBER` и фильтрацией `rn = 1`.
+3. Повторный деплой выполнен успешно с зелёными `healthz/readyz`.
+4. Подробности инцидента и повторного релиза:
+- `docs/operations/PROD_DEPLOY_CANONICAL_PROGRESS_2026_05_13.md`.
