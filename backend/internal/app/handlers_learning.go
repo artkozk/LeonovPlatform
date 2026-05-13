@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -47,7 +48,21 @@ func (a *App) Me(c *gin.Context) {
 	}
 
 	err := a.DB.QueryRow(c.Request.Context(), `
-		SELECT u.id, u.public_id, u.email, u.first_name, u.last_name, u.nickname, u.role, u.level, u.xp, u.streak, u.is_email_verified,
+		SELECT u.id,
+		       u.public_id,
+		       u.email,
+		       u.first_name,
+		       u.last_name,
+		       u.nickname,
+		       u.role,
+		       u.level,
+		       u.xp,
+		       CASE
+		           WHEN u.streak_last_active_day IS NULL THEN 0
+		           WHEN u.streak_last_active_day < ((NOW() AT TIME ZONE 'UTC')::date - 1) THEN 0
+		           ELSE u.streak
+		       END AS streak_visible,
+		       u.is_email_verified,
 		       'light' AS theme, s.language, s.notifications_email, s.code_font_size, s.editor_tab_size, s.editor_word_wrap
 		FROM users u
 		LEFT JOIN user_settings s ON s.user_id = u.id
@@ -381,6 +396,12 @@ func (a *App) GetPluginBootstrap(c *gin.Context) {
 }
 
 func (a *App) GetCourse(c *gin.Context) {
+	uctx, ok := userFromContext(c)
+	if !ok {
+		unauthorized(c, "unauthorized")
+		return
+	}
+
 	courseID := c.Param("courseID")
 
 	var course struct {
@@ -402,7 +423,8 @@ func (a *App) GetCourse(c *gin.Context) {
 			l.title,
 			l.position,
 			m.title AS module_title,
-			COALESCE(lb.block_count, 0) AS block_count
+			COALESCE(lb.block_count, 0) AS block_count,
+			COALESCE(lp.completed_blocks, 0) AS completed_blocks
 		FROM lessons l
 		JOIN modules m ON m.id = l.module_id
 		LEFT JOIN (
@@ -411,9 +433,16 @@ func (a *App) GetCourse(c *gin.Context) {
 			WHERE is_published = TRUE
 			GROUP BY lesson_id
 		) lb ON lb.lesson_id = l.id
+		LEFT JOIN (
+			SELECT lesson_id, COUNT(*)::int AS completed_blocks
+			FROM user_lesson_block_progress
+			WHERE user_id = $2
+			  AND status = 'completed'
+			GROUP BY lesson_id
+		) lp ON lp.lesson_id = l.id
 		WHERE m.course_id = $1 AND l.is_published = TRUE
 		ORDER BY m.position, l.position
-	`, courseID)
+	`, courseID, uctx.ID)
 	if err != nil {
 		internalServerError(c, err)
 		return
@@ -421,18 +450,28 @@ func (a *App) GetCourse(c *gin.Context) {
 	defer rows.Close()
 
 	type lessonBrief struct {
-		ID          string `json:"id"`
-		Title       string `json:"title"`
-		Position    int    `json:"position"`
-		ModuleTitle string `json:"moduleTitle"`
-		BlockCount  int    `json:"blockCount"`
+		ID              string `json:"id"`
+		Title           string `json:"title"`
+		Position        int    `json:"position"`
+		ModuleTitle     string `json:"moduleTitle"`
+		BlockCount      int    `json:"blockCount"`
+		TotalBlocks     int    `json:"totalBlocks"`
+		CompletedBlocks int    `json:"completedBlocks"`
+		ProgressPercent int    `json:"progressPercent"`
 	}
 	lessons := []lessonBrief{}
 	for rows.Next() {
 		var l lessonBrief
-		if err := rows.Scan(&l.ID, &l.Title, &l.Position, &l.ModuleTitle, &l.BlockCount); err != nil {
+		if err := rows.Scan(&l.ID, &l.Title, &l.Position, &l.ModuleTitle, &l.BlockCount, &l.CompletedBlocks); err != nil {
 			internalServerError(c, err)
 			return
+		}
+		l.TotalBlocks = l.BlockCount
+		if l.TotalBlocks > 0 {
+			if l.CompletedBlocks > l.TotalBlocks {
+				l.CompletedBlocks = l.TotalBlocks
+			}
+			l.ProgressPercent = int(float64(l.CompletedBlocks*100) / float64(l.TotalBlocks))
 		}
 		lessons = append(lessons, l)
 	}
@@ -571,6 +610,12 @@ func (a *App) GetCourseTasksCatalog(c *gin.Context) {
 }
 
 func (a *App) GetLesson(c *gin.Context) {
+	uctx, ok := userFromContext(c)
+	if !ok {
+		unauthorized(c, "unauthorized")
+		return
+	}
+
 	lessonID := c.Param("lessonID")
 
 	var lesson struct {
@@ -642,6 +687,17 @@ func (a *App) GetLesson(c *gin.Context) {
 	}
 	defer blockRows.Close()
 
+	progressRows, err := a.loadLessonProgressRows(c.Request.Context(), uctx.ID, lessonID)
+	if err != nil {
+		internalServerError(c, err)
+		return
+	}
+	progressSnapshot := buildLessonProgressSnapshot(progressRows)
+	completedByBlockID := make(map[string]bool, len(progressRows))
+	for _, row := range progressRows {
+		completedByBlockID[row.BlockID] = row.IsComplete
+	}
+
 	blocks := make([]gin.H, 0)
 	for blockRows.Next() {
 		var (
@@ -660,6 +716,7 @@ func (a *App) GetLesson(c *gin.Context) {
 			"title":     title,
 			"contentMd": content,
 			"position":  position,
+			"completed": completedByBlockID[id],
 		}
 		if taskID.Valid && taskID.String != "" {
 			item["taskId"] = taskID.String
@@ -674,7 +731,86 @@ func (a *App) GetLesson(c *gin.Context) {
 		blocks = append(blocks, item)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"lesson": lesson, "tasks": tasks, "blocks": blocks})
+	c.JSON(http.StatusOK, gin.H{"lesson": lesson, "tasks": tasks, "blocks": blocks, "progress": progressSnapshot})
+}
+
+func (a *App) CompleteLessonBlock(c *gin.Context) {
+	uctx, ok := userFromContext(c)
+	if !ok {
+		unauthorized(c, "unauthorized")
+		return
+	}
+
+	lessonID := strings.TrimSpace(c.Param("lessonID"))
+	blockID := strings.TrimSpace(c.Param("blockID"))
+	if _, err := uuid.Parse(lessonID); err != nil {
+		badRequest(c, errors.New("lessonID must be uuid"))
+		return
+	}
+	if _, err := uuid.Parse(blockID); err != nil {
+		badRequest(c, errors.New("blockID must be uuid"))
+		return
+	}
+
+	var req struct {
+		Source       string `json:"source"`
+		SubmissionID string `json:"submissionId"`
+	}
+	if c.Request.ContentLength > 0 {
+		if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+			badRequest(c, err)
+			return
+		}
+	}
+	if strings.TrimSpace(req.SubmissionID) != "" {
+		if _, err := uuid.Parse(req.SubmissionID); err != nil {
+			badRequest(c, errors.New("submissionId must be uuid"))
+			return
+		}
+	}
+
+	var exists bool
+	if err := a.DB.QueryRow(c.Request.Context(), `
+		SELECT EXISTS(
+			SELECT 1
+			FROM lesson_blocks
+			WHERE id = $1
+			  AND lesson_id = $2
+			  AND is_published = TRUE
+		)
+	`, blockID, lessonID).Scan(&exists); err != nil {
+		internalServerError(c, err)
+		return
+	}
+	if !exists {
+		notFound(c, "lesson block not found")
+		return
+	}
+
+	if err := a.upsertLessonBlockCompletion(
+		c.Request.Context(),
+		a.DB,
+		uctx.ID,
+		lessonID,
+		blockID,
+		req.Source,
+		req.SubmissionID,
+	); err != nil {
+		internalServerError(c, err)
+		return
+	}
+
+	progressSnapshot, err := a.loadLessonProgressSnapshot(c.Request.Context(), uctx.ID, lessonID)
+	if err != nil {
+		internalServerError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"status":   "completed",
+		"lessonId": lessonID,
+		"blockId":  blockID,
+		"progress": progressSnapshot,
+	})
 }
 
 func (a *App) GetTask(c *gin.Context) {
@@ -1154,7 +1290,17 @@ func (a *App) SubmissionHistory(c *gin.Context) {
 	}
 
 	rows, err := a.DB.Query(c.Request.Context(), `
-		SELECT latest.id, latest.task_id, latest.title, latest.status, latest.score, latest.created_at
+		SELECT
+			latest.id,
+			latest.task_id,
+			latest.title,
+			latest.status,
+			latest.score,
+			latest.created_at,
+			latest.lesson_id,
+			latest.lesson_title,
+			latest.course_id,
+			latest.course_title
 		FROM (
 			SELECT DISTINCT ON (s.task_id)
 				s.id,
@@ -1162,9 +1308,16 @@ func (a *App) SubmissionHistory(c *gin.Context) {
 				t.title,
 				s.status,
 				s.score,
-				s.created_at
+				s.created_at,
+				l.id::text AS lesson_id,
+				l.title AS lesson_title,
+				crs.id::text AS course_id,
+				crs.title AS course_title
 			FROM submissions s
 			JOIN tasks t ON t.id = s.task_id
+			JOIN lessons l ON l.id = t.lesson_id
+			JOIN modules m ON m.id = l.module_id
+			JOIN courses crs ON crs.id = m.course_id
 			WHERE s.user_id = $1
 			ORDER BY s.task_id, s.created_at DESC, s.id DESC
 		) AS latest
@@ -1179,15 +1332,39 @@ func (a *App) SubmissionHistory(c *gin.Context) {
 
 	items := make([]gin.H, 0)
 	for rows.Next() {
-		var id, taskID, title, status string
+		var (
+			id, taskID, title, status       string
+			lessonID, lessonTitle, courseID string
+			courseTitle                     string
+		)
 		var score int
 		var created time.Time
-		if err := rows.Scan(&id, &taskID, &title, &status, &score, &created); err != nil {
+		if err := rows.Scan(
+			&id,
+			&taskID,
+			&title,
+			&status,
+			&score,
+			&created,
+			&lessonID,
+			&lessonTitle,
+			&courseID,
+			&courseTitle,
+		); err != nil {
 			internalServerError(c, err)
 			return
 		}
 		items = append(items, gin.H{
-			"id": id, "taskId": taskID, "taskTitle": title, "status": status, "score": score, "createdAt": created,
+			"id":          id,
+			"taskId":      taskID,
+			"taskTitle":   title,
+			"status":      status,
+			"score":       score,
+			"createdAt":   created,
+			"lessonId":    lessonID,
+			"lessonTitle": lessonTitle,
+			"courseId":    courseID,
+			"courseTitle": courseTitle,
 		})
 	}
 	if err := rows.Err(); err != nil {

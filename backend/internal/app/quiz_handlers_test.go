@@ -49,3 +49,35 @@ func TestExtractQuizQuestionsForCheck(t *testing.T) {
 		t.Fatalf("expected normalized correct option B, got %q", questions[0].CorrectOptionID)
 	}
 }
+
+func TestParseQuizPayloadForCheckHonorsMinScorePercent(t *testing.T) {
+	raw := `{
+		"minScorePercent": 67,
+		"questions": [
+			{"id":"q1","question":"Q1","options":[{"id":"A","text":"1"},{"id":"B","text":"2"}],"correctOptionId":"A"},
+			{"id":"q2","question":"Q2","options":[{"id":"A","text":"1"},{"id":"B","text":"2"}],"correctOptionId":"B"},
+			{"id":"q3","question":"Q3","options":[{"id":"A","text":"1"},{"id":"B","text":"2"}],"correctOptionId":"A"}
+		]
+	}`
+	parsed, err := parseQuizPayloadForCheck(raw)
+	if err != nil {
+		t.Fatalf("unexpected parse error: %v", err)
+	}
+	if parsed.MinScorePercent != 67 {
+		t.Fatalf("expected minScorePercent=67, got %d", parsed.MinScorePercent)
+	}
+	if len(parsed.Questions) != 3 {
+		t.Fatalf("expected 3 questions, got %d", len(parsed.Questions))
+	}
+}
+
+func TestParseQuizPayloadForCheckDefaultsMinScorePercent(t *testing.T) {
+	raw := `{"questions":[{"id":"q1","question":"Q?","options":[{"id":"A","text":"1"},{"id":"B","text":"2"}],"correctOptionId":"A"}]}`
+	parsed, err := parseQuizPayloadForCheck(raw)
+	if err != nil {
+		t.Fatalf("unexpected parse error: %v", err)
+	}
+	if parsed.MinScorePercent != 100 {
+		t.Fatalf("expected default minScorePercent=100, got %d", parsed.MinScorePercent)
+	}
+}

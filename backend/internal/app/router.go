@@ -79,6 +79,7 @@ func (a *App) Router() *gin.Engine {
 			authed.GET("/courses/:courseID", a.GetCourse)
 			authed.GET("/courses/:courseID/tasks-catalog", a.GetCourseTasksCatalog)
 			authed.GET("/lessons/:lessonID", a.GetLesson)
+			authed.POST("/lessons/:lessonID/blocks/:blockID/complete", a.CompleteLessonBlock)
 			authed.POST("/lessons/:lessonID/quiz-check", a.CheckLessonQuiz)
 			authed.GET("/tasks/:taskID", a.GetTask)
 			authed.GET("/tasks/:taskID/template", a.GetTaskTemplate)

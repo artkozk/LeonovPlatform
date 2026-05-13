@@ -318,26 +318,56 @@ func (a *App) finalizeSubmissionResult(ctx context.Context, claimed *claimedSubm
 			return err
 		}
 
-		if _, err := tx.Exec(ctx, `
+		xpInsertTag, err := tx.Exec(ctx, `
 			INSERT INTO xp_events(user_id, submission_id, points, reason)
 			VALUES($1, $2, $3, 'task_accepted')
 			ON CONFLICT(user_id, submission_id, reason) DO NOTHING
-		`, claimed.UserID, claimed.SubmissionID, xpReward); err != nil {
+		`, claimed.UserID, claimed.SubmissionID, xpReward)
+		if err != nil {
 			return err
 		}
 
-		if _, err := tx.Exec(ctx, `
-			UPDATE users
-			SET xp = xp + $1,
-			    streak = streak + 1,
-			    level = GREATEST(1, FLOOR(SQRT((xp + $1) / 120.0))::int + 1),
-			    updated_at = NOW()
-			WHERE id = $2
-		`, xpReward, claimed.UserID); err != nil {
+		if xpInsertTag.RowsAffected() > 0 {
+			if _, err := tx.Exec(ctx, `
+				UPDATE users
+				SET xp = xp + $1,
+				    level = GREATEST(1, FLOOR(SQRT((xp + $1) / 120.0))::int + 1),
+				    updated_at = NOW()
+				WHERE id = $2
+			`, xpReward, claimed.UserID); err != nil {
+				return err
+			}
+		}
+
+		if _, err := a.applyAcceptedSubmissionStreak(ctx, tx, claimed.UserID); err != nil {
 			return err
 		}
-	} else {
-		if _, err := tx.Exec(ctx, `UPDATE users SET streak = 0, updated_at = NOW() WHERE id = $1`, claimed.UserID); err != nil {
+
+		var (
+			lessonID string
+			blockID  string
+		)
+		err = tx.QueryRow(ctx, `
+			SELECT lb.lesson_id::text, lb.id::text
+			FROM lesson_blocks lb
+			WHERE lb.task_id = $1
+			  AND lb.is_published = TRUE
+			ORDER BY lb.position ASC
+			LIMIT 1
+		`, claimed.TaskID).Scan(&lessonID, &blockID)
+		if err == nil {
+			if upsertErr := a.upsertLessonBlockCompletion(
+				ctx,
+				tx,
+				claimed.UserID,
+				lessonID,
+				blockID,
+				"submission",
+				claimed.SubmissionID,
+			); upsertErr != nil {
+				return upsertErr
+			}
+		} else if err != pgx.ErrNoRows {
 			return err
 		}
 	}

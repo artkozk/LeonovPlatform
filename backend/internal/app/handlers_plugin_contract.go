@@ -290,10 +290,14 @@ func (a *App) ResetTaskProgress(c *gin.Context) {
 		UPDATE users
 		SET xp = $1,
 		    level = $2,
-		    streak = 0,
 		    updated_at = NOW()
 		WHERE id = $3
 	`, xp, level, uctx.ID); err != nil {
+		internalServerError(c, err)
+		return
+	}
+
+	if err := a.recomputeUserStreakFromAcceptedSubmissions(ctx, tx, uctx.ID); err != nil {
 		internalServerError(c, err)
 		return
 	}

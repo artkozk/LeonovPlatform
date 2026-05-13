@@ -28,6 +28,7 @@ type quizPayloadEnvelope struct {
 	Options         []quizOptionPayload   `json:"options"`
 	CorrectOptionID string                `json:"correctOptionId"`
 	Questions       []quizQuestionPayload `json:"questions"`
+	MinScorePercent int                   `json:"minScorePercent"`
 }
 
 func sanitizeQuizPayloadForStudent(payload any) any {
@@ -53,10 +54,25 @@ func sanitizeQuizPayloadForStudent(payload any) any {
 	}
 }
 
-func extractQuizQuestionsForCheck(payloadRaw string) ([]quizQuestionPayload, error) {
+type parsedQuizCheckPayload struct {
+	Questions       []quizQuestionPayload
+	MinScorePercent int
+}
+
+func normalizeQuizMinScorePercent(raw int) int {
+	if raw <= 0 {
+		return 100
+	}
+	if raw > 100 {
+		return 100
+	}
+	return raw
+}
+
+func parseQuizPayloadForCheck(payloadRaw string) (parsedQuizCheckPayload, error) {
 	var envelope quizPayloadEnvelope
 	if err := json.Unmarshal([]byte(payloadRaw), &envelope); err != nil {
-		return nil, err
+		return parsedQuizCheckPayload{}, err
 	}
 
 	out := make([]quizQuestionPayload, 0)
@@ -73,7 +89,10 @@ func extractQuizQuestionsForCheck(payloadRaw string) ([]quizQuestionPayload, err
 				CorrectOptionID: strings.ToUpper(strings.TrimSpace(question.CorrectOptionID)),
 			})
 		}
-		return out, nil
+		return parsedQuizCheckPayload{
+			Questions:       out,
+			MinScorePercent: normalizeQuizMinScorePercent(envelope.MinScorePercent),
+		}, nil
 	}
 
 	if strings.TrimSpace(envelope.Question) != "" && len(envelope.Options) > 0 {
@@ -84,11 +103,23 @@ func extractQuizQuestionsForCheck(payloadRaw string) ([]quizQuestionPayload, err
 			CorrectOptionID: strings.ToUpper(strings.TrimSpace(envelope.CorrectOptionID)),
 		})
 	}
-	return out, nil
+	return parsedQuizCheckPayload{
+		Questions:       out,
+		MinScorePercent: normalizeQuizMinScorePercent(envelope.MinScorePercent),
+	}, nil
+}
+
+func extractQuizQuestionsForCheck(payloadRaw string) ([]quizQuestionPayload, error) {
+	parsed, err := parseQuizPayloadForCheck(payloadRaw)
+	if err != nil {
+		return nil, err
+	}
+	return parsed.Questions, nil
 }
 
 func (a *App) CheckLessonQuiz(c *gin.Context) {
-	if _, ok := userFromContext(c); !ok {
+	uctx, ok := userFromContext(c)
+	if !ok {
 		unauthorized(c, "unauthorized")
 		return
 	}
@@ -125,11 +156,13 @@ func (a *App) CheckLessonQuiz(c *gin.Context) {
 		return
 	}
 
-	questions, parseErr := extractQuizQuestionsForCheck(quizPayloadRaw)
+	parsed, parseErr := parseQuizPayloadForCheck(quizPayloadRaw)
+	questions := parsed.Questions
 	if parseErr != nil || len(questions) == 0 {
 		c.JSON(http.StatusUnprocessableEntity, APIError{Error: "quiz payload is invalid"})
 		return
 	}
+	minScorePercent := normalizeQuizMinScorePercent(parsed.MinScorePercent)
 
 	failed := make([]string, 0)
 	for _, question := range questions {
@@ -147,12 +180,46 @@ func (a *App) CheckLessonQuiz(c *gin.Context) {
 		}
 	}
 
+	totalQuestions := len(questions)
+	correctQuestions := totalQuestions - len(failed)
+	scorePercent := 0
+	if totalQuestions > 0 {
+		scorePercent = int(float64(correctQuestions*100) / float64(totalQuestions))
+	}
+	isCorrect := correctQuestions*100 >= minScorePercent*totalQuestions
+
 	status := "correct"
-	if len(failed) > 0 {
+	if !isCorrect {
 		status = "wrong"
 	}
+
+	var progressSnapshot *lessonProgressSnapshot
+	if isCorrect {
+		if err := a.upsertLessonBlockCompletion(
+			c.Request.Context(),
+			a.DB,
+			uctx.ID,
+			lessonID,
+			req.BlockID,
+			"quiz",
+			"",
+		); err != nil {
+			internalServerError(c, err)
+			return
+		}
+		snapshot, err := a.loadLessonProgressSnapshot(c.Request.Context(), uctx.ID, lessonID)
+		if err == nil {
+			progressSnapshot = &snapshot
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status":            status,
 		"failedQuestionIds": failed,
+		"correctQuestions":  correctQuestions,
+		"totalQuestions":    totalQuestions,
+		"scorePercent":      scorePercent,
+		"minScorePercent":   minScorePercent,
+		"progress":          progressSnapshot,
 	})
 }
