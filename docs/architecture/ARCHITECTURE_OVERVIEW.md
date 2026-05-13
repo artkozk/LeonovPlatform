@@ -92,3 +92,17 @@
 3. Frontend теперь не содержит маршрута `/settings`, ссылки `Настройки` в profile-menu и карточки `Настройки` на `/profile`.
 4. Backend сохраняет поле `theme` в профиле ради совместимости API, но возвращает и сохраняет только `light`.
 5. Миграция `024_light_theme_only.sql` приводит существующие записи и default `user_settings.theme` к `light`, чтобы production-данные не могли снова включить тёмную ветку.
+
+## 11. Актуализация от 2026-05-13: прогресс обучения и счётчики (фактическая модель)
+
+1. Историческая запись раздела 7 про “хранение прогресса” не удаляется, но для учебного lesson/block прогресса она неполная.
+2. Фактическое текущее поведение:
+- lesson/block completion в web-UI хранится преимущественно в `localStorage` (`lc_lesson_progress_*`);
+- backend endpoint `GET /lessons/:lessonID` не возвращает готовый completion-state пользователя по блокам;
+- `quiz-check` проверяет ответы, но не пишет durable progress-state в БД.
+3. Из-за этого разные экраны (`Lesson`, `Courses`, `Dashboard`) используют разные вычисления и источники данных для “прогресса”.
+4. Дополнительный важный факт:
+- при очистке auth-токенов frontend удаляет user-scoped storage, включая lesson progress.
+5. Текущая реализация `users.streak` в backend отражает серию accepted-submission подряд, а не календарную серию дней.
+6. Подробный разбор причин и следствий зафиксирован в:
+- `docs/operations/CRITICAL_LEARNING_ROOT_CAUSE_AUDIT_2026_05_13.md`.
