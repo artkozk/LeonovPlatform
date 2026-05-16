@@ -1239,3 +1239,17 @@ cd idea-plugin
 - блокировка на уровне скрипта останавливает ошибочный релиз до сборки и миграций.
 5. Подробный пошаговый протокол:
 - [docs/operations/DOMAIN_PROTECTION_LEONOVCARE_RU_2026_05_13.md](C:/prog/Comercial/LeonovCarePlatform/docs/operations/DOMAIN_PROTECTION_LEONOVCARE_RU_2026_05_13.md)
+
+## Актуализация от 2026-05-16: blueprint внедрения support-чата (без кодовых изменений)
+
+1. Подготовлена отдельная архитектурная спецификация внедрения чата поддержки:
+- [docs/architecture/SUPPORT_CHAT_IMPLEMENTATION_BLUEPRINT_2026_05_16.md](C:/prog/Comercial/LeonovCarePlatform/docs/architecture/SUPPORT_CHAT_IMPLEMENTATION_BLUEPRINT_2026_05_16.md)
+2. Что зафиксировано в документе:
+- state-machine обращения (`open/resolved/closed`) и критерии «проблема решена»;
+- модель смены оператора с аудитом;
+- realtime-контур (SSE first-step) и риски буферизации;
+- контракт БД/API, лимиты вложений (до 5 файлов), security guardrail'ы;
+- anti-regression checklist, rollout и release-gates.
+3. Почему сделано именно так:
+- задача сформулирована как product-critical и должна внедряться без «костыльного» точечного кода;
+- документ нужен как единый вход для инженера внедрения, чтобы изменения не повредили текущие learning/billing/auth контуры.
