@@ -4043,3 +4043,32 @@
    откат тривиальный (удалить файл + restart).
 5. Подробный append-only отчёт:
    `docs/operations/MULTI_INSTANCE_API_2026_05_16.md`.
+
+## 2026-05-16 — Username login shortcut + admin/123123 seed
+
+### Что сделано
+1. `Login`-handler (`backend/internal/app/handlers_auth.go`) теперь
+   принимает либо email, либо username:
+- если в `email`-поле есть `@` — обычный email-flow (нормализация +
+  parse), без изменений;
+- если `@` нет — lookup по `LOWER(users.username)`.
+2. На проде создан админский аккаунт:
+- email `admin@platform.local`, username `admin`, role `admin`,
+  password `123123`, `is_email_verified=true`, `public_id=LC-…`,
+  плюс строка в `user_settings` (иначе `/me` падал в 500 на
+  NULL-полях после LEFT JOIN).
+
+### Smoke
+- логин по `admin/123123` → 200 + accessToken;
+- логин по полному email → 200;
+- неверный пароль / несуществующий username → 401;
+- `/me` показывает `role: admin`.
+
+### Почему сделано именно так
+1. Никаких backdoor под конкретный `admin` — это general
+   username-логин для любого аккаунта с непустым `username`.
+2. bcrypt-проверка и rate-limit одинаковые для обеих веток.
+3. Register по-прежнему требует валидный email — username-логин
+   только на login-стороне.
+4. Подробный append-only документ:
+   `docs/operations/ADMIN_USERNAME_LOGIN_2026_05_16.md`.

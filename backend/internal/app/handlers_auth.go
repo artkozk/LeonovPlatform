@@ -184,22 +184,57 @@ func (a *App) Login(c *gin.Context) {
 		badRequest(c, err)
 		return
 	}
-	normalizedEmail, err := normalizeAndValidateEmail(req.Email)
-	if err != nil {
-		badRequest(c, err)
-		return
+
+	// Login принимает email или username. Это нужно, чтобы:
+	//   1. Операторы и админы могли логиниться короткими username'ами
+	//      (например, `admin`), не печатая email каждый раз.
+	//   2. Студенты с email-регистрацией продолжали логиниться обычным
+	//      путём — поведение для строк с `@` не меняется.
+	//
+	// Решение по наличию `@`:
+	//   - входит `@` → классический email-flow (нормализация + parser);
+	//   - нет `@`   → lookup по `LOWER(users.username)`, без email-валидации.
+	//
+	// Безопасность: пароль проверяется через bcrypt одинаково в обоих
+	// ветках; brute-force защищён существующим auth rate limiter
+	// (AUTH_RATE_LIMIT_PER_MINUTE).
+	//
+	// Append-only обоснование: см. docs/operations/ADMIN_USERNAME_LOGIN_2026_05_16.md.
+	identifierRaw := strings.TrimSpace(req.Email)
+	isEmailLogin := strings.Contains(identifierRaw, "@")
+	var (
+		lookupWhere string
+		lookupArg   string
+	)
+	if isEmailLogin {
+		normalizedEmail, err := normalizeAndValidateEmail(identifierRaw)
+		if err != nil {
+			badRequest(c, err)
+			return
+		}
+		req.Email = normalizedEmail
+		lookupWhere = "WHERE u.email = $1"
+		lookupArg = normalizedEmail
+	} else {
+		username := strings.ToLower(identifierRaw)
+		if username == "" {
+			badRequest(c, fmt.Errorf("email or username is required"))
+			return
+		}
+		req.Email = username
+		lookupWhere = "WHERE LOWER(u.username) = $1"
+		lookupArg = username
 	}
-	req.Email = normalizedEmail
 
 	var userID, passHash, role, planCode string
 	var isBlocked, isVerified bool
-	err = a.DB.QueryRow(c.Request.Context(), `
+	err := a.DB.QueryRow(c.Request.Context(), `
 		SELECT u.id, u.password_hash, u.role, u.is_blocked, u.is_email_verified, COALESCE(p.code,'free')
 		FROM users u
 		LEFT JOIN subscriptions s ON s.user_id=u.id AND s.status='active' AND (s.ends_at IS NULL OR s.ends_at > NOW())
 		LEFT JOIN plans p ON p.id=s.plan_id
-		WHERE u.email=$1
-	`, req.Email).Scan(&userID, &passHash, &role, &isBlocked, &isVerified, &planCode)
+		`+lookupWhere+`
+	`, lookupArg).Scan(&userID, &passHash, &role, &isBlocked, &isVerified, &planCode)
 	if err != nil {
 		unauthorized(c, "invalid credentials")
 		return
