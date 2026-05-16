@@ -1284,3 +1284,23 @@ cd idea-plugin
 - любая интеграция (cron, plugin, IDE) не затронута: api endpoints
   существующих ручек не менялись;
 - документация добавлена append-only, и старые записи сохранены.
+
+## Актуализация от 2026-05-16: 100 RPS readiness pass
+
+> Append-only. Эта секция дополняет предыдущие записи 2026-05-16 и не
+> заменяет ни одной из них.
+
+1. После релиза support-чата зафиксирована ожидаемая нагрузка ~100 RPS
+   и сделан безопасный production-tuning:
+- `DATABASE_URL` теперь включает `pool_max_conns=30&pool_min_conns=5&pool_max_conn_lifetime=1h` (раньше pgx использовал default ~8 соединений);
+- `GIN_MODE=release` и `NODE_ENV=production` зафиксированы в `.env` и в `ecosystem.config.cjs`;
+- найден и исправлен баг whitelist'а pm2-ecosystem, из-за которого новые env-keys (включая `SUPPORT_CHAT_*`) тихо не пробрасывались процессам.
+2. Подробный отчёт с измерениями, планом и приоритетами:
+- [docs/operations/100RPS_READINESS_2026_05_16.md](docs/operations/100RPS_READINESS_2026_05_16.md).
+3. Что ещё нужно для уверенных 100 RPS (зафиксировано в §4 отчёта):
+- Postgres tuning (shared_buffers, work_mem, pg_stat_statements);
+- nginx как edge перед API и frontend (выключив `vite preview`);
+- Redis Pub/Sub для SupportHub при переходе на 2+ API-инстанса.
+4. Почему ничего не «удалено» из существующих контуров:
+- правки только в `.env`, `.env.example`, `ecosystem.config.cjs` и новой документации;
+- никакой Go-код / SQL / handler / frontend не изменён в этой итерации.

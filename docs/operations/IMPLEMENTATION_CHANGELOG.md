@@ -3899,3 +3899,53 @@
    security signal остальным контурам.
 4. Append-only документация фиксирует, что и зачем сделано, в каждой
    точке проекта (config, middleware, handlers, store, frontend).
+
+## 2026-05-16 — 100 RPS readiness pass (production tuning + ecosystem fixes)
+
+### Контекст
+1. После релиза support-чата пользователь сообщил ожидаемую нагрузку
+   ~100 RPS и попросил оценить готовность.
+2. Полный отчёт с измерениями и приоритезированным планом — в
+   `docs/operations/100RPS_READINESS_2026_05_16.md`.
+
+### Что сделано в этой правке
+1. `DATABASE_URL` дополнен пулом:
+   `&pool_max_conns=30&pool_min_conns=5&pool_max_conn_lifetime=1h`.
+   До этого pgxpool открывал ~8 соединений (default) — основное
+   узкое горло при росте трафика.
+2. `GIN_MODE=release` и `NODE_ENV=production` зафиксированы в `.env`
+   и в `deploy/server/ecosystem.config.cjs`.
+3. **Найден и исправлен реальный баг**: `ecosystem.config.cjs`
+   whitelist-ит env-keys через `sharedEnv` → `SUPPORT_CHAT_*`
+   (только что добавленные в `.env.example`) и `GIN_MODE/NODE_ENV`
+   не пробрасывались до процессов. То есть support-чат работал
+   на хардкод-defaults в Go (по счастливой случайности они
+   разрешали запуск), а gin шёл в debug-режиме.
+4. В whitelist `sharedEnv` добавлены ключи:
+   `GIN_MODE`, `NODE_ENV`, `SUPPORT_CHAT_ENABLED`,
+   `SUPPORT_CHAT_MAX_ATTACHMENTS_PER_MESSAGE`,
+   `SUPPORT_CHAT_MAX_ATTACHMENT_BYTES`,
+   `SUPPORT_CHAT_MAX_MESSAGE_PAYLOAD_BYTES`,
+   `SUPPORT_CHAT_STORAGE_DIR`.
+5. `.env.example` дополнен документирующим блоком про
+   `GIN_MODE/NODE_ENV`, лимиты support-чата и пример
+   `DATABASE_URL` с пулом.
+6. pm2 перезапущен через `pm2 restart ecosystem.config.cjs --update-env`;
+   `/proc/<pid>/environ` подтверждает, что новые переменные дошли
+   до процесса.
+
+### Что НЕ сделано (зафиксировано в отчёте §4)
+1. Postgres tuning (shared_buffers, work_mem, pg_stat_statements) —
+   нужен short downtime; вынесено в §4.1.
+2. nginx как edge для `:8510/:8511` — заблокировано domain-lock
+   policy `leonovcare.ru`; вынесено в §4.2.
+3. Redis Pub/Sub для SupportHub (предусловие для multi-replica API) —
+   §4.3.
+
+### Почему сделано именно так
+1. Только безопасные правки в этой итерации: настройки env, без
+   изменений Go-кода и без перезапуска БД. Откат — `cp` назад из
+   `/opt/leonovcare-platform/backend.env.before_100rps_<timestamp>`.
+2. Найденный баг whitelist'а ecosystem.config.cjs мог тихо ломать
+   любые новые env-переменные в будущем, не только support-чата —
+   зафиксировано явно, чтобы следующий контроль env стал заметным.
