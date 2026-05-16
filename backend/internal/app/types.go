@@ -72,16 +72,23 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, err
 	j := judge.NewJavaEngine(cfg.JavaTimeoutSeconds, cfg.JudgeMode)
 
 	return &App{
-		Cfg:        cfg,
-		DB:         db,
-		Redis:      rds,
-		Log:        logger,
-		Judge:      j,
-		SupportHub: NewSupportHub(),
+		Cfg:   cfg,
+		DB:    db,
+		Redis: rds,
+		Log:   logger,
+		Judge: j,
+		// Передаём Redis client → SupportHub работает в multi-process
+		// режиме через Redis Pub/Sub (см. support_realtime.go v2).
+		// При nil-клиенте хаб fallback'нет на чисто локальный fan-out,
+		// что используется в тестах.
+		SupportHub: NewSupportHub(rds, logger),
 	}, nil
 }
 
 func (a *App) Close() {
+	if a.SupportHub != nil {
+		a.SupportHub.Close()
+	}
 	if a.Redis != nil {
 		_ = a.Redis.Close()
 	}

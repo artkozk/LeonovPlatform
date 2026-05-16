@@ -1,51 +1,67 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
+	"log/slog"
 	"sync"
+	"sync/atomic"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 // ============================================================================
-// Support chat realtime hub (in-memory pub/sub for SSE) — 2026-05-16.
+// Support chat realtime hub — Redis Pub/Sub backed fan-out for SSE.
 //
-// Почему именно так (см. blueprint §6 «Архитектура realtime»):
+// История (append-only):
+//   v1 (2026-05-16, blueprint §6): in-memory only fan-out, рассчитан на
+//     один API-процесс. См. изначальный коммит 30bb920.
 //
-//   1. На старте достаточно SSE: один админ, ограниченное число одновременных
-//      учеников. Полноценный WS-брокер был бы overengineering.
+//   v2 (2026-05-16, этот файл, см. docs/operations/MULTI_INSTANCE_API_2026_05_16.md):
+//     добавлен Redis Pub/Sub. Причина: подготовка к multi-instance API
+//     (2+ pm2-инстанса за nginx upstream). Без Redis SSE-подписчики на
+//     процессе A не получают события, опубликованные процессом B —
+//     админ отвечает на одном бекенде, студент висит на другом.
 //
-//   2. Хаб держит подписчиков в памяти процесса. У нас один API процесс
-//      (`leonovcare-api` под pm2), поэтому in-memory fan-out безопасен.
-//      Если когда-нибудь будет горизонтальная репликация — replace this
-//      hub'ом на Redis Pub/Sub без смены публичного API SupportHub.
+// Дизайн v2:
 //
-//   3. Подписчики хранят буферизированный chan, чтобы медленный клиент
-//      не блокировал отправителя. Если буфер переполнен — событие
-//      отбрасывается, а клиент сам перезатягивает состояние через
-//      обычные REST endpoints (см. blueprint §6 «Серверные события
-//      должны быть idempotent»).
+//   1. Публичный API не изменился: `Subscribe(userID) -> (<-chan, cancel)`,
+//      `Publish(event, recipients...)`. Handlers и тесты тронуты не были.
 //
-//   4. У каждого подписчика есть `userID` (адресат) — так мы аккуратно
-//      разделяем bus студента и админский bus. Сообщение всегда
-//      адресуется конкретному получателю; admin (assignedAdmin) и student
-//      получают одни и те же события независимыми каналами.
+//   2. Каждый API-процесс хранит свои `subscribers map[int64]*supportSubscriber`
+//      (это локальный набор открытых SSE-соединений именно этого процесса).
+//
+//   3. `Publish(...)` пишет событие в Redis-канал "support:events".
+//      Каждый процесс (включая опубликовавшего) подписан на этот канал
+//      через `runRedisSubscriber()` и при получении сообщения
+//      доставляет его своим локальным подписчикам, чьи userID совпали
+//      с recipients.
+//
+//   4. Если Redis недоступен (например, в unit-тестах хаб создаётся с
+//      `nil` клиентом, или Redis временно лёг), `Publish` падает на
+//      локальный fan-out — это гарантирует, что хотя бы свои-же
+//      подписчики на этом же процессе получат событие.
+//
+//   5. Бэкофф подключения к Redis (500ms → 10s, cap) и непрерывное
+//      переподключение — слежение за этим в `runRedisSubscriber`.
+//
+//   6. Сохранён принцип blueprint §6 «события идемпотентны»:
+//      на reconnect-стороне клиент перетягивает состояние через REST,
+//      на серверной стороне у нас тоже есть допуск к потере событий
+//      (дроп при полном буфере, дроп при Redis сбое).
 // ============================================================================
 
+const supportRedisChannel = "support:events"
+
 // SupportSSEEvent — единица realtime потока.
-//
-// Поля:
-//   Type     — короткое имя события: "message_created" / "message_status" /
-//              "conversation_updated" / "ping".
-//   Data     — произвольный JSON-сериализуемый payload (DTO).
-//   ID       — опциональный SSE id (для возможного `Last-Event-ID` в
-//              будущем); пока используется только monotonic timestamp.
 type SupportSSEEvent struct {
-	Type string
-	Data any
-	ID   string
+	Type string `json:"type"`
+	Data any    `json:"data"`
+	ID   string `json:"id,omitempty"`
 }
 
-// supportSubscriber — один подключенный SSE-клиент.
+// supportSubscriber — один подключенный SSE-клиент (локально на процессе).
 type supportSubscriber struct {
 	id     int64
 	userID string
@@ -57,18 +73,53 @@ type SupportHub struct {
 	mu          sync.RWMutex
 	nextSubID   int64
 	subscribers map[int64]*supportSubscriber
+
+	// Redis client. Может быть nil — тогда хаб работает только локально
+	// (полезно в тестах и как fallback при сбое Redis).
+	redis *redis.Client
+	log   *slog.Logger
+
+	// Управление background-сабом.
+	stopCh   chan struct{}
+	stopOnce sync.Once
+
+	// Опциональные метрики (атомики, чтобы было что вывести в /readyz/debug).
+	publishedTotal atomic.Uint64
+	deliveredTotal atomic.Uint64
+	droppedTotal   atomic.Uint64
+	redisErrors    atomic.Uint64
 }
 
-// NewSupportHub создаёт новый хаб.
-func NewSupportHub() *SupportHub {
-	return &SupportHub{
+// supportRedisEnvelope — то, что мы кладём в Redis (или в локальный
+// fan-out при отсутствии Redis).
+type supportRedisEnvelope struct {
+	Recipients []string        `json:"recipients"`
+	Event      SupportSSEEvent `json:"event"`
+}
+
+// NewSupportHub создаёт хаб. `client == nil` означает «без Redis,
+// только локальный fan-out» (тесты + degraded mode).
+func NewSupportHub(client *redis.Client, log *slog.Logger) *SupportHub {
+	h := &SupportHub{
 		subscribers: make(map[int64]*supportSubscriber),
+		redis:       client,
+		log:         log,
+		stopCh:      make(chan struct{}),
 	}
+	if client != nil {
+		go h.runRedisSubscriber()
+	}
+	return h
 }
 
-// Subscribe регистрирует слушателя для конкретного userID.
-// Возвращает канал для чтения, функцию отписки и id подписки.
-// Канал буферизирован, чтобы один медленный клиент не блокировал хаб.
+// Close корректно останавливает Redis subscriber. Безопасно вызывать
+// несколько раз.
+func (h *SupportHub) Close() {
+	h.stopOnce.Do(func() { close(h.stopCh) })
+}
+
+// Subscribe регистрирует локального слушателя для userID.
+// Возвращает канал и cancel-функцию (deregister + close).
 func (h *SupportHub) Subscribe(userID string) (<-chan SupportSSEEvent, func()) {
 	h.mu.Lock()
 	h.nextSubID++
@@ -91,9 +142,46 @@ func (h *SupportHub) Subscribe(userID string) (<-chan SupportSSEEvent, func()) {
 	return sub.ch, cancel
 }
 
-// Publish отправляет событие всем подписчикам, чей userID есть в recipients.
-// Если recipients пуст — событие никому не отправляется.
+// Publish публикует событие. На multi-process: отправка идёт через Redis
+// и приходит обратно к нам через subscribe-loop. Если Redis отсутствует
+// или сломан — fan-out выполняется локально (хотя бы свои подписчики
+// получат).
 func (h *SupportHub) Publish(event SupportSSEEvent, recipients ...string) {
+	if len(recipients) == 0 {
+		return
+	}
+	h.publishedTotal.Add(1)
+
+	if h.redis == nil {
+		// Нет Redis вообще — локальный режим (тесты).
+		h.localFanout(event, recipients)
+		return
+	}
+
+	envelope := supportRedisEnvelope{Recipients: recipients, Event: event}
+	payload, err := json.Marshal(envelope)
+	if err != nil {
+		// Никогда не должно произойти — fallback на локал.
+		h.redisErrors.Add(1)
+		h.localFanout(event, recipients)
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	if err := h.redis.Publish(ctx, supportRedisChannel, payload).Err(); err != nil {
+		if h.log != nil {
+			h.log.Error("support pubsub publish", "err", err.Error())
+		}
+		h.redisErrors.Add(1)
+		// Хотя бы свои подписчики получат событие — это лучше, чем
+		// тишина для админа на том же процессе.
+		h.localFanout(event, recipients)
+	}
+}
+
+// localFanout — общая логика доставки на текущий процесс.
+// Используется из локального Publish (нет Redis) и из Redis subscribe-loop.
+func (h *SupportHub) localFanout(event SupportSSEEvent, recipients []string) {
 	if len(recipients) == 0 {
 		return
 	}
@@ -117,15 +205,97 @@ func (h *SupportHub) Publish(event SupportSSEEvent, recipients ...string) {
 		}
 		select {
 		case sub.ch <- event:
+			h.deliveredTotal.Add(1)
 		default:
-			// Канал переполнен. Дропаем событие — клиент re-fetch'ом
-			// восстановит состояние при reconnect / при следующем
-			// успешном событии.
+			// Канал переполнен — дропаем (см. шапку файла).
+			h.droppedTotal.Add(1)
 		}
 	}
 }
 
-// MakeEventID — детерминированный id события из timestamp + counter.
+// runRedisSubscriber — long-lived goroutine. Подписывается на
+// `support:events` и доставляет каждое полученное сообщение в
+// локальный fan-out. При обрыве канала переподключается с
+// экспоненциальным backoff'ом (cap 10s).
+func (h *SupportHub) runRedisSubscriber() {
+	backoff := 500 * time.Millisecond
+	for {
+		select {
+		case <-h.stopCh:
+			return
+		default:
+		}
+
+		ctx, cancel := context.WithCancel(context.Background())
+		sub := h.redis.Subscribe(ctx, supportRedisChannel)
+		// Ждём подтверждения подписки, иначе при сбое мы тихо ловим nil-канал.
+		if _, err := sub.Receive(ctx); err != nil {
+			cancel()
+			_ = sub.Close()
+			h.redisErrors.Add(1)
+			if h.log != nil {
+				h.log.Warn("support pubsub subscribe failed; retrying", "err", err.Error(), "backoff", backoff.String())
+			}
+			if h.sleepOrStop(backoff) {
+				return
+			}
+			backoff = nextBackoff(backoff)
+			continue
+		}
+		backoff = 500 * time.Millisecond
+
+		ch := sub.Channel()
+		// Цикл пока канал жив или нас не остановили.
+	inner:
+		for {
+			select {
+			case <-h.stopCh:
+				cancel()
+				_ = sub.Close()
+				return
+			case msg, ok := <-ch:
+				if !ok {
+					// Канал закрыт — выйти из inner и переподключиться.
+					break inner
+				}
+				var env supportRedisEnvelope
+				if err := json.Unmarshal([]byte(msg.Payload), &env); err != nil {
+					if h.log != nil {
+						h.log.Warn("support pubsub: skip malformed envelope", "err", err.Error())
+					}
+					continue
+				}
+				h.localFanout(env.Event, env.Recipients)
+			}
+		}
+		cancel()
+		_ = sub.Close()
+		// Reconnect.
+		if h.sleepOrStop(backoff) {
+			return
+		}
+		backoff = nextBackoff(backoff)
+	}
+}
+
+func (h *SupportHub) sleepOrStop(d time.Duration) bool {
+	select {
+	case <-h.stopCh:
+		return true
+	case <-time.After(d):
+		return false
+	}
+}
+
+func nextBackoff(d time.Duration) time.Duration {
+	d *= 2
+	if d > 10*time.Second {
+		d = 10 * time.Second
+	}
+	return d
+}
+
+// MakeEventID — детерминированный id события из timestamp.
 // Используется как SSE event id (на будущее под Last-Event-ID).
 func MakeEventID() string {
 	return time.Now().UTC().Format("20060102T150405.000000000Z")

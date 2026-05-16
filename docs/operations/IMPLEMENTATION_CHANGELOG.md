@@ -3981,3 +3981,65 @@
    проекты на этом IP не задеты (smoke-проверено).
 3. Подробный отчёт + smoke-логи:
    `docs/operations/PLATFORM_NGINX_VHOST_2026_05_16.md`.
+
+## 2026-05-16 — 100 RPS readiness: PG tuning + vite cleanup + multi-instance API + Redis Pub/Sub
+
+### Что сделано
+
+1. **PostgreSQL tuning** (override через `/etc/postgresql/16/main/conf.d/`):
+- `shared_buffers` 128MB→2GB, `effective_cache_size` 4GB→8GB,
+  `work_mem` 4MB→16MB, `max_connections` 100→200,
+  `max_wal_size` 1GB→4GB, `random_page_cost` 4.0→1.1.
+- Установлено `shared_preload_libraries='pg_stat_statements'` + extension
+  для slow-query аналитики (раньше slow-query telemetry не было вообще).
+- Конфиг закоммичен в репо: `deploy/server/postgresql/99-leonovcare-100rps.conf`.
+
+2. **vite preview удалён**: `pm2 leonovcare-frontend` остановлен и
+   стёрт; блок в `ecosystem.config.cjs` убран. Фронт обслуживает
+   только nginx из `frontend/dist`. Порт 8511 свободен.
+
+3. **SupportHub v2 (Redis Pub/Sub)**:
+- `backend/internal/app/support_realtime.go` переписан: при
+  отправке `Publish` событие сериализуется и кладётся в Redis-канал
+  `support:events`; каждый API-процесс отдельной goroutine'й
+  подписан и доставляет события своим локальным SSE-подписчикам.
+- Публичный API хаба не изменён — handlers и тесты не правились.
+- Бэкофф reconnect к Redis 500ms→10s.
+- Fallback на локальный fan-out при отсутствии/сбое Redis.
+- 5 новых юнит-тестов (`support_realtime_test.go`) для адресации,
+  drop-on-full буфера, cancel-функции, ignore empty recipients.
+
+4. **Multi-instance API**:
+- Добавлен второй pm2-процесс `leonovcare-api-2` (`HTTP_PORT=8512`).
+  Первый продолжает работать на 8510.
+- nginx upstream `leonovcare_api` (round-robin, keepalive 32,
+  max_fails=3 fail_timeout=10s) — конфиг в
+  `deploy/server/nginx/conf.d/leonovcare-upstream.conf`.
+- Vhost `platform.ngix.leonovcare.ru` переведён на upstream
+  (`proxy_pass http://leonovcare_api;` для всех маршрутов
+  включая SSE).
+
+### Production smoke
+
+- `go test ./...` зелёный, 5 новых тестов хаба прошли;
+- `nginx -t` ok, reload без даунтайма прочих сайтов;
+- `pm2 ls` показывает оба API-процесса online + 4 workers;
+- `ss -tlnp` подтверждает 8510/8512 слушают;
+- `redis-cli PUBSUB NUMSUB support:events` = 6 подписчиков
+  (api + api-2 + 4 worker), `PUBLISH` доставлен во все 6;
+- 200/200 health-чеков успешно через nginx upstream;
+- сторонние vhost'ы (leonovcare.ru, shop.e-rd.ru, e-rd.ru) — HTTPS 200,
+  не задеты;
+- `pg_stat_activity` = 37 коннектов (укладываемся в 200).
+
+### Почему именно так
+1. `keepalive 32` в upstream + `Connection ""` per-location снимают
+   накладные TCP-handshake между nginx и Go.
+2. Два независимых fork-процесса, а не pm2 cluster_mode — Go-бинарь
+   не поддерживает Node `cluster` API, fork даёт честный isolation.
+3. Redis Pub/Sub, а не Streams — события идемпотентны (см.
+   blueprint §6), достаточно best-effort fan-out.
+4. PG override через `conf.d/` — не правит основной `postgresql.conf`,
+   откат тривиальный (удалить файл + restart).
+5. Подробный append-only отчёт:
+   `docs/operations/MULTI_INSTANCE_API_2026_05_16.md`.

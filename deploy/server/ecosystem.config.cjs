@@ -117,11 +117,38 @@ const sharedEnv = {
 
 module.exports = {
   apps: [
+    // ------------------------------------------------------------------
+    // leonovcare-api (multi-instance, 2026-05-16).
+    //
+    // Изначально один pm2-процесс на порту 8510. С 2026-05-16 (см.
+    // docs/operations/MULTI_INSTANCE_API_2026_05_16.md) переведён на
+    // два независимых процесса на портах 8510 и 8512. nginx upstream
+    // балансирует между ними. Это даёт:
+    //   - rolling restart (выкатываем по одному без даунтайма);
+    //   - устойчивость к падению одного процесса (GC pause, OOM и т.п.);
+    //   - удвоение CPU-фронта Go-планировщика.
+    //
+    // Поддержка realtime между процессами обеспечивается Redis Pub/Sub
+    // в SupportHub (см. backend/internal/app/support_realtime.go v2).
+    // ------------------------------------------------------------------
     {
       name: "leonovcare-api",
       script: "./backend/bin/leonovcare-api",
       cwd: "/opt/leonovcare-platform/current",
-      env: { ...sharedEnv },
+      env: { ...sharedEnv, HTTP_PORT: "8510" },
+      instances: 1,
+      exec_mode: "fork",
+      autorestart: true,
+      max_restarts: 20,
+      max_memory_restart: "700M",
+      kill_timeout: 10000,
+      watch: false,
+    },
+    {
+      name: "leonovcare-api-2",
+      script: "./backend/bin/leonovcare-api",
+      cwd: "/opt/leonovcare-platform/current",
+      env: { ...sharedEnv, HTTP_PORT: "8512" },
       instances: 1,
       exec_mode: "fork",
       autorestart: true,
@@ -143,14 +170,13 @@ module.exports = {
       kill_timeout: 10000,
       watch: false,
     },
-    {
-      name: "leonovcare-frontend",
-      script: "npm",
-      args: "run preview -- --host 0.0.0.0 --port 8511",
-      cwd: "/opt/leonovcare-platform/current/frontend",
-      autorestart: true,
-      max_restarts: 20,
-      watch: false,
-    },
+    // ------------------------------------------------------------------
+    // leonovcare-frontend (vite preview) удалён 2026-05-16: статика
+    // отдаётся nginx'ом напрямую из frontend/dist (см.
+    // docs/operations/PLATFORM_NGINX_VHOST_2026_05_16.md). Здесь
+    // намеренно НЕ оставлен закомментированный блок, чтобы pm2
+    // не предлагал его восстанавливать при `pm2 start` без флагов.
+    // История изменения сохранена в git и в IMPLEMENTATION_CHANGELOG.
+    // ------------------------------------------------------------------
   ],
 };

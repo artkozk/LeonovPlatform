@@ -1328,3 +1328,29 @@ cd idea-plugin
   reload nginx);
 - domain-lock policy `leonovcare.ru` соблюдена — основной домен
   остаётся за прежним проектом.
+
+## Актуализация от 2026-05-16: production-готовность к 100 RPS
+
+> Append-only. Дополнение к предыдущим записям 2026-05-16, не
+> заменяет ни одной из них.
+
+1. Закрыты §4.1, §4.2, §4.3 из
+   [100RPS_READINESS_2026_05_16.md](docs/operations/100RPS_READINESS_2026_05_16.md):
+- PostgreSQL tuned (shared_buffers 128MB→2GB, work_mem 4→16MB,
+  max_connections 100→200, `pg_stat_statements` включён);
+- vite preview процесс удалён, фронт обслуживает nginx из
+  `frontend/dist`;
+- API запущен в две независимых pm2-инстанции (8510 + 8512) за
+  nginx upstream `leonovcare_api` (round-robin, keepalive, failover);
+- `SupportHub` переписан на Redis Pub/Sub — SSE-события доставляются
+  между процессами; падение одного процесса не рвёт realtime.
+2. Подробный append-only отчёт (включая обоснование решений,
+   отвергнутые альтернативы, инструкцию по откату):
+- [docs/operations/MULTI_INSTANCE_API_2026_05_16.md](docs/operations/MULTI_INSTANCE_API_2026_05_16.md).
+3. Что не задето:
+- URL и API-контракты не изменились;
+- сторонние домены (`leonovcare.ru`, `shop.e-rd.ru`, `e-rd.ru`) — HTTPS 200
+  после reload nginx, что подтверждено smoke;
+- handlers и фронтенд не правились в этой итерации (изменения только
+  в инфра-конфигах и в `SupportHub`-реализации, чей публичный API
+  не сменился).
