@@ -365,8 +365,16 @@ func cleanupTempFiles(paths []string) {
 // sanitizeFilename — убирает path traversal, контрольные символы и
 // длинные имена. Не пытается транслировать unicode в ASCII; разрешает
 // кириллицу. Запасное имя если всё вычистили — "file".
+//
+// Замечание о Windows-style разделителях:
+//   filepath.Base считает path separator только нативный для текущей ОС:
+//   `\` на Windows и `/` на Linux. Браузер же может прислать имя
+//   `..\..\..\etc\passwd` независимо от того, на чём бежит сервер.
+//   Чтобы стабильно вырубать backslash-path traversal на любой ОС,
+//   нормализуем `\` → `/` ДО вызова filepath.Base.
 func sanitizeFilename(name string) string {
-	base := filepath.Base(name) // отбрасывает любой path-prefix
+	normalized := strings.ReplaceAll(name, "\\", "/")
+	base := filepath.Base(normalized) // отбрасывает любой path-prefix
 	base = strings.TrimSpace(base)
 	if base == "" || base == "." || base == ".." {
 		return "file"
