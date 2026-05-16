@@ -32,6 +32,12 @@ type AuthStore = {
   user: UserProfile | null;
   loading: boolean;
   error: string | null;
+  // `bootstrapped` — true только после того, как мы реально проверили текущую
+  // сессию (вызвали /me либо убедились, что токена нет). Используется
+  // защищёнными роутами и страницей логина, чтобы не показывать форму
+  // авторизации тем, у кого валидный токен ещё проверяется. Добавлено
+  // 2026-05-12 для устранения "вспышки" /auth при загрузке.
+  bootstrapped: boolean;
   bootstrap: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   register: (payload: {
@@ -45,13 +51,24 @@ type AuthStore = {
   refreshProfile: () => Promise<void>;
 };
 
+// Если в localStorage нет access-токена, мы и так знаем, что юзер
+// разлогинен — нет смысла блокировать UI ожиданием bootstrap. Поэтому
+// `bootstrapped` стартует `true` для безсессионных загрузок, и
+// переключается в `false` ровно на время первого /me, если токен есть.
+const hasInitialToken = typeof window !== "undefined" && Boolean(getAccessToken());
+
 export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
   loading: false,
   error: null,
+  bootstrapped: !hasInitialToken,
 
   bootstrap: async () => {
-    if (!getAccessToken()) return;
+    if (!getAccessToken()) {
+      // Нет токена — фронт уже знает, что юзер разлогинен.
+      set({ bootstrapped: true });
+      return;
+    }
     set({ loading: true, error: null });
     try {
       if (!bootstrapPromise) {
@@ -64,14 +81,15 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
       const profile = await bootstrapPromise;
       if (!getAccessToken()) {
-        set({ user: null, loading: false, error: null });
+        // logout случился пока ждали ответ — игнорируем результат.
+        set({ user: null, loading: false, error: null, bootstrapped: true });
         return;
       }
       set({ user: profile, loading: false, error: null });
     } catch (e: any) {
       if (!getAccessToken() || shouldClearAuthSession(e)) {
         clearTokens();
-        set({ user: null, loading: false, error: null });
+        set({ user: null, loading: false, error: null, bootstrapped: true });
         return;
       }
       set({
@@ -86,7 +104,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       await apiLogin({ email, password });
       const profile = await apiMe();
-      set({ user: profile, loading: false, error: null });
+      set({ user: profile, loading: false, error: null, bootstrapped: true });
     } catch (e: any) {
       set({ loading: false, error: resolveAuthError(e, "Не удалось выполнить вход") });
     }
@@ -97,7 +115,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     try {
       await apiRegister(payload);
       const profile = await apiMe();
-      set({ user: profile, loading: false, error: null });
+      set({ user: profile, loading: false, error: null, bootstrapped: true });
     } catch (e: any) {
       set({ loading: false, error: resolveAuthError(e, "Не удалось создать аккаунт") });
     }
@@ -106,7 +124,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
   logout: () => {
     bootstrapPromise = null;
     clearTokens();
-    set({ user: null, error: null, loading: false });
+    // После logout мы по-прежнему "bootstrapped" — просто разлогиненный.
+    set({ user: null, error: null, loading: false, bootstrapped: true });
   },
 
   refreshProfile: async () => {
