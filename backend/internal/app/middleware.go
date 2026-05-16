@@ -49,6 +49,13 @@ func gzipMiddleware() gin.HandlerFunc {
 			c.Next()
 			return
 		}
+		// SSE (text/event-stream) и любые long-lived потоки никогда не
+		// должны сжиматься — gzip-буфер ломает real-time доставку
+		// (blueprint §6 «Не сжимать SSE-поток gzip»).
+		if strings.Contains(strings.ToLower(c.GetHeader("Accept")), "text/event-stream") {
+			c.Next()
+			return
+		}
 		if !strings.Contains(strings.ToLower(c.GetHeader("Accept-Encoding")), "gzip") {
 			c.Next()
 			return
@@ -69,13 +76,49 @@ func gzipMiddleware() gin.HandlerFunc {
 	}
 }
 
-func maxRequestBodyMiddleware(maxBytes int64) gin.HandlerFunc {
+// maxRequestBodyMiddleware ограничивает тело запроса maxBytes байт.
+//
+// supportUploadCeil — больший лимит, применяемый только к multipart
+// support-эндпоинтам (см. blueprint §3.1 / §8.1 / §8.2): глобально
+// держим 16 MB для безопасности, но для вложений support-чата
+// (5 файлов × ~10 MB) разрешаем до supportUploadCeil. Это per-route
+// исключение, остальные эндпоинты по-прежнему упираются в maxBytes.
+//
+// Почему через path-prefix, а не отдельный middleware на роуте:
+//   gin'овский MaxBytesReader должен быть установлен до того, как
+//   будет прочитано тело. Если применять его в групповом middleware,
+//   роут уже сматчен, и FullPath() читается корректно. Это позволяет
+//   обойтись одним middleware без дублирования pipeline.
+func maxRequestBodyMiddleware(maxBytes, supportUploadCeil int64) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if maxBytes > 0 && c.Request != nil && c.Request.Body != nil {
-			c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxBytes)
+		limit := maxBytes
+		if supportUploadCeil > 0 && isSupportUploadRoute(c) {
+			limit = supportUploadCeil
+		}
+		if limit > 0 && c.Request != nil && c.Request.Body != nil {
+			c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, limit)
 		}
 		c.Next()
 	}
+}
+
+func isSupportUploadRoute(c *gin.Context) bool {
+	if c.Request == nil || c.Request.Method != http.MethodPost {
+		return false
+	}
+	path := c.FullPath()
+	if path == "" {
+		path = c.Request.URL.Path
+	}
+	if path == "/api/v1/support/conversation/messages" {
+		return true
+	}
+	// admin endpoint: /api/v1/admin/support/conversations/:conversationID/messages
+	if strings.HasPrefix(path, "/api/v1/admin/support/conversations/") &&
+		strings.HasSuffix(path, "/messages") {
+		return true
+	}
+	return false
 }
 
 func clientKeyForRateLimit(c *gin.Context) string {

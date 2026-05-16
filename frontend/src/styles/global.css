@@ -3896,3 +3896,380 @@ textarea:focus-visible {
   margin-top: 10px;
 }
 
+
+/* ============================================================================
+ * Support Chat (blueprint 2026-05-16) — стили страницы /support и /admin/support.
+ *
+ * Зачем отдельный блок, а не CSS Modules:
+ *   В проекте уже используется один global.css, без CSS-in-JS и без
+ *   CSS-modules — для согласованности продолжаем тот же путь. Все
+ *   стили префиксованы `support-` или `admin-support-` для изоляции.
+ *
+ * Цели:
+ *   1. Базовый «бабл»-вид сообщений, без зависимости от иконок-библиотек.
+ *   2. Двух-колоночный layout админки (Telegram-style).
+ *   3. Mobile-friendly: на узком экране admin-список сворачивается в
+ *      вертикальный стек, чтобы не нарушать существующую mobile policy
+ *      (blueprint §3.2 «не вносить mobile-регрессий»).
+ * ========================================================================== */
+
+.support-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  max-width: 880px;
+  margin: 0 auto;
+  min-height: 0;
+}
+
+.support-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.support-subheader,
+.support-resolution-note {
+  margin: 4px 0 0;
+  color: rgba(0, 0, 0, 0.55);
+  font-size: 14px;
+}
+
+.support-resolution-note {
+  padding: 8px 10px;
+  background: rgba(34, 139, 34, 0.08);
+  border-left: 3px solid rgba(34, 139, 34, 0.6);
+  border-radius: 4px;
+}
+
+.support-error {
+  padding: 8px 10px;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  border-radius: 4px;
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+.support-empty {
+  padding: 24px;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.support-messages {
+  flex: 1;
+  min-height: 320px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.support-message {
+  max-width: 80%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.support-message-outgoing {
+  align-self: flex-end;
+  background: rgba(59, 130, 246, 0.18);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.support-message-incoming {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.support-message-body {
+  white-space: pre-wrap;
+}
+
+.support-message-attachments {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.support-message-attachments li {
+  padding: 2px 0;
+}
+
+.support-attachment-size {
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+}
+
+.support-message-meta {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.support-message-status[aria-label*="read"]::after {
+  /* Read: визуально акцент-цвет. */
+}
+
+.support-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.support-composer textarea {
+  resize: vertical;
+  min-height: 60px;
+  padding: 8px 10px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: white;
+  font-family: inherit;
+}
+
+.support-composer-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.support-composer-hint {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.support-attach-btn {
+  cursor: pointer;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 6px;
+  font-size: 13px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.support-attach-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+
+.support-attach-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+}
+
+.support-attach-remove {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 2px;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.support-send-btn {
+  padding: 6px 16px;
+  border-radius: 6px;
+  background: #3b82f6;
+  color: white;
+  border: 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.support-send-btn:disabled {
+  background: rgba(0, 0, 0, 0.15);
+  cursor: not-allowed;
+}
+
+/* Admin page layout. */
+.admin-support-page {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 12px;
+  padding: 12px;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.admin-support-list {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.02);
+  overflow-y: auto;
+  max-height: calc(100vh - 140px);
+}
+
+.admin-support-list h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.admin-support-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-support-list-item {
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.admin-support-list-item.is-active {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.admin-support-list-item.status-resolved {
+  opacity: 0.85;
+}
+
+.admin-support-list-item.status-closed {
+  opacity: 0.6;
+}
+
+.admin-support-list-item-row1,
+.admin-support-list-item-row2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.admin-support-list-name {
+  font-weight: 500;
+}
+
+.admin-support-list-time {
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 11px;
+}
+
+.admin-support-list-preview {
+  color: rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+
+.admin-support-list-unread {
+  background: #3b82f6;
+  color: white;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+.admin-support-list-status {
+  margin-top: 2px;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.4);
+  letter-spacing: 0.04em;
+}
+
+.admin-support-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.02);
+  min-height: 0;
+}
+
+.admin-support-thread-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  padding-bottom: 8px;
+}
+
+.admin-support-thread-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.admin-support-thread-sub {
+  margin: 4px 0 0;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 12px;
+}
+
+.admin-support-thread-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.admin-support-thread-actions input[type="text"] {
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  font-size: 13px;
+}
+
+.admin-support-thread-actions button {
+  padding: 4px 10px;
+  font-size: 13px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: white;
+  cursor: pointer;
+}
+
+.admin-support-thread-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 760px) {
+  .admin-support-page {
+    grid-template-columns: 1fr;
+  }
+  .admin-support-list {
+    max-height: 220px;
+  }
+}

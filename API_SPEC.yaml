@@ -742,3 +742,86 @@ components:
           type: integer
         editorWordWrap:
           type: boolean
+
+    # ========================================================================
+    # Support Chat (2026-05-16) — append-only.
+    # Реализация blueprint:
+    #   docs/architecture/SUPPORT_CHAT_IMPLEMENTATION_BLUEPRINT_2026_05_16.md
+    # Все endpoint'ы требуют Bearer Authorization. Admin endpoint'ы
+    # дополнительно требуют role=admin.
+    # ========================================================================
+    SupportAttachment:
+      type: object
+      required: [id, messageId, originalName, mimeType, sizeBytes, downloadUrl, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        messageId: { type: string, format: uuid }
+        originalName: { type: string }
+        mimeType: { type: string }
+        sizeBytes: { type: integer, format: int64 }
+        downloadUrl: { type: string, description: "Относительный путь /api/v1/support/attachments/:id" }
+        createdAt: { type: string, format: date-time }
+    SupportMessage:
+      type: object
+      required: [id, conversationId, senderUserId, senderRole, status, hasAttachments, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        conversationId: { type: string, format: uuid }
+        senderUserId: { type: string, format: uuid }
+        senderRole: { type: string, enum: [student, admin, system] }
+        bodyText: { type: string }
+        status: { type: string, enum: [sent, delivered, read] }
+        deliveredAt: { type: string, format: date-time, nullable: true }
+        readAt: { type: string, format: date-time, nullable: true }
+        hasAttachments: { type: boolean }
+        attachments:
+          type: array
+          items: { $ref: '#/components/schemas/SupportAttachment' }
+        createdAt: { type: string, format: date-time }
+    SupportConversation:
+      type: object
+      required: [id, studentUserId, status, studentUnreadCount, adminUnreadCount, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        studentUserId: { type: string, format: uuid }
+        studentDisplayName: { type: string }
+        studentEmail: { type: string }
+        status: { type: string, enum: [open, resolved, closed] }
+        assignedAdminUserId: { type: string }
+        assignedAdminName: { type: string }
+        resolutionNote: { type: string }
+        resolvedAt: { type: string, format: date-time, nullable: true }
+        closedAt: { type: string, format: date-time, nullable: true }
+        lastMessageAt: { type: string, format: date-time, nullable: true }
+        lastMessagePreview: { type: string }
+        lastMessageSenderRole: { type: string }
+        studentUnreadCount: { type: integer }
+        adminUnreadCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    SupportEvent:
+      type: object
+      required: [id, conversationId, eventType, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        conversationId: { type: string, format: uuid }
+        eventType:
+          type: string
+          enum: [created, message_sent, assigned, reassigned, unassigned, resolved, reopened, closed]
+        actorUserId: { type: string }
+        actorName: { type: string }
+        payload: { type: object, additionalProperties: true }
+        createdAt: { type: string, format: date-time }
+    SupportPatchRequest:
+      type: object
+      required: [action]
+      properties:
+        action: { type: string, enum: [assign, unassign, resolve, reopen, close] }
+        adminUserId: { type: string, format: uuid, description: "Обязателен для action=assign" }
+        resolutionNote: { type: string, description: "Обязателен для action=resolve" }
+# NOTE: Это лишь schema-расширение. Сами path'ы документированы в
+# `docs/operations/SUPPORT_CHAT_IMPLEMENTATION_2026_05_16.md` (раздел 2)
+# и в blueprint §8. Намеренно не дублируем их сюда, чтобы не плодить
+# рассинхрон между двумя источниками правды и не нарушать append-only
+# принцип: данный YAML — overview контракта, а развернутый контракт
+# (включая negative cases, ошибки и SSE) живёт в blueprint + impl report.

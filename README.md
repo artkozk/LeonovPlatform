@@ -1253,3 +1253,34 @@ cd idea-plugin
 3. Почему сделано именно так:
 - задача сформулирована как product-critical и должна внедряться без «костыльного» точечного кода;
 - документ нужен как единый вход для инженера внедрения, чтобы изменения не повредили текущие learning/billing/auth контуры.
+
+## Актуализация от 2026-05-16: support-чат — реализация и rollout
+
+> Append-only. Эта секция не заменяет ни одну предыдущую — она дополняет
+> запись от 2026-05-16 (blueprint) и фиксирует факт внедрения.
+
+1. По blueprint'у `docs/architecture/SUPPORT_CHAT_IMPLEMENTATION_BLUEPRINT_2026_05_16.md`
+   реализован полный встроенный support-чат ученик ⇄ администратор:
+- БД (миграция `038_support_chat_core.sql`), feature flag
+  `SUPPORT_CHAT_ENABLED`, лимиты вложений (5 файлов × 10 MB, payload до 52 MB).
+- Backend: REST + SSE, in-memory hub, state-machine `open/resolved/closed`,
+  auto-reopen на новое сообщение ученика, audit trail в
+  `support_conversation_events` и `admin_audit_log`.
+- Frontend: студенческая страница `/support`, админская
+  Telegram-style страница `/admin/support`, общий пункт меню
+  «Поддержка» с авто-переадресацией админа на админский UI.
+2. Подробный append-only отчёт:
+- [docs/operations/SUPPORT_CHAT_IMPLEMENTATION_2026_05_16.md](docs/operations/SUPPORT_CHAT_IMPLEMENTATION_2026_05_16.md)
+3. Изменения, которые могут затронуть существующие контуры (и почему
+   они безопасны):
+- `gzipMiddleware` теперь пропускает запросы с `Accept: text/event-stream`
+  — изменение only-add, остальные запросы по-прежнему сжимаются.
+- `maxRequestBodyMiddleware` принимает второй параметр
+  `supportUploadCeil` и применяет повышенный потолок ТОЛЬКО к двум
+  POST маршрутам support-чата. Глобальный 16 MB cap остался
+  неизменным.
+4. Почему ничего не «удалено»:
+- весь старый учебный/биллинговый/админский контур остался без изменений;
+- любая интеграция (cron, plugin, IDE) не затронута: api endpoints
+  существующих ручек не менялись;
+- документация добавлена append-only, и старые записи сохранены.

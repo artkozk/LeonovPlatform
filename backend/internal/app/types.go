@@ -18,11 +18,12 @@ import (
 )
 
 type App struct {
-	Cfg   config.Config
-	DB    *pgxpool.Pool
-	Redis *redis.Client
-	Log   *slog.Logger
-	Judge judge.Engine
+	Cfg        config.Config
+	DB         *pgxpool.Pool
+	Redis      *redis.Client
+	Log        *slog.Logger
+	Judge      judge.Engine
+	SupportHub *SupportHub
 }
 
 type UserContext struct {
@@ -70,7 +71,14 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, err
 
 	j := judge.NewJavaEngine(cfg.JavaTimeoutSeconds, cfg.JudgeMode)
 
-	return &App{Cfg: cfg, DB: db, Redis: rds, Log: logger, Judge: j}, nil
+	return &App{
+		Cfg:        cfg,
+		DB:         db,
+		Redis:      rds,
+		Log:        logger,
+		Judge:      j,
+		SupportHub: NewSupportHub(),
+	}, nil
 }
 
 func (a *App) Close() {

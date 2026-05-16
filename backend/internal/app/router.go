@@ -10,7 +10,7 @@ import (
 
 func (a *App) Router() *gin.Engine {
 	r := gin.New()
-	r.Use(gin.Recovery(), gin.Logger(), requestIDMiddleware(), maxRequestBodyMiddleware(int64(a.Cfg.MaxRequestBodyBytes)), gzipMiddleware(), func(c *gin.Context) {
+	r.Use(gin.Recovery(), gin.Logger(), requestIDMiddleware(), maxRequestBodyMiddleware(int64(a.Cfg.MaxRequestBodyBytes), a.Cfg.SupportChatMaxMessagePayloadBytes), gzipMiddleware(), func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", a.Cfg.FrontendURL)
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
@@ -99,6 +99,17 @@ func (a *App) Router() *gin.Engine {
 			authed.POST("/subscription/checkout", a.CreateCheckout)
 			authed.GET("/subscription/payments/:paymentID", a.GetPaymentStatus)
 			authed.POST("/subscription/cancel", a.CancelSubscription)
+
+			// Support chat — student-side (blueprint §8.1, 2026-05-16).
+			// Все handler'ы внутри сами проверяют feature flag и роль.
+			authed.GET("/support/conversation", a.GetSupportConversation)
+			authed.GET("/support/conversation/messages", a.ListSupportMessages)
+			authed.POST("/support/conversation/messages", a.PostSupportMessage)
+			authed.POST("/support/conversation/read", a.MarkSupportRead)
+			authed.GET("/support/attachments/:attachmentID", a.GetSupportAttachment)
+			// Общий SSE-поток (используется и студентом, и админом).
+			// Гасится по userID подписчика — payload разный.
+			authed.GET("/support/stream", a.SupportStream)
 		}
 
 		admin := api.Group("/admin")
@@ -110,6 +121,15 @@ func (a *App) Router() *gin.Engine {
 			admin.POST("/users/:userID/block", a.AdminBlockUser)
 			admin.GET("/metrics/overview", a.AdminMetrics)
 			admin.GET("/metrics/export", a.AdminMetricsExportCSV)
+
+			// Support chat — admin-side (blueprint §8.2, 2026-05-16).
+			admin.GET("/support/conversations", a.ListAdminSupportConversations)
+			admin.GET("/support/conversations/:conversationID", a.GetAdminSupportConversation)
+			admin.GET("/support/conversations/:conversationID/messages", a.ListAdminSupportMessages)
+			admin.POST("/support/conversations/:conversationID/messages", a.PostAdminSupportMessage)
+			admin.PATCH("/support/conversations/:conversationID", a.PatchAdminSupportConversation)
+			admin.POST("/support/conversations/:conversationID/read", a.MarkAdminSupportRead)
+			admin.GET("/support/conversations/:conversationID/events", a.ListAdminSupportEvents)
 		}
 	}
 

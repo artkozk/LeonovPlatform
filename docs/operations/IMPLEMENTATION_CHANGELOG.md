@@ -3833,3 +3833,69 @@
    заново — формы логина быть не должно даже на медленной сети.
 2. В приватном окне (без токена) поведение должно остаться прежним —
    форма логина показывается сразу.
+
+## 2026-05-16 — Support chat implementation (full code + docs + deploy)
+
+### Что внедрено (append-only к 2026-05-16 blueprint)
+
+1. Полная реализация встроенного support-чата ученик ⇄ администратор
+   в строгом соответствии с
+   `docs/architecture/SUPPORT_CHAT_IMPLEMENTATION_BLUEPRINT_2026_05_16.md`.
+2. Подробный отчёт: `docs/operations/SUPPORT_CHAT_IMPLEMENTATION_2026_05_16.md`.
+
+### Конкретные артефакты
+
+1. Backend:
+   - миграция `backend/migrations/038_support_chat_core.sql`
+     (`support_conversations`, `support_messages`,
+     `support_message_attachments`, `support_conversation_events`);
+   - feature flag `SUPPORT_CHAT_ENABLED` + лимиты вложений
+     (5 файлов × 10 MB, payload до 52 MB);
+   - in-memory SSE hub (`support_realtime.go`) с heartbeat, drop-on-full;
+   - student/admin handlers (REST + multipart + SSE);
+   - state-machine `open/resolved/closed` с обязательным
+     `resolution_note` и audit trail в
+     `support_conversation_events` + `admin_audit_log`;
+   - auto-reopen на student-сообщение из resolved/closed;
+   - per-route bump лимита тела запроса для multipart-апплоадов
+     (без ослабления глобального cap);
+   - SSE-aware gzipMiddleware (`Accept: text/event-stream` не сжимаем);
+   - anti-N+1 SELECT'ы для списка диалогов и истории сообщений;
+   - санитизация filename + safe storage path
+     (хранилище вне web-root).
+2. Frontend:
+   - `/support` для студента, `/admin/support` для админа;
+   - REST + SSE-клиент через `fetch + ReadableStream` (для
+     Bearer-аутентификации без передачи токена в URL);
+   - визуальные галочки `sent/delivered/read`;
+   - Telegram-style админский список диалогов;
+   - пункт «Поддержка» в `AppLayout`, для admin-роли цель меню
+     автоматически переписывается на `/admin/support`.
+3. Unit-тесты бэкенда покрывают самые опасные места: path traversal
+   в filename, safe storage path, preview, state-machine, display name.
+4. Документация:
+   - подробный implementation report (above);
+   - этот append-only entry в changelog.
+
+### Что НЕ сделано (и почему — fixed для будущих итераций)
+
+1. AV-сканирование вложений — отложено, blueprint §9 (production
+   evolution).
+2. S3/MinIO presigned URL — отложено, blueprint §9.
+3. SLA-таймер автозакрытия `resolved → closed` — отложен; нужен
+   worker-job с настраиваемым окном.
+4. `Last-Event-ID`-driven догрузка — пока не реализован, клиент
+   после reconnect делает idempotent re-fetch (достаточно при
+   текущей нагрузке).
+
+### Почему именно так
+
+1. Domain model и state-machine фиксированы в blueprint до старта,
+   реализация лишь воплощает их — это снижает шанс архитектурного
+   drift и упрощает ревью.
+2. SSE — минимальный realtime-стек, не ломающий текущую инфраструктуру
+   (gzip-middleware расширен, а не переписан).
+3. Per-route лимит body вместо глобального bump'а сохраняет
+   security signal остальным контурам.
+4. Append-only документация фиксирует, что и зачем сделано, в каждой
+   точке проекта (config, middleware, handlers, store, frontend).
