@@ -1304,3 +1304,27 @@ cd idea-plugin
 4. Почему ничего не «удалено» из существующих контуров:
 - правки только в `.env`, `.env.example`, `ecosystem.config.cjs` и новой документации;
 - никакой Go-код / SQL / handler / frontend не изменён в этой итерации.
+
+## Актуализация от 2026-05-16: production-домен `platform.ngix.leonovcare.ru`
+
+> Append-only. Эта секция дополняет предыдущие записи 2026-05-16, не
+> заменяя ни одной из них.
+
+1. Платформа теперь доступна на публичном поддомене:
+- `https://platform.ngix.leonovcare.ru/` — SPA + `/api/v1/*`.
+2. Edge — nginx 1.24 на `85.198.82.221`, отдельный vhost. SPA отдаётся
+   напрямую из `frontend/dist`, без `vite preview`. SSE
+   (`/api/v1/support/stream`) проксируется с выключенным буфером.
+3. TLS — Let's Encrypt, выпущен через `certbot --nginx`, auto-renew
+   через системный `certbot.timer`. Срок до 2026-08-14.
+4. Подробный append-only отчёт:
+- [docs/operations/PLATFORM_NGINX_VHOST_2026_05_16.md](docs/operations/PLATFORM_NGINX_VHOST_2026_05_16.md)
+5. Что специально не удалено:
+- pm2-процесс `leonovcare-frontend` (vite preview на 8511) остался
+  как fallback на rollback; будет выключен отдельным шагом по
+  подтверждению.
+6. Что не задето:
+- `leonovcare.ru` и остальные vhost'ы на этом IP (smoke 200 после
+  reload nginx);
+- domain-lock policy `leonovcare.ru` соблюдена — основной домен
+  остаётся за прежним проектом.

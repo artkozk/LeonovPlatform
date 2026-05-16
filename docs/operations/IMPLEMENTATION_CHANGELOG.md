@@ -3949,3 +3949,35 @@
 2. Найденный баг whitelist'а ecosystem.config.cjs мог тихо ломать
    любые новые env-переменные в будущем, не только support-чата —
    зафиксировано явно, чтобы следующий контроль env стал заметным.
+
+## 2026-05-16 — Platform nginx edge + HTTPS for `platform.ngix.leonovcare.ru`
+
+### Что сделано
+1. Создан nginx vhost под выделенный поддомен платформы:
+   - конфиг: `deploy/server/nginx/platform.ngix.leonovcare.ru.conf`
+     (зеркало активного `/etc/nginx/sites-available/...` на проде);
+   - vhost отдаёт SPA-фронт прямо из `frontend/dist`, проксирует
+     `/api/v1/*` и `/healthz`/`/readyz` на Go API (`127.0.0.1:8510`),
+     отдельно настроен SSE для `/api/v1/support/stream`
+     (`proxy_buffering off`, `gzip off`, длинный read-timeout);
+   - явный `client_max_body_size 64m` под лимиты support-чата.
+2. Получен Let's Encrypt сертификат через `certbot --nginx`; auto-renew
+   управляется системным таймером certbot.
+3. HTTP→HTTPS редирект добавлен certbot'ом автоматически.
+
+### Что НЕ сделано (осознанно)
+1. PM2-процесс `leonovcare-frontend` (vite preview на 8511) НЕ удалён —
+   оставлен как fallback на rollback. Решение об его удалении —
+   отдельный шаг, требует подтверждения пользователя.
+2. Остальные follow-ups (Postgres tuning, 2-й API + Redis Pub/Sub
+   для SupportHub) — см. `100RPS_READINESS_2026_05_16.md` §4.1, §4.3.
+
+### Почему сделано именно так
+1. Использован тот же подход, что и для существующих vhost'ов
+   проекта (`certbot --nginx`), чтобы не разводить два механизма
+   управления сертификатами.
+2. nginx разводит сайты по `Host:`-header — добавление нового
+   vhost'а ни в один из существующих не вмешивается, чужие
+   проекты на этом IP не задеты (smoke-проверено).
+3. Подробный отчёт + smoke-логи:
+   `docs/operations/PLATFORM_NGINX_VHOST_2026_05_16.md`.
