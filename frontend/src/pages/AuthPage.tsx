@@ -110,7 +110,23 @@ export function AuthPage() {
 
             <label className="field">
               <span>Пароль</span>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" minLength={8} maxLength={128} required />
+              {/*
+                minLength=8 — это политика СОЗДАНИЯ нового пароля; на
+                логине проверка вредит (блокирует юзеров со старыми/
+                короткими паролями вроде seed admin/123123). Поэтому
+                ограничение применяется только в register-режиме.
+                Backend на login не валидирует длину — bcrypt-сравнение
+                одинаково для любого length. Изменено 2026-05-16.
+              */}
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                minLength={mode === "register" ? 8 : undefined}
+                maxLength={128}
+                required
+              />
             </label>
 
             <button type="submit" className="btn btn-primary btn-lg" disabled={loading}>
