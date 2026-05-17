@@ -1,7 +1,15 @@
-const RUNTIME_FALLBACK_API_URL =
-  typeof window !== "undefined" && window.location.hostname
-    ? `http://${window.location.hostname}:8510/api/v1`
-    : "http://85.198.82.221:8510/api/v1";
+// Same-origin relative base. После 2026-05-17 фронтенд раздаётся
+// nginx'ом с того же домена (https://platform.ngix.leonovcare.ru),
+// который проксирует /api/v1/* на бэкенд upstream. Жёсткий
+// `http://host:8510/api/v1` ломал бы HTTPS-страницу через
+// mixed-content и не работал бы из-под VPN, у которого нет
+// маршрута до bare-IP. Same-origin path этих проблем не имеет:
+// браузер сам подставит scheme/host/port текущей страницы.
+//
+// VITE_API_URL остаётся override'ом для dev-режима (когда фронт
+// слушает vite на 5173, а бэк отдельно на 8510 — там нужна полная
+// абсолютная URL с CORS).
+const RUNTIME_FALLBACK_API_URL = "/api/v1";
 
 export const API_URL = import.meta.env.VITE_API_URL ?? RUNTIME_FALLBACK_API_URL;
 
