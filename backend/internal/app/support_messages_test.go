@@ -112,6 +112,40 @@ func TestSupportDisplayName(t *testing.T) {
 	}
 }
 
+func TestSupportMimeAllowsInline(t *testing.T) {
+	inline := []string{
+		"image/png",
+		"image/jpeg",
+		"image/webp",
+		"IMAGE/GIF",
+		"video/mp4",
+		"audio/mpeg",
+		"audio/ogg; codecs=opus",
+		"application/pdf",
+		"  application/pdf  ",
+	}
+	for _, m := range inline {
+		if !supportMimeAllowsInline(m) {
+			t.Errorf("expected inline-allowed for %q", m)
+		}
+	}
+	notInline := []string{
+		"image/svg+xml",                // SVG может содержать <script>
+		"text/html",
+		"application/javascript",
+		"application/octet-stream",
+		"application/zip",
+		"application/x-msdownload",
+		"",
+		"text/plain",
+	}
+	for _, m := range notInline {
+		if supportMimeAllowsInline(m) {
+			t.Errorf("did NOT expect inline-allowed for %q", m)
+		}
+	}
+}
+
 func TestIsValidSupportStatus(t *testing.T) {
 	for _, s := range []string{"open", "resolved", "closed"} {
 		if !isValidSupportStatus(s) {

@@ -31,6 +31,7 @@ import {
   openSupportStream,
   postSupportMessage,
 } from "../api/support";
+import { openAttachment } from "../api/supportAttachments";
 import { useAuthStore } from "../store/auth";
 
 const MAX_FILES = 5;
@@ -227,9 +228,21 @@ export function SupportPage() {
                 <ul className="support-message-attachments">
                   {m.attachments.map((att) => (
                     <li key={att.id}>
-                      <a href={att.downloadUrl} target="_blank" rel="noopener noreferrer">
+                      {/*
+                        Аутентифицированный клик: см. ../api/supportAttachments.ts.
+                        Простой <a href> не работает — браузер не пошлёт Bearer.
+                      */}
+                      <button
+                        type="button"
+                        className="support-attachment-link"
+                        onClick={() => {
+                          openAttachment(att).catch((err: unknown) => {
+                            setError(err instanceof Error ? err.message : "Не удалось открыть файл.");
+                          });
+                        }}
+                      >
                         {att.originalName}
-                      </a>{" "}
+                      </button>{" "}
                       <span className="support-attachment-size">({formatSize(att.sizeBytes)})</span>
                     </li>
                   ))}

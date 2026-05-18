@@ -4273,3 +4273,25 @@ textarea:focus-visible {
     max-height: 220px;
   }
 }
+
+/* Support attachment as a clickable button (looks like an <a>).
+ * Внедрено 2026-05-17: см. docs/operations/SUPPORT_ATTACHMENT_VIEWER_2026_05_17.md.
+ */
+.support-attachment-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: #2563eb;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.support-attachment-link:hover {
+  color: #1d4ed8;
+}
+.support-attachment-link:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 2px;
+}

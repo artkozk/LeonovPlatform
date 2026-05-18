@@ -414,6 +414,33 @@ func sanitizeContentDispositionFilename(name string) string {
 	return name
 }
 
+// supportMimeAllowsInline возвращает true, если MIME безопасно отдавать
+// браузеру inline (без принудительного скачивания). Whitelist намеренно
+// строгий: только медиа и pdf. HTML/SVG/JS НЕ включены —
+// они могут содержать активный контент и привели бы к XSS при
+// inline-рендере в контексте нашего домена.
+//
+// Любой MIME вне whitelist отдаётся как `Content-Disposition: attachment`
+// (см. handlers_support_student.go::GetSupportAttachment).
+func supportMimeAllowsInline(mimeType string) bool {
+	t := strings.ToLower(strings.TrimSpace(mimeType))
+	// Срежем параметры типа `; charset=...`.
+	if i := strings.IndexByte(t, ';'); i >= 0 {
+		t = strings.TrimSpace(t[:i])
+	}
+	if strings.HasPrefix(t, "image/") {
+		// Запрещаем SVG — он может содержать <script>.
+		return t != "image/svg+xml"
+	}
+	if strings.HasPrefix(t, "video/") || strings.HasPrefix(t, "audio/") {
+		return true
+	}
+	if t == "application/pdf" {
+		return true
+	}
+	return false
+}
+
 // safeStoragePath — резолвит storage_key относительно SupportChatStorageDir
 // и проверяет, что результирующий путь не выскальзывает за пределы корня.
 func safeStoragePath(root, storageKey string) (string, error) {

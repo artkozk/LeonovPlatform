@@ -327,8 +327,17 @@ func (a *App) GetSupportAttachment(c *gin.Context) {
 	}
 	defer f.Close()
 
+	// Inline-friendly disposition только для безопасных media-MIME
+	// (картинки, видео, аудио, pdf). Для всего остального — attachment,
+	// чтобы браузер не пытался отрисовывать произвольный контент
+	// (защита от XSS через user-supplied HTML/SVG). См.
+	// blueprint §9 «Запрет исполняемых расширений для inline-выдачи».
+	disposition := "attachment"
+	if supportMimeAllowsInline(mimeType) {
+		disposition = "inline"
+	}
 	c.Header("Content-Type", mimeType)
-	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, sanitizeContentDispositionFilename(originalName)))
+	c.Header("Content-Disposition", fmt.Sprintf(`%s; filename="%s"`, disposition, sanitizeContentDispositionFilename(originalName)))
 	c.Header("X-Content-Type-Options", "nosniff")
 	c.Header("Content-Length", fmt.Sprintf("%d", sizeBytes))
 	if _, err := io.Copy(c.Writer, f); err != nil {

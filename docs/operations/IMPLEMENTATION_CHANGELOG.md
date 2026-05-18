@@ -4072,3 +4072,50 @@
    только на login-стороне.
 4. Подробный append-only документ:
    `docs/operations/ADMIN_USERNAME_LOGIN_2026_05_16.md`.
+
+## 2026-05-17 — Support chat attachment viewer: auth-aware download + inline media
+
+### Симптом
+1. Клик по вложению в чате → новая вкладка `/api/v1/support/attachments/<id>`
+   → `{"error":"missing authorization header"}` 401.
+
+### Корневая причина
+1. Endpoint требует Bearer; токен лежит в JS-памяти и через `<a href>`
+   браузером не отправляется.
+
+### Что сделано
+1. Backend: `Content-Disposition: inline` для media-safe MIME
+   (image/* кроме svg+xml, video/*, audio/*, application/pdf); для
+   всего остального — `attachment`. Защита от XSS через `nosniff` и
+   исключение SVG сохранена.
+2. Backend test: `TestSupportMimeAllowsInline` фиксирует whitelist
+   (anti-regression на случайное добавление html/js/svg в inline).
+3. Frontend: `frontend/src/api/supportAttachments.ts::openAttachment`
+   делает fetch с Bearer'ом, создаёт `URL.createObjectURL(blob)`,
+   и:
+- media-safe → открывает в новой вкладке (inline-просмотр);
+- остальное → программный download с original filename.
+4. `SupportPage` и `AdminSupportPage` переведены с `<a>` на
+   `<button class="support-attachment-link" onClick>`. Ошибки
+   попадают в общий `setError` баннер.
+
+### Production smoke
+- backend rebuild + `go test ./internal/app/ -run 'Support|Mime'` PASS;
+- frontend rebuild dist (bundle index-BbIM5msu.js);
+- pm2 restart обоих API — online;
+- GET вложения с Bearer'ом → 200, `Content-Disposition: inline`,
+  файл скачивается полностью (1.8 MB mp3 проверен);
+- GET без auth → 401 (как было).
+
+### Что НЕ сделано
+1. Presigned URL (HMAC + exp) — нужен для `Range`-запросов на больших
+   видео и для `<img src>` без клика. Отложено в blueprint §9.
+2. Thumbnail preview маленьких картинок прямо в ленте — отдельная задача.
+
+### Почему сделано именно так
+1. Подход «fetch + blob URL» не требует серверного редизайна, сразу
+   работает с существующим Bearer-флоу.
+2. inline-whitelist строгий: SVG / HTML / scripts → всегда attachment,
+   чтобы не открыть XSS-вектор.
+3. Подробный append-only отчёт:
+   `docs/operations/SUPPORT_ATTACHMENT_VIEWER_2026_05_17.md`.
