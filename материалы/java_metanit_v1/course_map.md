@@ -1,0 +1,651 @@
+# Course Map: Java Metanit v1
+
+Структура пакета для импорта в платформу. Источник импорта: `course_import.json`.
+
+## 1. Глава 1. Java Metanit
+- Урок 1: Что такое Java
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 2: Первая программа на Java
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 3: Первая программа в NetBeans
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 4: Первая программа в Eclipse
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 5: Первая программа в IntelliJ IDEA
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 6: Установка JDK
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 7: JShell
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+
+## 2. Глава 2. Java Metanit
+- Урок 1: Переменные и константы
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 2: Преобразования базовых типов данных
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 3: Арифметические операции
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 4: Массивы
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 5: Условные конструкции
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 6: Циклы
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 7: Методы
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 8: Рекурсивные функции
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 9: Консольный ввод/вывод в Java
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 10: Обработка исключений и конструкция try...catch...finally
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 11: Структура программы на Java
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 12: Типы данных
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 13: Поразрядные операции
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 14: Условные выражения
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 15: Операции присваивания и приоритет операций
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 16: Параметры методов
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 17: Оператор return. Результат метода
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 18: Перегрузка методов
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 19: Литералы
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 20: Конструкция и выражение switch
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+
+## 3. Глава 3. Java Metanit
+- Урок 1: Классы и объекты
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 2: Пакеты
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 3: Модификаторы доступа
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 4: Статические компоненты класса и модификатор static Последнее обновление: 16.09.2025 Кроме обычных методов и полей класс может иметь статические поля, методы, константы и инициализаторы. Кроме обычных полей, методов, свойств классы и структуры могут иметь статические поля, методы, свойства. Статические поля и методы ко всему классу, и для обращения к подобным полям и методам необязательно создавать объект класса. Например, главный класс программы на Java должен иметь метод main , который является статическим: public static void main(String[] args) { } Для объявления статических переменных, констант, методов и инициализаторов перед их объявлением указывается ключевое слово static . Статические поля Если обычные поля класса хранят состояние объекта, то статические поля хранят состояние всего класса. При создании объектов класса для каждого объекта создается своя копия нестатических обычных полей. А статические поля являются общими для всего класса и поэтому создаются в единственном виде. Статическое поле определяется как и обычное, только перед типом поля указывается ключевое слово static. Например, рассмотрим статические поля в рамках класса Person, который представляет человека, и их применение: class Program{ public static void main(String[] args) { Person tom = new Person(41); tom.checkAge(); // Сколько лет осталось до пенсии: 24 Person bob = new Person(68); bob.checkAge(); // Уже на пенсии // получение статического поля System.out.println(Person.retirementAge); // 65 // изменение статического поля Person.retirementAge = 67; System.out.println(Person.retirementAge); // 67 } } class Person{ int age; // обычное поле static int retirementAge = 65; // статическое поле Person(int age){ this.age = age; } void checkAge() { if (age >= retirementAge) System.out.println("Уже на пенсии"); else System.out.printf("Сколько лет осталось до пенсии: %d\n", retirementAge - age); } } В данном случае класс Person имеет два поля: age (хранит возраст человека) и retirementAge (хранит пенсионный возраст). Однако поле retirementAge является статическим. Оно относится не к конкретному человеку, а ко всем людям. (В данном случае для упрощения пренебрежем тем фактом, что в зависимости от пола и профессии пенсионный возраст может отличаться.) Таким образом, поле retirementAge относится не к отдельную объекту и хранит значение НЕ отдельного объекта класса Person, а относится ко всему классу Person и хранит общее значение для всего класса. Причем в самом классе мы можем использовать это поле как и любые другие. Так, в методе checkAge() , который поверяет пенсионный статус человека, для проверки используем это поле: if (age >= retirementAge) Но если мы хотим обратиться к этому полю вне своего класса, то мы можем обращаться к этому полю по имени класса: System.out.println(Person.retirementAge); Person.retirementAge = 67; На уровне памяти для статических полей будет создаваться участок в памяти, который будет общим для всех объектов класса. При этом память для статических переменных выделяется даже в том случае, если не создано ни одного объекта этого класса. Статические инициализаторы Статические инициализаторы предназначены для инициализации статических переменных, либо для выполнения таких действий, которые выполняются при создании самого первого объекта. Например, определим статический инициализатор: public class Program{ public static void main(String[] args) { Person tom = new Person(41); Person bob = new Person(68); tom.checkAge(); // Сколько лет осталось до пенсии: 24 bob.checkAge(); // Уже на пенсии } } class Person{ int age; // обычное поле static int retirementAge; // статическое поле static{ retirementAge = 65; System.out.println("Static initializer"); } Person(int age){ this.age = age; System.out.println("Constructor"); } void checkAge() { if (age >= retirementAge) System.out.println("Уже на пенсии"); else System.out.printf("Сколько лет осталось до пенсии: %d\n", retirementAge - age); } } Статический инициализатор определяется как обычный, только перед ним ставится ключевое слово static . В данном случае в статическом инициализаторе мы устанавливаем начальное значение статического поля retirementAgeи выводим на консоль сообщение. В самой программе создаются два объекта класса Person. Поэтому консольный вывод будет выглядеть следующим образом: Static initializer Constructor Constructor Сколько лет осталось до пенсии: 24 Уже на пенсии Стоит учитывать, что вызов статического инициализатора производится после загрузки класса и фактически до создания самого первого объекта класса. Статические константы Также статическими бывают константы, которые являются общими для всего класса. public class Program{ public static void main(String[] args) { double radius = 60; System.out.printf("Radisu: %f \n", radius); // 60 System.out.printf("Area: %f \n", Math.PI * radius); // 188,4 } } class Math{ public static final double PI = 3.14; } Стоит отметить, что на протяжении всех предыдущих тем уже активно использовались статические константы. В частности, в выражении: System.out.println("hello"); out как раз представляет статическую константу класса System. Поэтому обращение к ней идет без создания объекта класса System. Статические методы Статические методы определяют общее для всех объектов поведение, которое не зависит от конкретного объекта. В любой программе на Java мы уже сталкиваемся как минмум с одним статическим методом - это метод main , который автоматически запускается средой. И согласно правилам языка этот метод должен быть статическим: public class Program{ // метод main должен быть статическим public static void main(String[] args) { // здесь действия программы } } Для обращения к статическим методам также применяется имя класса. Например, определим следующую программу: public class Program{ public static void main(String[] args) { Person tom = new Person(41); Person.checkStatus(tom); // Сколько лет осталось до пенсии: 24 } } class Person{ int age; static int retirementAge = 65; Person(int age){ this.age = age; } // статический метод static void checkStatus(Person person) { if (person.age >= retirementAge) System.out.println("Уже на пенсии"); else System.out.printf("До пенсии осталось %d лет\n", retirementAge - person.age); } } В данном случае в классе Person определен статический метод checkStatus() , который в качестве параметра принимает объект Person и проверяет его пенсионный статус. Следует учитывать, что статические методы могут обращаться только к статическим членам класса. Обращаться к нестатическим методам и полям этого же класса внутри статического метода мы не можем. Поэтому, например, чтобы вызвать в методе main другие методы, которые определены в одном классе с методом main, они также должны иметь модификатор static : public class Program{ public static void main(String[] args) { sum(4, 5); // метод статический, поэтому мы можем его вызывать в методе main // add(4, 5); // метод НЕстатический, поэтому мы НЕ можем его вызвать в методе main } static void sum(int a, int b){ System.out.printf("Сумма чисел %d и %d равна %d\n", a, b, a+b); } void add(int a, int b){ System.out.printf("Сумма чисел %d и %d равна %d\n", a, b, a+b); } } Подчеркну, что в данном случае идет речь об обращении к методам и полям, которые определены в одном и том же классе. Вообще методы определяются как статические, когда методы не затрагивают состояние объекта, то есть его нестатические поля и константы, и для вызова метода нет смысла создавать экземпляр класса. Например: public class Program{ public static void main(String[] args) { System.out.println(Operation.sum(45, 23)); // 68 System.out.println(Operation.subtract(45, 23)); // 22 System.out.println(Operation.multiply(4, 23)); // 92 } } class Operation{ static int sum(int x, int y){ return x + y; } static int subtract(int x, int y){ return x - y; } static int multiply(int x, int y){ return x * y; } } В данном случае для методов sum, subtract, multiply не имеет значения, какой именно экземпляр класса Operation используется. Эти методы работают только с параметрами, не затрагивая состояние класса. Поэтому их можно определить как статические. Назад Содержание Вперед
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 5: Наследование
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 6: Абстрактные классы
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 7: Интерфейсы
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 8: Перечисления enum
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 9: Класс Object и его методы
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 10: Иерархия наследования и преобразование типов
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 11: Обобщения (Generics)
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 12: Внутренние и вложенные классы
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 13: Ссылочные типы и копирование объектов
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 14: Объекты как параметры методов
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 15: Наследование и обобщения
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 16: Интерфейсы в механизме обратного вызова
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 17: Ограничения обобщений
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 18: Классы Records
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 19: Компактные файлы кода и метод main
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 20: Область действия и время жизни переменных
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 21: Конструкторы и инициализаторы
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 22: Инкапсуляция
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 23: Запрет наследования и переопределения методов
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 24: Полиморфизм и динамическая диспетчеризация методов
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 25: Sealed-классы и интерфейсы
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 26: Pattern мatching. Паттерн типов
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 27: Pattern мatching. record-паттерн
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 28: Интерфейсы и полиморфизм
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 29: Множественная реализация и наследование интерфейсов
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 30: Анонимные классы
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 31: Type Erasure (Стирание типов)
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 32: Подстановочные знаки wildcards в обобщениях
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+
+## 4. Глава 4. Java Metanit
+- Урок 1: Оператор throws и throw
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 2: Классы исключений
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 3: Создание своих классов исключений
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 4: Assert
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+
+## 5. Глава 5. Java Metanit
+- Урок 1: Типы коллекций. Интерфейс Collection
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 2: Класс ArrayList и интерфейс List
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 3: Связанный список LinkedList
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 4: Интерфейс Set и хеш-таблицы HashSet
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 5: Деревья TreeSet и интерфейсы SortedSet и NavigableSet
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 6: Интерфейсы Comparable и Comparator. Сортировка
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 7: Очереди и стеки. Классы ArrayDeque и PriorityQueue
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 8: Словари. Интерфейс Map и класс HashMap
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 9: Интерфейсы SortedMap и NavigableMap. Класс TreeMap
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 10: Итераторы. Iterator и Iterable
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+
+## 6. Глава 6. Java Metanit
+- Урок 1: Потоки ввода-вывода. Работа с файлами
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 2: Закрытие потоков и конструкция try-с-ресурсами
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 3: Чтение и запись файлов. FileInputStream и FileOutputStream
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 4: Классы ByteArrayInputStream и ByteArrayOutputStream
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 5: Буферизованные потоки BufferedInputStream и BufferedOutputStream
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 6: Форматируемый ввод и вывод. PrintStream и PrintWriter
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 7: Классы DataOutputStream и DataInputStream
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 8: Чтение и запись текстовых файлов
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 9: Буферизация символьных потоков. BufferedReader и BufferedWriter
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 10: Сериализация
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 11: Класс File. Работа с файлами и каталогами
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 12: Работа с ZIP-архивами
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 13: Класс Console
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+
+## 7. Глава 7. Java Metanit
+- Урок 1: Введение в строки. Класс String
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 2: Основные операции со строками
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 3: StringBuffer и StringBuilder
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 4: Регулярные выражения
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+
+## 8. Глава 8. Java Metanit
+- Урок 1: Многопоточное программирование и класс Thread
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 2: Создание и выполнение потоков
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 3: Синхронизация потоков. Оператор synchronized
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 4: Завершение и прерывание потока
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 5: Взаимодействие потоков. Методы wait и notify
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 6: Семафоры
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 7: Обмен между потоками. Класс Exchanger
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 8: Класс Phaser
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 9: Блокировки. ReentrantLock
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 10: Условия в блокировках
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 11: Управление потоками
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 12: Виртуальные потоки
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 13: Асинхронные задачи FutureTask. Callable и Future
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 14: Executor - исполнитель задач
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 15: Координация выполнения асинхронных задач
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 16: Переменные volatile
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 17: Атомарность и Atomics. Потокобезопасность без блокировок
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 18: CompletableFuture и промисы. Обработка результата асинхронных задач
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 19: CompletableFuture, обработка ошибок и завершения асинхронных задач
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+
+## 9. Глава 9. Java Metanit
+- Урок 1: Введение в лямбда-выражения
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 2: Лямбды как параметры и результаты методов
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 3: Встроенные функциональные интерфейсы
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 4: Функциональные интерфейсы и ссылки на методы
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+
+## 10. Глава 10. Java Metanit
+- Урок 1: Stream API
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 2: Создание потока данных
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 3: Фильтрация, перебор элементов и отображение
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 4: Методы skip и limit
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 5: Метод reduce
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 6: Метод collect
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 7: Группировка
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 8: Сортировка
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 9: Параллельные потоки
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 10: Параллельные операции над массивами
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 11: Операции сведения
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 12: Тип Optional
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 13: Получение подпотока и объединение потоков
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+
+## 11. Глава 11. Java Metanit
+- Урок 1: Модульность
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 2: Зависимые модули
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 3: Взаимодействие между модулями. Экспорт и импорт
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+
+## 12. Глава 12. Java Metanit
+- Урок 1: Математические вычисления и класс Math
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 2: Большие числа BigInteger и BigDecimal
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 3: Работа с датами. LocalDate
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 4: Процессы. Process и ProcessBuilder
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+
+## 13. Глава 13. Java Metanit
+- Урок 1: Файлы JAR, их создание и выполнение
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 2: Создание и подключение библиотеки
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 3: Установка пути к классам
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 4: Модульный jar-файл
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+
+## 14. Глава 14. Java Metanit
+- Урок 1: Введение в рефлексию. Класс Class
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 2: Исследование типов
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 3: Поля класса и класс Field
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 4: Модификаторы доступа и класс Modifier
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 5: Класс Constructor и cоздание объектов
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 6: Методы и класс Method
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 7: Proxy (Прокси)
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+
+## 15. Глава 15. Java Metanit
+- Урок 1: Введение в аннотации
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 2: Создание и применение аннотаций
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 3: Обработка аннотаций во время выполнения
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+
+## 16. Глава 16. Java Metanit
+- Урок 1: Java Native Interface (JNI)
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 2: Foreign Functions и Memory API
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 3: Арена и сегменты памяти MemorySegment
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 4: Компоновка памяти MemoryLayout и работа с MemorySegment
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 5: Сложные данные и MemoryLayout
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 6: Поиск и вызов внешних функций
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)
+- Урок 7: Нативные функции обратного вызова
+  - Шаг 1: Теория (theory)
+  - Шаг 2: Квиз (test, checker=quiz_single)
+  - Шаг 3: Практика (practice, checker=java_stdout)

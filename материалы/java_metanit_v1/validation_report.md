@@ -1,0 +1,17 @@
+# Validation Report — Java Metanit v1
+
+## Summary
+- modules: 16
+- lessons: 154
+- steps: 462
+- practice steps: 154
+- quiz steps: 154
+- critical errors: 0
+
+## Checks
+- each lesson has exactly 3 ordered steps (theory, test, practice)
+- each practice has checker with public+hidden tests and ai_hint_config
+- each quiz has at least 3 structured questions
+- student-facing markdown does not include banned promo/channel mentions
+
+Final status: PASS

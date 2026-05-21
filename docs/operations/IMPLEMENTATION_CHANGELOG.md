@@ -3766,3 +3766,30 @@
 1. Запрос был на подготовку качественного внедрения без «костыльного» подхода и без риска поломать рабочие контуры.
 2. До начала кодовых изменений зафиксирована архитектура, границы, последовательность внедрения и критерии приемки.
 3. Такой формат снижает риск архитектурного drift, скрытых регрессий и спорных решений на этапе реализации.
+
+## 2026-05-22 — v3.8 (Java Metanit v1 full import pipeline)
+
+### Добавлено/исправлено
+
+1. Добавлен новый генеративный пакет материалов `материалы/java_metanit_v1` для полного импорта Java-курса на основе Metanit.
+2. Реализован краулер страниц `https://metanit.com/java/tutorial/<chapter>.<page>.php` с browser-like headers и стабильной сортировкой по chapter/page.
+3. На каждую страницу сформирован учебный набор из трех шагов:
+- подробная теория (очищенный контент + кодовые фрагменты)
+- quiz-step с structured questions (`quiz_single`)
+- practice-step на Java (`java_stdout`) с public/hidden tests, hints и `ai_hint_config`.
+4. Добавлены backend-инструменты генерации/валидации импорта:
+- `backend/tools/generate_java_metanit_v1_migration.js`
+- `backend/tools/validate_java_metanit_v1_import.js`
+5. Сгенерирована reseed-миграция:
+- `backend/migrations/038_reseed_java_zero_core_metanit_v1.sql`
+6. Добавлен отчёт валидации соответствия JSON↔SQL:
+- `docs/operations/JAVA_METANIT_V1_IMPORT_VALIDATION_2026_05_22.md`
+7. Добавлен rollout-отчёт:
+- `docs/operations/JAVA_METANIT_V1_ROLLOUT_2026_05_22.md`
+
+### Почему реализовано именно так
+
+1. Путь `parse -> normalize -> course_import.json -> migration -> validation` нужен для воспроизводимости релиза и прозрачного ревью.
+2. Замена курса `java-zero-core` через reseed (без смены slug) сохраняет совместимость каталога и текущих продуктовых связей.
+3. Формат `theory + quiz + practice` на каждой странице закрывает одновременно образовательную глубину и формальную проверяемость прогресса.
+4. Сохранение `source_policy.hints` и `ai_hint_config` позволяет AI-подсказкам работать в контексте конкретной задачи без раскрытия hidden tests.
