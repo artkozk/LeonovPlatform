@@ -429,7 +429,7 @@ function submissionOutcomeHint(status?: string): { text: string; className: stri
   const value = String(status ?? "").toLowerCase();
   if (value === "wrong_answer" || value === "compile_error" || value === "runtime_error" || value === "time_limit") {
     return {
-      text: "Это ошибка в вашем коде, а не в системе проверки. Исправьте решение по логу и отправьте снова.",
+      text: "Проверка не пройдена. Исправьте решение по логу и отправьте снова.",
       className: "status-box status-box-error",
     };
   }
@@ -454,6 +454,15 @@ function ruError(raw?: string) {
   if (text.includes("submission not found")) return "Результат отправки не найден.";
   if (text.includes("upgrade_required")) return "AI-подсказка доступна на Premium тарифе.";
   return "Произошла ошибка. Повторите действие.";
+}
+
+function ruHintError(raw?: string) {
+  const text = (raw ?? "").trim().toLowerCase();
+  if (!text) return "Не удалось получить AI-подсказку. Повторите действие.";
+  if (text.includes("upgrade_required")) return "AI-подсказка доступна на Premium тарифе.";
+  if (text.includes("unauthorized")) return "Сессия истекла. Выполните вход заново.";
+  if (text.includes("forbidden")) return "Недостаточно прав для этого действия.";
+  return "Не удалось получить AI-подсказку. Повторите действие.";
 }
 
 function buildLessonDraftsStorageKey(userId?: string, lessonId?: string): string {
@@ -1004,7 +1013,7 @@ export function LessonPage() {
       const data = await taskHint(practiceTask.id, practiceCode);
       setHint(String(data?.hint ?? "Подсказка недоступна."));
     } catch (e: any) {
-      setPracticeMessage(ruError(e?.response?.data?.error ?? "Не удалось получить подсказку."));
+      setPracticeMessage(ruHintError(e?.response?.data?.error ?? "Не удалось получить AI-подсказку."));
     } finally {
       setHintLoading(false);
     }

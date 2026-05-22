@@ -147,23 +147,22 @@ func (a *App) TaskHint(c *gin.Context) {
 	prompt := a.buildAIPrompt(taskLanguage, title, statement, topic, difficulty, sourceForPrompt, policyHints, previousHint, diagnostic)
 	hint, model, promptTokens, completionTokens, totalTokens, err := a.requestAIHint(c, prompt)
 	if err != nil {
+		fallbackStatus := "fallback_openai_error"
 		if isOpenAIRegionRestricted(err) {
-			fallback := buildLocalHintFallback(title, topic, difficulty, sourceForPrompt)
-			_ = a.logAIHint(c, uctx.ID, req.TaskID, uctx.PlanCode, "fallback_region_restricted", "local-fallback", len(sourceForPrompt), 0, 0, 0, fallback, err.Error())
-			c.JSON(http.StatusOK, gin.H{
-				"status": "ok",
-				"model":  "local-fallback",
-				"hint":   fallback,
-				"usage": gin.H{
-					"promptTokens":     0,
-					"completionTokens": 0,
-					"totalTokens":      0,
-				},
-			})
-			return
+			fallbackStatus = "fallback_region_restricted"
 		}
-		_ = a.logAIHint(c, uctx.ID, req.TaskID, uctx.PlanCode, "failed", a.Cfg.OpenAIModel, len(sourceForPrompt), 0, 0, 0, "", err.Error())
-		badGatewayError(c, err)
+		fallback := buildLocalHintFallback(title, topic, difficulty, sourceForPrompt)
+		_ = a.logAIHint(c, uctx.ID, req.TaskID, uctx.PlanCode, fallbackStatus, "local-fallback", len(sourceForPrompt), 0, 0, 0, fallback, err.Error())
+		c.JSON(http.StatusOK, gin.H{
+			"status": "ok",
+			"model":  "local-fallback",
+			"hint":   fallback,
+			"usage": gin.H{
+				"promptTokens":     0,
+				"completionTokens": 0,
+				"totalTokens":      0,
+			},
+		})
 		return
 	}
 
@@ -384,7 +383,7 @@ func (a *App) loadLatestSuccessfulHint(c *gin.Context, userID, taskID string) (s
 		FROM ai_hint_requests
 		WHERE user_id = $1
 		  AND task_id = $2
-		  AND status IN ('ok', 'fallback_region_restricted')
+		  AND status IN ('ok', 'fallback_region_restricted', 'fallback_openai_error')
 		ORDER BY created_at DESC
 		LIMIT 1
 	`, userID, taskID).Scan(&hint)
@@ -702,11 +701,20 @@ func buildLocalHintFallback(title, topic string, difficulty int, source string) 
 	}
 
 	var b strings.Builder
-	b.WriteString("Временный fallback-режим подсказки (основной AI-провайдер сейчас недоступен):\n\n")
+	b.WriteString("Следующий шаг:\n")
+	b.WriteString(fmt.Sprintf("- %s\n", tips[0]))
+	b.WriteString("Зачем этот шаг:\n")
+	b.WriteString("- Когда цель задачи сформулирована одной фразой, сразу видно, где код отходит от условия.\n")
+	b.WriteString("Проверь себя:\n")
+	for i := 1; i < len(tips); i++ {
+		b.WriteString(fmt.Sprintf("- %s\n", tips[i]))
+	}
+	b.WriteString("Как получить следующий шаг:\n")
+	b.WriteString("- После правок нажми «AI-подсказка» снова и покажи обновленный код.\n")
+	b.WriteString("\nКороткий чек-лист:\n")
 	for i, tip := range tips {
 		b.WriteString(fmt.Sprintf("%d. %s\n", i+1, tip))
 	}
-	b.WriteString("\nЕсли хочешь, пришли текущую версию решения — разберу по шагам, где именно логическая ошибка.")
 	return strings.TrimSpace(b.String())
 }
 

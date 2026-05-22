@@ -95,8 +95,8 @@ func TestBuildLocalHintFallbackNotEmpty(t *testing.T) {
 	if strings.TrimSpace(out) == "" {
 		t.Fatalf("fallback hint should not be empty")
 	}
-	if !strings.Contains(out, "fallback") {
-		t.Fatalf("fallback hint should explain fallback mode")
+	if !strings.Contains(out, "Следующий шаг:") {
+		t.Fatalf("fallback hint should keep step-by-step format")
 	}
 }
 
