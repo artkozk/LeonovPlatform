@@ -252,6 +252,35 @@ function parsePracticeStatement(raw?: string): { statementMd: string; examples: 
   return { statementMd, examples, inlineHintsMd };
 }
 
+function stripSourceMentions(markdown: string): string {
+  return markdown
+    .replace(/^\s*(?:\*\*)?\s*Источник(?:\*\*)?\s*:\s*https?:\/\/\S+\s*$/gimu, "")
+    .replace(/^\s*(?:\*\*)?\s*Источник(?:\*\*)?\s*:\s*\[[^\]]+\]\([^)]+\)\s*$/gimu, "")
+    .replace(/^\s*###\s*Код из источника\s*$/gimu, "### Пример кода")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function insertTheoryParagraphs(markdown: string): string {
+  const theorySectionRegex = /(###\s+Подробная теория\s*\n)([\s\S]*?)(?=\n###\s+|$)/iu;
+  return markdown.replace(theorySectionRegex, (_match, title, rawBody) => {
+    const body = String(rawBody ?? "").trim();
+    if (!body) return `${title}\n`;
+    if (/\n\s*\n/.test(body)) return `${title}${body}\n`;
+    const formatted = body
+      .replace(/((?:[^.!?]*[.!?]){3})(\s+)/g, "$1\n\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+    return `${title}${formatted}\n`;
+  });
+}
+
+function normalizeLessonContentMarkdown(raw?: string): string {
+  const source = String(raw ?? "").replace(/\r/g, "").trim();
+  if (!source) return "";
+  return insertTheoryParagraphs(stripSourceMentions(source));
+}
+
 function normalizeQuizQuestions(quiz?: LessonBlockQuiz): LessonBlockQuizQuestion[] {
   if (!quiz) return [];
 
@@ -406,8 +435,8 @@ function submissionOutcomeHint(status?: string): { text: string; className: stri
   }
   if (value === "failed") {
     return {
-      text: "Это сбой во время проверки на сервере. Попробуйте отправить решение повторно.",
-      className: "status-box",
+      text: "Проверка не завершилась. Проверьте решение по логу и отправьте снова.",
+      className: "status-box status-box-error",
     };
   }
   return null;
@@ -416,11 +445,15 @@ function submissionOutcomeHint(status?: string): { text: string; className: stri
 function ruError(raw?: string) {
   const text = (raw ?? "").trim().toLowerCase();
   if (!text) return "Произошла ошибка. Повторите действие.";
+  if (text.includes("internal server error")) return "Проверка не завершилась. Проверьте решение и отправьте снова.";
+  if (text.includes("service unavailable")) return "Проверка временно недоступна. Проверьте решение и отправьте снова.";
+  if (text.includes("bad gateway")) return "Проверка не завершилась. Проверьте решение и отправьте снова.";
+  if (text.includes("timeout")) return "Время проверки истекло. Проверьте решение и отправьте снова.";
   if (text.includes("unauthorized")) return "Сессия истекла. Выполните вход заново.";
   if (text.includes("task not found")) return "Задача не найдена.";
   if (text.includes("submission not found")) return "Результат отправки не найден.";
   if (text.includes("upgrade_required")) return "AI-подсказка доступна на Premium тарифе.";
-  return raw ?? "Произошла ошибка. Повторите действие.";
+  return "Произошла ошибка. Повторите действие.";
 }
 
 function buildLessonDraftsStorageKey(userId?: string, lessonId?: string): string {
@@ -619,7 +652,7 @@ export function LessonPage() {
         id: String(block.id),
         type: String(block.type ?? "theory"),
         title: String(block.title ?? "Шаг"),
-        contentMd: String(block.contentMd ?? "").replace(/\r/g, "").trim(),
+        contentMd: normalizeLessonContentMarkdown(block.contentMd),
         position: Number(block.position ?? 0),
         taskId: block.taskId ? String(block.taskId) : undefined,
         taskTitle: block.taskTitle ? String(block.taskTitle) : undefined,

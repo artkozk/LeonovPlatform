@@ -2220,11 +2220,12 @@ textarea:focus-visible {
 }
 
 .custom-select-menu {
-  position: absolute;
-  top: calc(100% - 1px);
-  left: 10px;
-  right: 10px;
-  z-index: 12;
+  position: relative;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin-top: 6px;
+  z-index: 2;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface);
@@ -2503,6 +2504,22 @@ textarea:focus-visible {
 .markdown-content li {
   color: var(--text-secondary);
   line-height: 1.65;
+}
+
+.markdown-content p {
+  margin: 0.78em 0;
+}
+
+.markdown-content li {
+  margin: 0.25em 0;
+}
+
+.markdown-content > :first-child {
+  margin-top: 0;
+}
+
+.markdown-content > :last-child {
+  margin-bottom: 0;
 }
 
 .markdown-content code,

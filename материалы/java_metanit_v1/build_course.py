@@ -177,8 +177,22 @@ def extract_code_blocks(container: BeautifulSoup) -> list[tuple[str, str]]:
     return blocks
 
 
+def format_theory_paragraphs(text_lines: list[str]) -> str:
+    merged = " ".join(line for line in text_lines if line).strip()
+    if not merged:
+        return ""
+    sentences = [chunk.strip() for chunk in re.split(r"(?<=[.!?])\s+", merged) if chunk.strip()]
+    if len(sentences) <= 3:
+        return merged
+    paragraphs: list[str] = []
+    for index in range(0, len(sentences), 3):
+        paragraphs.append(" ".join(sentences[index:index + 3]))
+    return "\n\n".join(paragraphs)
+
+
 def build_theory_markdown(url: str, title: str, text_lines: list[str], code_blocks: list[tuple[str, str]]) -> str:
-    body = [f"**Источник:** {url}", "", "### Подробная теория"]
+    _ = url
+    body = ["### Подробная теория"]
     content_lines = []
     for line in text_lines:
         if line == title:
@@ -187,14 +201,15 @@ def build_theory_markdown(url: str, title: str, text_lines: list[str], code_bloc
             continue
         content_lines.append(line)
 
-    if content_lines:
-        body.append(" ".join(content_lines))
+    formatted_theory = format_theory_paragraphs(content_lines)
+    if formatted_theory:
+        body.append(formatted_theory)
     else:
         body.append("Автоматическое извлечение теории дало пустой результат, требуется ручная сверка со страницей источника.")
 
     if code_blocks:
         body.append("")
-        body.append("### Код из источника")
+        body.append("### Пример кода")
         for language, code in code_blocks[:4]:
             body.append("")
             body.append(f"```{language}")

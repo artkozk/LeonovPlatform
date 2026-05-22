@@ -82,6 +82,10 @@ function readTaskDraft(storageKey: string): string | null {
 function ruError(raw?: string): string {
   const text = (raw ?? "").trim().toLowerCase();
   if (!text) return "Произошла ошибка. Повторите действие.";
+  if (text.includes("internal server error")) return "Проверка не завершилась. Проверьте решение и отправьте снова.";
+  if (text.includes("service unavailable")) return "Проверка временно недоступна. Проверьте решение и отправьте снова.";
+  if (text.includes("bad gateway")) return "Проверка не завершилась. Проверьте решение и отправьте снова.";
+  if (text.includes("timeout")) return "Время проверки истекло. Проверьте решение и отправьте снова.";
   if (text.includes("submission not found")) return "Отправка не найдена. Повторите отправку решения.";
   if (text.includes("task not found")) return "Задача не найдена.";
   if (text.includes("lesson not found")) return "Урок не найден.";
@@ -91,7 +95,7 @@ function ruError(raw?: string): string {
   if (text.includes("unauthorized")) return "Сессия истекла. Выполните вход заново.";
   if (text.includes("forbidden")) return "Недостаточно прав для этого действия.";
   if (text.includes("upgrade_required")) return "AI-подсказка доступна только на тарифе Premium.";
-  return raw ?? "Произошла ошибка. Повторите действие.";
+  return "Произошла ошибка. Повторите действие.";
 }
 
 function normalizeSubmissionStatus(status?: string): string {
@@ -137,8 +141,8 @@ function submissionOutcomeHint(status?: string): { text: string; className: stri
   }
   if (value === "failed") {
     return {
-      text: "Это сбой во время проверки на сервере. Попробуйте отправить решение повторно.",
-      className: "status-box",
+      text: "Проверка не завершилась. Проверьте решение по логу и отправьте снова.",
+      className: "status-box status-box-error",
     };
   }
   return null;
