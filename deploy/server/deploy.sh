@@ -127,7 +127,9 @@ echo "Applying migrations via migrator..."
 cd "$APP_ROOT/frontend"
 npm ci
 npm run test
-export VITE_API_URL="${VITE_API_URL:-http://85.198.82.221:8510/api/v1}"
+# В production по умолчанию используем same-origin API через nginx `/api/v1`,
+# чтобы не ломаться на mixed-content/CORS при HTTPS-домене.
+export VITE_API_URL="${VITE_API_URL:-/api/v1}"
 export VITE_GOOGLE_CLIENT_ID="${VITE_GOOGLE_CLIENT_ID:-${GOOGLE_CLIENT_ID:-}}"
 npm run build
 

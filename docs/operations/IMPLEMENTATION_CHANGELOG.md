@@ -3793,3 +3793,30 @@
 2. Замена курса `java-zero-core` через reseed (без смены slug) сохраняет совместимость каталога и текущих продуктовых связей.
 3. Формат `theory + quiz + practice` на каждой странице закрывает одновременно образовательную глубину и формальную проверяемость прогресса.
 4. Сохранение `source_policy.hints` и `ai_hint_config` позволяет AI-подсказкам работать в контексте конкретной задачи без раскрытия hidden tests.
+
+## 2026-05-22 — Auth API origin fix (production login/network error remediation)
+
+### Добавлено/исправлено
+
+1. Исправлен runtime-резолв API URL во frontend:
+- `frontend/src/api/types.ts`
+- для production/non-localhost используется same-origin `window.location.origin + /api/v1`;
+- для localhost сохранён direct fallback на `:<8510>`.
+2. Обновлён deploy default для frontend build:
+- `deploy/server/deploy.sh`
+- default `VITE_API_URL` изменён с `http://85.198.82.221:8510/api/v1` на `/api/v1`.
+3. Добавлена отдельная операционная документация по инциденту и фиксу:
+- `docs/operations/AUTH_API_ORIGIN_FIX_2026_05_22.md`
+4. Обновлён runbook для предотвращения регрессии:
+- `docs/operations/DEPLOYMENT_RUNBOOK.md` (секция 32, auth stability).
+5. Фикс применён на production:
+- обновлён `backend/.env` (`FRONTEND_URL=https://platform.ngix.leonovcare.ru`);
+- frontend пересобран на сервере;
+- API/worker перезапущены через PM2 ecosystem;
+- post-check: `/healthz` и `/readyz` = `200`, auth endpoint отвечает `401` на невалидные данные (сеть до auth рабочая), CORS origin приведён к каноническому домену.
+
+### Почему реализовано именно так
+
+1. Корневой риск был в абсолютном HTTP API URL внутри HTTPS-сессии платформы, что даёт browser-level network/mixed-content/CORS ошибки и ломает auth UX.
+2. Same-origin `/api/v1` через nginx устраняет класс ошибок на уровне архитектуры доставки фронта, а не симптомно в UI.
+3. Перевод default в deploy-script предотвращает повтор бага в следующих релизах без ручных действий оператора.
