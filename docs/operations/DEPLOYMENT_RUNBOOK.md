@@ -1404,3 +1404,42 @@ curl -k https://leonovcare.ru | head
 3. Проверить в браузере, что auth-запросы идут на same-origin `/api/v1/auth/*`.
 4. Подтвердить отсутствие UI-ошибки:
 - `Не удаётся подключиться к серверу авторизации. Проверьте интернет/VPN и адрес платформы.`
+
+## 25. Дополнение от 2026-05-22 (AI hint: Proxy Authentication Required + dual API drift)
+
+Контекст инцидента:
+
+1. Пользователь нажимал `AI-подсказка`, получал сообщение об ошибке.
+2. В логах API фиксировался ответ `502` и текст `Proxy Authentication Required`.
+3. Прямой маршрут к OpenAI без прокси для production-узла давал `403 unsupported_country_region_territory`.
+
+Подтвержденная первопричина:
+
+1. Невалидные/устаревшие учетные данные в текущем OpenAI proxy endpoint приводили к `407 Proxy Authentication Required`.
+2. Дополнительно был выявлен operational gap: nginx upstream использует два API порта (`8510` и `8512`), но в PM2 ecosystem ранее был описан только `leonovcare-api` (8510).
+3. Из-за этого второй процесс (`leonovcare-api-2`) мог существовать вне управляемого контура deploy-скрипта и сохранять рассинхроненные runtime env.
+
+Что изменено:
+
+1. Production env переведен на рабочий proxy endpoint (подтвержден `200` на `https://api.openai.com/v1/models` через этот прокси).
+2. `deploy/server/ecosystem.config.cjs` расширен: добавлен второй управляемый процесс `leonovcare-api-2` с портом `HTTP_PORT_SECONDARY` (по умолчанию `8512`).
+3. `deploy/server/deploy.sh` обновлен: перед стартом удаляются оба API-процесса (`leonovcare-api` и `leonovcare-api-2`), чтобы исключить дрейф окружения.
+
+Почему сделано именно так:
+
+1. Если оставить второй API вне декларативного контура PM2, платформа может обслуживать часть трафика старым конфигом даже после деплоя.
+2. Синхронное управление двумя API-процессами устраняет split-config поведение для `/api/v1/*`, включая `ai/task-hint`.
+3. Эта модель соответствует nginx upstream `127.0.0.1:8510` + `127.0.0.1:8512`, уже принятому в production.
+
+Операционная проверка после изменений:
+
+1. Проверить env в обоих API:
+- `pm2 env <id_primary> | grep -E "OPENAI_HTTP_PROXY|OPENAI_PROXY_"`
+- `pm2 env <id_secondary> | grep -E "OPENAI_HTTP_PROXY|OPENAI_PROXY_"`
+2. Проверить endpoint подсказки на обоих портах (`8510` и `8512`) с валидным access token.
+3. Убедиться, что HTTP-код `200` и возвращается `hint`.
+
+Примечание по эксплуатации:
+
+1. При замене proxy endpoint обновлять значения одновременно в `backend/.env` и runtime PM2 (`--update-env`) до деплоя.
+2. При диагностике `AI-подсказка` всегда проверять оба API-порта, если включен upstream из двух серверов.

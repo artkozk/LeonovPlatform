@@ -134,7 +134,7 @@ export VITE_GOOGLE_CLIENT_ID="${VITE_GOOGLE_CLIENT_ID:-${GOOGLE_CLIENT_ID:-}}"
 npm run build
 
 cd "$APP_ROOT"
-pm2 delete leonovcare-api leonovcare-worker leonovcare-frontend >/dev/null 2>&1 || true
+pm2 delete leonovcare-api leonovcare-api-2 leonovcare-worker leonovcare-frontend >/dev/null 2>&1 || true
 pm2 start deploy/server/ecosystem.config.cjs
 pm2 save
 

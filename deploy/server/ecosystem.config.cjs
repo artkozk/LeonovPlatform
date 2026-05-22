@@ -123,6 +123,22 @@ module.exports = {
       watch: false,
     },
     {
+      name: "leonovcare-api-2",
+      script: "./backend/bin/leonovcare-api",
+      cwd: "/opt/leonovcare-platform/current",
+      env: {
+        ...sharedEnv,
+        HTTP_PORT: pickEnv("HTTP_PORT_SECONDARY", "8512"),
+      },
+      instances: 1,
+      exec_mode: "fork",
+      autorestart: true,
+      max_restarts: 20,
+      max_memory_restart: "700M",
+      kill_timeout: 10000,
+      watch: false,
+    },
+    {
       name: "leonovcare-worker",
       script: "./backend/bin/leonovcare-worker",
       cwd: "/opt/leonovcare-platform/current",
