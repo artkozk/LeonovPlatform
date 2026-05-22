@@ -677,7 +677,7 @@ export function LessonPage() {
   useEffect(() => {
     if (!openQuizSelect) return;
 
-    function onOutsideClick(event: MouseEvent) {
+    function onOutsidePointerDown(event: PointerEvent) {
       const target = event.target as HTMLElement | null;
       if (!target) return;
       if (target.closest("[data-quiz-select-root='true']")) return;
@@ -690,13 +690,32 @@ export function LessonPage() {
       }
     }
 
-    document.addEventListener("mousedown", onOutsideClick);
+    function onScrollCapture() {
+      setOpenQuizSelect(null);
+    }
+
+    document.addEventListener("pointerdown", onOutsidePointerDown);
     document.addEventListener("keydown", onEscape);
+    window.addEventListener("scroll", onScrollCapture, true);
     return () => {
-      document.removeEventListener("mousedown", onOutsideClick);
+      document.removeEventListener("pointerdown", onOutsidePointerDown);
       document.removeEventListener("keydown", onEscape);
+      window.removeEventListener("scroll", onScrollCapture, true);
     };
   }, [openQuizSelect]);
+
+  const applyQuizAnswer = useCallback((blockID: string, questionID: string, optionID: string) => {
+    setQuizAnswers((prev) => ({
+      ...prev,
+      [blockID]: {
+        ...(prev[blockID] ?? {}),
+        [questionID]: optionID,
+      },
+    }));
+    setQuizCheckState((prev) => ({ ...prev, [blockID]: "idle" }));
+    setQuizFailedQuestions((prev) => ({ ...prev, [blockID]: [] }));
+    setOpenQuizSelect(null);
+  }, []);
 
   useEffect(() => {
     if (!activeBlock) return;
@@ -1193,7 +1212,7 @@ export function LessonPage() {
                         return (
                           <div
                             key={question.id}
-                            className={`lesson-quiz-select-wrap ${isFailed ? "has-error" : ""}`}
+                            className={`lesson-quiz-select-wrap ${isFailed ? "has-error" : ""} ${isOpen ? "is-open" : ""}`.trim()}
                             data-quiz-select-root="true"
                           >
                             <span className="lesson-quiz-question-title">
@@ -1214,18 +1233,10 @@ export function LessonPage() {
                                 <button
                                   type="button"
                                   className={`custom-select-option ${selectedOptionId === "" ? "selected" : ""}`}
-                                  onClick={() => {
-                                    setQuizAnswers((prev) => ({
-                                      ...prev,
-                                      [activeBlock.id]: {
-                                        ...(prev[activeBlock.id] ?? {}),
-                                        [question.id]: "",
-                                      },
-                                    }));
-                                    setQuizCheckState((prev) => ({ ...prev, [activeBlock.id]: "idle" }));
-                                    setQuizFailedQuestions((prev) => ({ ...prev, [activeBlock.id]: [] }));
-                                    setOpenQuizSelect(null);
+                                  onMouseDown={(event) => {
+                                    event.preventDefault();
                                   }}
+                                  onClick={() => applyQuizAnswer(activeBlock.id, question.id, "")}
                                 >
                                   Выберите вариант
                                 </button>
@@ -1235,18 +1246,10 @@ export function LessonPage() {
                                     key={option.id}
                                     type="button"
                                     className={`custom-select-option ${selectedOptionId === option.id ? "selected" : ""}`}
-                                    onClick={() => {
-                                      setQuizAnswers((prev) => ({
-                                        ...prev,
-                                        [activeBlock.id]: {
-                                          ...(prev[activeBlock.id] ?? {}),
-                                          [question.id]: option.id,
-                                        },
-                                      }));
-                                      setQuizCheckState((prev) => ({ ...prev, [activeBlock.id]: "idle" }));
-                                      setQuizFailedQuestions((prev) => ({ ...prev, [activeBlock.id]: [] }));
-                                      setOpenQuizSelect(null);
+                                    onMouseDown={(event) => {
+                                      event.preventDefault();
                                     }}
+                                    onClick={() => applyQuizAnswer(activeBlock.id, question.id, option.id)}
                                   >
                                     {option.id}. {option.text}
                                   </button>

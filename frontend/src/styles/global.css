@@ -2173,6 +2173,10 @@ textarea:focus-visible {
   z-index: 6;
 }
 
+.lesson-quiz-select-wrap.is-open {
+  z-index: 6;
+}
+
 .custom-select-trigger {
   width: 100%;
   min-height: 42px;
@@ -2220,12 +2224,11 @@ textarea:focus-visible {
 }
 
 .custom-select-menu {
-  position: relative;
-  top: 0;
-  left: 0;
-  right: 0;
-  margin-top: 6px;
-  z-index: 2;
+  position: absolute;
+  top: calc(100% - 1px);
+  left: 10px;
+  right: 10px;
+  z-index: 12;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface);
