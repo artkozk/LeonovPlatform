@@ -3820,3 +3820,23 @@
 1. Корневой риск был в абсолютном HTTP API URL внутри HTTPS-сессии платформы, что даёт browser-level network/mixed-content/CORS ошибки и ломает auth UX.
 2. Same-origin `/api/v1` через nginx устраняет класс ошибок на уровне архитектуры доставки фронта, а не симптомно в UI.
 3. Перевод default в deploy-script предотвращает повтор бага в следующих релизах без ручных действий оператора.
+
+## 2026-05-25 — Support UI style regression fix (production)
+
+### Добавлено/исправлено
+
+1. Устранена визуальная деградация интерфейса поддержки на production (`/support`, `/admin/support`), при которой экран рендерился как сырой список без ожидаемой layout-структуры.
+2. Восстановлен missing CSS-блок поддержки в `frontend/src/styles/global.css`:
+- `support-*` (chat/messages/composer/error/empty states)
+- `admin-support-*` (list/thread layout, active state, metadata)
+- `support-attachment-link` (interactive link states)
+3. Выполнен production deploy через стандартный pipeline:
+- `SKIP_DB_BACKUP=true bash deploy/server/deploy.sh`
+4. Добавлен отдельный инцидент-отчёт:
+- `docs/operations/SUPPORT_UI_STYLE_REGRESSION_FIX_2026_05_25.md`
+
+### Почему реализовано именно так
+
+1. RCA показал, что функциональный код страниц и API поддержки был на месте, а деградация происходила из-за отсутствующего CSS-слоя, поэтому исправление направлено в источник стилей, а не в бизнес-логику.
+2. Возвращён полный блок селекторов, чтобы исключить «частичный» ремонт только отдельных элементов и закрыть весь пользовательский сценарий support-chat/admin-support.
+3. Фикс прогнан через production сборку и deploy, чтобы подтверждать не только наличие изменений в репозитории, но и их фактическую доставку в боевой бандл.
