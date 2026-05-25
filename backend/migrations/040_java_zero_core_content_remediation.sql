@@ -1,4 +1,4 @@
-﻿-- 040_java_zero_core_content_remediation.sql
+-- 040_java_zero_core_content_remediation.sql
 --
 -- Remediation for support ticketed Java-content issues (2026-05-25):
 -- 1) remove corrupted title tail fragments in java-zero-core lessons
