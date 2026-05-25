@@ -98,10 +98,12 @@ function ruError(raw?: string): string {
   return "Произошла ошибка. Повторите действие.";
 }
 
-function ruHintError(raw?: string): string {
-  const text = (raw ?? "").trim().toLowerCase();
+function ruHintError(rawError?: string, rawStatus?: string): string {
+  const text = `${String(rawStatus ?? "").trim()} ${String(rawError ?? "").trim()}`.toLowerCase();
   if (!text) return "Не удалось получить AI-подсказку. Повторите действие.";
-  if (text.includes("upgrade_required")) return "AI-подсказка доступна только на тарифе Premium.";
+  if (text.includes("upgrade_required") || text.includes("available only for premium plan")) {
+    return "AI-подсказка доступна только на тарифе Premium.";
+  }
   if (text.includes("unauthorized")) return "Сессия истекла. Выполните вход заново.";
   if (text.includes("forbidden")) return "Недостаточно прав для этого действия.";
   if (text.includes("daily submission limit reached")) return "Дневной лимит отправок по вашему тарифу исчерпан.";
@@ -309,7 +311,9 @@ export function TaskPage() {
       const data = await taskHint(taskId, code);
       setHint(String(data?.hint ?? "Подсказка недоступна."));
     } catch (error: any) {
-      setToast(ruHintError(error?.response?.data?.error ?? "Не удалось получить AI-подсказку"));
+      const statusText = String(error?.response?.data?.status ?? "");
+      const errorText = String(error?.response?.data?.error ?? "Не удалось получить AI-подсказку");
+      setToast(ruHintError(errorText, statusText));
     } finally {
       setHintLoading(false);
     }

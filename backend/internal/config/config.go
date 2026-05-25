@@ -58,6 +58,12 @@ type Config struct {
 	OpenAIProxyPassword           string
 	GoogleClientID                string
 	ExposeDemoTokens              bool
+	// Support chat feature flags and operational limits.
+	SupportChatEnabled                  bool
+	SupportChatMaxAttachmentsPerMessage int
+	SupportChatMaxAttachmentBytes       int64
+	SupportChatMaxMessagePayloadBytes   int64
+	SupportChatStorageDir               string
 }
 
 func Load() (Config, error) {
@@ -112,6 +118,11 @@ func Load() (Config, error) {
 		OpenAIProxyPassword:           os.Getenv("OPENAI_PROXY_PASSWORD"),
 		GoogleClientID:                os.Getenv("GOOGLE_CLIENT_ID"),
 		ExposeDemoTokens:              getBoolOr("EXPOSE_DEMO_TOKENS", false),
+		SupportChatEnabled:                  getBoolOr("SUPPORT_CHAT_ENABLED", true),
+		SupportChatMaxAttachmentsPerMessage: getIntOr("SUPPORT_CHAT_MAX_ATTACHMENTS_PER_MESSAGE", 5),
+		SupportChatMaxAttachmentBytes:       getInt64Or("SUPPORT_CHAT_MAX_ATTACHMENT_BYTES", 10*1024*1024),
+		SupportChatMaxMessagePayloadBytes:   getInt64Or("SUPPORT_CHAT_MAX_MESSAGE_PAYLOAD_BYTES", 52*1024*1024),
+		SupportChatStorageDir:               getOr("SUPPORT_CHAT_STORAGE_DIR", "/var/lib/leonovcare/support"),
 	}
 	cfg = applySecurityDefaults(cfg)
 
@@ -139,6 +150,18 @@ func getIntOr(k string, v int) int {
 		return v
 	}
 	n, err := strconv.Atoi(raw)
+	if err != nil {
+		return v
+	}
+	return n
+}
+
+func getInt64Or(k string, v int64) int64 {
+	raw := os.Getenv(k)
+	if raw == "" {
+		return v
+	}
+	n, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil {
 		return v
 	}
@@ -199,6 +222,18 @@ func applySecurityDefaults(cfg Config) Config {
 	}
 	if cfg.CardlinkBillTTLSeconds <= 0 {
 		cfg.CardlinkBillTTLSeconds = 1800
+	}
+	if cfg.SupportChatMaxAttachmentsPerMessage <= 0 {
+		cfg.SupportChatMaxAttachmentsPerMessage = 5
+	}
+	if cfg.SupportChatMaxAttachmentBytes <= 0 {
+		cfg.SupportChatMaxAttachmentBytes = 10 * 1024 * 1024
+	}
+	if cfg.SupportChatMaxMessagePayloadBytes <= 0 {
+		cfg.SupportChatMaxMessagePayloadBytes = 52 * 1024 * 1024
+	}
+	if cfg.SupportChatStorageDir == "" {
+		cfg.SupportChatStorageDir = "/var/lib/leonovcare/support"
 	}
 	return cfg
 }

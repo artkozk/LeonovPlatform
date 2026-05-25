@@ -19,6 +19,7 @@ const menu: MenuItem[] = [
   { to: "/tasks", label: "Задачи", isActive: (pathname) => pathname.startsWith("/tasks") },
   { to: "/checks", label: "Проверки", isActive: (pathname) => pathname.startsWith("/checks") },
   { to: "/leaderboard", label: "Рейтинг", isActive: (pathname) => pathname.startsWith("/leaderboard") },
+  { to: "/support", label: "Поддержка", isActive: (pathname) => pathname.startsWith("/support") || pathname === "/admin/support" },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -86,11 +87,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
           <nav className={`app-nav ${mobileNavOpen ? "is-open" : ""}`} aria-label="Основная навигация">
             {menu.map((item) => {
+              const isSupport = item.to === "/support";
+              const target = isSupport && user?.role === "admin" ? "/admin/support" : item.to;
               const active = item.isActive(location.pathname);
               return (
                 <NavLink
                   key={item.to}
-                  to={item.to}
+                  to={target}
                   className={`app-nav-link ${active ? "active" : ""}`}
                   aria-current={active ? "page" : undefined}
                   onClick={() => setMobileNavOpen(false)}

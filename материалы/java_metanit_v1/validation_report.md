@@ -13,5 +13,8 @@
 - each practice has checker with public+hidden tests and ai_hint_config
 - each quiz has at least 3 structured questions
 - student-facing markdown does not include banned promo/channel mentions
+- lesson titles do not contain navigation/update artifacts and are within size limits
+- theory steps do not include source URL lines
+- practice steps do not include broken long-title fragments
 
 Final status: PASS

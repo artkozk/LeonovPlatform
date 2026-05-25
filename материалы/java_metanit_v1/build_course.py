@@ -39,6 +39,8 @@ BANNED_PROMO_PATTERNS = [
 ]
 
 SKIP_TEXT_LINES = {"Назад", "Вперед", "Содержание", "METANIT.COM", "Сайт о программировании"}
+SOURCE_LINE_RE = re.compile(r"^\s*(?:\*\*)?\s*Источник\s*:?\s*(?:\*\*)?\s*https?://\S+\s*$", re.IGNORECASE | re.MULTILINE)
+BROKEN_TITLE_MARKERS = ("Последнее обновление:", "Назад", "Содержание", "Вперед")
 
 
 def slug(value: str) -> str:
@@ -91,6 +93,18 @@ def slug(value: str) -> str:
 def clean_line(line: str) -> str:
     text = line.replace("\u00a0", " ").strip()
     return re.sub(r"\s+", " ", text)
+
+
+def sanitize_lesson_title(raw: str) -> str:
+    title = clean_line(raw)
+    title = re.split(r"\s+Последнее\s+обновление\s*:\s*\d{2}\.\d{2}\.\d{4}\s*", title, maxsplit=1)[0].strip()
+    title = re.split(r"\s+Назад\b", title, maxsplit=1)[0].strip()
+    title = re.split(r"\s+Содержание\b", title, maxsplit=1)[0].strip()
+    title = re.split(r"\s+Вперед\b", title, maxsplit=1)[0].strip()
+    if len(title) > 120:
+        shortened = title[:120].rsplit(" ", 1)[0].strip()
+        title = shortened if shortened else title[:120].strip()
+    return title
 
 
 def fetch(session: requests.Session, url: str) -> str:
@@ -241,9 +255,9 @@ def parse_page(session: requests.Session, url: str) -> dict:
 
     header = container.select_one("h1, h2") if container else None
     if header:
-        title = clean_line(header.get_text(" ", strip=True))
+        title = sanitize_lesson_title(header.get_text(" ", strip=True))
     elif soup.title:
-        title = clean_line(soup.title.get_text(" ", strip=True).split("|")[-1])
+        title = sanitize_lesson_title(soup.title.get_text(" ", strip=True).split("|")[-1])
     else:
         title = f"Тема {chapter}.{page}"
 
@@ -752,12 +766,17 @@ def validate_course(course: dict) -> list[str]:
         seen_lesson_orders = set()
         for lesson in module.get("lessons", []):
             lid = lesson.get("id")
+            lesson_title = str(lesson.get("title", ""))
             if lid in lesson_ids:
                 errors.append(f"Duplicate lesson id: {lid}")
             lesson_ids.add(lid)
             if lesson.get("order") in seen_lesson_orders:
                 errors.append(f"Duplicate lesson order in module {module.get('id')}: {lesson.get('order')}")
             seen_lesson_orders.add(lesson.get("order"))
+            if len(lesson_title) > 140:
+                errors.append(f"Lesson title too long: {lid}")
+            if any(marker.lower() in lesson_title.lower() for marker in BROKEN_TITLE_MARKERS):
+                errors.append(f"Lesson title contains navigation/update marker: {lid}")
 
             steps = lesson.get("steps", [])
             if len(steps) != 3:
@@ -776,6 +795,9 @@ def validate_course(course: dict) -> list[str]:
                 for pat in BANNED_PROMO_PATTERNS:
                     if pat.search(body):
                         errors.append(f"Promo mention in {sid}")
+                if step.get("type") == "theory":
+                    if SOURCE_LINE_RE.search(body):
+                        errors.append(f"Theory contains source line: {sid}")
 
                 if step.get("type") == "test":
                     if len(step.get("questions", [])) < 3:
@@ -788,6 +810,8 @@ def validate_course(course: dict) -> list[str]:
                         errors.append(f"Practice without full tests: {sid}")
                     if not step.get("ai_hint_config"):
                         errors.append(f"Practice without ai_hint_config: {sid}")
+                    if "Последнее обновление:" in body or "Назад Содержание Вперед" in body:
+                        errors.append(f"Practice contains broken title fragment: {sid}")
     return errors
 
 
@@ -815,6 +839,9 @@ def write_validation_report(course: dict, errors: list[str]) -> None:
         "- each practice has checker with public+hidden tests and ai_hint_config",
         "- each quiz has at least 3 structured questions",
         "- student-facing markdown does not include banned promo/channel mentions",
+        "- lesson titles do not contain navigation/update artifacts and are within size limits",
+        "- theory steps do not include source URL lines",
+        "- practice steps do not include broken long-title fragments",
         "",
         f"Final status: {status}",
     ]

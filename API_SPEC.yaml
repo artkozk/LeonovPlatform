@@ -742,3 +742,155 @@ components:
           type: integer
         editorWordWrap:
           type: boolean
+    SupportAttachment:
+      type: object
+      required: [id, messageId, originalName, mimeType, sizeBytes, downloadUrl, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        messageId:
+          type: string
+          format: uuid
+        originalName:
+          type: string
+        mimeType:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+        downloadUrl:
+          type: string
+          description: Relative path `/api/v1/support/attachments/:id`.
+        createdAt:
+          type: string
+          format: date-time
+    SupportMessage:
+      type: object
+      required: [id, conversationId, senderUserId, senderRole, status, hasAttachments, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        conversationId:
+          type: string
+          format: uuid
+        senderUserId:
+          type: string
+          format: uuid
+        senderRole:
+          type: string
+          enum: [student, admin, system]
+        bodyText:
+          type: string
+        status:
+          type: string
+          enum: [sent, delivered, read]
+        deliveredAt:
+          type: string
+          format: date-time
+          nullable: true
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+        hasAttachments:
+          type: boolean
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupportAttachment'
+        createdAt:
+          type: string
+          format: date-time
+    SupportConversation:
+      type: object
+      required: [id, studentUserId, status, studentUnreadCount, adminUnreadCount, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        studentUserId:
+          type: string
+          format: uuid
+        studentDisplayName:
+          type: string
+        studentEmail:
+          type: string
+        status:
+          type: string
+          enum: [open, resolved, closed]
+        assignedAdminUserId:
+          type: string
+          nullable: true
+        assignedAdminName:
+          type: string
+          nullable: true
+        resolutionNote:
+          type: string
+          nullable: true
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        closedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastMessageAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastMessagePreview:
+          type: string
+        lastMessageSenderRole:
+          type: string
+        studentUnreadCount:
+          type: integer
+        adminUnreadCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    SupportEvent:
+      type: object
+      required: [id, conversationId, eventType, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        conversationId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+          enum: [created, message_sent, assigned, reassigned, unassigned, resolved, reopened, closed]
+        actorUserId:
+          type: string
+          nullable: true
+        actorName:
+          type: string
+          nullable: true
+        payload:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+    SupportPatchRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [assign, unassign, resolve, reopen, close]
+        adminUserId:
+          type: string
+          format: uuid
+          nullable: true
+        resolutionNote:
+          type: string
+          nullable: true

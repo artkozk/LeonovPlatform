@@ -49,6 +49,10 @@ func gzipMiddleware() gin.HandlerFunc {
 			c.Next()
 			return
 		}
+		if strings.Contains(strings.ToLower(c.GetHeader("Accept")), "text/event-stream") {
+			c.Next()
+			return
+		}
 		if !strings.Contains(strings.ToLower(c.GetHeader("Accept-Encoding")), "gzip") {
 			c.Next()
 			return
@@ -69,13 +73,34 @@ func gzipMiddleware() gin.HandlerFunc {
 	}
 }
 
-func maxRequestBodyMiddleware(maxBytes int64) gin.HandlerFunc {
+func maxRequestBodyMiddleware(maxBytes, supportUploadCeil int64) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if maxBytes > 0 && c.Request != nil && c.Request.Body != nil {
-			c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxBytes)
+		limit := maxBytes
+		if supportUploadCeil > 0 && isSupportUploadRoute(c) {
+			limit = supportUploadCeil
+		}
+		if limit > 0 && c.Request != nil && c.Request.Body != nil {
+			c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, limit)
 		}
 		c.Next()
 	}
+}
+
+func isSupportUploadRoute(c *gin.Context) bool {
+	if c.Request == nil || c.Request.Method != http.MethodPost {
+		return false
+	}
+	path := c.FullPath()
+	if path == "" {
+		path = c.Request.URL.Path
+	}
+	if path == "/api/v1/support/conversation/messages" {
+		return true
+	}
+	if strings.HasPrefix(path, "/api/v1/admin/support/conversations/") && strings.HasSuffix(path, "/messages") {
+		return true
+	}
+	return false
 }
 
 func clientKeyForRateLimit(c *gin.Context) string {

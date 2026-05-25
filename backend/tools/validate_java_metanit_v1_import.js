@@ -7,6 +7,8 @@ const REPORT_PATH = path.resolve(
   __dirname,
   "../../docs/operations/JAVA_METANIT_V1_IMPORT_VALIDATION_2026_05_22.md"
 );
+const SOURCE_LINE_RE = /^\s*(?:\*\*)?\s*Источник\s*:?\s*(?:\*\*)?\s*https?:\/\/\S+\s*$/imu;
+const BROKEN_TITLE_MARKER_RE = /(Последнее обновление:|Назад\s+Содержание\s+Вперед)/iu;
 
 function readJSON(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -30,15 +32,23 @@ function main() {
     executableTests: 0,
     checkerCounts: {},
     stepTypeCounts: {},
+    longLessonTitles: 0,
+    brokenLessonTitles: 0,
+    theoryWithSourceLinks: 0,
+    practiceWithBrokenIntro: 0,
   };
 
   for (const moduleItem of input?.course?.modules || []) {
     stats.modules += 1;
     for (const lesson of moduleItem?.lessons || []) {
       stats.lessons += 1;
+      const lessonTitle = String(lesson?.title ?? "");
+      if (lessonTitle.length > 140) stats.longLessonTitles += 1;
+      if (BROKEN_TITLE_MARKER_RE.test(lessonTitle)) stats.brokenLessonTitles += 1;
       for (const step of lesson?.steps || []) {
         stats.steps += 1;
         const stepType = String(step?.type || "").toLowerCase();
+        const bodyMd = String(step?.body_markdown ?? "");
         stats.stepTypeCounts[stepType] = (stats.stepTypeCounts[stepType] || 0) + 1;
 
         const checkerType = String(step?.checker?.type || "").toLowerCase();
@@ -48,6 +58,8 @@ function main() {
 
         if (stepType === "practice") stats.tasks += 1;
         if (stepType === "test" || stepType === "quiz") stats.quizzes += 1;
+        if (stepType === "theory" && SOURCE_LINE_RE.test(bodyMd)) stats.theoryWithSourceLinks += 1;
+        if (stepType === "practice" && BROKEN_TITLE_MARKER_RE.test(bodyMd)) stats.practiceWithBrokenIntro += 1;
 
         if (checkerType === "java_stdout") {
           const publicTests = Array.isArray(step?.checker?.public_tests) ? step.checker.public_tests.length : 0;
@@ -73,6 +85,10 @@ function main() {
     testCountMatches: migrationStats.testExpectedTags === stats.executableTests,
     checkerCountsMatchJavaStdout: migrationStats.checkerJavaStdout === (stats.checkerCounts.java_stdout || 0),
     quizPayloadQuestionsPresent: migrationStats.hasQuizPayloadQuestions,
+    noLongLessonTitles: stats.longLessonTitles === 0,
+    noBrokenLessonTitles: stats.brokenLessonTitles === 0,
+    noTheorySourceLinks: stats.theoryWithSourceLinks === 0,
+    noPracticeBrokenIntro: stats.practiceWithBrokenIntro === 0,
   };
 
   const failed = Object.entries(checks)
@@ -95,6 +111,10 @@ function main() {
     `- executable tests (java_stdout): ${stats.executableTests}`,
     `- stepTypeCounts: ${JSON.stringify(stats.stepTypeCounts)}`,
     `- checkerCounts: ${JSON.stringify(stats.checkerCounts)}`,
+    `- long lesson titles: ${stats.longLessonTitles}`,
+    `- broken lesson titles: ${stats.brokenLessonTitles}`,
+    `- theory steps with source links: ${stats.theoryWithSourceLinks}`,
+    `- practice steps with broken intro: ${stats.practiceWithBrokenIntro}`,
     "",
     "## Migration Structure Stats",
     `- block type tags: ${migrationStats.blockTypeTags}`,

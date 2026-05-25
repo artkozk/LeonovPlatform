@@ -4,6 +4,7 @@ const path = require("path");
 const INPUT_PATH = path.resolve(__dirname, "../../материалы/java_metanit_v1/course_import.json");
 const OUT_PATH = path.resolve(__dirname, "../migrations/038_reseed_java_zero_core_metanit_v1.sql");
 const COURSE_SLUG = "java-zero-core";
+const SOURCE_LINE_REGEX = /^\s*(?:\*\*)?\s*Источник\s*:?\s*(?:\*\*)?\s*https?:\/\/\S+\s*$/gimu;
 
 function readText(filePath) {
   return fs.readFileSync(filePath, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
@@ -18,6 +19,33 @@ function normalizeSpaces(value) {
 
 function sanitizeMultilineText(value) {
   return String(value ?? "").replace(/\r/g, "");
+}
+
+function sanitizeLessonTitle(raw) {
+  let title = normalizeSpaces(raw);
+  title = title.replace(/\s+Последнее\s+обновление\s*:\s*\d{2}\.\d{2}\.\d{4}\s*.*/iu, "").trim();
+  title = title.replace(/\s+Назад\b.*/iu, "").trim();
+  title = title.replace(/\s+Содержание\b.*/iu, "").trim();
+  title = title.replace(/\s+Вперед\b.*/iu, "").trim();
+  if (title.length > 120) {
+    const shortened = title.slice(0, 120);
+    title = shortened.includes(" ") ? shortened.slice(0, shortened.lastIndexOf(" ")).trim() : shortened.trim();
+  }
+  return title;
+}
+
+function sanitizeStepContent(raw) {
+  return sanitizeMultilineText(raw)
+    .replace(SOURCE_LINE_REGEX, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function sanitizePracticeShortLine(contentMd, lessonTitle) {
+  return String(contentMd ?? "").replace(
+    /(\*\*Коротко:\*\*\s*практическая задача по теме «)([^»]+)(»)/u,
+    (_match, prefix, inner, suffix) => `${prefix}${sanitizeLessonTitle(inner) || lessonTitle}${suffix}`
+  );
 }
 
 function ensureArray(value) {
@@ -76,11 +104,8 @@ function normalizeOptionId(raw, index) {
 
 function buildLessonContent(moduleTitle, lesson) {
   const lines = [];
-  lines.push(`Материалы урока "${normalizeSpaces(lesson.title) || "Урок"}".`);
+  lines.push(`Материалы урока "${sanitizeLessonTitle(lesson.title) || "Урок"}".`);
   lines.push(`Модуль: ${normalizeSpaces(moduleTitle)}.`);
-  if (normalizeSpaces(lesson.source_url) !== "") {
-    lines.push(`Source URL: ${normalizeSpaces(lesson.source_url)}.`);
-  }
   const estimatedHours = Number(lesson.estimated_hours || 0);
   if (Number.isFinite(estimatedHours) && estimatedHours > 0) {
     lines.push(`Оценка времени: ${estimatedHours} ч.`);
@@ -223,7 +248,7 @@ function prepareCourse(rawRoot) {
         .sort((a, b) => toInt(a.order, 0) - toInt(b.order, 0))
         .map((lessonItem, lessonIndex) => {
           const lessonPosition = toInt(lessonItem.order, lessonIndex + 1);
-          const lessonTitle = normalizeSpaces(lessonItem.title) || `Урок ${lessonPosition}`;
+          const lessonTitle = sanitizeLessonTitle(lessonItem.title) || `Урок ${lessonPosition}`;
           const lessonContent = buildLessonContent(moduleTitle, lessonItem);
 
           const blocks = ensureArray(lessonItem.steps)
@@ -233,14 +258,18 @@ function prepareCourse(rawRoot) {
               const position = toInt(stepItem.order, stepIndex + 1);
               const blockType = normalizeStepType(stepItem.type);
               const title = normalizeSpaces(stepItem.title) || `Шаг ${position}`;
-              const contentMd = sanitizeMultilineText(stepItem.body_markdown || "").trim();
+              let contentMd = sanitizeStepContent(stepItem.body_markdown || "");
+              if (blockType === "practice") {
+                contentMd = sanitizePracticeShortLine(contentMd, lessonTitle);
+              }
+              const normalizedStep = { ...stepItem, body_markdown: contentMd };
 
               let task = null;
               let quizPayload = null;
               if (blockType === "practice") {
-                task = buildTaskFromPractice(stepItem, moduleTitle, lessonTitle);
+                task = buildTaskFromPractice(normalizedStep, moduleTitle, lessonTitle);
               } else if (blockType === "quiz") {
-                quizPayload = buildQuizPayload(stepItem, modulePosition, lessonPosition, position);
+                quizPayload = buildQuizPayload(normalizedStep, modulePosition, lessonPosition, position);
               }
 
               return {

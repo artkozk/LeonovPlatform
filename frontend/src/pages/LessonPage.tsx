@@ -254,8 +254,8 @@ function parsePracticeStatement(raw?: string): { statementMd: string; examples: 
 
 function stripSourceMentions(markdown: string): string {
   return markdown
-    .replace(/^\s*(?:\*\*)?\s*Источник(?:\*\*)?\s*:\s*https?:\/\/\S+\s*$/gimu, "")
-    .replace(/^\s*(?:\*\*)?\s*Источник(?:\*\*)?\s*:\s*\[[^\]]+\]\([^)]+\)\s*$/gimu, "")
+    .replace(/^\s*(?:\*\*)?\s*Источник\s*:?\s*(?:\*\*)?\s*https?:\/\/\S+\s*$/gimu, "")
+    .replace(/^\s*(?:\*\*)?\s*Источник\s*:?\s*(?:\*\*)?\s*\[[^\]]+\]\([^)]+\)\s*$/gimu, "")
     .replace(/^\s*###\s*Код из источника\s*$/gimu, "### Пример кода")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
@@ -456,10 +456,12 @@ function ruError(raw?: string) {
   return "Произошла ошибка. Повторите действие.";
 }
 
-function ruHintError(raw?: string) {
-  const text = (raw ?? "").trim().toLowerCase();
+function ruHintError(rawError?: string, rawStatus?: string) {
+  const text = `${String(rawStatus ?? "").trim()} ${String(rawError ?? "").trim()}`.toLowerCase();
   if (!text) return "Не удалось получить AI-подсказку. Повторите действие.";
-  if (text.includes("upgrade_required")) return "AI-подсказка доступна на Premium тарифе.";
+  if (text.includes("upgrade_required") || text.includes("available only for premium plan")) {
+    return "AI-подсказка доступна на Premium тарифе.";
+  }
   if (text.includes("unauthorized")) return "Сессия истекла. Выполните вход заново.";
   if (text.includes("forbidden")) return "Недостаточно прав для этого действия.";
   return "Не удалось получить AI-подсказку. Повторите действие.";
@@ -1013,7 +1015,9 @@ export function LessonPage() {
       const data = await taskHint(practiceTask.id, practiceCode);
       setHint(String(data?.hint ?? "Подсказка недоступна."));
     } catch (e: any) {
-      setPracticeMessage(ruHintError(e?.response?.data?.error ?? "Не удалось получить AI-подсказку."));
+      const statusText = String(e?.response?.data?.status ?? "");
+      const errorText = String(e?.response?.data?.error ?? "Не удалось получить AI-подсказку.");
+      setPracticeMessage(ruHintError(errorText, statusText));
     } finally {
       setHintLoading(false);
     }

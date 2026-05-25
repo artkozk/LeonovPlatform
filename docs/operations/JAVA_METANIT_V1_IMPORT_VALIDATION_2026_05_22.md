@@ -13,6 +13,10 @@
 - executable tests (java_stdout): 616
 - stepTypeCounts: {"theory":154,"test":154,"practice":154}
 - checkerCounts: {"quiz_single":154,"java_stdout":154}
+- long lesson titles: 0
+- broken lesson titles: 0
+- theory steps with source links: 0
+- practice steps with broken intro: 0
 
 ## Migration Structure Stats
 - block type tags: 462
@@ -30,3 +34,7 @@
 - testCountMatches: PASS
 - checkerCountsMatchJavaStdout: PASS
 - quizPayloadQuestionsPresent: PASS
+- noLongLessonTitles: PASS
+- noBrokenLessonTitles: PASS
+- noTheorySourceLinks: PASS
+- noPracticeBrokenIntro: PASS
