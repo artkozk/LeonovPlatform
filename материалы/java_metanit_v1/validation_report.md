@@ -11,6 +11,7 @@
 ## Checks
 - each lesson has exactly 3 ordered steps (theory, test, practice)
 - each practice has checker with public+hidden tests and ai_hint_config
+- practice templates are diverse and do not repeat back-to-back inside module flow
 - each quiz has at least 3 structured questions
 - student-facing markdown does not include banned promo/channel mentions
 - lesson titles do not contain navigation/update artifacts and are within size limits

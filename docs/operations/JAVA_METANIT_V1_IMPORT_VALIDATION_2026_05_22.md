@@ -2,7 +2,7 @@
 
 ## Source Inputs
 - materials json: `C:\prog\Comercial\LeonovCarePlatform\материалы\java_metanit_v1\course_import.json`
-- generated migration: `C:\prog\Comercial\LeonovCarePlatform\backend\migrations\038_reseed_java_zero_core_metanit_v1.sql`
+- generated migration: `C:\prog\Comercial\LeonovCarePlatform\backend\migrations\041_reseed_java_zero_core_metanit_v1_practice_refresh.sql`
 
 ## Parsed Materials Stats
 - modules: 16
@@ -17,6 +17,9 @@
 - broken lesson titles: 0
 - theory steps with source links: 0
 - practice steps with broken intro: 0
+- practice template diversity: 24
+- practice adjacent template repeats: 0
+- max practice template reuse: 9
 
 ## Migration Structure Stats
 - block type tags: 462
@@ -38,3 +41,6 @@
 - noBrokenLessonTitles: PASS
 - noTheorySourceLinks: PASS
 - noPracticeBrokenIntro: PASS
+- practiceTemplateDiversityOk: PASS
+- noPracticeAdjacentTemplateRepeats: PASS
+- practiceTemplateMaxReuseOk: PASS

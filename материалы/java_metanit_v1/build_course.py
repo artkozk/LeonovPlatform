@@ -370,6 +370,124 @@ def _op_substring_count(lines: list[str]) -> str:
     return f"{cnt}\n"
 
 
+def _op_abs_sum_two(tokens: list[str]) -> str:
+    a, b = map(int, tokens[:2])
+    return f"{abs(a) + abs(b)}\n"
+
+
+def _op_product_two(tokens: list[str]) -> str:
+    a, b = map(int, tokens[:2])
+    return f"{a * b}\n"
+
+
+def _op_min_three(tokens: list[str]) -> str:
+    a, b, c = map(int, tokens[:3])
+    return f"{min(a, b, c)}\n"
+
+
+def _op_middle_three(tokens: list[str]) -> str:
+    a, b, c = map(int, tokens[:3])
+    return f"{sorted([a, b, c])[1]}\n"
+
+
+def _op_odd_count(tokens: list[str]) -> str:
+    n = int(tokens[0])
+    arr = list(map(int, tokens[1 : 1 + n]))
+    return f"{sum(1 for x in arr if x % 2 != 0)}\n"
+
+
+def _op_positive_count(tokens: list[str]) -> str:
+    n = int(tokens[0])
+    arr = list(map(int, tokens[1 : 1 + n]))
+    return f"{sum(1 for x in arr if x > 0)}\n"
+
+
+def _op_upper_line(lines: list[str]) -> str:
+    return (lines[0] if lines else "").upper() + "\n"
+
+
+def _op_word_count(lines: list[str]) -> str:
+    text = (lines[0] if lines else "").strip()
+    if not text:
+        return "0\n"
+    return f"{len(text.split())}\n"
+
+
+def _op_sum_to_n(tokens: list[str]) -> str:
+    n = int(tokens[0])
+    return f"{(n * (n + 1)) // 2}\n"
+
+
+def _op_fibonacci(tokens: list[str]) -> str:
+    n = int(tokens[0])
+    if n <= 0:
+        return "0\n"
+    if n == 1:
+        return "1\n"
+    a, b = 0, 1
+    for _ in range(2, n + 1):
+        a, b = b, a + b
+    return f"{b}\n"
+
+
+def _op_char_count(lines: list[str]) -> str:
+    text = lines[0] if lines else ""
+    raw_ch = lines[1] if len(lines) > 1 else ""
+    ch = raw_ch[0] if raw_ch else ""
+    return f"{text.count(ch)}\n"
+
+
+def _op_substring_overlap(lines: list[str]) -> str:
+    text = lines[0] if lines else ""
+    pattern = lines[1] if len(lines) > 1 else ""
+    if not pattern:
+        return "0\n"
+    idx = 0
+    cnt = 0
+    while True:
+        pos = text.find(pattern, idx)
+        if pos < 0:
+            break
+        cnt += 1
+        idx = pos + 1
+    return f"{cnt}\n"
+
+
+def _op_digit_sum(tokens: list[str]) -> str:
+    n = abs(int(tokens[0]))
+    total = 0
+    for ch in str(n):
+        total += int(ch)
+    return f"{total}\n"
+
+
+def _op_gcd_two(tokens: list[str]) -> str:
+    a, b = map(abs, map(int, tokens[:2]))
+    while b:
+        a, b = b, a % b
+    return f"{a}\n"
+
+
+def _op_lcm_two(tokens: list[str]) -> str:
+    a_raw, b_raw = map(int, tokens[:2])
+    if a_raw == 0 or b_raw == 0:
+        return "0\n"
+    a, b = abs(a_raw), abs(b_raw)
+    x, y = a, b
+    while y:
+        x, y = y, x % y
+    return f"{(a // x) * b}\n"
+
+
+def _op_unique_once_count(tokens: list[str]) -> str:
+    n = int(tokens[0])
+    arr = list(map(int, tokens[1 : 1 + n]))
+    freq = {}
+    for value in arr:
+        freq[value] = freq.get(value, 0) + 1
+    return f"{sum(1 for value in arr if freq[value] == 1)}\n"
+
+
 def _build_tests(seeds: list[str], evaluator: Callable[[list[str], list[str]], str]) -> tuple[list[dict], list[dict]]:
     tests = []
     for raw in seeds:
@@ -410,6 +528,70 @@ def _eval_fact(tokens: list[str], _: list[str]) -> str:
 
 def _eval_sub(_: list[str], lines: list[str]) -> str:
     return _op_substring_count(lines)
+
+
+def _eval_abs_sum(tokens: list[str], _: list[str]) -> str:
+    return _op_abs_sum_two(tokens)
+
+
+def _eval_product(tokens: list[str], _: list[str]) -> str:
+    return _op_product_two(tokens)
+
+
+def _eval_min(tokens: list[str], _: list[str]) -> str:
+    return _op_min_three(tokens)
+
+
+def _eval_middle(tokens: list[str], _: list[str]) -> str:
+    return _op_middle_three(tokens)
+
+
+def _eval_odd(tokens: list[str], _: list[str]) -> str:
+    return _op_odd_count(tokens)
+
+
+def _eval_positive(tokens: list[str], _: list[str]) -> str:
+    return _op_positive_count(tokens)
+
+
+def _eval_upper(_: list[str], lines: list[str]) -> str:
+    return _op_upper_line(lines)
+
+
+def _eval_words(_: list[str], lines: list[str]) -> str:
+    return _op_word_count(lines)
+
+
+def _eval_sum_to_n(tokens: list[str], _: list[str]) -> str:
+    return _op_sum_to_n(tokens)
+
+
+def _eval_fib(tokens: list[str], _: list[str]) -> str:
+    return _op_fibonacci(tokens)
+
+
+def _eval_char_count(_: list[str], lines: list[str]) -> str:
+    return _op_char_count(lines)
+
+
+def _eval_sub_overlap(_: list[str], lines: list[str]) -> str:
+    return _op_substring_overlap(lines)
+
+
+def _eval_digit_sum(tokens: list[str], _: list[str]) -> str:
+    return _op_digit_sum(tokens)
+
+
+def _eval_gcd(tokens: list[str], _: list[str]) -> str:
+    return _op_gcd_two(tokens)
+
+
+def _eval_lcm(tokens: list[str], _: list[str]) -> str:
+    return _op_lcm_two(tokens)
+
+
+def _eval_unique_once(tokens: list[str], _: list[str]) -> str:
+    return _op_unique_once_count(tokens)
 
 
 PRACTICE_CONFIGS = [
@@ -493,23 +675,195 @@ PRACTICE_CONFIGS = [
         "seeds": ["aaaaa\naa\n", "metanit java\nja\n", "abc\nd\n", "abababa\naba\n"],
         "eval": _eval_sub,
     },
+    {
+        "key": "abs_sum_two",
+        "summary": "Прочитай два целых числа и выведи сумму их модулей.",
+        "input_desc": "Одна строка: `a b`.",
+        "output_desc": "Одно число: `|a| + |b|`.",
+        "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        long a = sc.nextLong();\n        long b = sc.nextLong();\n        // TODO: выведите сумму модулей\n    }\n}\n",
+        "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        long a = sc.nextLong();\n        long b = sc.nextLong();\n        System.out.println(Math.abs(a) + Math.abs(b));\n    }\n}\n",
+        "seeds": ["-2 3\n", "-10 -4\n", "0 0\n", "999999 -1\n"],
+        "eval": _eval_abs_sum,
+    },
+    {
+        "key": "product_two",
+        "summary": "Прочитай два целых числа и выведи их произведение.",
+        "input_desc": "Одна строка: `a b`.",
+        "output_desc": "Одно число: `a * b`.",
+        "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        long a = sc.nextLong();\n        long b = sc.nextLong();\n        // TODO: выведите произведение\n    }\n}\n",
+        "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        long a = sc.nextLong();\n        long b = sc.nextLong();\n        System.out.println(a * b);\n    }\n}\n",
+        "seeds": ["2 3\n", "-5 4\n", "0 7\n", "-9 -8\n"],
+        "eval": _eval_product,
+    },
+    {
+        "key": "min_three",
+        "summary": "Прочитай три целых числа и выведи минимальное.",
+        "input_desc": "Одна строка: `a b c`.",
+        "output_desc": "Одно число: минимум из трёх.",
+        "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        int c = sc.nextInt();\n        // TODO: найдите минимум\n    }\n}\n",
+        "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        int c = sc.nextInt();\n        System.out.println(Math.min(a, Math.min(b, c)));\n    }\n}\n",
+        "seeds": ["1 9 3\n", "-2 -7 -1\n", "4 4 4\n", "100 20 99\n"],
+        "eval": _eval_min,
+    },
+    {
+        "key": "middle_three",
+        "summary": "Прочитай три целых числа и выведи среднее по значению (медиану).",
+        "input_desc": "Одна строка: `a b c`.",
+        "output_desc": "Одно число: элемент между минимумом и максимумом.",
+        "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        int c = sc.nextInt();\n        // TODO: выведите медиану трех чисел\n    }\n}\n",
+        "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        int c = sc.nextInt();\n        int[] arr = new int[]{a, b, c};\n        Arrays.sort(arr);\n        System.out.println(arr[1]);\n    }\n}\n",
+        "seeds": ["1 9 3\n", "-2 -7 -1\n", "4 4 4\n", "100 20 99\n"],
+        "eval": _eval_middle,
+    },
+    {
+        "key": "odd_count",
+        "summary": "Прочитай `n` и затем `n` чисел. Выведи количество нечётных.",
+        "input_desc": "Первая строка: `n`, вторая строка: `n` целых чисел.",
+        "output_desc": "Одно число: количество нечётных элементов.",
+        "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        int count = 0;\n        for (int i = 0; i < n; i++) {\n            int x = sc.nextInt();\n            // TODO: учитывайте нечетные\n        }\n        System.out.println(count);\n    }\n}\n",
+        "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        int count = 0;\n        for (int i = 0; i < n; i++) {\n            int x = sc.nextInt();\n            if (x % 2 != 0) count++;\n        }\n        System.out.println(count);\n    }\n}\n",
+        "seeds": ["5\n1 2 3 4 5\n", "4\n2 4 6 8\n", "3\n-2 -3 -4\n", "1\n7\n"],
+        "eval": _eval_odd,
+    },
+    {
+        "key": "positive_count",
+        "summary": "Прочитай `n` и затем `n` чисел. Выведи количество положительных.",
+        "input_desc": "Первая строка: `n`, вторая строка: `n` целых чисел.",
+        "output_desc": "Одно число: количество чисел `> 0`.",
+        "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        int count = 0;\n        for (int i = 0; i < n; i++) {\n            int x = sc.nextInt();\n            // TODO: учитывайте положительные значения\n        }\n        System.out.println(count);\n    }\n}\n",
+        "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        int count = 0;\n        for (int i = 0; i < n; i++) {\n            int x = sc.nextInt();\n            if (x > 0) count++;\n        }\n        System.out.println(count);\n    }\n}\n",
+        "seeds": ["5\n1 0 -3 7 9\n", "4\n0 0 0 0\n", "3\n-2 -3 -4\n", "1\n7\n"],
+        "eval": _eval_positive,
+    },
+    {
+        "key": "uppercase_line",
+        "summary": "Прочитай строку и выведи её в верхнем регистре.",
+        "input_desc": "Одна строка текста.",
+        "output_desc": "Та же строка, преобразованная в `UPPERCASE`.",
+        "starter": "import java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String s = br.readLine();\n        if (s == null) s = \"\";\n        // TODO: выведите строку в верхнем регистре\n    }\n}\n",
+        "solution": "import java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String s = br.readLine();\n        if (s == null) s = \"\";\n        System.out.println(s.toUpperCase());\n    }\n}\n",
+        "seeds": ["java\n", "Metanit\n", "a b c\n", "\n"],
+        "eval": _eval_upper,
+    },
+    {
+        "key": "word_count",
+        "summary": "Прочитай строку и выведи количество слов (разделитель — пробелы).",
+        "input_desc": "Одна строка текста.",
+        "output_desc": "Одно число: число слов в строке.",
+        "starter": "import java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String s = br.readLine();\n        if (s == null) s = \"\";\n        // TODO: выведите количество слов\n    }\n}\n",
+        "solution": "import java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String s = br.readLine();\n        if (s == null) s = \"\";\n        s = s.trim();\n        if (s.isEmpty()) {\n            System.out.println(0);\n            return;\n        }\n        System.out.println(s.split(\"\\\\s+\").length);\n    }\n}\n",
+        "seeds": ["hello world\n", "one\n", "  two   spaces here  \n", "\n"],
+        "eval": _eval_words,
+    },
+    {
+        "key": "sum_to_n",
+        "summary": "Прочитай `n` и выведи сумму чисел от `1` до `n`.",
+        "input_desc": "Одно целое число `n`.",
+        "output_desc": "Одно число: `1 + 2 + ... + n`.",
+        "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        long n = sc.nextLong();\n        // TODO: вычислите сумму от 1 до n\n    }\n}\n",
+        "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        long n = sc.nextLong();\n        System.out.println((n * (n + 1)) / 2);\n    }\n}\n",
+        "seeds": ["1\n", "5\n", "10\n", "100\n"],
+        "eval": _eval_sum_to_n,
+    },
+    {
+        "key": "fibonacci_n",
+        "summary": "Прочитай `n` и выведи `n`-е число Фибоначчи (`F0 = 0`, `F1 = 1`).",
+        "input_desc": "Одно целое число `n` (`0 ≤ n ≤ 45`).",
+        "output_desc": "Одно число: значение `Fn`.",
+        "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        // TODO: вычислите n-е число Фибоначчи\n    }\n}\n",
+        "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        if (n <= 0) {\n            System.out.println(0);\n            return;\n        }\n        if (n == 1) {\n            System.out.println(1);\n            return;\n        }\n        int a = 0;\n        int b = 1;\n        for (int i = 2; i <= n; i++) {\n            int c = a + b;\n            a = b;\n            b = c;\n        }\n        System.out.println(b);\n    }\n}\n",
+        "seeds": ["0\n", "1\n", "7\n", "10\n"],
+        "eval": _eval_fib,
+    },
+    {
+        "key": "char_count",
+        "summary": "Прочитай строку `text` и символ `ch`, выведи количество вхождений `ch` в `text`.",
+        "input_desc": "Первая строка: `text`, вторая строка: `ch`.",
+        "output_desc": "Одно число: сколько раз `ch` встречается в `text`.",
+        "starter": "import java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String text = br.readLine();\n        String rawCh = br.readLine();\n        if (text == null) text = \"\";\n        if (rawCh == null) rawCh = \"\";\n        // TODO: выведите количество вхождений символа\n    }\n}\n",
+        "solution": "import java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String text = br.readLine();\n        String rawCh = br.readLine();\n        if (text == null) text = \"\";\n        if (rawCh == null || rawCh.isEmpty()) {\n            System.out.println(0);\n            return;\n        }\n        char ch = rawCh.charAt(0);\n        int count = 0;\n        for (int i = 0; i < text.length(); i++) {\n            if (text.charAt(i) == ch) count++;\n        }\n        System.out.println(count);\n    }\n}\n",
+        "seeds": ["banana\na\n", "metanit\nt\n", "abc\nd\n", "\na\n"],
+        "eval": _eval_char_count,
+    },
+    {
+        "key": "substring_overlap",
+        "summary": "Прочитай `text` и `pattern` и выведи число вхождений `pattern` в `text` с учётом перекрытий.",
+        "input_desc": "Первая строка: `text`, вторая строка: `pattern`.",
+        "output_desc": "Одно число: количество вхождений с перекрытиями.",
+        "starter": "import java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String text = br.readLine();\n        String pattern = br.readLine();\n        if (text == null) text = \"\";\n        if (pattern == null) pattern = \"\";\n        // TODO: посчитайте вхождения с перекрытиями\n    }\n}\n",
+        "solution": "import java.io.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String text = br.readLine();\n        String pattern = br.readLine();\n        if (text == null) text = \"\";\n        if (pattern == null || pattern.isEmpty()) {\n            System.out.println(0);\n            return;\n        }\n        int idx = 0;\n        int cnt = 0;\n        while (true) {\n            int pos = text.indexOf(pattern, idx);\n            if (pos < 0) break;\n            cnt++;\n            idx = pos + 1;\n        }\n        System.out.println(cnt);\n    }\n}\n",
+        "seeds": ["aaaaa\naa\n", "abababa\naba\n", "abc\nd\n", "zzzz\nzz\n"],
+        "eval": _eval_sub_overlap,
+    },
+    {
+        "key": "digit_sum",
+        "summary": "Прочитай целое число `n` и выведи сумму его цифр.",
+        "input_desc": "Одно целое число `n`.",
+        "output_desc": "Одно число: сумма цифр `|n|`.",
+        "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        // TODO: вычислите сумму цифр\n    }\n}\n",
+        "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = Math.abs(sc.nextInt());\n        int sum = 0;\n        while (n > 0) {\n            sum += n % 10;\n            n /= 10;\n        }\n        System.out.println(sum);\n    }\n}\n",
+        "seeds": ["0\n", "123\n", "-908\n", "99999\n"],
+        "eval": _eval_digit_sum,
+    },
+    {
+        "key": "gcd_two",
+        "summary": "Прочитай два целых числа и выведи их НОД.",
+        "input_desc": "Одна строка: `a b`.",
+        "output_desc": "Одно число: `gcd(|a|, |b|)`.",
+        "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        // TODO: вычислите НОД\n    }\n}\n",
+        "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = Math.abs(sc.nextInt());\n        int b = Math.abs(sc.nextInt());\n        while (b != 0) {\n            int t = a % b;\n            a = b;\n            b = t;\n        }\n        System.out.println(a);\n    }\n}\n",
+        "seeds": ["12 18\n", "7 5\n", "0 10\n", "-24 36\n"],
+        "eval": _eval_gcd,
+    },
+    {
+        "key": "lcm_two",
+        "summary": "Прочитай два целых числа и выведи их НОК.",
+        "input_desc": "Одна строка: `a b`.",
+        "output_desc": "Одно число: `lcm(a, b)`.",
+        "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        long a = sc.nextLong();\n        long b = sc.nextLong();\n        // TODO: вычислите НОК\n    }\n}\n",
+        "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        long a = sc.nextLong();\n        long b = sc.nextLong();\n        if (a == 0 || b == 0) {\n            System.out.println(0);\n            return;\n        }\n        long x = Math.abs(a);\n        long y = Math.abs(b);\n        while (y != 0) {\n            long t = x % y;\n            x = y;\n            y = t;\n        }\n        System.out.println((Math.abs(a) / x) * Math.abs(b));\n    }\n}\n",
+        "seeds": ["12 18\n", "7 5\n", "0 10\n", "-24 36\n"],
+        "eval": _eval_lcm,
+    },
+    {
+        "key": "unique_once_count",
+        "summary": "Прочитай `n` и затем `n` чисел. Выведи, сколько значений встречается ровно один раз.",
+        "input_desc": "Первая строка: `n`, вторая строка: `n` целых чисел.",
+        "output_desc": "Одно число: количество элементов с частотой `1`.",
+        "starter": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        int[] arr = new int[n];\n        for (int i = 0; i < n; i++) arr[i] = sc.nextInt();\n        // TODO: посчитайте элементы, встречающиеся один раз\n    }\n}\n",
+        "solution": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int n = sc.nextInt();\n        int[] arr = new int[n];\n        Map<Integer, Integer> freq = new HashMap<>();\n        for (int i = 0; i < n; i++) {\n            arr[i] = sc.nextInt();\n            freq.put(arr[i], freq.getOrDefault(arr[i], 0) + 1);\n        }\n        int ans = 0;\n        for (int value : arr) {\n            if (freq.get(value) == 1) ans++;\n        }\n        System.out.println(ans);\n    }\n}\n",
+        "seeds": ["5\n1 2 2 3 3\n", "4\n7 7 7 7\n", "6\n-1 0 1 0 -1 2\n", "1\n42\n"],
+        "eval": _eval_unique_once,
+    },
 ]
 
 
-def pick_practice_config(chapter: int, page: int) -> dict:
-    idx = (chapter * 37 + page * 19) % len(PRACTICE_CONFIGS)
+def pick_practice_config(chapter: int, page: int, title: str, avoid_template_key: str = "") -> dict:
+    mix = f"{chapter}:{page}:{title}".encode("utf-8")
+    digest = 0
+    for byte in mix:
+        digest = (digest * 131 + byte) % 1_000_000_007
+    idx = digest % len(PRACTICE_CONFIGS)
+    if avoid_template_key and len(PRACTICE_CONFIGS) > 1 and PRACTICE_CONFIGS[idx]["key"] == avoid_template_key:
+        idx = (idx + 1 + (chapter + page) % (len(PRACTICE_CONFIGS) - 1)) % len(PRACTICE_CONFIGS)
     return PRACTICE_CONFIGS[idx]
 
 
-def build_practice_step(page: dict, lesson_id: str) -> dict:
-    cfg = pick_practice_config(page["chapter"], page["page"])
+def build_practice_step(page: dict, lesson_id: str, avoid_template_key: str = "") -> dict:
+    cfg = pick_practice_config(page["chapter"], page["page"], page["title"], avoid_template_key)
     public_tests, hidden_tests = _build_tests(cfg["seeds"], cfg["eval"])
+    practice_context = [
+        f"Применяя идею темы «{page['title']}», выполни упражнение: ",
+        f"Для закрепления темы «{page['title']}» реши задачу: ",
+        f"Проверь понимание темы «{page['title']}» на практике: ",
+        f"Сделай короткий кодовый шаг по теме «{page['title']}»: ",
+    ][(page["chapter"] * 13 + page["page"] * 7) % 4]
     body = textwrap.dedent(
         f"""
         **Коротко:** практическая задача по теме «{page['title']}».
 
         ### Задание
-        {cfg['summary']}
+        {practice_context}{cfg['summary']}
 
         ### Формат входных данных
         {cfg['input_desc']}
@@ -631,12 +985,16 @@ def build_course(pages: list[dict]) -> dict:
         chapter_pages = sorted(by_chapter[chapter], key=lambda p: p["page"])
         module_id = f"m{chapter:02d}"
         lessons = []
+        previous_practice_template = ""
         for lesson_order, page in enumerate(chapter_pages, 1):
             lesson_id = f"{module_id}_l{lesson_order:03d}_{slug(page['title'])[:60]}"
+            practice_step = build_practice_step(page, lesson_id, previous_practice_template)
+            if "template=" in practice_step["admin_notes"]:
+                previous_practice_template = practice_step["admin_notes"].split("template=", 1)[1].strip()
             steps = [
                 build_theory_step(page, lesson_id),
                 build_quiz_step(page, lesson_id),
-                build_practice_step(page, lesson_id),
+                practice_step,
             ]
             lessons.append(
                 {
@@ -762,8 +1120,12 @@ def validate_course(course: dict) -> list[str]:
 
     lesson_ids = set()
     step_ids = set()
+    practice_template_counts: dict[str, int] = {}
+    practice_total = 0
+    practice_adjacent_repeats = 0
     for module in modules:
         seen_lesson_orders = set()
+        previous_practice_template = ""
         for lesson in module.get("lessons", []):
             lid = lesson.get("id")
             lesson_title = str(lesson.get("title", ""))
@@ -812,6 +1174,28 @@ def validate_course(course: dict) -> list[str]:
                         errors.append(f"Practice without ai_hint_config: {sid}")
                     if "Последнее обновление:" in body or "Назад Содержание Вперед" in body:
                         errors.append(f"Practice contains broken title fragment: {sid}")
+                    notes = str(step.get("admin_notes", ""))
+                    match = re.search(r"template=([a-z0-9_\\-]+)", notes, flags=re.IGNORECASE)
+                    template_key = match.group(1).lower() if match else ""
+                    if not template_key:
+                        errors.append(f"Practice without template key in admin notes: {sid}")
+                    else:
+                        practice_total += 1
+                        practice_template_counts[template_key] = practice_template_counts.get(template_key, 0) + 1
+                        if previous_practice_template and previous_practice_template == template_key:
+                            practice_adjacent_repeats += 1
+                        previous_practice_template = template_key
+
+    if practice_total > 0:
+        if len(practice_template_counts) < 12:
+            errors.append(
+                f"Practice diversity too low: {len(practice_template_counts)} templates for {practice_total} practice steps"
+            )
+        if practice_adjacent_repeats > 0:
+            errors.append(f"Practice has adjacent template repeats: {practice_adjacent_repeats}")
+        max_reuse = max(practice_template_counts.values()) if practice_template_counts else 0
+        if practice_total >= 40 and max_reuse > 12:
+            errors.append(f"Practice template reused too often: max={max_reuse}")
     return errors
 
 
@@ -837,6 +1221,7 @@ def write_validation_report(course: dict, errors: list[str]) -> None:
         "## Checks",
         "- each lesson has exactly 3 ordered steps (theory, test, practice)",
         "- each practice has checker with public+hidden tests and ai_hint_config",
+        "- practice templates are diverse and do not repeat back-to-back inside module flow",
         "- each quiz has at least 3 structured questions",
         "- student-facing markdown does not include banned promo/channel mentions",
         "- lesson titles do not contain navigation/update artifacts and are within size limits",

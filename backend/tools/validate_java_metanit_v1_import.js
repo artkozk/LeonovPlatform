@@ -2,13 +2,27 @@ const fs = require("fs");
 const path = require("path");
 
 const INPUT_PATH = path.resolve(__dirname, "../../материалы/java_metanit_v1/course_import.json");
-const MIGRATION_PATH = path.resolve(__dirname, "../migrations/038_reseed_java_zero_core_metanit_v1.sql");
+const MIGRATIONS_DIR = path.resolve(__dirname, "../migrations");
 const REPORT_PATH = path.resolve(
   __dirname,
   "../../docs/operations/JAVA_METANIT_V1_IMPORT_VALIDATION_2026_05_22.md"
 );
 const SOURCE_LINE_RE = /^\s*(?:\*\*)?\s*Источник\s*:?\s*(?:\*\*)?\s*https?:\/\/\S+\s*$/imu;
 const BROKEN_TITLE_MARKER_RE = /(Последнее обновление:|Назад\s+Содержание\s+Вперед)/iu;
+const PRACTICE_TEMPLATE_RE = /template=([a-z0-9_\-]+)/iu;
+
+function resolveMigrationPath() {
+  const files = fs
+    .readdirSync(MIGRATIONS_DIR)
+    .filter((name) => /^\d+_reseed_java_zero_core_metanit_v1.*\.sql$/i.test(name))
+    .sort();
+  if (files.length === 0) {
+    throw new Error(`No java reseed migration found in ${MIGRATIONS_DIR}`);
+  }
+  return path.join(MIGRATIONS_DIR, files[files.length - 1]);
+}
+
+const MIGRATION_PATH = resolveMigrationPath();
 
 function readJSON(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -36,9 +50,13 @@ function main() {
     brokenLessonTitles: 0,
     theoryWithSourceLinks: 0,
     practiceWithBrokenIntro: 0,
+    practiceTemplateDiversity: 0,
+    practiceAdjacentTemplateRepeats: 0,
   };
+  const practiceTemplateCounts = {};
 
   for (const moduleItem of input?.course?.modules || []) {
+    let previousPracticeTemplate = "";
     stats.modules += 1;
     for (const lesson of moduleItem?.lessons || []) {
       stats.lessons += 1;
@@ -60,6 +78,18 @@ function main() {
         if (stepType === "test" || stepType === "quiz") stats.quizzes += 1;
         if (stepType === "theory" && SOURCE_LINE_RE.test(bodyMd)) stats.theoryWithSourceLinks += 1;
         if (stepType === "practice" && BROKEN_TITLE_MARKER_RE.test(bodyMd)) stats.practiceWithBrokenIntro += 1;
+        if (stepType === "practice") {
+          const notes = String(step?.admin_notes || "");
+          const templateMatch = notes.match(PRACTICE_TEMPLATE_RE);
+          if (templateMatch && templateMatch[1]) {
+            const templateKey = templateMatch[1].toLowerCase();
+            practiceTemplateCounts[templateKey] = (practiceTemplateCounts[templateKey] || 0) + 1;
+            if (previousPracticeTemplate && previousPracticeTemplate === templateKey) {
+              stats.practiceAdjacentTemplateRepeats += 1;
+            }
+            previousPracticeTemplate = templateKey;
+          }
+        }
 
         if (checkerType === "java_stdout") {
           const publicTests = Array.isArray(step?.checker?.public_tests) ? step.checker.public_tests.length : 0;
@@ -78,6 +108,8 @@ function main() {
     checkerQuizSingle: (migration.match(/"checker_type":"quiz_single"/g) || []).length,
     hasQuizPayloadQuestions: migration.includes('"questions":[{'),
   };
+  stats.practiceTemplateDiversity = Object.keys(practiceTemplateCounts).length;
+  const maxPracticeTemplateReuse = Math.max(0, ...Object.values(practiceTemplateCounts));
 
   const checks = {
     stepCountMatches: migrationStats.blockTypeTags === stats.steps,
@@ -89,6 +121,9 @@ function main() {
     noBrokenLessonTitles: stats.brokenLessonTitles === 0,
     noTheorySourceLinks: stats.theoryWithSourceLinks === 0,
     noPracticeBrokenIntro: stats.practiceWithBrokenIntro === 0,
+    practiceTemplateDiversityOk: stats.practiceTemplateDiversity >= 12,
+    noPracticeAdjacentTemplateRepeats: stats.practiceAdjacentTemplateRepeats === 0,
+    practiceTemplateMaxReuseOk: stats.tasks < 40 || maxPracticeTemplateReuse <= 12,
   };
 
   const failed = Object.entries(checks)
@@ -115,6 +150,9 @@ function main() {
     `- broken lesson titles: ${stats.brokenLessonTitles}`,
     `- theory steps with source links: ${stats.theoryWithSourceLinks}`,
     `- practice steps with broken intro: ${stats.practiceWithBrokenIntro}`,
+    `- practice template diversity: ${stats.practiceTemplateDiversity}`,
+    `- practice adjacent template repeats: ${stats.practiceAdjacentTemplateRepeats}`,
+    `- max practice template reuse: ${maxPracticeTemplateReuse}`,
     "",
     "## Migration Structure Stats",
     `- block type tags: ${migrationStats.blockTypeTags}`,

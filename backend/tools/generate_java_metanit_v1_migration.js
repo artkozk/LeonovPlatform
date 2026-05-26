@@ -2,7 +2,11 @@ const fs = require("fs");
 const path = require("path");
 
 const INPUT_PATH = path.resolve(__dirname, "../../материалы/java_metanit_v1/course_import.json");
-const OUT_PATH = path.resolve(__dirname, "../migrations/038_reseed_java_zero_core_metanit_v1.sql");
+const DEFAULT_OUT_PATH = path.resolve(__dirname, "../migrations/038_reseed_java_zero_core_metanit_v1.sql");
+const OUT_PATH = process.env.JAVA_METANIT_OUT_PATH
+  ? path.resolve(__dirname, process.env.JAVA_METANIT_OUT_PATH)
+  : DEFAULT_OUT_PATH;
+const MIGRATION_FILE_NAME = path.basename(OUT_PATH);
 const COURSE_SLUG = "java-zero-core";
 const SOURCE_LINE_REGEX = /^\s*(?:\*\*)?\s*Источник\s*:?\s*(?:\*\*)?\s*https?:\/\/\S+\s*$/gimu;
 
@@ -426,7 +430,7 @@ function buildBlockSeedValues(modulePosition, lessonPosition, lesson) {
 
 function buildMigrationSql(course) {
   let sql = "";
-  sql += "-- 038_reseed_java_zero_core_metanit_v1.sql\n";
+  sql += `-- ${MIGRATION_FILE_NAME}\n`;
   sql += "-- Generated from materials/java_metanit_v1/course_import.json\n";
   sql += "-- Purpose: reseed java-zero-core with full Metanit-based lessons (theory + quiz + practice).\n";
   sql += `-- Generated at: ${new Date().toISOString()}\n\n`;
