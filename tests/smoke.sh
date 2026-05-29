@@ -7,6 +7,7 @@ NICKNAME="student$(date +%s)"
 FIRST_NAME="Smoke"
 LAST_NAME="Tester"
 PASSWORD="StrongPassword123!"
+SMOKE_PROMO_CODE="${SMOKE_PROMO_CODE:-}"
 
 echo "Health check"
 curl -fsS "${API_URL%/api/v1}/healthz" >/dev/null
@@ -40,7 +41,37 @@ if [ -z "$TOKEN" ]; then
 fi
 
 echo "Get courses"
-COURSES=$(curl -fsS "$API_URL/courses" -H "Authorization: Bearer $TOKEN")
+COURSES_HTTP=$(curl -sS -o /tmp/smoke_courses.json -w '%{http_code}' "$API_URL/courses" -H "Authorization: Bearer $TOKEN")
+COURSES=$(cat /tmp/smoke_courses.json)
+
+if [ "$COURSES_HTTP" = "402" ]; then
+  if [ -z "$SMOKE_PROMO_CODE" ]; then
+    echo "Courses are subscription-locked. Set SMOKE_PROMO_CODE to continue smoke in subscription-only mode." >&2
+    echo "$COURSES" >&2
+    exit 1
+  fi
+
+  echo "Apply promo code for smoke access"
+  PROMO_HTTP=$(curl -sS -o /tmp/smoke_promo.json -w '%{http_code}' -X POST "$API_URL/subscription/promocode/apply" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "{\"code\":\"$SMOKE_PROMO_CODE\"}")
+  if [ "$PROMO_HTTP" != "200" ]; then
+    echo "Promo apply failed with HTTP $PROMO_HTTP" >&2
+    cat /tmp/smoke_promo.json >&2
+    exit 1
+  fi
+
+  COURSES_HTTP=$(curl -sS -o /tmp/smoke_courses.json -w '%{http_code}' "$API_URL/courses" -H "Authorization: Bearer $TOKEN")
+  COURSES=$(cat /tmp/smoke_courses.json)
+fi
+
+if [ "$COURSES_HTTP" != "200" ]; then
+  echo "Get courses failed with HTTP $COURSES_HTTP" >&2
+  echo "$COURSES" >&2
+  exit 1
+fi
+
 COURSE_ID=$(echo "$COURSES" | python3 -c 'import sys,json;items=json.load(sys.stdin)["items"];print(items[0]["id"] if items else "")')
 
 if [ -z "$COURSE_ID" ]; then
