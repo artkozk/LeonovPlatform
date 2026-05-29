@@ -32,6 +32,21 @@
 5. Подробный технический отчёт и причины решений:
 - `docs/operations/SUBSCRIPTION_ONLY_ACCESS_PROMOCODES_AUDIT_2026_05_29.md`.
 
+### Актуализация от 2026-05-29 (post-deploy hotfix + rollout)
+
+1. Закрыт боевой дефект pre-deploy backup:
+- `deploy/server/backup-db.sh` теперь очищает `pool_*` query-параметры в `DATABASE_URL` перед `pg_dump`.
+2. Закрыт боевой дефект промокодов (`500`):
+- `ApplyPromoCode` создаёт synthetic payment (`provider='promo'`) и активирует подписку через валидный `source_payment_id`, чтобы не нарушать FK `subscriptions.source_payment_id -> payments.id`.
+3. Добавлена миграция пополнения пула промокодов:
+- `backend/migrations/044_promocode_topup_launch_2026_05_29.sql`.
+4. Финальный production smoke после фиксов:
+- subscription-only работает (`/courses` без подписки закрыт);
+- Start код открывает 1 курс;
+- Premium код открывает все курсы и AI hints;
+- повторное использование кода даёт `409`;
+- `artkozk` подтверждён на 1 месте leaderboard.
+
 ### Актуализация от 2026-05-03: внедрение курса Python v18 Strict Pedagogy
 
 1. В платформу внедряется новый production-ready пакет курса:

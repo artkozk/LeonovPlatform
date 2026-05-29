@@ -143,3 +143,117 @@
 3. Статистика очищается системно, а не ручным точечным SQL:
 - повторяемое и документированное поведение при деплое.
 
+## 9. Production rollout и найденные боевые дефекты (2026-05-29)
+
+### 9.1 Дефект №1: pre-deploy backup падал на `DATABASE_URL`
+
+Факт:
+
+1. Первый production rollout упал на шаге `backup-db.sh`:
+- `pg_dump: error: invalid URI query parameter: "pool_max_conns"`.
+
+Причина:
+
+1. В `.env` используется `DATABASE_URL` с query-параметрами пула (`pool_*`), которые не принимает `pg_dump`.
+
+Исправление:
+
+1. В `deploy/server/backup-db.sh` добавлена нормализация DSN перед `pg_dump`:
+- удаляются только `pool_*` query-параметры;
+- остальные параметры подключения остаются.
+
+Почему именно так:
+
+1. Не ломаем runtime DSN приложения.
+2. Чиним только контур backup, где и возникал дефект.
+
+### 9.2 Дефект №2: `POST /subscription/promocode/apply` возвращал `500`
+
+Факт:
+
+1. После первого успешного деплоя API отдавал `500` на применении промокода.
+2. В логах:
+- сначала `invalid input syntax for type uuid` для pseudo-id;
+- затем, после первого фикса формата, `FOREIGN KEY` ошибка по `subscriptions.source_payment_id -> payments(id)`.
+
+Причина:
+
+1. Активация подписки по промокоду пыталась писать `source_payment_id`, который не существовал в `payments`.
+
+Исправление:
+
+1. В `ApplyPromoCode` добавлена транзакционная вставка synthetic payment с `provider='promo'` и статусом `paid`.
+2. В `activateSubscriptionFromPaymentTx` передаётся реальный `payments.id` этой записи.
+
+Почему именно так:
+
+1. Сохраняется уже существующая строгая связь подписки с источником оплаты.
+2. Не размывается контракт `source_payment_id` и не требуется ломать FK-констрейнт.
+
+### 9.3 Top-up промокодов после smoke
+
+Факт:
+
+1. Во время production smoke часть одноразовых кодов была технически погашена.
+
+Исправление:
+
+1. Добавлена миграция `044_promocode_topup_launch_2026_05_29.sql`.
+2. Миграция добавляет дополнительный пул одноразовых 12-символьных кодов (без удаления старых).
+
+Почему именно так:
+
+1. Reviewer видит append-only историю изменения данных.
+2. Владелец получает рабочий запас кодов для ручного тестирования без правки уже применённых миграций.
+
+## 10. Post-deploy smoke (production, после финального фикса)
+
+Проверено на `2026-05-29`:
+
+1. `deploy/server/deploy.sh` — PASS, включая:
+- pre-deploy DB backup;
+- backend test/build;
+- migrator;
+- frontend test/build;
+- PM2 restart;
+- `healthz/readyz`.
+2. Subscription-only доступ:
+- без подписки `GET /api/v1/courses` -> `402 subscription_required`.
+3. Start promo flow:
+- `POST /api/v1/subscription/promocode/apply` -> `200` и `planCode=pro`;
+- после этого `GET /api/v1/courses` -> `200`, доступен ровно 1 курс.
+4. One-time rule:
+- повторное использование того же кода другим аккаунтом -> `409 promo code already redeemed`.
+5. Premium promo flow:
+- `planCode=premium`;
+- `GET /api/v1/courses` -> полный список курсов;
+- `POST /api/v1/ai/task-hint` -> `200`.
+6. AI-гейт на Start:
+- `POST /api/v1/ai/task-hint` -> `402` с ошибкой `ai hints are available only for Premium plan`.
+7. Лидерборд:
+- top user = `artkozk`;
+- top xp = `2147483647`.
+
+## 11. Промокоды top-up (дополнительный пул, 12 символов)
+
+### Start (`pro`)
+
+1. `START26R2T4Y`
+2. `START26M5N7P`
+3. `START26V8C3X`
+4. `START26L4J9K`
+5. `START26H6Q1W`
+
+### Premium (`premium`)
+
+1. `PREM26Q8W2E1`
+2. `PREM26T5Y7U3`
+3. `PREM26I4O9P2`
+4. `PREM26A7S3D8`
+5. `PREM26F6G2H5`
+
+## 12. Граница текущего аудита UI
+
+1. Выполнен production smoke уровня API + роутинг фронтенда (`/auth`, `/dashboard`, `/courses`, `/billing`, `/leaderboard`, `/support`, `/admin/support` возвращают `200` после redirect-follow).
+2. Полный визуальный проход «каждая кнопка/анимация/меню» требует интерактивной browser-сессии с ручным action-by-action чеклистом.
+3. Текущий релиз подтверждён по критичным функциональным сценариям запуска; детальный визуальный walkthrough фиксируется как отдельный следующий QA-проход.

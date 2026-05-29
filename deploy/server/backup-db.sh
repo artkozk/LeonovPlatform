@@ -40,6 +40,11 @@ require_cmd gzip
 require_cmd mkdir
 require_cmd find
 
+sanitize_database_url() {
+  local raw="$1"
+  echo "$raw" | sed -E 's/[?&]pool_[^&=]+=[^&]*//g; s/\?&/\?/g; s/[?&]$//g'
+}
+
 DATABASE_URL="${DATABASE_URL:-}"
 if [ -z "$DATABASE_URL" ]; then
   DATABASE_URL="$(read_env_value "DATABASE_URL" "$ENV_FILE" || true)"
@@ -48,6 +53,7 @@ if [ -z "$DATABASE_URL" ]; then
   echo "DATABASE_URL is required for backup and was not found in env or $ENV_FILE"
   exit 1
 fi
+DATABASE_URL="$(sanitize_database_url "$DATABASE_URL")"
 
 mkdir -p "$DB_BACKUP_DIR"
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"

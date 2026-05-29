@@ -371,6 +371,7 @@ func (a *App) ApplyPromoCode(c *gin.Context) {
 		planID        string
 		planCode      string
 		planTitle     string
+		planPriceRub  int
 		isActive      bool
 		redeemedByID  sql.NullString
 		redeemedAtRaw sql.NullTime
@@ -381,6 +382,7 @@ func (a *App) ApplyPromoCode(c *gin.Context) {
 			pc.plan_id,
 			p.code,
 			p.title,
+			p.price_rub,
 			pc.is_active,
 			pc.redeemed_by_user_id::text,
 			pc.redeemed_at
@@ -393,6 +395,7 @@ func (a *App) ApplyPromoCode(c *gin.Context) {
 		&planID,
 		&planCode,
 		&planTitle,
+		&planPriceRub,
 		&isActive,
 		&redeemedByID,
 		&redeemedAtRaw,
@@ -427,8 +430,24 @@ func (a *App) ApplyPromoCode(c *gin.Context) {
 		return
 	}
 
-	pseudoPaymentID := "PROMO-" + promoID
-	if err := a.activateSubscriptionFromPaymentTx(c.Request.Context(), tx, uctx.ID, planID, pseudoPaymentID); err != nil {
+	promoPaymentID := uuid.NewString()
+	if _, err := tx.Exec(c.Request.Context(), `
+		INSERT INTO payments(
+			id, user_id, plan_id, provider, provider_payment_id, amount_rub, status, checkout_url, raw_payload, provider_bill_id
+		)
+		VALUES($1, $2, $3, 'promo', $4, $5, 'paid', NULL, $6::jsonb, NULL)
+	`, promoPaymentID, uctx.ID, planID, "PROMO-"+promoID, planPriceRub, jsonMarshal(gin.H{
+		"mode":      "promo_code_redeem",
+		"promoId":   promoID,
+		"promoCode": code,
+		"planCode":  planCode,
+		"planTitle": planTitle,
+	})); err != nil {
+		internalServerError(c, err)
+		return
+	}
+
+	if err := a.activateSubscriptionFromPaymentTx(c.Request.Context(), tx, uctx.ID, planID, promoPaymentID); err != nil {
 		internalServerError(c, err)
 		return
 	}
