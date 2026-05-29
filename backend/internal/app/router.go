@@ -97,6 +97,7 @@ func (a *App) Router() *gin.Engine {
 			authed.GET("/plans", a.ListPlans)
 			authed.GET("/subscription", a.GetSubscription)
 			authed.POST("/subscription/checkout", a.CreateCheckout)
+			authed.POST("/subscription/promocode/apply", a.ApplyPromoCode)
 			authed.GET("/subscription/payments/:paymentID", a.GetPaymentStatus)
 			authed.POST("/subscription/cancel", a.CancelSubscription)
 

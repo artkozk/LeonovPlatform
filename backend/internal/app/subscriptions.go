@@ -61,7 +61,7 @@ func (a *App) ensureSubscriptionStateTx(ctx context.Context, tx pgx.Tx, userID s
 
 func (a *App) ensureFreeSubscriptionTx(ctx context.Context, tx pgx.Tx, userID string) error {
 	var freePlanID string
-	if err := tx.QueryRow(ctx, `SELECT id FROM plans WHERE code='free' LIMIT 1`).Scan(&freePlanID); err != nil {
+	if err := tx.QueryRow(ctx, `SELECT id FROM plans WHERE code = $1 LIMIT 1`, technicalFreePlanCode).Scan(&freePlanID); err != nil {
 		return fmt.Errorf("resolve free plan: %w", err)
 	}
 

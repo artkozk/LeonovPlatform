@@ -209,8 +209,8 @@ func (a *App) AdminMetrics(c *gin.Context) {
 		JOIN plans p ON p.id = s.plan_id
 		WHERE s.status='active'
 		  AND (s.ends_at IS NULL OR s.ends_at > NOW())
-		  AND p.code <> 'free'
-	`).Scan(&activePaidSubs)
+		  AND p.code <> $1
+	`, technicalFreePlanCode).Scan(&activePaidSubs)
 	_ = a.DB.QueryRow(c.Request.Context(), `SELECT COUNT(*) FROM submissions WHERE created_at >= NOW() - interval '24 hour'`).Scan(&submissions24h)
 	_ = a.DB.QueryRow(c.Request.Context(), `SELECT COUNT(*) FROM submissions WHERE status='accepted' AND created_at >= NOW() - interval '24 hour'`).Scan(&accepted24h)
 

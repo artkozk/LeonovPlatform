@@ -241,7 +241,7 @@ export function openSupportStream(onEvent: SupportStreamHandler): () => void {
           handleFrame(frame, onEvent);
         }
       }
-    } catch (err) {
+    } catch {
       if (cancelled) return;
     } finally {
       try {

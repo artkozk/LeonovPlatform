@@ -1,21 +1,36 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func (a *App) GetTaskTemplate(c *gin.Context) {
-	if _, ok := userFromContext(c); !ok {
+	uctx, ok := userFromContext(c)
+	if !ok {
 		unauthorized(c, "unauthorized")
 		return
 	}
 
 	taskID := c.Param("taskID")
+	if _, err := uuid.Parse(taskID); err != nil {
+		badRequest(c, errors.New("taskID must be uuid"))
+		return
+	}
+	courseID, ok := a.resolveCourseIDByTask(c, taskID)
+	if !ok {
+		return
+	}
+	if !a.requireCourseAccess(c, uctx.ID, courseID) {
+		return
+	}
+
 	var title, language, sourcePolicyRaw, statementMD, starterCode, solutionCode string
 	if err := a.DB.QueryRow(c.Request.Context(), `
 		SELECT
@@ -94,8 +109,21 @@ func defaultReadmeTemplate(taskTitle, mainPath string) string {
 }
 
 func (a *App) TaskStyleCheck(c *gin.Context) {
-	if _, ok := userFromContext(c); !ok {
+	uctx, ok := userFromContext(c)
+	if !ok {
 		unauthorized(c, "unauthorized")
+		return
+	}
+	taskID := c.Param("taskID")
+	if _, err := uuid.Parse(taskID); err != nil {
+		badRequest(c, errors.New("taskID must be uuid"))
+		return
+	}
+	courseID, ok := a.resolveCourseIDByTask(c, taskID)
+	if !ok {
+		return
+	}
+	if !a.requireCourseAccess(c, uctx.ID, courseID) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -111,6 +139,18 @@ func (a *App) GetTaskReferenceSolution(c *gin.Context) {
 	}
 
 	taskID := c.Param("taskID")
+	if _, err := uuid.Parse(taskID); err != nil {
+		badRequest(c, errors.New("taskID must be uuid"))
+		return
+	}
+	courseID, ok := a.resolveCourseIDByTask(c, taskID)
+	if !ok {
+		return
+	}
+	if !a.requireCourseAccess(c, uctx.ID, courseID) {
+		return
+	}
+
 	var language, sourcePolicyRaw, solutionCode string
 	if err := a.DB.QueryRow(c.Request.Context(), `
 		SELECT COALESCE(language, 'java'), COALESCE(source_policy::text, '{}'::text), COALESCE(solution_code, '')
@@ -168,6 +208,18 @@ func (a *App) MarkTaskInProgress(c *gin.Context) {
 	}
 
 	taskID := c.Param("taskID")
+	if _, err := uuid.Parse(taskID); err != nil {
+		badRequest(c, errors.New("taskID must be uuid"))
+		return
+	}
+	courseID, ok := a.resolveCourseIDByTask(c, taskID)
+	if !ok {
+		return
+	}
+	if !a.requireCourseAccess(c, uctx.ID, courseID) {
+		return
+	}
+
 	ctx := c.Request.Context()
 
 	var exists bool
@@ -215,6 +267,17 @@ func (a *App) ResetTaskProgress(c *gin.Context) {
 		return
 	}
 	taskID := c.Param("taskID")
+	if _, err := uuid.Parse(taskID); err != nil {
+		badRequest(c, errors.New("taskID must be uuid"))
+		return
+	}
+	courseID, ok := a.resolveCourseIDByTask(c, taskID)
+	if !ok {
+		return
+	}
+	if !a.requireCourseAccess(c, uctx.ID, courseID) {
+		return
+	}
 
 	ctx := c.Request.Context()
 	tx, err := a.DB.Begin(ctx)
@@ -319,6 +382,9 @@ func (a *App) SyncTasksState(c *gin.Context) {
 	uctx, ok := userFromContext(c)
 	if !ok {
 		unauthorized(c, "unauthorized")
+		return
+	}
+	if !a.requireAnyCourseAccess(c, uctx.ID) {
 		return
 	}
 

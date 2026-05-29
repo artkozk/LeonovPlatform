@@ -136,12 +136,35 @@ func (a *App) UpdateSettings(c *gin.Context) {
 }
 
 func (a *App) ListCourses(c *gin.Context) {
-	rows, err := a.DB.Query(c.Request.Context(), `
+	uctx, ok := userFromContext(c)
+	if !ok {
+		unauthorized(c, "unauthorized")
+		return
+	}
+
+	policy, err := a.loadCourseAccessPolicy(c.Request.Context(), uctx.ID)
+	if err != nil {
+		internalServerError(c, err)
+		return
+	}
+	if policy.MaxCourses != nil && *policy.MaxCourses <= 0 {
+		writeSubscriptionRequiredResponse(c, policy.PlanCode)
+		return
+	}
+
+	query := `
 		SELECT id, slug, title, description
 		FROM courses
 		WHERE is_published = TRUE
 		ORDER BY created_at ASC
-	`)
+	`
+	args := []any{}
+	if policy.MaxCourses != nil {
+		query += "\nLIMIT $1"
+		args = append(args, *policy.MaxCourses)
+	}
+
+	rows, err := a.DB.Query(c.Request.Context(), query, args...)
 	if err != nil {
 		internalServerError(c, err)
 		return
@@ -177,6 +200,15 @@ func (a *App) GetPluginBootstrap(c *gin.Context) {
 		unauthorized(c, "unauthorized")
 		return
 	}
+	policy, err := a.loadCourseAccessPolicy(c.Request.Context(), uctx.ID)
+	if err != nil {
+		internalServerError(c, err)
+		return
+	}
+	if policy.MaxCourses != nil && *policy.MaxCourses <= 0 {
+		writeSubscriptionRequiredResponse(c, policy.PlanCode)
+		return
+	}
 
 	preferredLanguage := strings.ToLower(strings.TrimSpace(c.Query("preferredLanguage")))
 	selectedCourseHint := strings.TrimSpace(c.Query("selectedCourseId"))
@@ -189,12 +221,19 @@ func (a *App) GetPluginBootstrap(c *gin.Context) {
 		Description string `json:"description"`
 	}
 
-	courseRows, err := a.DB.Query(c.Request.Context(), `
+	query := `
 		SELECT id, slug, title, description
 		FROM courses
 		WHERE is_published = TRUE
 		ORDER BY created_at ASC
-	`)
+	`
+	args := []any{}
+	if policy.MaxCourses != nil {
+		query += "\nLIMIT $1"
+		args = append(args, *policy.MaxCourses)
+	}
+
+	courseRows, err := a.DB.Query(c.Request.Context(), query, args...)
 	if err != nil {
 		internalServerError(c, err)
 		return
@@ -416,6 +455,9 @@ func (a *App) GetCourse(c *gin.Context) {
 		notFound(c, "course not found")
 		return
 	}
+	if !a.requireCourseAccess(c, uctx.ID, courseID) {
+		return
+	}
 
 	rows, err := a.DB.Query(c.Request.Context(), `
 		SELECT
@@ -501,6 +543,9 @@ func (a *App) GetCourseTasksCatalog(c *gin.Context) {
 	uctx, ok := userFromContext(c)
 	if !ok {
 		unauthorized(c, "unauthorized")
+		return
+	}
+	if !a.requireCourseAccess(c, uctx.ID, courseID) {
 		return
 	}
 
@@ -617,6 +662,17 @@ func (a *App) GetLesson(c *gin.Context) {
 	}
 
 	lessonID := c.Param("lessonID")
+	if _, err := uuid.Parse(lessonID); err != nil {
+		badRequest(c, errors.New("lessonID must be uuid"))
+		return
+	}
+	courseID, ok := a.resolveCourseIDByLesson(c, lessonID)
+	if !ok {
+		return
+	}
+	if !a.requireCourseAccess(c, uctx.ID, courseID) {
+		return
+	}
 
 	var lesson struct {
 		ID          string `json:"id"`
@@ -751,6 +807,13 @@ func (a *App) CompleteLessonBlock(c *gin.Context) {
 		badRequest(c, errors.New("blockID must be uuid"))
 		return
 	}
+	courseID, ok := a.resolveCourseIDByLesson(c, lessonID)
+	if !ok {
+		return
+	}
+	if !a.requireCourseAccess(c, uctx.ID, courseID) {
+		return
+	}
 
 	var req struct {
 		Source       string `json:"source"`
@@ -814,7 +877,25 @@ func (a *App) CompleteLessonBlock(c *gin.Context) {
 }
 
 func (a *App) GetTask(c *gin.Context) {
+	uctx, ok := userFromContext(c)
+	if !ok {
+		unauthorized(c, "unauthorized")
+		return
+	}
+
 	taskID := c.Param("taskID")
+	if _, err := uuid.Parse(taskID); err != nil {
+		badRequest(c, errors.New("taskID must be uuid"))
+		return
+	}
+	courseID, ok := a.resolveCourseIDByTask(c, taskID)
+	if !ok {
+		return
+	}
+	if !a.requireCourseAccess(c, uctx.ID, courseID) {
+		return
+	}
+
 	var task struct {
 		ID         string `json:"id"`
 		Title      string `json:"title"`
@@ -934,7 +1015,8 @@ func buildBuggyStarterFromSolution(solutionCode, language string) string {
 }
 
 func (a *App) RunTask(c *gin.Context) {
-	if _, ok := userFromContext(c); !ok {
+	uctx, ok := userFromContext(c)
+	if !ok {
 		unauthorized(c, "unauthorized")
 		return
 	}
@@ -957,6 +1039,18 @@ func (a *App) RunTask(c *gin.Context) {
 	}
 
 	taskID := c.Param("taskID")
+	if _, err := uuid.Parse(taskID); err != nil {
+		badRequest(c, errors.New("taskID must be uuid"))
+		return
+	}
+	courseID, ok := a.resolveCourseIDByTask(c, taskID)
+	if !ok {
+		return
+	}
+	if !a.requireCourseAccess(c, uctx.ID, courseID) {
+		return
+	}
+
 	var language string
 	var sourcePolicyRaw string
 	var solutionCode string
@@ -1045,6 +1139,18 @@ func (a *App) CreateSubmission(c *gin.Context) {
 	}
 
 	taskID := c.Param("taskID")
+	if _, err := uuid.Parse(taskID); err != nil {
+		badRequest(c, errors.New("taskID must be uuid"))
+		return
+	}
+	courseID, ok := a.resolveCourseIDByTask(c, taskID)
+	if !ok {
+		return
+	}
+	if !a.requireCourseAccess(c, uctx.ID, courseID) {
+		return
+	}
+
 	var maxAttempts int
 	var taskLanguage string
 	var sourcePolicyRaw string

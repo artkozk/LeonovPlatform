@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -125,6 +126,18 @@ func (a *App) CheckLessonQuiz(c *gin.Context) {
 	}
 
 	lessonID := strings.TrimSpace(c.Param("lessonID"))
+	if _, err := uuid.Parse(lessonID); err != nil {
+		badRequest(c, errors.New("lessonID must be uuid"))
+		return
+	}
+	courseID, ok := a.resolveCourseIDByLesson(c, lessonID)
+	if !ok {
+		return
+	}
+	if !a.requireCourseAccess(c, uctx.ID, courseID) {
+		return
+	}
+
 	var req struct {
 		BlockID string            `json:"blockId" binding:"required,uuid"`
 		Answers map[string]string `json:"answers"`

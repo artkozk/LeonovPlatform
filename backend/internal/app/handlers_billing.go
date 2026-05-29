@@ -6,6 +6,7 @@ import (
 	"crypto/hmac"
 	"crypto/md5"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -61,8 +62,18 @@ type cardlinkBillStatusResponse struct {
 
 func (a *App) ListPlans(c *gin.Context) {
 	rows, err := a.DB.Query(c.Request.Context(), `
-		SELECT code, title, description, price_rub, daily_submission_limit, has_priority_queue, has_personal_hints, has_extended_analytics
+		SELECT
+			code,
+			title,
+			description,
+			price_rub,
+			daily_submission_limit,
+			has_priority_queue,
+			has_personal_hints,
+			has_extended_analytics,
+			max_courses
 		FROM plans
+		WHERE is_public = TRUE
 		ORDER BY price_rub ASC
 	`)
 	if err != nil {
@@ -76,13 +87,20 @@ func (a *App) ListPlans(c *gin.Context) {
 		var code, title, description string
 		var price, daily int
 		var priority, hints, analytics bool
-		if err := rows.Scan(&code, &title, &description, &price, &daily, &priority, &hints, &analytics); err != nil {
+		var maxCoursesRaw sql.NullInt32
+		if err := rows.Scan(&code, &title, &description, &price, &daily, &priority, &hints, &analytics, &maxCoursesRaw); err != nil {
 			internalServerError(c, err)
 			return
+		}
+		var maxCourses *int
+		if maxCoursesRaw.Valid {
+			value := int(maxCoursesRaw.Int32)
+			maxCourses = &value
 		}
 		items = append(items, gin.H{
 			"code": code, "title": title, "description": description, "priceRub": price,
 			"dailySubmissionLimit": daily,
+			"maxCourses":           maxCourses,
 			"features":             gin.H{"priorityQueue": priority, "personalHints": hints, "extendedAnalytics": analytics},
 		})
 	}
@@ -105,8 +123,9 @@ func (a *App) GetSubscription(c *gin.Context) {
 	var price int
 	var endsAt *time.Time
 	var autoRenew bool
+	var maxCoursesRaw sql.NullInt32
 	err := a.DB.QueryRow(c.Request.Context(), `
-		SELECT p.code, p.title, p.price_rub, s.status, s.ends_at, s.auto_renew
+		SELECT p.code, p.title, p.price_rub, s.status, s.ends_at, s.auto_renew, p.max_courses
 		FROM subscriptions s
 		JOIN plans p ON p.id = s.plan_id
 		WHERE s.user_id = $1
@@ -114,24 +133,31 @@ func (a *App) GetSubscription(c *gin.Context) {
 		  AND (s.ends_at IS NULL OR s.ends_at > NOW())
 		ORDER BY s.starts_at DESC, s.created_at DESC
 		LIMIT 1
-	`, uctx.ID).Scan(&code, &title, &price, &status, &endsAt, &autoRenew)
+	`, uctx.ID).Scan(&code, &title, &price, &status, &endsAt, &autoRenew, &maxCoursesRaw)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
-			"code":      "free",
-			"title":     "Free",
-			"status":    "active",
-			"priceRub":  0,
-			"autoRenew": true,
+			"code":       technicalFreePlanCode,
+			"title":      "Без подписки",
+			"status":     "active",
+			"priceRub":   0,
+			"maxCourses": 0,
+			"autoRenew":  true,
 		})
 		return
 	}
+	var maxCourses *int
+	if maxCoursesRaw.Valid {
+		value := int(maxCoursesRaw.Int32)
+		maxCourses = &value
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"code":      code,
-		"title":     title,
-		"status":    status,
-		"priceRub":  price,
-		"endsAt":    endsAt,
-		"autoRenew": autoRenew,
+		"code":       code,
+		"title":      title,
+		"status":     status,
+		"priceRub":   price,
+		"maxCourses": maxCourses,
+		"endsAt":     endsAt,
+		"autoRenew":  autoRenew,
 	})
 }
 
@@ -154,14 +180,19 @@ func (a *App) CreateCheckout(c *gin.Context) {
 		return
 	}
 	req.PlanCode = strings.ToLower(strings.TrimSpace(req.PlanCode))
-	if req.PlanCode == "free" {
-		c.JSON(http.StatusBadRequest, APIError{Error: "free plan does not require checkout"})
+	if req.PlanCode == technicalFreePlanCode {
+		c.JSON(http.StatusBadRequest, APIError{Error: "technical free plan does not require checkout"})
 		return
 	}
 
 	var planID, planTitle string
 	var amount int
-	err := a.DB.QueryRow(c.Request.Context(), `SELECT id, title, price_rub FROM plans WHERE code = $1`, req.PlanCode).Scan(&planID, &planTitle, &amount)
+	err := a.DB.QueryRow(c.Request.Context(), `
+		SELECT id, title, price_rub
+		FROM plans
+		WHERE code = $1
+		  AND is_public = TRUE
+	`, req.PlanCode).Scan(&planID, &planTitle, &amount)
 	if err != nil {
 		notFound(c, "plan not found")
 		return
@@ -299,6 +330,133 @@ func (a *App) CreateCheckout(c *gin.Context) {
 	})
 }
 
+func (a *App) ApplyPromoCode(c *gin.Context) {
+	uctx, ok := userFromContext(c)
+	if !ok {
+		unauthorized(c, "unauthorized")
+		return
+	}
+	if err := a.ensureSubscriptionState(c.Request.Context(), uctx.ID); err != nil {
+		internalServerError(c, err)
+		return
+	}
+
+	var req struct {
+		Code string `json:"code" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		badRequest(c, err)
+		return
+	}
+	code := strings.ToUpper(strings.TrimSpace(req.Code))
+	if code == "" {
+		badRequest(c, fmt.Errorf("promo code is required"))
+		return
+	}
+
+	tx, err := a.DB.Begin(c.Request.Context())
+	if err != nil {
+		internalServerError(c, err)
+		return
+	}
+	defer tx.Rollback(c.Request.Context())
+
+	if err := a.ensureSubscriptionStateTx(c.Request.Context(), tx, uctx.ID); err != nil {
+		internalServerError(c, err)
+		return
+	}
+
+	var (
+		promoID       string
+		planID        string
+		planCode      string
+		planTitle     string
+		isActive      bool
+		redeemedByID  sql.NullString
+		redeemedAtRaw sql.NullTime
+	)
+	err = tx.QueryRow(c.Request.Context(), `
+		SELECT
+			pc.id,
+			pc.plan_id,
+			p.code,
+			p.title,
+			pc.is_active,
+			pc.redeemed_by_user_id::text,
+			pc.redeemed_at
+		FROM promo_codes pc
+		JOIN plans p ON p.id = pc.plan_id
+		WHERE UPPER(pc.code) = $1
+		FOR UPDATE
+	`, code).Scan(
+		&promoID,
+		&planID,
+		&planCode,
+		&planTitle,
+		&isActive,
+		&redeemedByID,
+		&redeemedAtRaw,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			notFound(c, "promo code not found")
+			return
+		}
+		internalServerError(c, err)
+		return
+	}
+
+	if planCode == technicalFreePlanCode {
+		c.JSON(http.StatusConflict, APIError{Error: "promo code points to technical non-learning plan"})
+		return
+	}
+	if !isActive {
+		c.JSON(http.StatusConflict, APIError{Error: "promo code is disabled"})
+		return
+	}
+	if redeemedByID.Valid && strings.TrimSpace(redeemedByID.String) != "" {
+		if strings.TrimSpace(redeemedByID.String) == uctx.ID {
+			c.JSON(http.StatusConflict, APIError{Error: "promo code already redeemed by this account"})
+			return
+		}
+		c.JSON(http.StatusConflict, APIError{Error: "promo code already redeemed"})
+		return
+	}
+	if redeemedAtRaw.Valid {
+		c.JSON(http.StatusConflict, APIError{Error: "promo code already redeemed"})
+		return
+	}
+
+	pseudoPaymentID := "PROMO-" + promoID
+	if err := a.activateSubscriptionFromPaymentTx(c.Request.Context(), tx, uctx.ID, planID, pseudoPaymentID); err != nil {
+		internalServerError(c, err)
+		return
+	}
+
+	if _, err := tx.Exec(c.Request.Context(), `
+		UPDATE promo_codes
+		SET redeemed_by_user_id = $2,
+		    redeemed_at = NOW(),
+		    updated_at = NOW()
+		WHERE id = $1
+	`, promoID, uctx.ID); err != nil {
+		internalServerError(c, err)
+		return
+	}
+
+	if err := tx.Commit(c.Request.Context()); err != nil {
+		internalServerError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":    "promo_applied",
+		"code":      code,
+		"planCode":  planCode,
+		"planTitle": planTitle,
+	})
+}
+
 func (a *App) CancelSubscription(c *gin.Context) {
 	uctx, ok := userFromContext(c)
 	if !ok {
@@ -322,14 +480,14 @@ func (a *App) CancelSubscription(c *gin.Context) {
 		internalServerError(c, err)
 		return
 	}
-	if !exists || current.PlanCode == "free" {
+	if !exists || current.PlanCode == technicalFreePlanCode {
 		if err := tx.Commit(c.Request.Context()); err != nil {
 			internalServerError(c, err)
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
 			"status":   "already_free",
-			"planCode": "free",
+			"planCode": technicalFreePlanCode,
 		})
 		return
 	}
@@ -432,8 +590,9 @@ func (a *App) GetPaymentStatus(c *gin.Context) {
 	var subCode, subStatus string
 	var subEndsAt *time.Time
 	var subAutoRenew bool
+	var subMaxCoursesRaw sql.NullInt32
 	err = a.DB.QueryRow(c.Request.Context(), `
-		SELECT p.code, s.status, s.ends_at, s.auto_renew
+		SELECT p.code, s.status, s.ends_at, s.auto_renew, p.max_courses
 		FROM subscriptions s
 		JOIN plans p ON p.id = s.plan_id
 		WHERE s.user_id = $1
@@ -441,11 +600,16 @@ func (a *App) GetPaymentStatus(c *gin.Context) {
 		  AND (s.ends_at IS NULL OR s.ends_at > NOW())
 		ORDER BY s.starts_at DESC, s.created_at DESC
 		LIMIT 1
-	`, uctx.ID).Scan(&subCode, &subStatus, &subEndsAt, &subAutoRenew)
+	`, uctx.ID).Scan(&subCode, &subStatus, &subEndsAt, &subAutoRenew, &subMaxCoursesRaw)
 	if err != nil {
-		subCode = "free"
+		subCode = technicalFreePlanCode
 		subStatus = "active"
 		subAutoRenew = true
+	}
+	var subMaxCourses *int
+	if subMaxCoursesRaw.Valid {
+		value := int(subMaxCoursesRaw.Int32)
+		subMaxCourses = &value
 	}
 
 	normalizedStatus := normalizePaymentStatus(status)
@@ -465,10 +629,11 @@ func (a *App) GetPaymentStatus(c *gin.Context) {
 			"updatedAt":    updatedAt,
 		},
 		"subscription": gin.H{
-			"code":      subCode,
-			"status":    subStatus,
-			"endsAt":    subEndsAt,
-			"autoRenew": subAutoRenew,
+			"code":       subCode,
+			"status":     subStatus,
+			"maxCourses": subMaxCourses,
+			"endsAt":     subEndsAt,
+			"autoRenew":  subAutoRenew,
 		},
 	})
 }
@@ -793,7 +958,7 @@ func (a *App) activateSubscriptionFromPaymentTx(ctx context.Context, tx pgx.Tx, 
 		return err
 	}
 
-	if current.PlanCode == "free" {
+	if current.PlanCode == technicalFreePlanCode {
 		if _, err := tx.Exec(ctx, `
 			UPDATE subscriptions
 			SET status = 'cancelled',

@@ -452,6 +452,12 @@ function ruError(raw?: string) {
   if (text.includes("unauthorized")) return "Сессия истекла. Выполните вход заново.";
   if (text.includes("task not found")) return "Задача не найдена.";
   if (text.includes("submission not found")) return "Результат отправки не найден.";
+  if (text.includes("active subscription required for course access") || text.includes("subscription_required")) {
+    return "Для доступа к материалам нужна активная подписка. Откройте раздел «Подписка».";
+  }
+  if (text.includes("current plan does not include this course") || text.includes("course_not_in_plan")) {
+    return "Текущий тариф не включает этот курс. Выберите более высокий тариф.";
+  }
   if (text.includes("upgrade_required")) return "AI-подсказка доступна на Premium тарифе.";
   return "Произошла ошибка. Повторите действие.";
 }
@@ -461,6 +467,12 @@ function ruHintError(rawError?: string, rawStatus?: string) {
   if (!text) return "Не удалось получить AI-подсказку. Повторите действие.";
   if (text.includes("upgrade_required") || text.includes("available only for premium plan")) {
     return "AI-подсказка доступна на Premium тарифе.";
+  }
+  if (text.includes("active subscription required for course access") || text.includes("subscription_required")) {
+    return "AI-подсказка доступна только при активной подписке на курс.";
+  }
+  if (text.includes("current plan does not include this course") || text.includes("course_not_in_plan")) {
+    return "Текущий тариф не включает этот курс. Выберите более высокий тариф.";
   }
   if (text.includes("unauthorized")) return "Сессия истекла. Выполните вход заново.";
   if (text.includes("forbidden")) return "Недостаточно прав для этого действия.";
@@ -518,7 +530,7 @@ function extractCompletedBlocksFromLessonPayload(payload: any): Record<string, b
     payload.blocks.forEach((block: any) => {
       const blockID = String(block?.id ?? "").trim();
       if (!blockID) return;
-      if (Boolean(block?.completed)) completed[blockID] = true;
+      if (block?.completed) completed[blockID] = true;
     });
   }
 

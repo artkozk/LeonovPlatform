@@ -60,6 +60,21 @@ function parseReviewTopic(status?: string) {
   return "";
 }
 
+function dashboardErrorText(raw?: string, fallback = "Не удалось загрузить данные."): string {
+  const text = String(raw ?? "").trim().toLowerCase();
+  if (!text) return fallback;
+  if (text.includes("active subscription required for course access") || text.includes("subscription_required")) {
+    return "Для доступа к курсам нужна активная подписка. Перейдите в раздел «Подписка».";
+  }
+  if (text.includes("current plan does not include this course") || text.includes("course_not_in_plan")) {
+    return "Текущий тариф не включает этот курс. Выберите более высокий тариф.";
+  }
+  if (text.includes("unauthorized")) {
+    return "Сессия истекла. Выполните вход заново.";
+  }
+  return raw ?? fallback;
+}
+
 function extractCompletedBlockIds(payload: any): string[] {
   const out = new Set<string>();
 
@@ -74,7 +89,7 @@ function extractCompletedBlockIds(payload: any): string[] {
     payload.blocks.forEach((block: any) => {
       const id = String(block?.id ?? "").trim();
       if (!id) return;
-      if (Boolean(block?.completed)) out.add(id);
+      if (block?.completed) out.add(id);
     });
   }
 
@@ -115,7 +130,7 @@ export function DashboardPage() {
           courseTitle: item?.courseTitle ? String(item.courseTitle) : undefined,
         }));
       } else {
-        setError("Не удалось загрузить историю отправок.");
+        setError(dashboardErrorText(historyResult.reason?.response?.data?.error, "Не удалось загрузить историю отправок."));
       }
       setHistory(nextHistory);
 
@@ -131,7 +146,10 @@ export function DashboardPage() {
 
       if (!contextCourseId) {
         if (coursesResult.status === "rejected") {
-          setError((prev) => (prev ? `${prev} Не удалось загрузить курсы.` : "Не удалось загрузить курсы."));
+          setError((prev) => {
+            const message = dashboardErrorText(coursesResult.reason?.response?.data?.error, "Не удалось загрузить курсы.");
+            return prev ? `${prev} ${message}` : message;
+          });
         }
         setLoading(false);
         return;
@@ -197,9 +215,12 @@ export function DashboardPage() {
           completedSteps: safeCompletedSteps,
           progressPercent,
         });
-      } catch {
+      } catch (error: any) {
         setCurrentCourse(null);
-        setError((prev) => (prev ? `${prev} Не удалось загрузить текущий контекст обучения.` : "Не удалось загрузить текущий контекст обучения."));
+        setError((prev) => {
+          const message = dashboardErrorText(error?.response?.data?.error, "Не удалось загрузить текущий контекст обучения.");
+          return prev ? `${prev} ${message}` : message;
+        });
       } finally {
         if (!cancelled) {
           setLoading(false);

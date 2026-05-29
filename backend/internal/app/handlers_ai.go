@@ -102,6 +102,14 @@ func (a *App) TaskHint(c *gin.Context) {
 
 	var title, statement, topic, taskLanguage, sourcePolicyRaw string
 	var difficulty int
+	courseID, ok := a.resolveCourseIDByTask(c, req.TaskID)
+	if !ok {
+		return
+	}
+	if !a.requireCourseAccess(c, uctx.ID, courseID) {
+		return
+	}
+
 	err := a.DB.QueryRow(c.Request.Context(), `
 		SELECT title, statement_md, topic, difficulty, COALESCE(language, 'java'), COALESCE(source_policy::text, '{}'::text)
 		FROM tasks

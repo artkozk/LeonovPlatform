@@ -22,6 +22,14 @@ const menu: MenuItem[] = [
   { to: "/support", label: "Поддержка", isActive: (pathname) => pathname.startsWith("/support") || pathname === "/admin/support" },
 ];
 
+function formatPlanLabel(raw?: string) {
+  const value = String(raw ?? "").trim().toLowerCase();
+  if (value === "" || value === "free") return "БЕЗ ПОДПИСКИ";
+  if (value === "pro") return "START";
+  if (value === "premium") return "PREMIUM";
+  return value.toUpperCase();
+}
+
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -30,7 +38,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const currentPlan = useMemo(() => `${user?.planCode?.toUpperCase() ?? "FREE"} • L${user?.level ?? 1}`, [user?.planCode, user?.level]);
+  const currentPlan = useMemo(() => `${formatPlanLabel(user?.planCode)} • L${user?.level ?? 1}`, [user?.planCode, user?.level]);
   const displayName = useMemo(() => {
     const fullName = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
     if (fullName) return fullName;

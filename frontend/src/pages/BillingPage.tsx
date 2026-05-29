@@ -1,7 +1,7 @@
 import { Check } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { cancelSubscription, checkout, plans, subscription, subscriptionPaymentStatus } from "../api/client";
+import { applyPromoCode, cancelSubscription, checkout, plans, subscription, subscriptionPaymentStatus } from "../api/client";
 
 type PlanItem = {
   code: string;
@@ -9,6 +9,7 @@ type PlanItem = {
   description: string;
   priceRub: number;
   dailySubmissionLimit: number;
+  maxCourses?: number | null;
 };
 
 type SubscriptionState = {
@@ -34,22 +35,27 @@ type PaymentState = {
 };
 
 const featureMap: Record<string, string[]> = {
-  free: [
-    "Базовый доступ к урокам",
-    "Лимит отправок в день",
-    "Стартовый профиль прогресса",
-  ],
   pro: [
-    "Расширенный лимит отправок",
-    "Подробная аналитика обучения",
-    "Приоритетная обработка решений",
+    "Доступ к 1 курсу",
+    "Практика и автопроверка заданий",
+    "Полный доступ к материалам выбранного курса",
   ],
   premium: [
-    "Максимальный лимит отправок",
+    "Доступ ко всем курсам",
     "AI-подсказки в задачах",
-    "Полный доступ к трекам",
+    "Максимальный лимит отправок и приоритет проверки",
   ],
 };
+
+const TECHNICAL_FREE_PLAN_CODE = "free";
+
+function planLabel(code?: string | null) {
+  const value = String(code ?? "").trim().toLowerCase();
+  if (value === TECHNICAL_FREE_PLAN_CODE || value === "") return "Без подписки";
+  if (value === "pro") return "Start";
+  if (value === "premium") return "Premium";
+  return value.toUpperCase();
+}
 
 function humanPaymentStatus(status: string) {
   const value = String(status ?? "").toLowerCase();
@@ -91,6 +97,8 @@ export function BillingPage() {
   const [paymentState, setPaymentState] = useState<PaymentState | null>(null);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
 
   const pendingPayment = searchParams.get("pendingPayment") ?? "";
   const featuredPlan = useMemo(() => planItems.find((plan) => plan.code === "premium")?.code ?? "premium", [planItems]);
@@ -239,19 +247,73 @@ export function BillingPage() {
     }
   }
 
+  async function onApplyPromo() {
+    const normalized = promoCode.trim().toUpperCase();
+    if (!normalized) {
+      setMessage("Введите промокод.");
+      return;
+    }
+    setPromoLoading(true);
+    setMessage("");
+    try {
+      const result = await applyPromoCode(normalized);
+      setPromoCode("");
+      setMessage(`Промокод ${result?.code ?? normalized} активирован. План: ${planLabel(result?.planCode)}.`);
+      await load();
+    } catch (e: any) {
+      setMessage(e?.response?.data?.error ?? "Не удалось применить промокод.");
+    } finally {
+      setPromoLoading(false);
+    }
+  }
+
   return (
     <div className="billing-page page-stack">
       <section className="surface">
         <div className="page-title-block">
           <h1>Подписка</h1>
-          <p>Текущий план, сравнение тарифов и статус оплаты.</p>
+          <p>Доступ к материалам открыт только с активной подпиской.</p>
         </div>
 
         <div className="subscription-summary">
-          <span className="badge badge-blue">Текущий план: {current?.code?.toUpperCase() ?? "FREE"}</span>
+          <span className="badge badge-blue">Текущий план: {planLabel(current?.code)}</span>
           <span className="badge badge-neutral">Статус: {current?.status ?? "active"}</span>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={onCancel} disabled={loading || (current?.code ?? "free") === "free"}>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={onCancel}
+            disabled={loading || (current?.code ?? TECHNICAL_FREE_PLAN_CODE) === TECHNICAL_FREE_PLAN_CODE}
+          >
             Отключить автопродление
+          </button>
+        </div>
+
+        {(current?.code ?? TECHNICAL_FREE_PLAN_CODE) === TECHNICAL_FREE_PLAN_CODE && (
+          <div className="status-box status-box-error">
+            Без подписки доступ к курсам и заданиям закрыт.
+          </div>
+        )}
+      </section>
+
+      <section className="surface">
+        <div className="section-head">
+          <div>
+            <h2>Промокод</h2>
+            <p>Одноразовый код для тестовой активации подписки без оплаты.</p>
+          </div>
+        </div>
+        <div className="subscription-summary">
+          <input
+            type="text"
+            className="input"
+            placeholder="Введите 12-символьный промокод"
+            value={promoCode}
+            onChange={(event) => setPromoCode(event.target.value)}
+            maxLength={32}
+            autoComplete="off"
+          />
+          <button type="button" className="btn btn-primary btn-sm" onClick={onApplyPromo} disabled={promoLoading}>
+            {promoLoading ? "Применяем..." : "Применить промокод"}
           </button>
         </div>
       </section>
@@ -282,7 +344,7 @@ export function BillingPage() {
           const isCurrent = current?.code === plan.code;
           const isFeatured = plan.code === featuredPlan;
           const features = featureMap[plan.code] ?? [
-            "Доступ к курсам",
+            plan.maxCourses && plan.maxCourses > 0 ? `Доступ к ${plan.maxCourses} курсу(ам)` : "Доступ ко всем курсам",
             "Практика задач",
             `Лимит отправок: ${plan.dailySubmissionLimit} в день`,
           ];
@@ -296,6 +358,9 @@ export function BillingPage() {
 
               <p className="pricing-description">{plan.description}</p>
               <div className="pricing-price">{plan.priceRub} ₽ <span>/ месяц</span></div>
+              <p className="pricing-limit">
+                {plan.maxCourses && plan.maxCourses > 0 ? `Доступно курсов: ${plan.maxCourses}` : "Доступно курсов: все"}
+              </p>
               <p className="pricing-limit">Лимит отправок: {plan.dailySubmissionLimit} в день</p>
 
               <ul className="pricing-features">
@@ -311,9 +376,9 @@ export function BillingPage() {
                 type="button"
                 className={`btn ${isFeatured ? "btn-primary" : "btn-secondary"}`}
                 onClick={() => onCheckout(plan.code)}
-                disabled={loading || plan.code === "free" || isCurrent}
+                disabled={loading || isCurrent}
               >
-                {isCurrent ? "Текущий тариф" : "Выбрать тариф"}
+                {isCurrent ? "Текущий тариф" : "Оформить подписку"}
               </button>
             </article>
           );

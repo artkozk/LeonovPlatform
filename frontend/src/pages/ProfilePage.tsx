@@ -1,6 +1,14 @@
-﻿import { CreditCard, ShieldCheck, Trophy, UserRound } from "lucide-react";
+import { CreditCard, ShieldCheck, Trophy, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/auth";
+
+function formatPlanLabel(raw?: string) {
+  const value = String(raw ?? "").trim().toLowerCase();
+  if (value === "" || value === "free") return "Без подписки";
+  if (value === "pro") return "Start";
+  if (value === "premium") return "Premium";
+  return value.toUpperCase();
+}
 
 export function ProfilePage() {
   const user = useAuthStore((s) => s.user);
@@ -24,7 +32,7 @@ export function ProfilePage() {
           </div>
         </div>
         <div className="profile-meta">
-          <span className="badge badge-blue">{user?.planCode?.toUpperCase() ?? "FREE"} • L{user?.level ?? 1}</span>
+          <span className="badge badge-blue">{formatPlanLabel(user?.planCode)} • L{user?.level ?? 1}</span>
           <span className="badge badge-neutral">XP {user?.xp ?? 0}</span>
         </div>
       </section>
@@ -48,7 +56,7 @@ export function ProfilePage() {
         <article className="surface compact-stat-card">
           <span className="stat-icon"><CreditCard size={16} strokeWidth={1.9} /></span>
           <p>План</p>
-          <strong>{user?.planCode?.toUpperCase() ?? "FREE"}</strong>
+          <strong>{formatPlanLabel(user?.planCode)}</strong>
         </article>
       </section>
 
@@ -73,3 +81,4 @@ export function ProfilePage() {
     </div>
   );
 }
+

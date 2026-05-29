@@ -50,6 +50,19 @@ type CoursesScreenCache = {
   savedAt: string;
 };
 
+function ruCoursesError(raw?: string): string {
+  const text = String(raw ?? "").trim().toLowerCase();
+  if (!text) return "Не удалось загрузить курсы.";
+  if (text.includes("active subscription required for course access") || text.includes("subscription_required")) {
+    return "Для доступа к курсам нужна активная подписка. Перейдите в раздел «Подписка».";
+  }
+  if (text.includes("current plan does not include this course") || text.includes("course_not_in_plan")) {
+    return "Текущий тариф не включает этот курс. Выберите более высокий тариф.";
+  }
+  if (text.includes("unauthorized")) return "Сессия истекла. Выполните вход заново.";
+  return raw ?? "Не удалось загрузить курсы.";
+}
+
 function normalizeOptionalString(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const normalized = value.trim();
@@ -251,7 +264,7 @@ export function CoursesPage() {
       if (!selectedCourseRef.current) {
         setSelectedCourse(null);
       }
-      setError(e?.response?.data?.error ?? "Не удалось открыть курс.");
+      setError(ruCoursesError(e?.response?.data?.error));
     } finally {
       setLoadingDetail(false);
     }
@@ -273,7 +286,7 @@ export function CoursesPage() {
         }
       })
       .catch((e: any) => {
-        setError(e?.response?.data?.error ?? "Не удалось загрузить курсы.");
+        setError(ruCoursesError(e?.response?.data?.error));
       })
       .finally(() => {
         setCoursesLoading(false);
@@ -400,8 +413,8 @@ export function CoursesPage() {
 
           {!coursesLoading && courses.length === 0 ? (
             <div className="empty-state">
-              <h3>Курсы не опубликованы</h3>
-              <p>Проверьте публикацию контента в админке.</p>
+              <h3>Доступ к курсам закрыт</h3>
+              <p>Оформите подписку, чтобы открыть материалы и практику.</p>
             </div>
           ) : null}
 

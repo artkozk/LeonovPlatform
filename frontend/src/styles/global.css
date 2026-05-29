@@ -2618,6 +2618,10 @@ textarea:focus-visible {
   flex-wrap: wrap;
 }
 
+.subscription-summary .input {
+  min-width: min(340px, 100%);
+}
+
 .pricing-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

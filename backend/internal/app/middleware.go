@@ -166,12 +166,12 @@ func (a *App) authMiddleware() gin.HandlerFunc {
 		ctx := UserContext{ID: claims.UserID, Role: claims.Role}
 		var isBlocked bool
 		if err := a.DB.QueryRow(c.Request.Context(), `
-			SELECT u.is_blocked, COALESCE(p.code, 'free')
+			SELECT u.is_blocked, COALESCE(p.code, $2)
 			FROM users u
 			LEFT JOIN subscriptions s ON s.user_id = u.id AND s.status = 'active' AND (s.ends_at IS NULL OR s.ends_at > NOW())
 			LEFT JOIN plans p ON p.id = s.plan_id
 			WHERE u.id = $1
-		`, claims.UserID).Scan(&isBlocked, &ctx.PlanCode); err != nil {
+		`, claims.UserID, technicalFreePlanCode).Scan(&isBlocked, &ctx.PlanCode); err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, APIError{Error: "invalid access token"})
 				return
@@ -180,7 +180,7 @@ func (a *App) authMiddleware() gin.HandlerFunc {
 			return
 		}
 		if strings.TrimSpace(ctx.PlanCode) == "" {
-			ctx.PlanCode = "free"
+			ctx.PlanCode = technicalFreePlanCode
 		}
 		if isBlocked {
 			c.AbortWithStatusJSON(http.StatusForbidden, APIError{Error: "account blocked"})

@@ -90,6 +90,12 @@ function ruError(raw?: string): string {
   if (text.includes("task not found")) return "Задача не найдена.";
   if (text.includes("lesson not found")) return "Урок не найден.";
   if (text.includes("course not found")) return "Курс не найден.";
+  if (text.includes("active subscription required for course access") || text.includes("subscription_required")) {
+    return "Для доступа к задачам нужна активная подписка. Откройте раздел «Подписка».";
+  }
+  if (text.includes("current plan does not include this course") || text.includes("course_not_in_plan")) {
+    return "Текущий тариф не включает этот курс. Выберите более высокий тариф.";
+  }
   if (text.includes("daily submission limit reached")) return "Дневной лимит отправок по вашему тарифу исчерпан.";
   if (text.includes("max attempts exceeded")) return "Вы исчерпали лимит попыток для этой задачи.";
   if (text.includes("unauthorized")) return "Сессия истекла. Выполните вход заново.";
@@ -103,6 +109,12 @@ function ruHintError(rawError?: string, rawStatus?: string): string {
   if (!text) return "Не удалось получить AI-подсказку. Повторите действие.";
   if (text.includes("upgrade_required") || text.includes("available only for premium plan")) {
     return "AI-подсказка доступна только на тарифе Premium.";
+  }
+  if (text.includes("active subscription required for course access") || text.includes("subscription_required")) {
+    return "AI-подсказка доступна только при активной подписке на курс.";
+  }
+  if (text.includes("current plan does not include this course") || text.includes("course_not_in_plan")) {
+    return "Текущий тариф не включает этот курс. Выберите более высокий тариф.";
   }
   if (text.includes("unauthorized")) return "Сессия истекла. Выполните вход заново.";
   if (text.includes("forbidden")) return "Недостаточно прав для этого действия.";

@@ -400,6 +400,12 @@ export async function checkout(planCode: string) {
   return data;
 }
 
+export async function applyPromoCode(code: string) {
+  const { data } = await http.post("/subscription/promocode/apply", { code });
+  clearReadCaches();
+  return data;
+}
+
 export async function cancelSubscription() {
   const { data } = await http.post("/subscription/cancel");
   return data;

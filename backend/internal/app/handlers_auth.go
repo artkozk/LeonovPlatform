@@ -127,7 +127,7 @@ func (a *App) Register(c *gin.Context) {
 	}
 
 	var freePlanID string
-	if err := tx.QueryRow(c.Request.Context(), `SELECT id FROM plans WHERE code='free'`).Scan(&freePlanID); err != nil {
+	if err := tx.QueryRow(c.Request.Context(), `SELECT id FROM plans WHERE code = $1`, technicalFreePlanCode).Scan(&freePlanID); err != nil {
 		internalServerError(c, err)
 		return
 	}
@@ -168,7 +168,7 @@ func (a *App) Register(c *gin.Context) {
 			AccessTokenTTL:  a.Cfg.JWTAccessTTL.String(),
 			RefreshTokenTTL: a.Cfg.JWTRefreshTTL.String(),
 			EmailVerified:   false,
-			CurrentPlan:     "free",
+			CurrentPlan:     technicalFreePlanCode,
 		},
 		"verificationRequired": true,
 	}
@@ -194,12 +194,12 @@ func (a *App) Login(c *gin.Context) {
 	var userID, passHash, role, planCode string
 	var isBlocked, isVerified bool
 	err = a.DB.QueryRow(c.Request.Context(), `
-		SELECT u.id, u.password_hash, u.role, u.is_blocked, u.is_email_verified, COALESCE(p.code,'free')
+		SELECT u.id, u.password_hash, u.role, u.is_blocked, u.is_email_verified, COALESCE(p.code, $2)
 		FROM users u
 		LEFT JOIN subscriptions s ON s.user_id=u.id AND s.status='active' AND (s.ends_at IS NULL OR s.ends_at > NOW())
 		LEFT JOIN plans p ON p.id=s.plan_id
 		WHERE u.email=$1
-	`, req.Email).Scan(&userID, &passHash, &role, &isBlocked, &isVerified, &planCode)
+	`, req.Email, technicalFreePlanCode).Scan(&userID, &passHash, &role, &isBlocked, &isVerified, &planCode)
 	if err != nil {
 		unauthorized(c, "invalid credentials")
 		return
