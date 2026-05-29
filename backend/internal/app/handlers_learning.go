@@ -1522,6 +1522,8 @@ func (a *App) Leaderboard(c *gin.Context) {
 		SELECT nickname, first_name, last_name, xp, level
 		FROM users
 		WHERE is_blocked = FALSE
+		  AND role = 'student'
+		  AND xp > 0
 		ORDER BY xp DESC, level DESC
 		LIMIT 100
 	`)
