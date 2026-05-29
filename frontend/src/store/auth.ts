@@ -85,7 +85,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
         set({ user: null, loading: false, error: null, bootstrapped: true });
         return;
       }
-      set({ user: profile, loading: false, error: null });
+      set({ user: profile, loading: false, error: null, bootstrapped: true });
     } catch (e: any) {
       if (!getAccessToken() || shouldClearAuthSession(e)) {
         clearTokens();
@@ -94,6 +94,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
       }
       set({
         loading: false,
+        bootstrapped: true,
         error: resolveAuthError(e, "Не удалось обновить сессию. Проверьте подключение и повторите позже."),
       });
     }
