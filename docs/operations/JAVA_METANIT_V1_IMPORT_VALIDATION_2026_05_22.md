@@ -2,7 +2,7 @@
 
 ## Source Inputs
 - materials json: `C:\prog\Comercial\LeonovCarePlatform\материалы\java_metanit_v1\course_import.json`
-- generated migration: `C:\prog\Comercial\LeonovCarePlatform\backend\migrations\041_reseed_java_zero_core_metanit_v1_practice_refresh.sql`
+- generated migration: `C:\prog\Comercial\LeonovCarePlatform\backend\migrations\042_reseed_java_zero_core_metanit_v1_theory_readability_refresh.sql`
 
 ## Parsed Materials Stats
 - modules: 16

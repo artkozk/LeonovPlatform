@@ -9,6 +9,7 @@ from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 ROOT = Path(__file__).resolve().parent
 COURSE_FILE = ROOT / "course_import.json"
@@ -41,6 +42,8 @@ BANNED_PROMO_PATTERNS = [
 SKIP_TEXT_LINES = {"Назад", "Вперед", "Содержание", "METANIT.COM", "Сайт о программировании"}
 SOURCE_LINE_RE = re.compile(r"^\s*(?:\*\*)?\s*Источник\s*:?\s*(?:\*\*)?\s*https?://\S+\s*$", re.IGNORECASE | re.MULTILINE)
 BROKEN_TITLE_MARKERS = ("Последнее обновление:", "Назад", "Содержание", "Вперед")
+NAV_CLUSTER_RE = re.compile(r"\bНазад\b\s+\bСодержание\b\s+\bВперед\b", re.IGNORECASE)
+LAST_UPDATE_RE = re.compile(r"\bПоследнее\s+обновление\s*:\s*\d{2}\.\d{2}\.\d{4}\b", re.IGNORECASE)
 
 
 def slug(value: str) -> str:
@@ -176,6 +179,42 @@ def strip_navigation_noise(lines: list[str]) -> list[str]:
     return cleaned
 
 
+def extract_theory_lines(container: Tag | BeautifulSoup, title: str) -> list[str]:
+    # Work on a detached DOM fragment so we can safely remove noisy elements.
+    detached = BeautifulSoup(str(container), "html.parser")
+
+    for node in detached.select("script, style, noscript, iframe, pre"):
+        node.decompose()
+
+    lines: list[str] = []
+    seen: set[str] = set()
+    allowed_tags = ("h1", "h2", "h3", "h4", "p", "li", "blockquote")
+    for node in detached.find_all(allowed_tags):
+        text = clean_line(node.get_text(" ", strip=True))
+        text = LAST_UPDATE_RE.sub("", text)
+        text = NAV_CLUSTER_RE.sub("", text)
+        text = clean_line(text)
+        if not text:
+            continue
+        if text == title:
+            continue
+        if len(text) == 1 and text.isdigit():
+            continue
+        if text in SKIP_TEXT_LINES:
+            continue
+        if text.startswith("Последнее обновление:"):
+            continue
+        if any(pat.search(text) for pat in BANNED_PROMO_PATTERNS):
+            continue
+        key = text.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        lines.append(text)
+
+    return lines
+
+
 def extract_code_blocks(container: BeautifulSoup) -> list[tuple[str, str]]:
     blocks: list[tuple[str, str]] = []
     for pre in container.select("pre"):
@@ -192,16 +231,46 @@ def extract_code_blocks(container: BeautifulSoup) -> list[tuple[str, str]]:
 
 
 def format_theory_paragraphs(text_lines: list[str]) -> str:
-    merged = " ".join(line for line in text_lines if line).strip()
-    if not merged:
-        return ""
-    sentences = [chunk.strip() for chunk in re.split(r"(?<=[.!?])\s+", merged) if chunk.strip()]
-    if len(sentences) <= 3:
-        return merged
     paragraphs: list[str] = []
-    for index in range(0, len(sentences), 3):
-        paragraphs.append(" ".join(sentences[index:index + 3]))
-    return "\n\n".join(paragraphs)
+    buffer: list[str] = []
+
+    def flush_buffer() -> None:
+        if not buffer:
+            return
+        merged = " ".join(buffer).strip()
+        buffer.clear()
+        if not merged:
+            return
+        merged = re.sub(r"\s{2,}", " ", merged)
+        sentences = [chunk.strip() for chunk in re.split(r"(?<=[.!?])\s+", merged) if chunk.strip()]
+        dedup_sentences: list[str] = []
+        seen_sentences: set[str] = set()
+        for sentence in sentences:
+            key = sentence.lower()
+            if key in seen_sentences:
+                continue
+            seen_sentences.add(key)
+            dedup_sentences.append(sentence)
+        sentences = dedup_sentences
+        if len(sentences) <= 3:
+            paragraphs.append(merged)
+            return
+        for index in range(0, len(sentences), 3):
+            paragraphs.append(" ".join(sentences[index:index + 3]))
+
+    for line in text_lines:
+        text = clean_line(line)
+        if not text:
+            flush_buffer()
+            continue
+        if text.endswith(":") and len(text) <= 110:
+            flush_buffer()
+            paragraphs.append(f"**{text}**")
+            continue
+        buffer.append(text)
+
+    flush_buffer()
+    return "\n\n".join(paragraphs).strip()
 
 
 def build_theory_markdown(url: str, title: str, text_lines: list[str], code_blocks: list[tuple[str, str]]) -> str:
@@ -261,9 +330,12 @@ def parse_page(session: requests.Session, url: str) -> dict:
     else:
         title = f"Тема {chapter}.{page}"
 
-    text = container.get_text("\n", strip=True) if container else soup.get_text("\n", strip=True)
-    lines = strip_navigation_noise(text.splitlines())
-    code_blocks = extract_code_blocks(container)
+    if container is not None:
+        lines = extract_theory_lines(container, title)
+    else:
+        text = soup.get_text("\n", strip=True)
+        lines = strip_navigation_noise(text.splitlines())
+    code_blocks = extract_code_blocks(container) if container is not None else []
 
     return {
         "chapter": chapter,
