@@ -402,6 +402,10 @@ func (a *App) ApplyPromoCode(c *gin.Context) {
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
+			if suggestion, ok := a.suggestPromoCodeWithSingleExtraCharTx(c.Request.Context(), tx, code); ok {
+				notFound(c, fmt.Sprintf("promo code not found; did you mean %s?", suggestion))
+				return
+			}
 			notFound(c, "promo code not found")
 			return
 		}
@@ -474,6 +478,63 @@ func (a *App) ApplyPromoCode(c *gin.Context) {
 		"planCode":  planCode,
 		"planTitle": planTitle,
 	})
+}
+
+func (a *App) suggestPromoCodeWithSingleExtraCharTx(ctx context.Context, tx pgx.Tx, code string) (string, bool) {
+	// Typical user typo: one extra character in an otherwise valid code.
+	// Example: PREM26AB0B1C2 -> PREM26A0B1C2
+	if len(code) != 13 {
+		return "", false
+	}
+
+	seen := make(map[string]struct{}, len(code))
+	candidates := make([]string, 0, len(code))
+	for i := 0; i < len(code); i++ {
+		candidate := code[:i] + code[i+1:]
+		if len(candidate) != 12 {
+			continue
+		}
+		if _, exists := seen[candidate]; exists {
+			continue
+		}
+		seen[candidate] = struct{}{}
+		candidates = append(candidates, candidate)
+	}
+	if len(candidates) == 0 {
+		return "", false
+	}
+
+	rows, err := tx.Query(ctx, `
+		SELECT code
+		FROM promo_codes
+		WHERE UPPER(code) = ANY($1::text[])
+		  AND is_active = TRUE
+		  AND redeemed_at IS NULL
+		  AND redeemed_by_user_id IS NULL
+	`, candidates)
+	if err != nil {
+		return "", false
+	}
+	defer rows.Close()
+
+	matches := make([]string, 0, 2)
+	for rows.Next() {
+		var match string
+		if scanErr := rows.Scan(&match); scanErr != nil {
+			return "", false
+		}
+		matches = append(matches, strings.ToUpper(strings.TrimSpace(match)))
+		if len(matches) > 1 {
+			return "", false
+		}
+	}
+	if rows.Err() != nil {
+		return "", false
+	}
+	if len(matches) == 1 && matches[0] != "" {
+		return matches[0], true
+	}
+	return "", false
 }
 
 func (a *App) CancelSubscription(c *gin.Context) {
