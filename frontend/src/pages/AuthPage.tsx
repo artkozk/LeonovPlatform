@@ -110,7 +110,15 @@ export function AuthPage() {
 
             <label className="field">
               <span>Пароль</span>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" minLength={8} maxLength={128} required />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                minLength={mode === "register" ? 8 : undefined}
+                maxLength={128}
+                required
+              />
             </label>
 
             <button type="submit" className="btn btn-primary btn-lg" disabled={loading}>
