@@ -9,6 +9,8 @@ function humanAuthError(raw?: string) {
   if (text.includes("nickname must contain letters")) return "Ник должен содержать буквы, цифры, подчёркивание или дефис.";
   if (text.includes("registerrequest.nickname") && text.includes("min")) return "Ник должен содержать минимум 3 символа.";
   if (text.includes("registerrequest.password") && text.includes("min")) return "Пароль должен быть не короче 8 символов.";
+  if (text.includes("bad request") && text.includes("invalid character")) return "Сервер получил некорректный JSON. Очистите кеш браузера и откройте /auth повторно.";
+  if (text.includes("bad request") && text.includes("string")) return "Сервер получил некорректный JSON. Проверьте ввод пароля и отправку формы.";
   if (text.includes("invalid credentials")) return "Неверный email или пароль.";
   if (text.includes("user already exists")) return "Пользователь с таким email уже существует.";
   if (text.includes("nickname already exists")) return "Этот ник уже занят.";

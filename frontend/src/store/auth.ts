@@ -6,6 +6,13 @@ let bootstrapPromise: Promise<UserProfile> | null = null;
 
 function resolveAuthError(error: any, fallback: string) {
   const responseError = error?.response?.data?.error;
+  const responseDetails = error?.response?.data?.details;
+  if (typeof responseError === "string" && responseError.toLowerCase() === "bad request") {
+    if (typeof responseDetails === "string" && responseDetails.trim() !== "") {
+      return `${responseError}: ${responseDetails}`;
+    }
+    return fallback;
+  }
   if (typeof responseError === "string" && responseError.trim() !== "") {
     return responseError;
   }
