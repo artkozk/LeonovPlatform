@@ -9,6 +9,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,6 +21,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 var pendingPaymentStatuses = map[string]struct{}{
@@ -367,14 +369,15 @@ func (a *App) ApplyPromoCode(c *gin.Context) {
 	}
 
 	var (
-		promoID       string
-		planID        string
-		planCode      string
-		planTitle     string
-		planPriceRub  int
-		isActive      bool
-		redeemedByID  sql.NullString
-		redeemedAtRaw sql.NullTime
+		promoID        string
+		planID         string
+		planCode       string
+		planTitle      string
+		planPriceRub   int
+		promoPaymentID string
+		isActive       bool
+		redeemedByID   sql.NullString
+		redeemedAtRaw  sql.NullTime
 	)
 	err = tx.QueryRow(c.Request.Context(), `
 		SELECT
@@ -434,20 +437,106 @@ func (a *App) ApplyPromoCode(c *gin.Context) {
 		return
 	}
 
-	promoPaymentID := uuid.NewString()
-	if _, err := tx.Exec(c.Request.Context(), `
+	promoPaymentID = uuid.NewString()
+	promoProviderPaymentID := "PROMO-" + promoID
+
+	var existingPaymentUserID sql.NullString
+	var existingPaymentCreatedAt time.Time
+	err = tx.QueryRow(c.Request.Context(), `
+		SELECT id::text, user_id::text, created_at
+		FROM payments
+		WHERE provider = 'promo'
+		  AND provider_payment_id = $1
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, promoProviderPaymentID).Scan(new(string), &existingPaymentUserID, &existingPaymentCreatedAt)
+	if err != nil && err != pgx.ErrNoRows {
+		internalServerError(c, err)
+		return
+	}
+	if err == nil {
+		if !redeemedByID.Valid && !redeemedAtRaw.Valid {
+			if _, err := tx.Exec(c.Request.Context(), `
+				UPDATE promo_codes
+				SET redeemed_by_user_id = $2,
+				    redeemed_at = COALESCE(redeemed_at, $3),
+				    updated_at = NOW()
+				WHERE id = $1
+			`, promoID, existingPaymentUserID, existingPaymentCreatedAt); err != nil {
+				internalServerError(c, err)
+				return
+			}
+
+			redeemedByID.String = existingPaymentUserID.String
+			redeemedByID.Valid = existingPaymentUserID.Valid && strings.TrimSpace(existingPaymentUserID.String) != ""
+			redeemedAtRaw.Time = existingPaymentCreatedAt
+			redeemedAtRaw.Valid = true
+		}
+
+		if strings.TrimSpace(existingPaymentUserID.String) == uctx.ID {
+			c.JSON(http.StatusConflict, APIError{Error: "promo code already redeemed by this account"})
+			return
+		}
+		c.JSON(http.StatusConflict, APIError{Error: "promo code already redeemed"})
+		return
+	}
+
+	insertPromoPaymentErr := tx.QueryRow(c.Request.Context(), `
 		INSERT INTO payments(
 			id, user_id, plan_id, provider, provider_payment_id, amount_rub, status, checkout_url, raw_payload, provider_bill_id
 		)
 		VALUES($1, $2, $3, 'promo', $4, $5, 'paid', NULL, $6::jsonb, NULL)
-	`, promoPaymentID, uctx.ID, planID, "PROMO-"+promoID, planPriceRub, jsonMarshal(gin.H{
+		RETURNING id
+	`, promoPaymentID, uctx.ID, planID, promoProviderPaymentID, planPriceRub, jsonMarshal(gin.H{
 		"mode":      "promo_code_redeem",
 		"promoId":   promoID,
 		"promoCode": code,
 		"planCode":  planCode,
 		"planTitle": planTitle,
-	})); err != nil {
-		internalServerError(c, err)
+	})).Scan(&promoPaymentID)
+	if insertPromoPaymentErr != nil {
+		var pgErr *pgconn.PgError
+		if !errors.As(insertPromoPaymentErr, &pgErr) || pgErr.Code != "23505" {
+			internalServerError(c, insertPromoPaymentErr)
+			return
+		}
+
+		err = tx.QueryRow(c.Request.Context(), `
+			SELECT user_id::text, created_at
+			FROM payments
+			WHERE provider = 'promo'
+			  AND provider_payment_id = $1
+			ORDER BY created_at DESC
+			LIMIT 1
+		`, promoProviderPaymentID).Scan(&existingPaymentUserID, &existingPaymentCreatedAt)
+		if err != nil {
+			internalServerError(c, err)
+			return
+		}
+
+		if !redeemedByID.Valid && !redeemedAtRaw.Valid {
+			if _, err := tx.Exec(c.Request.Context(), `
+				UPDATE promo_codes
+				SET redeemed_by_user_id = $2,
+				    redeemed_at = COALESCE(redeemed_at, $3),
+				    updated_at = NOW()
+				WHERE id = $1
+			`, promoID, existingPaymentUserID, existingPaymentCreatedAt); err != nil {
+				internalServerError(c, err)
+				return
+			}
+
+			redeemedByID.String = existingPaymentUserID.String
+			redeemedByID.Valid = existingPaymentUserID.Valid && strings.TrimSpace(existingPaymentUserID.String) != ""
+			redeemedAtRaw.Time = existingPaymentCreatedAt
+			redeemedAtRaw.Valid = true
+		}
+
+		if strings.TrimSpace(existingPaymentUserID.String) == uctx.ID {
+			c.JSON(http.StatusConflict, APIError{Error: "promo code already redeemed by this account"})
+			return
+		}
+		c.JSON(http.StatusConflict, APIError{Error: "promo code already redeemed"})
 		return
 	}
 

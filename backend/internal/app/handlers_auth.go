@@ -184,22 +184,39 @@ func (a *App) Login(c *gin.Context) {
 		badRequest(c, err)
 		return
 	}
-	normalizedEmail, err := normalizeAndValidateEmail(req.Email)
-	if err != nil {
-		badRequest(c, err)
+
+	normalizedLogin := strings.ToLower(strings.TrimSpace(req.Email))
+	if normalizedLogin == "" {
+		badRequest(c, fmt.Errorf("email is required"))
 		return
 	}
-	req.Email = normalizedEmail
+	req.Email = normalizedLogin
 
 	var userID, passHash, role, planCode string
 	var isBlocked, isVerified bool
-	err = a.DB.QueryRow(c.Request.Context(), `
+	loginByEmail := strings.Contains(normalizedLogin, "@")
+	if loginByEmail {
+		if normalized, err := normalizeAndValidateEmail(req.Email); err != nil {
+			badRequest(c, err)
+			return
+		} else {
+			req.Email = normalized
+		}
+	}
+
+	loginQuery := `
 		SELECT u.id, u.password_hash, u.role, u.is_blocked, u.is_email_verified, COALESCE(p.code, $2)
 		FROM users u
 		LEFT JOIN subscriptions s ON s.user_id=u.id AND s.status='active' AND (s.ends_at IS NULL OR s.ends_at > NOW())
 		LEFT JOIN plans p ON p.id=s.plan_id
-		WHERE u.email=$1
-	`, req.Email, technicalFreePlanCode).Scan(&userID, &passHash, &role, &isBlocked, &isVerified, &planCode)
+		WHERE `
+	if loginByEmail {
+		loginQuery += `u.email=$1`
+	} else {
+		loginQuery += `u.username=$1`
+	}
+
+	err := a.DB.QueryRow(c.Request.Context(), loginQuery, req.Email, technicalFreePlanCode).Scan(&userID, &passHash, &role, &isBlocked, &isVerified, &planCode)
 	if err != nil {
 		unauthorized(c, "invalid credentials")
 		return
