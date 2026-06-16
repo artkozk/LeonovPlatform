@@ -376,6 +376,7 @@ func (a *App) ApplyPromoCode(c *gin.Context) {
 		planPriceRub   int
 		promoPaymentID string
 		isActive       bool
+		isReusable     bool
 		redeemedByID   sql.NullString
 		redeemedAtRaw  sql.NullTime
 	)
@@ -387,6 +388,7 @@ func (a *App) ApplyPromoCode(c *gin.Context) {
 			p.title,
 			p.price_rub,
 			pc.is_active,
+			pc.is_reusable,
 			pc.redeemed_by_user_id::text,
 			pc.redeemed_at
 		FROM promo_codes pc
@@ -400,6 +402,7 @@ func (a *App) ApplyPromoCode(c *gin.Context) {
 		&planTitle,
 		&planPriceRub,
 		&isActive,
+		&isReusable,
 		&redeemedByID,
 		&redeemedAtRaw,
 	)
@@ -424,61 +427,68 @@ func (a *App) ApplyPromoCode(c *gin.Context) {
 		c.JSON(http.StatusConflict, APIError{Error: "promo code is disabled"})
 		return
 	}
-	if redeemedByID.Valid && strings.TrimSpace(redeemedByID.String) != "" {
-		if strings.TrimSpace(redeemedByID.String) == uctx.ID {
-			c.JSON(http.StatusConflict, APIError{Error: "promo code already redeemed by this account"})
+	if !isReusable {
+		if redeemedByID.Valid && strings.TrimSpace(redeemedByID.String) != "" {
+			if strings.TrimSpace(redeemedByID.String) == uctx.ID {
+				c.JSON(http.StatusConflict, APIError{Error: "promo code already redeemed by this account"})
+				return
+			}
+			c.JSON(http.StatusConflict, APIError{Error: "promo code already redeemed"})
 			return
 		}
-		c.JSON(http.StatusConflict, APIError{Error: "promo code already redeemed"})
-		return
-	}
-	if redeemedAtRaw.Valid {
-		c.JSON(http.StatusConflict, APIError{Error: "promo code already redeemed"})
-		return
+		if redeemedAtRaw.Valid {
+			c.JSON(http.StatusConflict, APIError{Error: "promo code already redeemed"})
+			return
+		}
 	}
 
 	promoPaymentID = uuid.NewString()
 	promoProviderPaymentID := "PROMO-" + promoID
-
-	var existingPaymentUserID sql.NullString
-	var existingPaymentCreatedAt time.Time
-	err = tx.QueryRow(c.Request.Context(), `
-		SELECT id::text, user_id::text, created_at
-		FROM payments
-		WHERE provider = 'promo'
-		  AND provider_payment_id = $1
-		ORDER BY created_at DESC
-		LIMIT 1
-	`, promoProviderPaymentID).Scan(new(string), &existingPaymentUserID, &existingPaymentCreatedAt)
-	if err != nil && err != pgx.ErrNoRows {
-		internalServerError(c, err)
-		return
+	if isReusable {
+		promoProviderPaymentID = fmt.Sprintf("PROMO-%s-%s", promoID, promoPaymentID)
 	}
-	if err == nil {
-		if !redeemedByID.Valid && !redeemedAtRaw.Valid {
-			if _, err := tx.Exec(c.Request.Context(), `
-				UPDATE promo_codes
-				SET redeemed_by_user_id = $2,
-				    redeemed_at = COALESCE(redeemed_at, $3),
-				    updated_at = NOW()
-				WHERE id = $1
-			`, promoID, existingPaymentUserID, existingPaymentCreatedAt); err != nil {
-				internalServerError(c, err)
-				return
-			}
 
-			redeemedByID.String = existingPaymentUserID.String
-			redeemedByID.Valid = existingPaymentUserID.Valid && strings.TrimSpace(existingPaymentUserID.String) != ""
-			redeemedAtRaw.Time = existingPaymentCreatedAt
-			redeemedAtRaw.Valid = true
-		}
-
-		if strings.TrimSpace(existingPaymentUserID.String) == uctx.ID {
-			c.JSON(http.StatusConflict, APIError{Error: "promo code already redeemed by this account"})
+	if !isReusable {
+		var existingPaymentUserID sql.NullString
+		var existingPaymentCreatedAt time.Time
+		err = tx.QueryRow(c.Request.Context(), `
+			SELECT id::text, user_id::text, created_at
+			FROM payments
+			WHERE provider = 'promo'
+			  AND provider_payment_id = $1
+			ORDER BY created_at DESC
+			LIMIT 1
+		`, promoProviderPaymentID).Scan(new(string), &existingPaymentUserID, &existingPaymentCreatedAt)
+		if err != nil && err != pgx.ErrNoRows {
+			internalServerError(c, err)
 			return
 		}
-		c.JSON(http.StatusConflict, APIError{Error: "promo code already redeemed"})
-		return
+		if err == nil {
+			if !redeemedByID.Valid && !redeemedAtRaw.Valid {
+				if _, err := tx.Exec(c.Request.Context(), `
+					UPDATE promo_codes
+					SET redeemed_by_user_id = $2,
+					    redeemed_at = COALESCE(redeemed_at, $3),
+					    updated_at = NOW()
+					WHERE id = $1
+			`, promoID, existingPaymentUserID, existingPaymentCreatedAt); err != nil {
+					internalServerError(c, err)
+					return
+				}
+
+				redeemedByID.String = existingPaymentUserID.String
+				redeemedByID.Valid = existingPaymentUserID.Valid && strings.TrimSpace(existingPaymentUserID.String) != ""
+				redeemedAtRaw.Time = existingPaymentCreatedAt
+				redeemedAtRaw.Valid = true
+			}
+
+			if strings.TrimSpace(existingPaymentUserID.String) == uctx.ID {
+				c.JSON(http.StatusConflict, APIError{Error: "promo code already redeemed by this account"})
+				return
+			}
+			c.JSON(http.StatusConflict, APIError{Error: "promo code already redeemed"})
+			return
+		}
 	}
 
 	insertPromoPaymentErr := tx.QueryRow(c.Request.Context(), `
@@ -495,8 +505,17 @@ func (a *App) ApplyPromoCode(c *gin.Context) {
 		"planTitle": planTitle,
 	})).Scan(&promoPaymentID)
 	if insertPromoPaymentErr != nil {
-		var pgErr *pgconn.PgError
-		if !errors.As(insertPromoPaymentErr, &pgErr) || pgErr.Code != "23505" {
+		if isReusable {
+			internalServerError(c, insertPromoPaymentErr)
+			return
+		}
+		var (
+			existingPaymentUserID    sql.NullString
+			existingPaymentCreatedAt time.Time
+			pgErr                    *pgconn.PgError
+		)
+		var pgCheckErr error = insertPromoPaymentErr
+		if !errors.As(pgCheckErr, &pgErr) || pgErr.Code != "23505" {
 			internalServerError(c, insertPromoPaymentErr)
 			return
 		}
@@ -545,15 +564,17 @@ func (a *App) ApplyPromoCode(c *gin.Context) {
 		return
 	}
 
-	if _, err := tx.Exec(c.Request.Context(), `
-		UPDATE promo_codes
-		SET redeemed_by_user_id = $2,
-		    redeemed_at = NOW(),
-		    updated_at = NOW()
-		WHERE id = $1
-	`, promoID, uctx.ID); err != nil {
-		internalServerError(c, err)
-		return
+	if !isReusable {
+		if _, err := tx.Exec(c.Request.Context(), `
+			UPDATE promo_codes
+			SET redeemed_by_user_id = $2,
+			    redeemed_at = NOW(),
+			    updated_at = NOW()
+			WHERE id = $1
+		`, promoID, uctx.ID); err != nil {
+			internalServerError(c, err)
+			return
+		}
 	}
 
 	if err := tx.Commit(c.Request.Context()); err != nil {
@@ -598,8 +619,7 @@ func (a *App) suggestPromoCodeWithSingleExtraCharTx(ctx context.Context, tx pgx.
 		FROM promo_codes
 		WHERE UPPER(code) = ANY($1::text[])
 		  AND is_active = TRUE
-		  AND redeemed_at IS NULL
-		  AND redeemed_by_user_id IS NULL
+		  AND (is_reusable OR (redeemed_at IS NULL AND redeemed_by_user_id IS NULL))
 	`, candidates)
 	if err != nil {
 		return "", false
