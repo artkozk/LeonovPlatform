@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#123c69">
+  <title>Контур бизнеса</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="auth-root" class="auth-root" hidden>
+    <main class="auth-panel">
+      <div class="brand-mark">КБ</div>
+      <div>
+        <p class="eyebrow">Рабочее пространство</p>
+        <h1>Контур бизнеса</h1>
+        <p class="muted">Идеи, решения и задачи в одной истории.</p>
+      </div>
+      <div class="segmented" role="tablist" aria-label="Вход или регистрация">
+        <button type="button" class="segment active" data-auth-mode="login">Вход</button>
+        <button type="button" class="segment" data-auth-mode="register">Регистрация</button>
+      </div>
+      <form id="auth-form" class="stack-form">
+        <label id="email-field" hidden>Почта<input name="email" type="email" autocomplete="email"></label>
+        <label><span id="login-label">Логин или почта</span><input name="login" autocomplete="username" required></label>
+        <label>Пароль<input name="password" type="password" autocomplete="current-password" minlength="8" required></label>
+        <button class="primary wide" type="submit" id="auth-submit">Войти</button>
+        <p id="auth-error" class="form-error" role="alert"></p>
+      </form>
+    </main>
+  </div>
+
+  <div id="app-root" class="app-shell" hidden>
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark small">КБ</span><span><strong>Контур</strong><small>бизнес-проект</small></span></div>
+      <nav id="main-nav" class="main-nav" aria-label="Разделы"></nav>
+      <div class="sidebar-footer">
+        <button type="button" class="user-button" id="profile-button"><span class="avatar" id="user-avatar"></span><span><strong id="user-name"></strong><small>Профиль</small></span></button>
+        <button type="button" class="quiet" id="logout-button">Выйти</button>
+      </div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <button type="button" class="menu-button" id="menu-button" aria-label="Открыть меню">☰</button>
+        <div><p class="eyebrow">Проект</p><h2 id="page-title">Обзор</h2></div>
+        <div class="topbar-actions"><span id="sync-state" class="sync-state">Сохранено</span><button type="button" class="primary" id="new-record-button">+ Новая карточка</button></div>
+      </header>
+      <main id="main-content" class="main-content"></main>
+    </div>
+  </div>
+
+  <dialog id="record-dialog" class="record-dialog"><div id="record-dialog-content"></div></dialog>
+  <dialog id="create-dialog" class="create-dialog"><div id="create-dialog-content"></div></dialog>
+  <dialog id="reason-dialog" class="reason-dialog"><div id="reason-dialog-content"></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
