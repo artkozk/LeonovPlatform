@@ -135,6 +135,25 @@ curl -fsS http://127.0.0.1:8522/api/health
 
 До появления автоматического offsite backup оператор должен выгружать резервную копию с сервера. Хранение backup только на том же диске не защищает от потери VPS.
 
+Автоматизация, которая работает сейчас после первого production деплоя:
+
+- `/usr/local/sbin/business-control-backup` создаёт online backup через SQLite backup API;
+- каждый backup проверяется `PRAGMA integrity_check` до атомарного переименования;
+- `business-control-backup.timer` запускает backup ежедневно в `02:15 UTC` с небольшим случайным сдвигом;
+- backups старше 30 дней удаляются только после успешного создания нового;
+- каталог `/var/lib/business-control/backups` доступен только сервисному пользователю и root.
+
+Проверка timer:
+
+```bash
+systemctl list-timers business-control-backup.timer --no-pager
+systemctl start business-control-backup.service
+systemctl status business-control-backup.service --no-pager
+ls -lh /var/lib/business-control/backups
+```
+
+Локальная автоматизация не отменяет offsite backup: она защищает от ошибки приложения и части операционных ошибок, но не от полной потери VPS или диска.
+
 ## 8. Rollback приложения
 
 Rollback кода не должен откатывать БД без отдельного анализа совместимости:
@@ -186,3 +205,57 @@ du -h /var/lib/business-control/business-control.db*
 ## 12. Правило обновления документа
 
 Существующие разделы не удаляются. При изменении фактического production поведения в конец добавляется датированная актуализация: что работало раньше, что работает сейчас, причина изменения, миграционный путь и rollback.
+
+## 13. Актуализация 2026-08-12: HTTPS и закрытие прямого порта
+
+Исторические разделы выше описывают первый технический запуск через `http://85.198.82.221:8522`. Этот этап использовался только для проверки работоспособности отдельного процесса и firewall. Текущее production поведение после hardening:
+
+- пользовательский адрес: `https://business-control.85-198-82-221.sslip.io/`;
+- HTTP автоматически возвращает `301` на HTTPS;
+- nginx принимает внешний трафик на стандартных `80/443`;
+- Go-сервис слушает только `127.0.0.1:8522`;
+- отдельное UFW-правило `8522/tcp` удалено для IPv4 и IPv6;
+- `BUSINESS_COOKIE_SECURE=true`;
+- сертификат Let's Encrypt выпущен для `business-control.85-198-82-221.sslip.io` и управляется certbot auto-renew;
+- nginx-конфигурация хранится в `business-control/deploy/business-control.nginx.conf` и после установки дополняется certbot директивами сертификата и redirect.
+- nginx требует общий Basic Auth команды из `/etc/nginx/business-control.htpasswd` и задаёт `X-Robots-Tag: noindex, nofollow, nosnippet`.
+
+Почему сделано именно так:
+
+1. Регистрация передаёт пароль, поэтому постоянное использование открытого HTTP неприемлемо даже для MVP двух партнёров.
+2. Binding на localhost исключает обход nginx, TLS и его ограничений прямым обращением к `8522`.
+3. Использование отдельного hostname не меняет и не перезаписывает конфигурацию домена Leonov Care.
+4. `sslip.io` даёт немедленно работающий DNS для IP и позволяет начать защищённую работу до выбора постоянного бизнес-домена.
+5. Allowlist логинов не доказывает, что первый регистрирующийся действительно является владельцем логина. Внешний командный пароль закрывает риск захвата `artkozk` или `sweetybboy` до создания личных аккаунтов.
+
+Создание или замена командного доступа выполняется без записи открытого пароля в Git:
+
+```bash
+printf 'founders:%s\n' "$(openssl passwd -apr1 '<strong-team-password>')" > /etc/nginx/business-control.htpasswd
+chown root:www-data /etc/nginx/business-control.htpasswd
+chmod 0640 /etc/nginx/business-control.htpasswd
+nginx -t && systemctl reload nginx
+```
+
+Командный пароль передаётся обоим партнёрам через закрытый канал и хранится в менеджере паролей. После ввода nginx browser challenge пользователь проходит обычную личную регистрацию по почте, логину и паролю без подтверждения почты и кодов.
+
+Актуальные env:
+
+```dotenv
+BUSINESS_ADDRESS=127.0.0.1:8522
+BUSINESS_DATABASE_PATH=/var/lib/business-control/business-control.db
+BUSINESS_COOKIE_SECURE=true
+BUSINESS_ALLOWED_USERNAMES=artkozk,sweetybboy
+```
+
+Проверки после HTTPS hardening:
+
+```bash
+curl -fsSI http://business-control.85-198-82-221.sslip.io/
+curl -u founders:'<team-password>' -fsS https://business-control.85-198-82-221.sslip.io/api/health
+ss -ltnp | grep '127.0.0.1:8522'
+ufw status | grep 8522  # не должно быть разрешающего правила
+certbot certificates
+```
+
+При переходе на постоянный домен создаётся новый отдельный nginx host, выпускается сертификат, проверяется HTTPS health, и только после этого старый hostname выводится из эксплуатации. БД и release-каталог от смены hostname не меняются.
