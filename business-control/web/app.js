@@ -66,7 +66,7 @@ const navItems = [
 ];
 
 const state = {
-  me: null, users: [], records: [], notifications: [], activity: [], definitions: [],
+  me: null, users: [], records: [], notifications: [], activity: [], definitions: [], pendingQuestions: [],
   view: 'dashboard', search: '', statusFilter: '', ownerFilter: '', authMode: 'login', activeDetail: null,
   activeRecordTab: 'overview', activeActivity: null, historyMode: 'feed', activeRecordRequest: 0,
   detailCache: new Map(), detailRequests: new Map(),
@@ -144,6 +144,14 @@ function recordsCountLabel(count) {
   return `${count} записей`;
 }
 
+function discussionsCountLabel(count) {
+  const mod100 = count % 100;
+  const mod10 = count % 10;
+  if (mod10 === 1 && mod100 !== 11) return `${count} обсуждения`;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${count} обсуждений`;
+  return `${count} обсуждений`;
+}
+
 function deadlineState(record) {
   if (record.status === 'completed') return { className: 'done', label: 'Выполнено' };
   if (!record.dueAt) return { className: 'none', label: 'Без срока' };
@@ -205,9 +213,9 @@ async function bootstrap() {
 
 async function loadData(silent = false) {
   if (!silent) $('#sync-state').textContent = 'Обновление…';
-  const [users, records, notifications, activity, definitions] = await Promise.all([
+  const [users, records, notifications, activity, definitions, pendingQuestions] = await Promise.all([
     api('/api/users'), api('/api/records?includeArchived=true'), api('/api/notifications'),
-    api('/api/activity'), api('/api/section-definitions'),
+    api('/api/activity'), api('/api/section-definitions'), api('/api/questions/pending'),
   ]);
   const projectActivity = activity.filter((item) => typeMeta[item.entityType] || item.entityType === 'section_definition');
   const recordsByID = new Map(records.map((record) => [record.id, record]));
@@ -215,7 +223,7 @@ async function loadData(silent = false) {
     const current = recordsByID.get(id);
     if (!current || current.updatedAt !== detail.record.updatedAt) state.detailCache.delete(id);
   });
-  Object.assign(state, { users, records, notifications, activity: projectActivity, definitions });
+  Object.assign(state, { users, records, notifications, activity: projectActivity, definitions, pendingQuestions });
   $('#sync-state').textContent = 'На связи';
   render();
 }
@@ -333,6 +341,13 @@ function renderDashboard() {
     const priority = { overdue: 0, urgent: 1, soon: 2, normal: 3, none: 4, done: 5 };
     return priority[deadlineState(a).className] - priority[deadlineState(b).className] || sortByDeadline(a, b);
   }).slice(0, 4);
+  const urgentFocus = focusTasks.filter((record) => ['overdue', 'urgent'].includes(deadlineState(record).className));
+  const regularFocus = focusTasks.filter((record) => !['overdue', 'urgent'].includes(deadlineState(record).className));
+  const focusItems = [
+    ...urgentFocus.map((record) => ({ kind: 'task', record })),
+    ...state.pendingQuestions.map((question) => ({ kind: 'question', question })),
+    ...regularFocus.map((record) => ({ kind: 'task', record })),
+  ].slice(0, 4);
   const latestActivity = state.activity[0];
   $('#main-content').innerHTML = `
     <section class="project-brief">
@@ -342,7 +357,7 @@ function renderDashboard() {
     <section class="workbench-grid">
       <article class="focus-panel">
         <div class="section-heading inverse"><div><p class="eyebrow">Мой рабочий стол</p><h2>Фокус на сегодня</h2></div><button class="text-button" data-go="task">Все задачи ${icon('chevronRight')}</button></div>
-        <div class="focus-list">${focusTasks.length ? focusTasks.map((record, index) => renderFocusRecord(record, index === 0)).join('') : `<div class="focus-empty">${icon('check')}<strong>Срочных задач нет</strong><span>Можно зафиксировать следующий шаг.</span></div>`}</div>
+        <div class="focus-list">${focusItems.length ? focusItems.map((item, index) => item.kind === 'task' ? renderFocusRecord(item.record, index === 0) : renderFocusQuestion(item.question, index === 0)).join('') : `<div class="focus-empty">${icon('check')}<strong>Срочных задач и вопросов нет</strong><span>Можно зафиксировать следующий шаг.</span></div>`}</div>
       </article>
       <aside class="capture-panel">
         <div><p class="eyebrow">Быстрое действие</p><h3>Зафиксировать и продолжить</h3><p>Достаточно названия. Остальное можно заполнить позже.</p></div>
@@ -352,7 +367,7 @@ function renderDashboard() {
     <section class="metrics-grid">
       ${metric('Мои активные', myTasks.length, 'задач в работе', 'blue', 'checkSquare')}
       ${metric('Просрочено', overdue.length, overdue.length ? 'нужно пересмотреть' : 'всё по срокам', overdue.length ? 'danger' : 'coral', 'clock')}
-      ${metric('Обсуждения', questionSets.length, 'карточек вопросов', 'teal', 'messages')}
+      ${metric('Ждут ответа', state.pendingQuestions.length, `из ${discussionsCountLabel(questionSets.length)}`, 'teal', 'messages')}
       ${metric('Главные идеи', mainIdeas.length, 'текущий фокус', 'amber', 'lightbulb')}
     </section>
     <section class="dashboard-grid">
@@ -381,6 +396,11 @@ function metric(label, value, note, tone = '', iconName = 'dashboard') {
 function renderFocusRecord(record, primary = false) {
   const deadline = deadlineState(record);
   return `<button type="button" class="focus-record ${primary ? 'primary-focus' : ''}" data-open-record="${record.id}"><span class="focus-marker">${icon('checkSquare')}</span><span class="focus-copy"><small>${primary ? 'Следующая задача' : escapeHTML(record.ownerUsername)}</small><strong>${escapeHTML(record.title)}</strong><em class="deadline ${deadline.className}">${escapeHTML(deadline.label)}</em></span><span class="focus-progress"><b>${record.progress}%</b><i><u style="width:${record.progress}%"></u></i></span>${icon('chevronRight', 'row-chevron')}</button>`;
+}
+
+function renderFocusQuestion(question, primary = false) {
+  const deadline = question.dueAt ? formatDate(question.dueAt) : 'Без срока';
+  return `<button type="button" class="focus-record focus-question ${primary ? 'primary-focus' : ''}" data-open-record="${question.recordId}"><span class="focus-marker">${icon('messages')}</span><span class="focus-copy"><small>Ждёт вашего ответа · ${escapeHTML(question.recordTitle)}</small><strong>${escapeHTML(question.body)}</strong><em class="deadline normal">${escapeHTML(deadline)}</em></span><span class="focus-progress"><b>Ответить</b><i><u style="width:0"></u></i></span>${icon('chevronRight', 'row-chevron')}</button>`;
 }
 
 function renderPersonLoad(user, tasks) {
@@ -562,7 +582,7 @@ function renderRecordOverview(record, statuses) {
         ${record.type === 'question_set' ? `<div class="derived-progress"><span>Прогресс обсуждения рассчитывается по принятым итогам</span><strong>${record.progress}%</strong></div>` : ''}
       </div></details>
       <label id="record-reason-field" class="reason-field" hidden>Причина изменения <input name="reason" placeholder="Почему изменился статус или срок"></label>
-      <div class="form-actions"><button type="submit" class="primary">Сохранить</button><span class="form-save-state" id="record-save-state">Изменений нет</span><button type="button" class="secondary" id="notify-partners">Уведомить</button><button type="button" class="danger-text" id="archive-record">В архив</button></div>
+      <div class="form-actions"><button type="submit" class="primary">Сохранить</button><span class="form-save-state" id="record-save-state">Изменений нет</span><button type="button" class="secondary" id="notify-partners">Уведомить</button>${record.type === 'task' ? `<button type="button" class="secondary" id="convert-to-questions">${icon('messages')} Сделать карточкой вопросов</button>` : ''}<button type="button" class="danger-text" id="archive-record">В архив</button></div>
     </form>
     ${(record.type === 'task') ? renderProofBlock(record, state.activeDetail.proofs) : ''}
   </div>`;
@@ -587,9 +607,13 @@ function renderQuestionItem(question, index, userCount) {
   const answerByUser = new Map(question.answers.map((answer) => [answer.authorId, answer]));
   return `<article class="question-item ${question.decision ? 'resolved' : ''}">
     <header class="question-header"><span class="question-number">${index + 1}</span><div><h3>${escapeHTML(question.body)}</h3><p>${question.decision ? 'Совместный итог зафиксирован' : `${question.answers.length} из ${userCount} ответов готово`}</p></div><span class="status ${question.decision ? 'status-completed' : 'status-in_progress'}">${question.decision ? 'Решено' : 'Обсуждаем'}</span><button type="button" class="icon-button danger-icon" data-archive-question="${question.id}" title="Архивировать вопрос" aria-label="Архивировать вопрос">${icon('archive')}</button></header>
-    <div class="answer-grid">${state.users.map((user) => renderFounderAnswer(question, user, answerByUser.get(user.id))).join('')}</div>
+    <div class="answer-grid">${state.users.map((user) => renderFounderAnswer(question, user, answerByUser.get(user.id))).join('')}${state.users.length < 2 ? renderMissingFounder() : ''}</div>
     ${question.decision ? renderJointDecision(question) : allAnswered ? renderDecisionComposer(question) : `<div class="waiting-note">${icon('clock')} Итог станет доступен после ответов всех основателей.</div>`}
   </article>`;
+}
+
+function renderMissingFounder() {
+  return `<section class="answer-panel missing-founder"><header><span class="avatar">?</span><span><strong>Второй основатель</strong><small>Аккаунт ещё не зарегистрирован</small></span></header><div class="answer-placeholder">После регистрации партнёр увидит этот вопрос в блоке «Ждут ответа».</div></section>`;
 }
 
 function renderFounderAnswer(question, user, answer) {
@@ -767,6 +791,14 @@ function bindRecordDialogEvents() {
     if (!reason) return;
     await mutateRecord(`/api/records/${record.id}/archive`, { method: 'POST', body: JSON.stringify({ reason }) }, true);
   });
+  $('#convert-to-questions')?.addEventListener('click', async () => {
+    const reason = await askText({ title: 'Преобразовать карточку', label: 'Почему эта запись должна стать карточкой вопросов?', defaultValue: 'Задача изначально создана для совместной проработки списка вопросов', required: true });
+    if (!reason) return;
+    state.activeRecordTab = 'questions';
+    const converted = await mutateRecord(`/api/records/${record.id}/convert-to-questions`, { method: 'POST', body: JSON.stringify({ reason, expectedUpdatedAt: record.updatedAt }) });
+    if (converted) toast('Карточка преобразована. Теперь добавьте вопросы по одному на строку');
+    else state.activeRecordTab = 'overview';
+  });
   $$('.section-form').forEach((formNode) => formNode.addEventListener('submit', async (event) => {
     event.preventDefault(); const form = new FormData(event.currentTarget);
     await mutateDetail(`/api/records/${record.id}/sections`, { method: 'POST', body: JSON.stringify({ sectionId: event.currentTarget.dataset.sectionId, definitionId: event.currentTarget.dataset.definitionId || null, title: form.get('title'), content: form.get('content'), reason: form.get('reason') }) });
@@ -907,7 +939,7 @@ function openCreateDialog(initialType = 'idea', preset = {}) {
 }
 
 function actionLabel(action) {
-  return ({ created: 'создал карточку', profile_updated: 'изменил профиль', updated: 'изменил карточку', archived: 'перенёс в архив', section_updated: 'обновил раздел', link_created: 'создал связь', link_removed: 'убрал связь', criterion_scored: 'оценил по критерию', proof_added: 'добавил доказательство', completed: 'завершил задачу', partners_notified: 'уведомил партнёра', questions_added: 'добавил вопросы', question_answered: 'ответил на вопрос', question_decided: 'зафиксировал совместное решение', question_archived: 'архивировал вопрос' }[action] || action);
+  return ({ created: 'создал карточку', profile_updated: 'изменил профиль', updated: 'изменил карточку', converted_to_questions: 'преобразовал в карточку вопросов', archived: 'перенёс в архив', section_updated: 'обновил раздел', link_created: 'создал связь', link_removed: 'убрал связь', criterion_scored: 'оценил по критерию', proof_added: 'добавил доказательство', completed: 'завершил задачу', partners_notified: 'уведомил партнёра', questions_added: 'добавил вопросы', question_answered: 'ответил на вопрос', question_decided: 'зафиксировал совместное решение', question_archived: 'архивировал вопрос' }[action] || action);
 }
 
 function formatActivityValue(value, truncate = true) {
@@ -919,6 +951,7 @@ function formatActivityValue(value, truncate = true) {
 
 function activityDisplayValue(field, value, truncate = true) {
   if (field === 'status' && value) return statusLabels[value] || value;
+  if (field === 'type' && value) return typeMeta[value]?.singular || value;
   if ((field === 'ownerId' || field === 'decisionMakerId') && value) return state.users.find((user) => user.id === Number(value))?.username || value;
   if (field === 'dueAt' && value) return formatDate(value, true);
   if (field === 'estimateMinutes' && value !== null && value !== undefined) return minutesLabel(Number(value));

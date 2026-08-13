@@ -176,6 +176,15 @@ type QuestionWorkflow struct {
 	Resolved  int            `json:"resolved"`
 }
 
+type PendingQuestion struct {
+	QuestionID  string  `json:"questionId"`
+	Body        string  `json:"body"`
+	RecordID    string  `json:"recordId"`
+	RecordTitle string  `json:"recordTitle"`
+	DueAt       *string `json:"dueAt"`
+	CreatedAt   string  `json:"createdAt"`
+}
+
 func OpenStore(path string) (*Store, error) {
 	if path != ":memory:" {
 		if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {

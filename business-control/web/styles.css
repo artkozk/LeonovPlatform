@@ -131,6 +131,7 @@ label small { color: var(--muted); font-weight: 500; }
 .focus-record.primary-focus { min-height: 82px; border: 1px solid rgba(255,255,255,.13); border-left: 4px solid #e77b64; border-radius: 6px; background: #263846; padding: 12px; }
 .focus-marker { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 5px; background: rgba(86,189,169,.14); color: #6fc9b7; }
 .focus-marker .icon { width: 17px; height: 17px; }
+.focus-question .focus-marker { background: rgba(86,189,169,.18); color: #79d1bf; }
 .focus-copy { min-width: 0; display: grid; gap: 3px; }
 .focus-copy small { color: #8fa9b9; font-size: 9px; }
 .focus-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -371,6 +372,8 @@ dialog::backdrop { background: rgba(13, 22, 30, .62); }
 .answer-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .answer-panel { min-width: 0; padding: 15px; border-right: 1px solid var(--line); }
 .answer-panel:last-child { border-right: 0; }
+.answer-panel.missing-founder { background: #f7f9fa; }
+.missing-founder .avatar { background: #e6ecef; color: #73818a; }
 .answer-panel > header { display: flex; align-items: center; gap: 9px; margin-bottom: 11px; }
 .answer-panel > header > span:nth-child(2) { min-width: 0; display: grid; gap: 2px; }
 .answer-panel header small { color: var(--muted); font-size: 9px; }

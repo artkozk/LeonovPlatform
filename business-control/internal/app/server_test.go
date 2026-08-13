@@ -108,6 +108,17 @@ func TestBusinessWorkflow(t *testing.T) {
 		"type": "task", "title": "Расписать вопросы до совместной работы", "ownerId": partner.ID,
 		"estimateMinutes": 90, "dueAt": "2026-08-12T12:00:00Z",
 	})
+	convertibleTask := createRecord(t, artkozk, server.URL, map[string]any{
+		"type": "task", "title": "Список вопросов основателей", "ownerId": me.ID,
+		"estimateMinutes": 120, "dueAt": "2026-08-20T12:00:00Z",
+	})
+	var convertedQuestionSet Record
+	requestJSON(t, artkozk, http.MethodPost, server.URL+"/api/records/"+convertibleTask.ID+"/convert-to-questions", map[string]any{
+		"reason": "Задача на самом деле является совместной проработкой вопросов", "expectedUpdatedAt": convertibleTask.UpdatedAt,
+	}, http.StatusOK, &convertedQuestionSet)
+	if convertedQuestionSet.ID != convertibleTask.ID || convertedQuestionSet.Type != "question_set" || convertedQuestionSet.Status != "planned" || convertedQuestionSet.EstimateMinutes != 120 || convertedQuestionSet.DueAt == nil || *convertedQuestionSet.DueAt != "2026-08-20T12:00:00Z" {
+		t.Fatalf("converted task must preserve identity and planning fields: before=%#v after=%#v", convertibleTask, convertedQuestionSet)
+	}
 
 	var taskEdited Record
 	requestJSON(t, artkozk, http.MethodPatch, server.URL+"/api/records/"+task.ID, map[string]any{
@@ -146,6 +157,9 @@ func TestBusinessWorkflow(t *testing.T) {
 	if completed.Status != "completed" || completed.Progress != 100 || completed.ProofCount != 1 {
 		t.Fatalf("completed task = %#v", completed)
 	}
+	requestJSON(t, artkozk, http.MethodPost, server.URL+"/api/records/"+task.ID+"/convert-to-questions", map[string]any{
+		"reason": "Проверка защиты данных",
+	}, http.StatusConflict, nil)
 
 	var notifications []Notification
 	requestJSON(t, artkozk, http.MethodGet, server.URL+"/api/notifications", nil, http.StatusOK, &notifications)
@@ -166,6 +180,12 @@ func TestBusinessWorkflow(t *testing.T) {
 	if len(workflow.Questions) != 2 || workflow.Expected != 4 || workflow.Answered != 0 {
 		t.Fatalf("question workflow after create = %#v", workflow)
 	}
+	var artPending, partnerPending []PendingQuestion
+	requestJSON(t, artkozk, http.MethodGet, server.URL+"/api/questions/pending", nil, http.StatusOK, &artPending)
+	requestJSON(t, sweetybboy, http.MethodGet, server.URL+"/api/questions/pending", nil, http.StatusOK, &partnerPending)
+	if len(artPending) != 2 || len(partnerPending) != 2 || artPending[0].RecordID != questionSet.ID {
+		t.Fatalf("pending questions before answers: art=%#v partner=%#v", artPending, partnerPending)
+	}
 	var activeQuestionSet Record
 	requestJSON(t, artkozk, http.MethodGet, server.URL+"/api/records/"+questionSet.ID, nil, http.StatusOK, &struct {
 		Record *Record `json:"record"`
@@ -179,6 +199,11 @@ func TestBusinessWorkflow(t *testing.T) {
 	}, http.StatusOK, &workflow)
 	if workflow.Answered != 1 || len(workflow.Questions[0].Answers) != 1 {
 		t.Fatalf("first founder answer = %#v", workflow)
+	}
+	requestJSON(t, artkozk, http.MethodGet, server.URL+"/api/questions/pending", nil, http.StatusOK, &artPending)
+	requestJSON(t, sweetybboy, http.MethodGet, server.URL+"/api/questions/pending", nil, http.StatusOK, &partnerPending)
+	if len(artPending) != 1 || len(partnerPending) != 2 {
+		t.Fatalf("pending questions must be personal: art=%#v partner=%#v", artPending, partnerPending)
 	}
 	requestJSON(t, artkozk, http.MethodPost, server.URL+"/api/records/"+questionSet.ID+"/questions/"+firstQuestion.ID+"/decision", map[string]any{
 		"mode": "answer", "answerId": workflow.Questions[0].Answers[0].ID,
@@ -276,6 +301,36 @@ func TestBusinessWorkflow(t *testing.T) {
 	if renamed.Username != "artkozk_new" {
 		t.Fatalf("updated username = %q", renamed.Username)
 	}
+}
+
+func TestQuestionDecisionWaitsForSecondFounder(t *testing.T) {
+	store, err := OpenStore(filepath.Join(t.TempDir(), "single-founder.db"))
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	defer store.Close()
+	server := httptest.NewServer(NewServer(store, Config{SessionLifetime: 24 * 60 * 60 * 1e9}))
+	defer server.Close()
+	client := testClient(t)
+	founder := register(t, client, server.URL, "founder@example.test", "founder")
+	questionSet := createRecord(t, client, server.URL, map[string]any{
+		"type": "question_set", "title": "Договорённости", "ownerId": founder.ID,
+	})
+	var workflow QuestionWorkflow
+	requestJSON(t, client, http.MethodPost, server.URL+"/api/records/"+questionSet.ID+"/questions", map[string]any{
+		"questions": "Кто принимает финальное решение?",
+	}, http.StatusCreated, &workflow)
+	if workflow.UserCount != 2 || workflow.Expected != 2 {
+		t.Fatalf("single registered founder must still require two answers: %#v", workflow)
+	}
+	question := workflow.Questions[0]
+	requestJSON(t, client, http.MethodPut, server.URL+"/api/records/"+questionSet.ID+"/questions/"+question.ID+"/answer", map[string]any{
+		"content": "Решает владелец области.",
+	}, http.StatusOK, &workflow)
+	answerID := workflow.Questions[0].Answers[0].ID
+	requestJSON(t, client, http.MethodPost, server.URL+"/api/records/"+questionSet.ID+"/questions/"+question.ID+"/decision", map[string]any{
+		"mode": "answer", "answerId": answerID,
+	}, http.StatusConflict, nil)
 }
 
 func testClient(t *testing.T) *http.Client {
