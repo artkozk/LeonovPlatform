@@ -774,6 +774,20 @@ dialog, .dialog-header, .dialog-layout, .record-tabs { background: var(--surface
 .create-menu, .secondary, .icon-button, .stage-action { background: #f6f6f2; }
 .table-panel, .section-panel, .record-table.row, .quick-action, .person-load { background: transparent; }
 
+.auth-root { background: #e6e8e4; }
+.auth-layout { border-color: #c7cec9; background: var(--surface); box-shadow: 0 24px 70px rgba(25, 34, 30, .17); }
+.auth-intro { background: #26312d; }
+.auth-intro::after { display: none; }
+.auth-intro .auth-brand strong, .auth-statement h1 { color: #eef2ef; }
+.auth-intro .brand-mark { color: #78b6a4; }
+.auth-statement .eyebrow { color: #78b6a4; }
+.auth-statement h1 { font-size: 36px; }
+.auth-statement > p:last-child { color: #b5c0bb; }
+.auth-caption { color: #8f9b96; }
+.auth-panel { background: var(--surface); }
+.segmented { background: #e5e8e4; }
+.segment.active { background: #f8f8f4; color: var(--accent); box-shadow: 0 2px 8px rgba(25,34,30,.08); }
+
 @media (max-width: 980px) {
   .principle-grid { grid-template-columns: 1fr; }
   .principle-column, .principle-column:first-child, .principle-column:last-child { padding: 22px 0; border-right: 0; border-bottom: 1px solid var(--line); }
