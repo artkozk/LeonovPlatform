@@ -238,6 +238,41 @@ func TestBusinessWorkflow(t *testing.T) {
 	if workflow.Resolved != 2 || workflow.Questions[1].Decision == nil || workflow.Questions[1].Decision.SourceAnswerID != nil {
 		t.Fatalf("custom joint decision = %#v", workflow)
 	}
+	var rule Record
+	requestJSON(t, artkozk, http.MethodPost, server.URL+"/api/records/"+questionSet.ID+"/questions/"+secondQuestion.ID+"/outputs", map[string]any{
+		"kind": "rule", "title": "Контрольные решения принимает владелец области", "ownerId": me.ID,
+	}, http.StatusCreated, &rule)
+	if rule.Type != "decision" || rule.Kind != "rule" || rule.Description != workflow.Questions[1].Decision.Content {
+		t.Fatalf("rule created from question decision = %#v", rule)
+	}
+	var ruleDetail struct {
+		Record     Record            `json:"record"`
+		Derivation *RecordDerivation `json:"derivation"`
+	}
+	requestJSON(t, artkozk, http.MethodGet, server.URL+"/api/records/"+rule.ID, nil, http.StatusOK, &ruleDetail)
+	if ruleDetail.Derivation == nil || ruleDetail.Derivation.SourceRecordID != questionSet.ID || ruleDetail.Derivation.SourceQuestionID != secondQuestion.ID || ruleDetail.Derivation.DecisionContent != workflow.Questions[1].Decision.Content {
+		t.Fatalf("rule derivation must preserve exact source chain: %#v", ruleDetail)
+	}
+	originalDecision := ruleDetail.Derivation.DecisionContent
+	requestJSON(t, artkozk, http.MethodPost, server.URL+"/api/records/"+questionSet.ID+"/questions/"+secondQuestion.ID+"/decision", map[string]any{
+		"mode": "custom", "content": "После пересмотра контрольное решение принимаем только вместе.",
+	}, http.StatusOK, &workflow)
+	requestJSON(t, artkozk, http.MethodGet, server.URL+"/api/records/"+rule.ID, nil, http.StatusOK, &ruleDetail)
+	if ruleDetail.Derivation == nil || ruleDetail.Derivation.DecisionContent != originalDecision {
+		t.Fatalf("rule derivation changed after source decision edit: %#v", ruleDetail.Derivation)
+	}
+	requestJSON(t, artkozk, http.MethodGet, server.URL+"/api/records/"+questionSet.ID, nil, http.StatusOK, &struct {
+		QuestionWorkflow *QuestionWorkflow `json:"questionWorkflow"`
+	}{QuestionWorkflow: &workflow})
+	if len(workflow.Questions[1].Outputs) != 1 || workflow.Questions[1].Outputs[0].RecordID != rule.ID {
+		t.Fatalf("question output missing from workflow: %#v", workflow.Questions[1].Outputs)
+	}
+	meeting := createRecord(t, artkozk, server.URL, map[string]any{
+		"type": "meeting", "title": "Установочная встреча", "description": "Сузили круг направлений", "ownerId": me.ID, "dueAt": "2026-08-14T16:00:00Z",
+	})
+	if meeting.Type != "meeting" || meeting.Kind != "meeting" || meeting.Status != "planned" {
+		t.Fatalf("meeting card = %#v", meeting)
+	}
 	decisionTask := createRecord(t, artkozk, server.URL, map[string]any{
 		"type": "task", "title": "Реализовать совместное решение", "ownerId": me.ID,
 	})

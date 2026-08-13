@@ -8,6 +8,7 @@ const typeMeta = {
   decision: { label: 'Решения', singular: 'Решение', icon: 'scale' },
   disagreement: { label: 'Разногласия', singular: 'Разногласие', icon: 'gitCompare' },
   document: { label: 'Документы', singular: 'Документ', icon: 'fileText' },
+  meeting: { label: 'Встречи', singular: 'Встреча', icon: 'calendar' },
 };
 
 const iconPaths = {
@@ -36,6 +37,8 @@ const iconPaths = {
   edit: '<path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/>',
   check: '<path d="m5 12 4 4L19 6"/>',
   help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 0 1 5 1c0 2-2.5 2-2.5 4M12 18h.01"/>',
+  calendar: '<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  bookOpen: '<path d="M2 3h6a4 4 0 0 1 4 4v14a4 4 0 0 0-4-4H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a4 4 0 0 1 4-4h6z"/>',
 };
 
 function icon(name, className = '') {
@@ -53,16 +56,18 @@ const statusesByType = {
   goal: ['planned', 'in_progress', 'blocked', 'completed', 'postponed', 'cancelled'],
   task: ['planned', 'in_progress', 'blocked', 'postponed', 'completed', 'cancelled'],
   question_set: ['planned', 'in_progress', 'blocked', 'completed', 'postponed', 'cancelled'],
+  meeting: ['planned', 'in_progress', 'completed', 'postponed', 'cancelled'],
   default: ['draft', 'in_progress', 'completed', 'cancelled'],
 };
 
 const navItems = [
   ['dashboard', 'Обзор', 'dashboard', 'Работа'], ['task', 'Задачи', 'checkSquare', 'Работа'],
-  ['question_set', 'Вопросы', 'messages', 'Работа'], ['goal', 'Цели', 'target', 'Бизнес'],
+  ['question_set', 'Вопросы', 'messages', 'Работа'], ['meeting', 'Встречи', 'calendar', 'Работа'],
+  ['principles', 'Правила и критерии', 'bookOpen', 'Основа'], ['goal', 'Цели', 'target', 'Бизнес'],
   ['idea', 'Идеи', 'lightbulb', 'Бизнес'], ['research', 'Исследования', 'flask', 'Бизнес'],
   ['decision', 'Решения', 'scale', 'Бизнес'], ['disagreement', 'Разногласия', 'gitCompare', 'Бизнес'],
-  ['document', 'Документы', 'fileText', 'Бизнес'], ['criterion', 'Критерии', 'sliders', 'Контроль'],
-  ['history', 'История', 'history', 'Контроль'], ['structure', 'Настройки карточек', 'settings', 'Контроль'],
+  ['document', 'Документы', 'fileText', 'Бизнес'], ['history', 'История', 'history', 'Контроль'],
+  ['structure', 'Шаблоны карточек', 'settings', 'Настройки'],
 ];
 
 const state = {
@@ -326,6 +331,7 @@ function renderContent() {
   if (state.view === 'dashboard') return renderDashboard();
   if (typeMeta[state.view]) return renderRecordList(state.view);
   if (state.view === 'history') return renderHistory();
+  if (state.view === 'principles') return renderPrinciples();
   if (state.view === 'structure') return renderStructure();
   if (state.view === 'notifications') return renderNotifications();
 }
@@ -334,9 +340,6 @@ function renderDashboard() {
   const active = state.records.filter((record) => !['completed', 'cancelled', 'archived', 'rejected'].includes(record.status));
   const tasks = active.filter((record) => record.type === 'task');
   const overdue = tasks.filter((record) => deadlineState(record).className === 'overdue');
-  const ideas = state.records.filter((record) => record.type === 'idea' && record.status !== 'archived');
-  const mainIdeas = ideas.filter((record) => record.status === 'main');
-  const questionSets = active.filter((record) => record.type === 'question_set');
   const myTasks = tasks.filter((record) => record.ownerId === state.me.id);
   const attention = myTasks.filter((record) => ['overdue', 'urgent'].includes(deadlineState(record).className));
   const focusTasks = myTasks.slice().sort((a, b) => {
@@ -350,27 +353,19 @@ function renderDashboard() {
     ...state.pendingQuestions.map((question) => ({ kind: 'question', question })),
     ...regularFocus.map((record) => ({ kind: 'task', record })),
   ].slice(0, 4);
-  const latestActivity = state.activity[0];
   $('#main-content').innerHTML = `
     <section class="project-brief">
-      <div><p class="eyebrow">Рабочий контур · ${formatDate(new Date().toISOString())}</p><h1>${attention.length ? `${attention.length} ${attention.length === 1 ? 'задача требует' : 'задачи требуют'} внимания` : `В фокусе — следующая важная работа`}</h1><p>${attention.length ? 'Сначала разберите сроки, затем возвращайтесь к новым идеям.' : 'Двигайте активные задачи, фиксируйте решения и не теряйте новые мысли.'}</p></div>
-      <div class="project-pulse"><span><i></i> Проект активен</span><strong>${active.length}</strong><small>активных карточек</small>${latestActivity ? `<p>Последнее изменение ${formatDate(latestActivity.createdAt, true)}</p>` : ''}</div>
+      <div><p class="eyebrow">${formatDate(new Date().toISOString())} · рабочая очередь</p><h1>${attention.length ? `${attention.length} ${attention.length === 1 ? 'задача требует' : 'задачи требуют'} внимания` : `Следующее важное действие`}</h1><p>${attention.length ? 'Начните с просроченных и срочных обязательств.' : 'Ответьте на открытый вопрос или продолжите ближайшую задачу.'}</p></div>
     </section>
     <section class="workbench-grid">
       <article class="focus-panel">
-        <div class="section-heading inverse"><div><p class="eyebrow">Мой рабочий стол</p><h2>Фокус на сегодня</h2></div><button class="text-button" data-go="task">Все задачи ${icon('chevronRight')}</button></div>
+        <div class="section-heading inverse"><div><p class="eyebrow">Требует действия</p><h2>Рабочая очередь</h2></div><button class="text-button" data-go="task">Задачи ${icon('chevronRight')}</button></div>
         <div class="focus-list">${focusItems.length ? focusItems.map((item, index) => item.kind === 'task' ? renderFocusRecord(item.record, index === 0) : renderFocusQuestion(item.question, index === 0)).join('') : `<div class="focus-empty">${icon('check')}<strong>Срочных задач и вопросов нет</strong><span>Можно зафиксировать следующий шаг.</span></div>`}</div>
       </article>
       <aside class="capture-panel">
-        <div><p class="eyebrow">Быстрое действие</p><h3>Зафиксировать и продолжить</h3><p>Достаточно названия. Остальное можно заполнить позже.</p></div>
-        <div class="quick-actions"><button type="button" class="quick-action idea" data-quick-create="idea"><span class="quick-icon">${icon('lightbulb')}</span><span><strong>Новая идея</strong><small>Сохранить мысль без оценки</small></span>${icon('chevronRight')}</button><button type="button" class="quick-action task" data-quick-create="task"><span class="quick-icon">${icon('checkSquare')}</span><span><strong>Общая задача</strong><small>Исполнитель, результат и срок</small></span>${icon('chevronRight')}</button><button type="button" class="quick-action discussion" data-quick-create="question_set"><span class="quick-icon">${icon('messages')}</span><span><strong>Карточка вопросов</strong><small>Два ответа и совместный итог</small></span>${icon('chevronRight')}</button></div>
+        <div><p class="eyebrow">Создать</p><h3>Быстрая фиксация</h3></div>
+        <div class="quick-actions"><button type="button" class="quick-action idea" data-quick-create="idea"><span class="quick-icon">${icon('lightbulb')}</span><span><strong>Идея</strong><small>Название, детали позже</small></span>${icon('chevronRight')}</button><button type="button" class="quick-action task" data-quick-create="task"><span class="quick-icon">${icon('checkSquare')}</span><span><strong>Задача</strong><small>Кто, что и когда</small></span>${icon('chevronRight')}</button><button type="button" class="quick-action discussion" data-quick-create="meeting"><span class="quick-icon">${icon('calendar')}</span><span><strong>Встреча</strong><small>Заметки и результаты</small></span>${icon('chevronRight')}</button><button type="button" class="quick-action discussion" data-quick-create="question_set"><span class="quick-icon">${icon('messages')}</span><span><strong>Вопросы</strong><small>Два ответа и итог</small></span>${icon('chevronRight')}</button></div>
       </aside>
-    </section>
-    <section class="metrics-grid">
-      ${metric('Мои активные', myTasks.length, 'задач в работе', 'blue', 'checkSquare')}
-      ${metric('Просрочено', overdue.length, overdue.length ? 'нужно пересмотреть' : 'всё по срокам', overdue.length ? 'danger' : 'coral', 'clock')}
-      ${metric('Ждут ответа', state.pendingQuestions.length, `из ${discussionsCountLabel(questionSets.length)}`, 'teal', 'messages')}
-      ${metric('Главные идеи', mainIdeas.length, 'текущий фокус', 'amber', 'lightbulb')}
     </section>
     <section class="dashboard-grid">
       <div class="section-panel">
@@ -381,14 +376,18 @@ function renderDashboard() {
         <div class="section-heading"><div><p class="eyebrow">Командный радар</p><h3>Ближайшие сроки</h3></div><button class="text-button" data-go="task">Открыть список</button></div>
         <div class="compact-list">${tasks.slice().sort(sortByDeadline).slice(0, 7).map(renderCompactRecord).join('') || emptyState('Активных задач пока нет.')}</div>
       </div>
-    </section>
-    <section class="section-panel activity-panel">
-      <div class="section-heading"><div><p class="eyebrow">Лента проекта</p><h3>Последние изменения</h3></div><button class="text-button" data-go="history">Вся история</button></div>
-      <div class="activity-list">${state.activity.slice(0, 6).map(renderActivityItem).join('') || emptyState('История появится после первой карточки.')}</div>
     </section>`;
   bindOpenRecords();
   $$('[data-quick-create]').forEach((button) => button.addEventListener('click', () => openCreateDialog(button.dataset.quickCreate)));
-  $$('[data-go]').forEach((button) => button.addEventListener('click', () => { state.view = button.dataset.go; render(); }));
+  $$('[data-go]').forEach((button) => button.addEventListener('click', () => { navigateToView(button.dataset.go); }));
+}
+
+function navigateToView(view, options = {}) {
+  state.view = view;
+  state.statusFilter = options.status || '';
+  state.search = options.search || '';
+  state.ownerFilter = options.ownerId ? String(options.ownerId) : '';
+  render();
 }
 
 function metric(label, value, note, tone = '', iconName = 'dashboard') {
@@ -410,6 +409,21 @@ function renderPersonLoad(user, tasks) {
   const minutes = owned.reduce((sum, task) => sum + task.estimateMinutes, 0);
   const progress = owned.length ? Math.round(owned.reduce((sum, task) => sum + task.progress, 0) / owned.length) : 0;
   return `<button type="button" class="person-load" data-owner-filter="${user.id}"><span class="avatar">${escapeHTML(user.username.slice(0, 2).toUpperCase())}</span><span class="person-main"><strong>${escapeHTML(user.username)}</strong><small>${owned.length} задач · ${minutesLabel(minutes)}</small><progress class="progress-track" max="100" value="${progress}"></progress></span><b>${progress}%</b></button>`;
+}
+
+function renderPrinciples() {
+  const groups = [
+    { kind: 'preference', title: 'Что нам подходит', copy: 'Положительные критерии выбора сфер и идей.', icon: 'target' },
+    { kind: 'limitation', title: 'Чего избегаем', copy: 'Ограничения, которые идея не должна нарушать.', icon: 'archive' },
+    { kind: 'rule', title: 'Как принимаем решения', copy: 'Договорённости, к которым возвращаемся при разногласиях.', icon: 'scale' },
+  ];
+  const records = state.records.filter((record) => (['preference', 'limitation', 'rule'].includes(record.kind) || (record.type === 'criterion' && !record.kind)) && record.status !== 'archived');
+  $('#main-content').innerHTML = `<div class="page-heading"><div><p class="eyebrow">Основа отбора</p><h1>Правила и критерии</h1><p>Рабочие выводы, которые влияют на выбор идей и совместные решения.</p></div></div><div class="principle-grid">${groups.map((group) => {
+    const items = records.filter((record) => record.kind === group.kind || (group.kind === 'preference' && record.type === 'criterion' && !record.kind));
+    return `<section class="principle-column"><header><span class="type-icon">${icon(group.icon)}</span><div><h3>${group.title}</h3><p>${group.copy}</p></div><b>${items.length}</b></header><div class="principle-list">${items.map((record) => `<button type="button" data-open-record="${record.id}"><strong>${escapeHTML(record.title)}</strong><span>${escapeHTML(record.description || 'Без пояснения')}</span>${icon('chevronRight')}</button>`).join('') || emptyState('Пока ничего не зафиксировано.')}</div><button type="button" class="text-button principle-add" data-create-principle="${group.kind}">${icon('plus')} Добавить</button></section>`;
+  }).join('')}</div>`;
+  bindOpenRecords();
+  $$('[data-create-principle]').forEach((button) => button.addEventListener('click', () => openCreateDialog(button.dataset.createPrinciple === 'rule' ? 'decision' : 'criterion', { kind: button.dataset.createPrinciple })));
 }
 
 function sortByDeadline(a, b) {
@@ -436,12 +450,12 @@ function renderRecordList(type) {
   $('#main-content').innerHTML = `
     <div class="list-toolbar">
       <div class="search-box"><input id="record-search" type="search" placeholder="Поиск по карточкам" value="${escapeHTML(state.search)}"></div>
-      <select id="owner-filter" aria-label="${type === 'question_set' ? 'Координатор' : 'Ответственный'}"><option value="">${type === 'question_set' ? 'Все координаторы' : 'Все ответственные'}</option>${state.users.map((user) => `<option value="${user.id}" ${state.ownerFilter === String(user.id) ? 'selected' : ''}>${escapeHTML(user.username)}</option>`).join('')}</select>
+      <select id="owner-filter" aria-label="${type === 'question_set' ? 'Координатор' : type === 'meeting' ? 'Организатор' : 'Ответственный'}"><option value="">${type === 'question_set' ? 'Все координаторы' : type === 'meeting' ? 'Все организаторы' : 'Все ответственные'}</option>${state.users.map((user) => `<option value="${user.id}" ${state.ownerFilter === String(user.id) ? 'selected' : ''}>${escapeHTML(user.username)}</option>`).join('')}</select>
       <span class="record-total">${recordsCountLabel(records.length)}</span>
     </div>
     <div class="status-tabs">${statusTabs.map((status) => `<button type="button" data-status-filter="${status === 'all' ? '' : status}" class="${state.statusFilter === (status === 'all' ? '' : status) ? 'active' : ''}">${status === 'all' ? 'Все' : statusLabels[status]}</button>`).join('')}</div>
     <section class="table-panel">
-      <div class="record-table header ${['task', 'goal', 'question_set'].includes(type) ? '' : 'simple'}"><span>Карточка</span><span>${type === 'question_set' ? 'Координатор' : 'Ответственный'}</span><span>Статус</span><span>${['task', 'goal', 'question_set'].includes(type) ? 'Срок / прогресс' : 'Изменено'}</span></div>
+      <div class="record-table header ${['task', 'goal', 'question_set', 'meeting'].includes(type) ? '' : 'simple'}"><span>Карточка</span><span>${type === 'question_set' ? 'Координатор' : type === 'meeting' ? 'Организатор' : 'Ответственный'}</span><span>Статус</span><span>${['task', 'goal', 'question_set', 'meeting'].includes(type) ? 'Дата / прогресс' : 'Изменено'}</span></div>
       <div class="record-rows">${records.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)).map(renderRecordRow).join('') || emptyState('Карточек в этом представлении пока нет.')}</div>
     </section>`;
   $('#record-search').addEventListener('input', (event) => { state.search = event.target.value; renderRecordList(type); });
@@ -451,7 +465,7 @@ function renderRecordList(type) {
 }
 
 function renderRecordRow(record) {
-  const isPlannable = ['task', 'goal', 'question_set'].includes(record.type);
+  const isPlannable = ['task', 'goal', 'question_set', 'meeting'].includes(record.type);
   const deadline = deadlineState(record);
   return `<button type="button" class="record-table row ${isPlannable ? '' : 'simple'}" data-open-record="${record.id}">
     <span class="record-title"><i class="type-icon type-${record.type}">${icon(typeMeta[record.type].icon)}</i><span><strong>${escapeHTML(record.title)}</strong><small>${escapeHTML(record.description || 'Без описания')}</small></span></span>
@@ -472,7 +486,7 @@ function bindOpenRecords() {
     node.addEventListener('focus', () => prefetchRecord(node.dataset.openRecord), { once: true });
   });
   $$('[data-open-event]').forEach((node) => node.addEventListener('click', () => openActivity(node.dataset.openEvent)));
-  $$('[data-owner-filter]').forEach((node) => node.addEventListener('click', () => { state.view = 'task'; state.ownerFilter = node.dataset.ownerFilter; render(); }));
+  $$('[data-owner-filter]').forEach((node) => node.addEventListener('click', () => navigateToView('task', { ownerId: node.dataset.ownerFilter })));
 }
 
 function cachedRecordDetail(id) {
@@ -546,7 +560,7 @@ function recordTabs(record, detail, activity) {
   const tabs = [
     ['overview', 'Обзор', ''],
     ['content', 'Содержание', `${filledSections}/${detail.sections.length}`],
-    ['relations', 'Связи и оценка', detail.relationsLoaded ? `${detail.links.length}` : ''],
+    ['relations', record.type === 'idea' ? 'Критерии и связи' : 'Связи', detail.relationsLoaded ? `${detail.links.length}` : ''],
     ['history', 'История', `${activity.length}`],
   ];
   if (record.type === 'question_set') {
@@ -569,23 +583,30 @@ function renderRecordOverview(record, statuses) {
     decision: { description: 'Какой вопрос решаем и какие варианты рассмотрены', owner: 'Ответственный' },
     disagreement: { description: 'Предмет разногласия и контекст', owner: 'Координатор' },
     document: { description: 'Краткое содержание документа', owner: 'Владелец' },
+    meeting: { description: 'Повестка, заметки и договорённости', owner: 'Организатор' },
   }[record.type];
-  const hasDeadline = ['task', 'goal', 'question_set', 'research', 'decision', 'disagreement'].includes(record.type);
+  const hasDeadline = ['task', 'goal', 'question_set', 'research', 'decision', 'disagreement', 'meeting'].includes(record.type);
   const hasDecisionMaker = ['decision', 'disagreement'].includes(record.type);
   const hasWork = ['task', 'goal'].includes(record.type);
+  const planningTitle = record.type === 'task' ? 'Исполнение' : record.type === 'meeting' ? 'Организатор и время' : hasDecisionMaker ? 'Ответственность за решение' : hasDeadline ? 'Планирование' : 'Владелец карточки';
+  const dueLabel = ({ meeting: 'Дата и время', research: 'Срок исследования', decision: 'Срок решения', disagreement: 'Срок разбора' })[record.type] || 'Срок';
+  const planningGrid = hasDecisionMaker && hasDeadline ? 'three' : hasDeadline ? 'two' : 'one';
+  const origin = state.activeDetail.derivation;
   return `<div class="record-pane ${state.activeRecordTab === 'overview' ? 'active' : ''}" data-record-pane="overview">
+    ${origin ? `<button type="button" class="origin-trace" data-related-record="${origin.sourceRecordId}"><span>${icon('link')}</span><span><small>Создано из совместного вывода</small><strong>${escapeHTML(origin.questionBody)}</strong><em>${escapeHTML(origin.decisionContent)}</em></span>${icon('chevronRight')}</button>` : ''}
     ${draft ? `<div class="draft-banner"><span><strong>Найден несохранённый черновик</strong><small>Можно восстановить текст или удалить черновик.</small></span><div><button type="button" class="secondary" data-restore-draft>Восстановить</button><button type="button" class="text-button" data-discard-draft>Удалить</button></div></div>` : ''}
     <form id="record-edit-form" class="card-form record-overview-form">
       <div class="form-grid two"><label>Название<input name="title" value="${escapeHTML(record.title)}" required></label><label>${record.type === 'question_set' ? 'Статус рассчитывается автоматически' : 'Статус'}<select name="status" ${record.type === 'question_set' ? 'disabled' : ''}>${statuses.map((status) => `<option value="${status}" ${record.status === status ? 'selected' : ''}>${statusLabels[status]}</option>`).join('')}</select></label></div>
       <label>${language.description}<textarea name="description" rows="5">${escapeHTML(record.description)}</textarea></label>
-      <details class="form-more" ${record.type === 'task' ? 'open' : ''}><summary>Участники и рабочие параметры</summary><div class="form-more-body">
-        <div class="form-grid ${hasDecisionMaker && hasDeadline ? 'three' : 'two'}"><label>${language.owner}<select name="ownerId">${userOptions(record.ownerId)}</select></label>${hasDecisionMaker ? `<label>Принимает решение<select name="decisionMakerId"><option value="">Не указан</option>${userOptions(record.decisionMakerId)}</select></label>` : ''}${hasDeadline ? `<label>Срок<input name="dueAt" type="datetime-local" value="${toLocalInput(record.dueAt)}"></label>` : ''}</div>
-        ${hasWork ? `<div class="form-grid three"><label>Плановая оценка, минут<input name="estimateMinutes" type="number" min="0" value="${record.estimateMinutes}"></label><label>Прогресс, %<input name="progress" type="number" min="0" max="100" value="${record.progress}"></label><label>Текущее обновление<input name="progressNote" value="${escapeHTML(record.progressNote)}" placeholder="Что изменилось с прошлого раза"></label></div><label>Полученный результат<textarea name="result" rows="3">${escapeHTML(record.result)}</textarea></label>` : ''}
+      <details class="form-more" ${['task', 'meeting'].includes(record.type) ? 'open' : ''}><summary>${planningTitle}</summary><div class="form-more-body">
+        <div class="form-grid ${planningGrid}"><label>${language.owner}<select name="ownerId">${userOptions(record.ownerId)}</select></label>${hasDecisionMaker ? `<label>Принимает решение<select name="decisionMakerId"><option value="">Не указан</option>${userOptions(record.decisionMakerId)}</select></label>` : ''}${hasDeadline ? `<label>${dueLabel}<input name="dueAt" type="datetime-local" value="${toLocalInput(record.dueAt)}"></label>` : ''}</div>
+        ${hasWork ? `<div class="form-grid three"><label>Плановая оценка, минут<input name="estimateMinutes" type="number" min="0" value="${record.estimateMinutes}"></label><label>Прогресс, %<input name="progress" type="number" min="0" max="100" value="${record.progress}"></label><label>Текущее обновление<input name="progressNote" value="${escapeHTML(record.progressNote)}" placeholder="Что изменилось с прошлого раза"></label></div>${record.type === 'goal' ? `<label>Достигнутый результат<textarea name="result" rows="3">${escapeHTML(record.result)}</textarea></label>` : ''}` : ''}
         ${record.type === 'question_set' ? `<div class="derived-progress"><span>Прогресс обсуждения рассчитывается по принятым итогам</span><strong>${record.progress}%</strong></div>` : ''}
       </div></details>
       <label id="record-reason-field" class="reason-field" hidden>Причина изменения <input name="reason" placeholder="Почему изменился статус или срок"></label>
       <div class="form-actions"><button type="submit" class="primary">Сохранить</button><span class="form-save-state" id="record-save-state">Изменений нет</span><button type="button" class="secondary" id="notify-partners">Уведомить</button>${record.type === 'task' ? `<button type="button" class="secondary" id="convert-to-questions">${icon('messages')} Сделать карточкой вопросов</button>` : ''}<button type="button" class="danger-text" id="archive-record">В архив</button></div>
     </form>
+    ${record.type === 'meeting' ? `<section class="meeting-results"><header><div><p class="eyebrow">После встречи</p><h3>Превратить заметки в работу</h3></div></header><div><button type="button" data-create-from-record="task">${icon('checkSquare')} Задача</button><button type="button" data-create-from-record="decision">${icon('scale')} Решение</button><button type="button" data-create-from-record="limitation">${icon('archive')} Ограничение</button><button type="button" data-create-from-record="idea">${icon('lightbulb')} Идея</button><button type="button" data-create-from-record="research">${icon('flask')} Исследование</button></div></section>` : ''}
     ${(record.type === 'task') ? renderProofBlock(record, state.activeDetail.proofs) : ''}
   </div>`;
 }
@@ -625,7 +646,8 @@ function renderFounderAnswer(question, user, answer) {
 
 function renderJointDecision(question) {
   const source = question.decision.sourceAuthorUsername ? `Выбрано из ответа ${question.decision.sourceAuthorUsername}` : 'Сформулировано после обсуждения';
-  return `<section class="joint-decision"><span class="decision-icon">${icon('scale')}</span><div><p class="eyebrow">Совместное решение</p><blockquote>${escapeHTML(question.decision.content).replace(/\n/g, '<br>')}</blockquote><small>${escapeHTML(source)} · зафиксировал ${escapeHTML(question.decision.decidedByUsername)}</small></div><div class="decision-actions"><button type="button" class="secondary" data-create-task-from-decision="${question.id}">${icon('checkSquare')} Создать задачу</button><details><summary>${icon('edit')} Изменить итог</summary>${renderDecisionComposer(question, true)}</details></div></section>`;
+  const outputLabels = { preference: 'Критерий', limitation: 'Ограничение', rule: 'Правило', insight: 'Вывод', task: 'Задача', idea: 'Идея', research: 'Исследование', goal: 'Цель' };
+  return `<section class="joint-decision"><span class="decision-icon">${icon('scale')}</span><div><p class="eyebrow">Совместный итог</p><blockquote>${escapeHTML(question.decision.content).replace(/\n/g, '<br>')}</blockquote><small>${escapeHTML(source)} · зафиксировал ${escapeHTML(question.decision.decidedByUsername)}</small>${question.outputs?.length ? `<div class="decision-outputs"><span>Уже используется:</span>${question.outputs.map((output) => `<button type="button" data-related-record="${output.recordId}">${escapeHTML(outputLabels[output.kind || output.type] || typeMeta[output.type]?.singular || 'Карточка')}: ${escapeHTML(output.title)}</button>`).join('')}</div>` : ''}</div><div class="decision-actions"><details class="output-menu"><summary>${icon('plus')} Использовать вывод</summary><div>${Object.entries(outputLabels).map(([kind, label]) => `<button type="button" data-create-output="${kind}" data-question-id="${question.id}">${escapeHTML(label)}</button>`).join('')}</div></details><details><summary>${icon('edit')} Изменить итог</summary>${renderDecisionComposer(question, true)}</details></div></section>`;
 }
 
 function renderDecisionComposer(question, compact = false) {
@@ -634,7 +656,7 @@ function renderDecisionComposer(question, compact = false) {
 
 function renderRecordRelations(record, detail, criteria, targets) {
   const content = detail.relationsLoaded
-    ? `<section class="accordion-stack content-stack">${record.type !== 'criterion' ? renderCriteriaBlock(criteria, detail.scores, true) : ''}${renderLinksBlock(detail.links, targets, true)}</section>`
+    ? `<section class="accordion-stack content-stack">${record.type === 'idea' ? renderCriteriaBlock(criteria, detail.scores, true) : ''}${renderLinksBlock(record, detail.links, targets, true)}</section>`
     : `<div class="relations-loading"><span class="spinner"></span><strong>Подготавливаем связи</strong><small>Основная карточка уже доступна, эта часть загружается отдельно.</small></div>`;
   return `<div class="record-pane ${state.activeRecordTab === 'relations' ? 'active' : ''}" data-record-pane="relations">${content}</div>`;
 }
@@ -651,6 +673,7 @@ function renderRecordDialog() {
   const allLinkTargets = state.records.filter((item) => item.id !== record.id && item.status !== 'archived');
   const criteria = state.records.filter((item) => item.type === 'criterion' && item.status !== 'archived');
   const activity = state.activity.filter((item) => item.entityId === record.id);
+  const hasDeadline = ['task', 'goal', 'question_set', 'research', 'decision', 'disagreement', 'meeting'].includes(record.type);
   const ideaActions = record.type === 'idea' ? `<div class="idea-actions">${['review', 'main', 'rejected'].map((status) => `<button type="button" class="stage-action ${status}" data-stage="${status}" ${record.status === status ? 'disabled' : ''}>${statusLabels[status]}</button>`).join('')}</div>` : '';
   $('#record-dialog-content').innerHTML = `
     <div class="record-shell record-type-${record.type}">
@@ -666,9 +689,9 @@ function renderRecordDialog() {
         ${renderRecordHistory(activity)}
       </div>
       <aside class="dialog-aside">
-        <div class="fact"><span>${record.type === 'question_set' ? 'Координатор' : 'Ответственный'}</span><strong>${escapeHTML(record.ownerUsername)}</strong></div>
+        <div class="fact"><span>${record.type === 'question_set' ? 'Координатор' : record.type === 'meeting' ? 'Организатор' : 'Ответственный'}</span><strong>${escapeHTML(record.ownerUsername)}</strong></div>
         <div class="fact"><span>Статус</span><strong>${escapeHTML(statusLabels[record.status])}</strong></div>
-        <div class="fact"><span>Срок</span><strong class="deadline ${deadlineState(record).className}">${escapeHTML(deadlineState(record).label)}</strong></div>
+        ${hasDeadline ? `<div class="fact"><span>${record.type === 'meeting' ? 'Дата' : 'Срок'}</span><strong class="deadline ${deadlineState(record).className}">${escapeHTML(deadlineState(record).label)}</strong></div>` : ''}
         <div class="fact"><span>Изменено</span><strong>${formatDate(record.updatedAt, true)}</strong></div>
         ${record.type === 'task' ? `<div class="fact"><span>Доказательств</span><strong>${record.proofCount}</strong></div>` : ''}
         ${record.type === 'question_set' ? `<div class="fact"><span>Решено вопросов</span><strong>${detail.questionWorkflow.resolved} / ${detail.questionWorkflow.questions.length}</strong></div>` : ''}
@@ -687,15 +710,34 @@ function renderSection(section) {
 
 function renderCriteriaBlock(criteria, scores, open = false) {
   const scoreMap = new Map(scores.map((score) => [score.criterionId, score]));
-  return `<details class="accordion" ${open ? 'open' : ''}><summary><span>Оценка по критериям</span><small>${scores.length} оценок</small></summary><div class="criteria-list">${criteria.map((criterion) => { const current = scoreMap.get(criterion.id); return `<form class="criterion-form" data-criterion-id="${criterion.id}"><div><strong>${escapeHTML(criterion.title)}</strong><small>${escapeHTML(criterion.description)}</small></div><input name="score" type="number" min="0" max="10" value="${current?.score ?? 0}" aria-label="Оценка"><input name="note" value="${escapeHTML(current?.note || '')}" placeholder="Комментарий"><button class="secondary" type="submit">Оценить</button></form>`; }).join('') || emptyState('Сначала создайте критерии в отдельном разделе.')}</div></details>`;
+  const kindLabels = { preference: 'Критерий', limitation: 'Ограничение' };
+  return `<details class="accordion" ${open ? 'open' : ''}><summary><span>Оценка по критериям</span><small>${scores.length} оценок · 0 не подходит, 10 полностью подходит</small></summary><div class="criteria-list">${criteria.map((criterion) => { const current = scoreMap.get(criterion.id); return `<form class="criterion-form" data-criterion-id="${criterion.id}"><div><span class="criterion-kind">${kindLabels[criterion.kind] || 'Критерий'}</span><strong>${escapeHTML(criterion.title)}</strong><small>${escapeHTML(criterion.description)}</small></div><input name="score" type="number" min="0" max="10" value="${current?.score ?? 0}" aria-label="Оценка соответствия от 0 до 10"><input name="note" value="${escapeHTML(current?.note || '')}" placeholder="Почему такая оценка"><button class="secondary" type="submit">Оценить</button></form>`; }).join('') || emptyState('Сначала зафиксируйте критерии в разделе «Правила и критерии».')}</div></details>`;
 }
 
-function renderLinksBlock(links, targets, open = false) {
-  return `<details class="accordion" ${open ? 'open' : ''}><summary><span>Связанные записи</span><small>${links.length} связей</small></summary><div class="linked-list">${links.map((link) => `<div class="linked-item"><button type="button" data-related-record="${link.record.id}"><i class="type-icon">${icon(typeMeta[link.record.type].icon)}</i><span><strong>${escapeHTML(link.record.title)}</strong><small>${escapeHTML(link.relationType)} · ${typeMeta[link.record.type].singular}</small></span></button><button type="button" class="icon-button danger-icon remove-link" data-remove-link="${link.id}" aria-label="Убрать связь" title="Убрать связь">${icon('x')}</button></div>`).join('') || emptyState('Связей пока нет.')}</div><form id="link-form" class="link-form"><select name="targetId" required><option value="">Выберите карточку</option>${targets.map((target) => `<option value="${target.id}">${typeMeta[target.type].singular}: ${escapeHTML(target.title)}</option>`).join('')}</select><select name="relationType"><option value="related">Связано</option><option value="supports">Поддерживает</option><option value="depends_on">Зависит от</option><option value="result_of">Результат</option><option value="leads_to">Приводит к</option></select><button class="secondary" type="submit">${icon('link')} Связать</button></form></details>`;
+function renderLinksBlock(record, links, targets, open = false) {
+  const relationLabel = (link) => {
+    const outgoing = link.sourceId === record.id;
+    const labels = {
+      related: ['Связано', 'Связано'], supports: ['Поддерживает', 'Поддерживается'],
+      depends_on: ['Зависит от', 'Нужно для'], result_of: ['Является результатом', 'Дало результат'],
+      leads_to: ['Приводит к', 'Следует из'], produced: ['Породило', 'Создано из'],
+    };
+    return (labels[link.relationType] || [link.relationType, link.relationType])[outgoing ? 0 : 1];
+  };
+  const createOptions = {
+    goal: [['task', '', 'Задача'], ['criterion', 'preference', 'Критерий']],
+    idea: [['research', '', 'Исследование'], ['task', '', 'Задача'], ['decision', '', 'Решение']],
+    research: [['decision', '', 'Решение'], ['criterion', 'preference', 'Критерий']],
+    decision: [['task', '', 'Задача'], ['goal', '', 'Цель']],
+    disagreement: [['decision', '', 'Решение'], ['decision', 'rule', 'Правило']],
+    criterion: [['research', '', 'Исследование']],
+    meeting: [['task', '', 'Задача'], ['decision', '', 'Решение'], ['criterion', 'limitation', 'Ограничение'], ['idea', '', 'Идея'], ['research', '', 'Исследование']],
+  }[record.type] || [];
+  return `<details class="accordion" ${open ? 'open' : ''}><summary><span>Связанные записи</span><small>${links.length} связей</small></summary>${createOptions.length ? `<div class="linked-create"><span>Создать следующий объект</span>${createOptions.map(([type, kind, label]) => `<button type="button" data-create-linked="${type}" data-linked-kind="${kind}">${icon(typeMeta[type].icon)} ${label}</button>`).join('')}</div>` : ''}<div class="linked-list">${links.map((link) => `<div class="linked-item"><button type="button" data-related-record="${link.record.id}"><i class="type-icon type-${link.record.type}">${icon(typeMeta[link.record.type].icon)}</i><span><strong>${escapeHTML(link.record.title)}</strong><small>${escapeHTML(relationLabel(link))} · ${typeMeta[link.record.type].singular}</small></span></button><button type="button" class="icon-button danger-icon remove-link" data-remove-link="${link.id}" aria-label="Убрать связь" title="Убрать связь">${icon('x')}</button></div>`).join('') || emptyState('Связей пока нет.')}</div><form id="link-form" class="link-form"><select name="targetId" required><option value="">Выберите существующую карточку</option>${targets.map((target) => `<option value="${target.id}">${typeMeta[target.type].singular}: ${escapeHTML(target.title)}</option>`).join('')}</select><select name="relationType"><option value="related">Связано</option><option value="supports">Поддерживает</option><option value="depends_on">Зависит от</option><option value="result_of">Является результатом</option><option value="leads_to">Приводит к</option></select><button class="secondary" type="submit">${icon('link')} Связать</button></form></details>`;
 }
 
 function renderProofBlock(record, proofs) {
-  return `<details class="accordion" open><summary><span>Доказательства выполнения</span><small>${proofs.length} приложено</small></summary><div class="proof-list">${proofs.map((proof) => `<article class="proof"><header><strong>${escapeHTML(proof.authorUsername)}</strong><time>${formatDate(proof.createdAt, true)}</time></header>${proof.kind === 'link' && /^https?:\/\//i.test(proof.content) ? `<a href="${escapeHTML(proof.content)}" target="_blank" rel="noreferrer">${escapeHTML(proof.content)}</a>` : `<p>${escapeHTML(proof.content).replace(/\n/g, '<br>')}</p>`}</article>`).join('') || emptyState('Ответственный должен приложить текст или ссылку до завершения задачи.')}</div>${record.ownerId === state.me.id ? `<form id="proof-form" class="proof-form"><select name="kind"><option value="text">Текст</option><option value="link">Ссылка</option></select><textarea name="content" rows="4" placeholder="Вопросы, цели, результат или ссылка на материал" required></textarea><button class="secondary" type="submit">Добавить доказательство</button></form><div class="completion-box"><label>Итог задачи<textarea id="completion-result" rows="3" placeholder="Кратко опишите полученный результат"></textarea></label><label class="check"><input id="notify-on-complete" type="checkbox" checked> Уведомить партнёра о выполнении</label><button type="button" class="success" id="complete-task" ${proofs.length ? '' : 'disabled'}>Завершить задачу</button></div>` : ''}</details>`;
+  return `<details class="accordion" open><summary><span>Подтверждение результата</span><small>${proofs.length} приложено</small></summary><div class="proof-list">${proofs.map((proof) => `<article class="proof"><header><strong>${escapeHTML(proof.authorUsername)}</strong><time>${formatDate(proof.createdAt, true)}</time></header>${proof.kind === 'link' && /^https?:\/\//i.test(proof.content) ? `<a href="${escapeHTML(proof.content)}" target="_blank" rel="noreferrer">${escapeHTML(proof.content)}</a>` : `<p>${escapeHTML(proof.content).replace(/\n/g, '<br>')}</p>`}</article>`).join('') || emptyState('Перед завершением приложите результат или ссылку на него.')}</div>${record.ownerId === state.me.id ? `<form id="proof-form" class="proof-form"><select name="kind"><option value="text">Текст</option><option value="link">Ссылка</option></select><textarea name="content" rows="4" placeholder="Что сделано или где находится результат" required></textarea><button class="secondary" type="submit">Приложить</button></form><div class="completion-box"><label>Краткий итог<textarea id="completion-result" rows="3" placeholder="Что получили в результате"></textarea></label><label class="check"><input id="notify-on-complete" type="checkbox" checked> Уведомить партнёра</label><button type="button" class="success" id="complete-task" ${proofs.length ? '' : 'disabled'}>Завершить задачу</button></div>` : ''}</details>`;
 }
 
 function buildRecordUpdate(form, record) {
@@ -810,6 +852,14 @@ function bindRecordDialogEvents() {
   $('#link-form')?.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateDetail(`/api/records/${record.id}/links`, { method: 'POST', body: JSON.stringify({ targetId: form.get('targetId'), relationType: form.get('relationType') }) }); });
   $$('[data-remove-link]').forEach((button) => button.addEventListener('click', async () => { const reason = await askText({ title: 'Убрать связь', label: 'Почему связь больше не актуальна?', required: true }); if (!reason) return; await mutateDetail(`/api/records/${record.id}/links/${button.dataset.removeLink}/remove`, { method: 'POST', body: JSON.stringify({ reason }) }); }));
   $$('[data-related-record]').forEach((button) => button.addEventListener('click', () => openRecord(button.dataset.relatedRecord)));
+  $$('[data-create-from-record]').forEach((button) => button.addEventListener('click', () => {
+    const requested = button.dataset.createFromRecord;
+    const type = requested === 'limitation' ? 'criterion' : requested;
+    openCreateDialog(type, { kind: requested === 'limitation' ? 'limitation' : '', description: `Источник: встреча «${record.title}»\n\n${record.description}`.trim(), sourceRecordId: record.id, relationType: 'produced', reason: 'Создано из заметок встречи' });
+  }));
+  $$('[data-create-linked]').forEach((button) => button.addEventListener('click', () => {
+    openCreateDialog(button.dataset.createLinked, { kind: button.dataset.linkedKind, sourceRecordId: record.id, relationType: 'leads_to', reason: `Следующий объект создан из карточки «${record.title}»` });
+  }));
   $$('[data-open-event]', $('#record-dialog')).forEach((button) => button.addEventListener('click', () => openActivity(button.dataset.openEvent)));
   $('#add-questions-form')?.addEventListener('submit', async (event) => {
     event.preventDefault(); const form = new FormData(event.currentTarget);
@@ -826,12 +876,11 @@ function bindRecordDialogEvents() {
     event.preventDefault(); const form = new FormData(event.currentTarget);
     await mutateDetail(`/api/records/${record.id}/questions/${event.currentTarget.dataset.customDecision}/decision`, { method: 'POST', body: JSON.stringify({ mode: 'custom', content: form.get('content') }) });
   }));
-  $$('[data-create-task-from-decision]').forEach((button) => button.addEventListener('click', () => {
-    const question = detail.questionWorkflow.questions.find((item) => item.id === button.dataset.createTaskFromDecision);
+  $$('[data-create-output]').forEach((button) => button.addEventListener('click', () => {
+    const question = detail.questionWorkflow.questions.find((item) => item.id === button.dataset.questionId);
     if (!question?.decision) return;
-    const title = `Реализовать решение: ${question.body}`.slice(0, 240);
-    const description = `Вопрос:\n${question.body}\n\nСовместное решение:\n${question.decision.content}`;
-    openCreateDialog('task', { title, description, sourceRecordId: record.id });
+    const titles = { preference: question.decision.content, limitation: question.decision.content, rule: question.body, insight: question.body, task: `Реализовать: ${question.body}`, idea: question.decision.content, research: `Проверить: ${question.body}`, goal: question.decision.content };
+    openQuestionOutputDialog(record, question, button.dataset.createOutput, String(titles[button.dataset.createOutput] || question.body).slice(0, 240));
   }));
   $$('[data-archive-question]').forEach((button) => button.addEventListener('click', async () => {
     const reason = await askText({ title: 'Архивировать вопрос', label: 'Почему вопрос больше не нужен?', required: true });
@@ -867,6 +916,27 @@ function askText({ title, label, defaultValue = '', required = false }) {
     dialog.addEventListener('close', () => { if (!settled) { settled = true; resolve(null); } }, { once: true });
     dialog.showModal();
   });
+}
+
+function openQuestionOutputDialog(sourceRecord, question, kind, defaultTitle) {
+  const labels = { preference: 'Критерий выбора', limitation: 'Ограничение', rule: 'Правило', insight: 'Вывод', task: 'Задача', idea: 'Идея', research: 'Исследование', goal: 'Цель' };
+  const planned = ['task', 'goal', 'research'].includes(kind);
+  $('#create-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">${icon('link')} Результат совместного вывода</span><h2>${labels[kind]}</h2><p>Источник сохранится автоматически: группа вопросов → вопрос → совместный итог → новая карточка.</p></div><button type="button" class="close-button icon-button" data-close-create aria-label="Закрыть">${icon('x')}</button></div><form id="question-output-form" class="card-form dialog-form"><div class="source-context"><span>Вопрос</span><strong>${escapeHTML(question.body)}</strong><blockquote>${escapeHTML(question.decision.content)}</blockquote></div><label>Название<input name="title" required maxlength="240" value="${escapeHTML(defaultTitle)}"></label><label>Как применять<textarea name="description" rows="4">${escapeHTML(question.decision.content)}</textarea></label>${planned ? `<div class="form-grid two"><label>Ответственный<select name="ownerId">${userOptions(state.me.id)}</select></label><label>Срок<input name="dueAt" type="datetime-local"></label></div>` : `<input type="hidden" name="ownerId" value="${state.me.id}">`}<div class="form-actions"><button type="submit" class="primary">${icon('plus')} Создать и связать</button><button type="button" class="secondary" data-close-create>Отмена</button></div></form>`;
+  $$('[data-close-create]').forEach((button) => button.addEventListener('click', () => $('#create-dialog').close()));
+  $('#question-output-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const due = form.get('dueAt');
+    try {
+      const output = await api(`/api/records/${sourceRecord.id}/questions/${question.id}/outputs`, { method: 'POST', body: JSON.stringify({ kind, title: form.get('title'), description: form.get('description'), ownerId: Number(form.get('ownerId')), dueAt: due ? new Date(due).toISOString() : '' }) });
+      $('#create-dialog').close();
+      state.detailCache.delete(sourceRecord.id);
+      await loadData(true);
+      toast('Результат создан и связан');
+      await openRecord(output.id);
+    } catch (error) { toast(error.message, true); }
+  });
+  $('#create-dialog').showModal();
 }
 
 async function mutateDetail(path, options) {
@@ -909,6 +979,7 @@ function toggleCreateMenu() {
   menu.innerHTML = `
     <button type="button" data-create-type="idea">${icon('lightbulb')}<span><strong>Быстрая идея</strong><small>Сохранить мысль без оценки</small></span></button>
     <button type="button" data-create-type="task">${icon('checkSquare')}<span><strong>Задача</strong><small>Себе или партнёру</small></span></button>
+    <button type="button" data-create-type="meeting">${icon('calendar')}<span><strong>Встреча</strong><small>Повестка, заметки и результаты</small></span></button>
     <button type="button" data-create-type="question_set">${icon('messages')}<span><strong>Карточка вопросов</strong><small>Несколько вопросов, личные ответы и итоги</small></span></button>
     <button type="button" data-create-type="other">${icon('plus')}<span><strong>Другая карточка</strong><small>Цель, исследование, решение или документ</small></span></button>`;
   menu.hidden = !menu.hidden;
@@ -919,19 +990,23 @@ function toggleCreateMenu() {
 
 function openCreateDialog(initialType = 'idea', preset = {}) {
   const initialMeta = typeMeta[initialType];
-  $('#create-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">${icon(initialMeta.icon)} Новая запись</span><h2>${escapeHTML(initialMeta.singular)}</h2><p>${preset.sourceRecordId ? 'Задача будет автоматически связана с исходным обсуждением.' : initialType === 'question_set' ? 'Одна карточка объединит список вопросов, отдельные ответы и совместные итоги.' : 'Сначала зафиксируйте главное. Детали можно добавить после создания.'}</p></div><button type="button" class="close-button icon-button" data-close-create aria-label="Закрыть">${icon('x')}</button></div><form id="create-record-form" class="card-form dialog-form"><div class="form-grid two"><label>Тип<select name="type">${Object.entries(typeMeta).map(([key, meta]) => `<option value="${key}" ${initialType === key ? 'selected' : ''}>${meta.singular}</option>`).join('')}</select></label><label>${initialType === 'question_set' ? 'Координатор' : 'Ответственный'}<select name="ownerId">${userOptions(state.me.id)}</select></label></div><label>${initialType === 'question_set' ? 'Название группы вопросов' : 'Название'}<input name="title" required maxlength="240" autofocus value="${escapeHTML(preset.title || '')}" placeholder="${initialType === 'question_set' ? 'Например: Договорённости основателей' : ''}"></label><label>${initialType === 'question_set' ? 'Контекст обсуждения' : 'Описание'}<textarea name="description" rows="5" placeholder="${initialType === 'question_set' ? 'Зачем обсуждаем эти вопросы и к чему хотим прийти' : ''}">${escapeHTML(preset.description || '')}</textarea></label><div class="form-grid two"><label>Срок<input name="dueAt" type="datetime-local"></label><label>Оценка времени, минут<input name="estimateMinutes" type="number" min="0" value="0"></label></div>${preset.sourceRecordId ? `<div class="source-link-note">${icon('link')} После создания добавим связь «приводит к» с карточкой вопросов.</div>` : ''}<div class="form-actions"><button type="submit" class="primary">${icon('plus')} Создать</button><button type="button" class="secondary" data-close-create>Отмена</button></div></form>`;
+  const kindLabels = { preference: 'Критерий выбора', limitation: 'Ограничение', rule: 'Правило', insight: 'Вывод' };
+  const displayName = kindLabels[preset.kind] || initialMeta.singular;
+  const titleLabel = initialType === 'question_set' ? 'Название группы вопросов' : initialType === 'meeting' ? 'Тема встречи' : 'Название';
+  const descriptionLabel = preset.kind === 'limitation' ? 'Как применять ограничение' : preset.kind === 'rule' ? 'Формулировка и область действия' : initialType === 'question_set' ? 'Зачем обсуждаем' : initialType === 'meeting' ? 'Повестка и заметки' : initialType === 'task' ? 'Ожидаемый результат' : 'Краткое описание';
+  $('#create-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">${icon(initialMeta.icon)} Новая запись</span><h2>${escapeHTML(displayName)}</h2></div><button type="button" class="close-button icon-button" data-close-create aria-label="Закрыть">${icon('x')}</button></div><form id="create-record-form" class="card-form dialog-form"><label>${titleLabel}<input name="title" required maxlength="240" autofocus value="${escapeHTML(preset.title || '')}" placeholder="${initialType === 'question_set' ? 'Например: Договорённости основателей' : ''}"></label><label>${descriptionLabel}<textarea name="description" rows="5">${escapeHTML(preset.description || '')}</textarea></label><input type="hidden" name="type" value="${initialType}"><input type="hidden" name="kind" value="${escapeHTML(preset.kind || '')}">${['task', 'goal', 'research', 'question_set', 'meeting'].includes(initialType) ? `<div class="form-grid two"><label>${initialType === 'question_set' ? 'Координатор' : initialType === 'meeting' ? 'Организатор' : 'Ответственный'}<select name="ownerId">${userOptions(state.me.id)}</select></label><label>${initialType === 'meeting' ? 'Дата и время' : 'Срок'}<input name="dueAt" type="datetime-local"></label></div>` : `<input type="hidden" name="ownerId" value="${state.me.id}">`}${initialType === 'task' ? `<label>Оценка времени, минут<input name="estimateMinutes" type="number" min="0" value="0"></label>` : `<input type="hidden" name="estimateMinutes" value="0">`}<div class="form-actions"><button type="submit" class="primary">${icon('plus')} Создать</button><button type="button" class="secondary" data-close-create>Отмена</button></div></form>`;
   $$('[data-close-create]').forEach((button) => button.addEventListener('click', () => $('#create-dialog').close()));
   $('#create-record-form').addEventListener('submit', async (event) => {
     event.preventDefault(); const form = new FormData(event.currentTarget); const due = form.get('dueAt');
     try {
-      const record = await api('/api/records', { method: 'POST', body: JSON.stringify({ type: form.get('type'), title: form.get('title'), description: form.get('description'), ownerId: Number(form.get('ownerId')), dueAt: due ? new Date(due).toISOString() : '', estimateMinutes: Number(form.get('estimateMinutes')) }) });
+      const record = await api('/api/records', { method: 'POST', body: JSON.stringify({ type: form.get('type'), kind: form.get('kind'), title: form.get('title'), description: form.get('description'), ownerId: Number(form.get('ownerId')), dueAt: due ? new Date(due).toISOString() : '', estimateMinutes: Number(form.get('estimateMinutes')) }) });
       let linkError = '';
       if (preset.sourceRecordId) {
         try {
-          await api(`/api/records/${preset.sourceRecordId}/links`, { method: 'POST', body: JSON.stringify({ targetId: record.id, relationType: 'leads_to', reason: 'Задача создана из совместного решения' }) });
+          await api(`/api/records/${preset.sourceRecordId}/links`, { method: 'POST', body: JSON.stringify({ targetId: record.id, relationType: preset.relationType || 'leads_to', reason: preset.reason || 'Карточка создана из связанного рабочего контекста' }) });
           state.detailCache.delete(preset.sourceRecordId);
         } catch (error) {
-          linkError = `Задача создана, но связь не добавлена: ${error.message}`;
+          linkError = `Карточка создана, но связь не добавлена: ${error.message}`;
         }
       }
       $('#create-dialog').close(); await loadData(true); toast(linkError || 'Карточка создана', Boolean(linkError)); await openRecord(record.id);
@@ -941,7 +1016,7 @@ function openCreateDialog(initialType = 'idea', preset = {}) {
 }
 
 function actionLabel(action) {
-  return ({ created: 'создал карточку', profile_updated: 'изменил профиль', updated: 'изменил карточку', converted_to_questions: 'преобразовал в карточку вопросов', archived: 'перенёс в архив', section_updated: 'обновил раздел', link_created: 'создал связь', link_removed: 'убрал связь', criterion_scored: 'оценил по критерию', proof_added: 'добавил доказательство', completed: 'завершил задачу', partners_notified: 'уведомил партнёра', questions_added: 'добавил вопросы', question_answered: 'ответил на вопрос', question_decided: 'зафиксировал совместное решение', question_archived: 'архивировал вопрос' }[action] || action);
+  return ({ created: 'создал карточку', profile_updated: 'изменил профиль', updated: 'изменил карточку', converted_to_questions: 'преобразовал в карточку вопросов', archived: 'перенёс в архив', section_updated: 'обновил раздел', link_created: 'создал связь', link_removed: 'убрал связь', criterion_scored: 'оценил по критерию', proof_added: 'добавил доказательство', completed: 'завершил задачу', partners_notified: 'уведомил партнёра', questions_added: 'добавил вопросы', question_answered: 'ответил на вопрос', question_decided: 'зафиксировал совместное решение', question_archived: 'архивировал вопрос', output_created: 'превратил вывод в рабочую карточку', created_from_question: 'создал карточку из совместного вывода' }[action] || action);
 }
 
 function formatActivityValue(value, truncate = true) {
@@ -1010,9 +1085,13 @@ function renderHistory() {
 }
 
 function renderStructure() {
-  const configurableTypes = Object.entries(typeMeta).filter(([key]) => key !== 'question_set');
-  $('#main-content').innerHTML = `<section class="section-panel"><div class="section-heading"><div><p class="eyebrow">Универсальные пункты</p><h3>Структура карточек</h3><p>Карточка вопросов использует отдельную фиксированную структуру: вопрос, два личных ответа и совместный итог.</p></div></div><form id="definition-form" class="definition-form"><input name="name" placeholder="Название нового пункта" required><select name="scopeType"><option value="">Все обычные карточки</option>${configurableTypes.map(([key, meta]) => `<option value="${key}">${meta.label}</option>`).join('')}</select><select name="kind"><option value="universal">Универсальный</option><option value="template">Шаблонный</option></select><button class="primary" type="submit">Добавить</button></form><div class="definition-list">${state.definitions.map((definition) => `<div class="definition-row ${definition.active ? '' : 'inactive'}"><span><strong>${escapeHTML(definition.name)}</strong><small>${definition.scopeType ? typeMeta[definition.scopeType].label : 'Все обычные карточки'} · ${definition.kind === 'universal' ? 'универсальный' : 'шаблонный'}</small></span><button type="button" class="secondary" data-toggle-definition="${definition.id}" data-active="${definition.active}">${definition.active ? 'Отключить' : 'Восстановить'}</button></div>`).join('')}</div></section>`;
-  $('#definition-form').addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); try { await api('/api/section-definitions', { method: 'POST', body: JSON.stringify({ name: form.get('name'), scopeType: form.get('scopeType') || null, kind: form.get('kind') }) }); await loadData(true); toast('Пункт добавлен'); } catch (error) { toast(error.message, true); } });
+  const configurableTypes = Object.entries(typeMeta).filter(([key]) => !['question_set', 'meeting'].includes(key));
+  const selectedType = state.structureType || 'idea';
+  state.structureType = selectedType;
+  const definitions = state.definitions.filter((definition) => definition.scopeType === selectedType || !definition.scopeType);
+  $('#main-content').innerHTML = `<div class="page-heading"><div><p class="eyebrow">Настройки</p><h1>Шаблоны карточек</h1><p>Выберите тип и настройте дополнительные смысловые блоки. Основные поля карточки не меняются.</p></div></div><div class="template-editor"><aside>${configurableTypes.map(([key, meta]) => `<button type="button" data-structure-type="${key}" class="${selectedType === key ? 'active' : ''}">${icon(meta.icon)}<span>${meta.label}</span><b>${state.definitions.filter((definition) => definition.scopeType === key && definition.active).length}</b></button>`).join('')}</aside><section><header><div><h2>${typeMeta[selectedType].label}</h2><p>Блоки появляются во вкладке «Содержание» карточек этого типа.</p></div><button type="button" class="secondary" data-add-template-block>${icon('plus')} Добавить блок</button></header><div class="template-block-list">${definitions.map((definition) => `<article class="template-block ${definition.active ? '' : 'inactive'}"><span class="drag-handle">⋮⋮</span><div><strong>${escapeHTML(definition.name)}</strong><small>${definition.scopeType ? `Только ${typeMeta[definition.scopeType].label.toLowerCase()}` : 'Во всех карточках'}</small></div><button type="button" class="text-button" data-toggle-definition="${definition.id}" data-active="${definition.active}">${definition.active ? 'Скрыть' : 'Вернуть'}</button></article>`).join('') || emptyState('Дополнительных блоков нет.')}</div></section></div>`;
+  $$('[data-structure-type]').forEach((button) => button.addEventListener('click', () => { state.structureType = button.dataset.structureType; renderStructure(); }));
+  $('[data-add-template-block]').addEventListener('click', async () => { const name = await askText({ title: `Новый блок для «${typeMeta[selectedType].label}»`, label: 'Название смыслового блока', required: true }); if (!name) return; try { await api('/api/section-definitions', { method: 'POST', body: JSON.stringify({ name, scopeType: selectedType, kind: 'universal' }) }); await loadData(true); state.structureType = selectedType; renderStructure(); toast('Блок добавлен'); } catch (error) { toast(error.message, true); } });
   $$('[data-toggle-definition]').forEach((button) => button.addEventListener('click', async () => { try { await api(`/api/section-definitions/${button.dataset.toggleDefinition}`, { method: 'PATCH', body: JSON.stringify({ active: button.dataset.active !== 'true', reason: button.dataset.active === 'true' ? 'Пункт больше не используется в новых карточках' : 'Пункт снова нужен' }) }); await loadData(true); toast('Структура обновлена'); } catch (error) { toast(error.message, true); } }));
 }
 

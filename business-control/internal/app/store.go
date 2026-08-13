@@ -37,6 +37,7 @@ type User struct {
 type Record struct {
 	ID                string  `json:"id"`
 	Type              string  `json:"type"`
+	Kind              string  `json:"kind"`
 	Title             string  `json:"title"`
 	Description       string  `json:"description"`
 	Status            string  `json:"status"`
@@ -86,6 +87,16 @@ type RecordLink struct {
 	RelationType string `json:"relationType"`
 	Record       Record `json:"record"`
 	CreatedAt    string `json:"createdAt"`
+}
+
+type RecordDerivation struct {
+	SourceRecordID    string `json:"sourceRecordId"`
+	SourceRecordTitle string `json:"sourceRecordTitle"`
+	SourceQuestionID  string `json:"sourceQuestionId"`
+	QuestionBody      string `json:"questionBody"`
+	SourceDecisionID  string `json:"sourceDecisionId"`
+	DecisionContent   string `json:"decisionContent"`
+	CreatedAt         string `json:"createdAt"`
 }
 
 type CriterionScore struct {
@@ -155,6 +166,16 @@ type QuestionDecision struct {
 	UpdatedAt            string  `json:"updatedAt"`
 }
 
+type QuestionOutput struct {
+	ID        string `json:"id"`
+	RecordID  string `json:"recordId"`
+	Type      string `json:"type"`
+	Kind      string `json:"kind"`
+	Title     string `json:"title"`
+	Status    string `json:"status"`
+	CreatedAt string `json:"createdAt"`
+}
+
 type QuestionItem struct {
 	ID        string            `json:"id"`
 	RecordID  string            `json:"recordId"`
@@ -166,6 +187,7 @@ type QuestionItem struct {
 	UpdatedAt string            `json:"updatedAt"`
 	Answers   []QuestionAnswer  `json:"answers"`
 	Decision  *QuestionDecision `json:"decision"`
+	Outputs   []QuestionOutput  `json:"outputs"`
 }
 
 type QuestionWorkflow struct {

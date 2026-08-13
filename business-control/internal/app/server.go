@@ -26,6 +26,7 @@ var questionListPrefixPattern = regexp.MustCompile(`^\s*(?:[-*]\s+|[0-9]+[.)]\s+
 var recordTypes = map[string]struct{}{
 	"goal": {}, "task": {}, "idea": {}, "criterion": {}, "research": {},
 	"decision": {}, "disagreement": {}, "document": {}, "question_set": {},
+	"meeting": {},
 }
 
 var recordStatuses = map[string]struct{}{
@@ -77,6 +78,7 @@ func (s *Server) routes() {
 	s.mux.Handle("POST /api/records/{id}/questions", s.requireAuth(http.HandlerFunc(s.handleAddQuestions)))
 	s.mux.Handle("PUT /api/records/{id}/questions/{questionId}/answer", s.requireAuth(http.HandlerFunc(s.handleSaveQuestionAnswer)))
 	s.mux.Handle("POST /api/records/{id}/questions/{questionId}/decision", s.requireAuth(http.HandlerFunc(s.handleSaveQuestionDecision)))
+	s.mux.Handle("POST /api/records/{id}/questions/{questionId}/outputs", s.requireAuth(http.HandlerFunc(s.handleCreateQuestionOutput)))
 	s.mux.Handle("POST /api/records/{id}/questions/{questionId}/archive", s.requireAuth(http.HandlerFunc(s.handleArchiveQuestion)))
 	s.mux.Handle("GET /api/questions/pending", s.requireAuth(http.HandlerFunc(s.handlePendingQuestions)))
 
@@ -337,7 +339,7 @@ func (s *Server) handleUsers(w http.ResponseWriter, r *http.Request) {
 type recordScanner interface{ Scan(...any) error }
 
 const recordSelect = `
-	SELECT r.id, CASE WHEN r.subtype = 'question_set' THEN 'question_set' ELSE r.type END, r.title, r.description, r.status,
+	SELECT r.id, CASE WHEN r.subtype = 'question_set' THEN 'question_set' WHEN r.record_kind = 'meeting' THEN 'meeting' ELSE r.type END, r.record_kind, r.title, r.description, r.status,
 		r.author_id, author.username, r.owner_id, owner.username,
 		r.decision_maker_id, decision_maker.username, r.due_at,
 		r.estimate_minutes, r.progress, r.progress_note, r.result, r.completed_at,
@@ -352,7 +354,7 @@ func scanRecord(scanner recordScanner) (Record, error) {
 	var record Record
 	var decisionMakerID sql.NullInt64
 	var decisionMakerName, dueAt, completedAt sql.NullString
-	err := scanner.Scan(&record.ID, &record.Type, &record.Title, &record.Description, &record.Status,
+	err := scanner.Scan(&record.ID, &record.Type, &record.Kind, &record.Title, &record.Description, &record.Status,
 		&record.AuthorID, &record.AuthorUsername, &record.OwnerID, &record.OwnerUsername,
 		&decisionMakerID, &decisionMakerName, &dueAt, &record.EstimateMinutes, &record.Progress,
 		&record.ProgressNote, &record.Result, &completedAt, &record.CreatedAt, &record.UpdatedAt, &record.ProofCount)
@@ -385,8 +387,10 @@ func (s *Server) handleListRecords(w http.ResponseWriter, r *http.Request) {
 		}
 		if recordType == "question_set" {
 			where = append(where, "r.subtype = 'question_set'")
+		} else if recordType == "meeting" {
+			where = append(where, "r.type = 'document' AND r.record_kind = 'meeting'")
 		} else if recordType == "document" {
-			where = append(where, "r.type = 'document' AND r.subtype = ''")
+			where = append(where, "r.type = 'document' AND r.subtype = '' AND r.record_kind = ''")
 		} else {
 			where = append(where, "r.type = ? AND r.subtype = ''")
 			args = append(args, recordType)
@@ -444,13 +448,14 @@ type createRecordRequest struct {
 	DecisionMakerID *int64 `json:"decisionMakerId"`
 	DueAt           string `json:"dueAt"`
 	EstimateMinutes int    `json:"estimateMinutes"`
+	Kind            string `json:"kind"`
 }
 
 func defaultStatus(recordType string) string {
 	switch recordType {
 	case "idea":
 		return "inbox"
-	case "goal", "task", "question_set":
+	case "goal", "task", "question_set", "meeting":
 		return "planned"
 	default:
 		return "draft"
@@ -464,10 +469,25 @@ func validStatusForType(recordType, status string) bool {
 	switch recordType {
 	case "idea":
 		return status == "inbox" || status == "review" || status == "main" || status == "rejected"
-	case "goal", "task", "question_set":
+	case "goal", "task", "question_set", "meeting":
 		return status == "planned" || status == "in_progress" || status == "blocked" || status == "completed" || status == "postponed" || status == "cancelled"
 	default:
 		return status == "draft" || status == "in_progress" || status == "completed" || status == "cancelled"
+	}
+}
+
+func validRecordKind(databaseType, kind string) bool {
+	switch kind {
+	case "":
+		return true
+	case "preference", "limitation":
+		return databaseType == "criterion"
+	case "rule", "insight":
+		return databaseType == "decision"
+	case "meeting":
+		return databaseType == "document"
+	default:
+		return false
 	}
 }
 
@@ -524,11 +544,20 @@ func (s *Server) handleCreateRecord(w http.ResponseWriter, r *http.Request) {
 	now := nowText()
 	databaseType := input.Type
 	subtype := ""
+	recordKind := strings.TrimSpace(input.Kind)
 	if input.Type == "question_set" {
 		databaseType = "document"
 		subtype = "question_set"
+		recordKind = ""
+	} else if input.Type == "meeting" {
+		databaseType = "document"
+		recordKind = "meeting"
 	}
-	_, err = tx.ExecContext(r.Context(), `INSERT INTO records(id, type, subtype, title, description, status, author_id, owner_id, decision_maker_id, due_at, estimate_minutes, created_at, updated_at) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, id, databaseType, subtype, input.Title, strings.TrimSpace(input.Description), input.Status, user.ID, input.OwnerID, input.DecisionMakerID, dueAt, input.EstimateMinutes, now, now)
+	if !validRecordKind(databaseType, recordKind) {
+		writeError(w, http.StatusBadRequest, "Некорректный вид карточки")
+		return
+	}
+	_, err = tx.ExecContext(r.Context(), `INSERT INTO records(id, type, subtype, record_kind, title, description, status, author_id, owner_id, decision_maker_id, due_at, estimate_minutes, created_at, updated_at) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, id, databaseType, subtype, recordKind, input.Title, strings.TrimSpace(input.Description), input.Status, user.ID, input.OwnerID, input.DecisionMakerID, dueAt, input.EstimateMinutes, now, now)
 	if err != nil {
 		log.Printf("create record: %v", err)
 		writeError(w, http.StatusInternalServerError, "Не удалось создать карточку")
@@ -581,10 +610,25 @@ func (s *Server) handleGetRecord(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	var derivation *RecordDerivation
+	var origin RecordDerivation
+	err = s.store.db.QueryRowContext(r.Context(), `
+		SELECT d.source_record_id, source.title, COALESCE(d.source_question_id, ''), COALESCE(q.body, ''),
+			COALESCE(d.source_decision_id, ''), d.source_excerpt, d.created_at
+		FROM record_derivations d
+		JOIN records source ON source.id = d.source_record_id
+		LEFT JOIN question_items q ON q.id = d.source_question_id
+		WHERE d.output_record_id = ?`, record.ID).Scan(&origin.SourceRecordID, &origin.SourceRecordTitle, &origin.SourceQuestionID, &origin.QuestionBody, &origin.SourceDecisionID, &origin.DecisionContent, &origin.CreatedAt)
+	if err == nil {
+		derivation = &origin
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		writeError(w, http.StatusInternalServerError, "Не удалось загрузить происхождение карточки")
+		return
+	}
 	w.Header().Set("Server-Timing", fmt.Sprintf("record-detail;dur=%.2f", float64(time.Since(startedAt).Microseconds())/1000))
 	writeJSON(w, http.StatusOK, map[string]any{
 		"record": record, "sections": sections, "links": []RecordLink{}, "scores": []CriterionScore{},
-		"proofs": proofs, "questionWorkflow": workflow, "relationsLoaded": false,
+		"proofs": proofs, "questionWorkflow": workflow, "derivation": derivation, "relationsLoaded": false,
 	})
 }
 
@@ -1107,7 +1151,7 @@ func (s *Server) handleSaveSection(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) listLinks(ctx context.Context, recordID string) ([]RecordLink, error) {
-	rows, err := s.store.db.QueryContext(ctx, `SELECT l.id, l.source_id, l.target_id, l.relation_type, l.created_at, r.id, CASE WHEN r.subtype = 'question_set' THEN 'question_set' ELSE r.type END, r.title, r.description, r.status, r.author_id, a.username, r.owner_id, o.username, r.decision_maker_id, dm.username, r.due_at, r.estimate_minutes, r.progress, r.progress_note, r.result, r.completed_at, r.created_at, r.updated_at, (SELECT COUNT(*) FROM task_proofs p WHERE p.record_id = r.id) FROM record_links l JOIN records r ON r.id = CASE WHEN l.source_id = ? THEN l.target_id ELSE l.source_id END JOIN users a ON a.id = r.author_id JOIN users o ON o.id = r.owner_id LEFT JOIN users dm ON dm.id = r.decision_maker_id WHERE l.active = 1 AND (l.source_id = ? OR l.target_id = ?) ORDER BY l.created_at DESC`, recordID, recordID, recordID)
+	rows, err := s.store.db.QueryContext(ctx, `SELECT l.id, l.source_id, l.target_id, l.relation_type, l.created_at, r.id, CASE WHEN r.subtype = 'question_set' THEN 'question_set' WHEN r.record_kind = 'meeting' THEN 'meeting' ELSE r.type END, r.record_kind, r.title, r.description, r.status, r.author_id, a.username, r.owner_id, o.username, r.decision_maker_id, dm.username, r.due_at, r.estimate_minutes, r.progress, r.progress_note, r.result, r.completed_at, r.created_at, r.updated_at, (SELECT COUNT(*) FROM task_proofs p WHERE p.record_id = r.id) FROM record_links l JOIN records r ON r.id = CASE WHEN l.source_id = ? THEN l.target_id ELSE l.source_id END JOIN users a ON a.id = r.author_id JOIN users o ON o.id = r.owner_id LEFT JOIN users dm ON dm.id = r.decision_maker_id WHERE l.active = 1 AND (l.source_id = ? OR l.target_id = ?) ORDER BY l.created_at DESC`, recordID, recordID, recordID)
 	if err != nil {
 		return nil, err
 	}
@@ -1117,7 +1161,7 @@ func (s *Server) listLinks(ctx context.Context, recordID string) ([]RecordLink, 
 		var link RecordLink
 		var dmID sql.NullInt64
 		var dmName, dueAt, completedAt sql.NullString
-		if err := rows.Scan(&link.ID, &link.SourceID, &link.TargetID, &link.RelationType, &link.CreatedAt, &link.Record.ID, &link.Record.Type, &link.Record.Title, &link.Record.Description, &link.Record.Status, &link.Record.AuthorID, &link.Record.AuthorUsername, &link.Record.OwnerID, &link.Record.OwnerUsername, &dmID, &dmName, &dueAt, &link.Record.EstimateMinutes, &link.Record.Progress, &link.Record.ProgressNote, &link.Record.Result, &completedAt, &link.Record.CreatedAt, &link.Record.UpdatedAt, &link.Record.ProofCount); err != nil {
+		if err := rows.Scan(&link.ID, &link.SourceID, &link.TargetID, &link.RelationType, &link.CreatedAt, &link.Record.ID, &link.Record.Type, &link.Record.Kind, &link.Record.Title, &link.Record.Description, &link.Record.Status, &link.Record.AuthorID, &link.Record.AuthorUsername, &link.Record.OwnerID, &link.Record.OwnerUsername, &dmID, &dmName, &dueAt, &link.Record.EstimateMinutes, &link.Record.Progress, &link.Record.ProgressNote, &link.Record.Result, &completedAt, &link.Record.CreatedAt, &link.Record.UpdatedAt, &link.Record.ProofCount); err != nil {
 			return nil, err
 		}
 		if dmID.Valid {
@@ -1590,6 +1634,7 @@ func (s *Server) listQuestionWorkflow(ctx context.Context, recordID string) (Que
 	}
 	for index := range workflow.Questions {
 		item := &workflow.Questions[index]
+		item.Outputs = make([]QuestionOutput, 0)
 		answerRows, err := s.store.db.QueryContext(ctx, `SELECT a.id, a.question_id, a.author_id, u.username, a.content, a.created_at, a.updated_at FROM question_answers a JOIN users u ON u.id = a.author_id WHERE a.question_id = ? ORDER BY u.username`, item.ID)
 		if err != nil {
 			return workflow, err
@@ -1617,6 +1662,28 @@ func (s *Server) listQuestionWorkflow(ctx context.Context, recordID string) (Que
 			}
 			item.Decision = &decision
 		} else if !errors.Is(err, sql.ErrNoRows) {
+			return workflow, err
+		}
+		outputRows, err := s.store.db.QueryContext(ctx, `
+			SELECT d.id, r.id,
+				CASE WHEN r.subtype = 'question_set' THEN 'question_set' WHEN r.record_kind = 'meeting' THEN 'meeting' ELSE r.type END,
+				r.record_kind, r.title, r.status, d.created_at
+			FROM record_derivations d
+			JOIN records r ON r.id = d.output_record_id
+			WHERE d.source_question_id = ?
+			ORDER BY d.created_at`, item.ID)
+		if err != nil {
+			return workflow, err
+		}
+		for outputRows.Next() {
+			var output QuestionOutput
+			if err := outputRows.Scan(&output.ID, &output.RecordID, &output.Type, &output.Kind, &output.Title, &output.Status, &output.CreatedAt); err != nil {
+				outputRows.Close()
+				return workflow, err
+			}
+			item.Outputs = append(item.Outputs, output)
+		}
+		if err := outputRows.Close(); err != nil {
 			return workflow, err
 		}
 		workflow.Answered += len(item.Answers)
@@ -1865,6 +1932,129 @@ func (s *Server) handleSaveQuestionDecision(w http.ResponseWriter, r *http.Reque
 	writeJSON(w, http.StatusOK, workflow)
 }
 
+func (s *Server) handleCreateQuestionOutput(w http.ResponseWriter, r *http.Request) {
+	source, err := s.getRecord(r.Context(), r.PathValue("id"))
+	questionID := r.PathValue("questionId")
+	if err != nil || source.Type != "question_set" || !s.questionBelongsToRecord(r.Context(), questionID, source.ID) {
+		writeError(w, http.StatusNotFound, "Вопрос не найден")
+		return
+	}
+	var input struct {
+		Kind            string `json:"kind"`
+		Title           string `json:"title"`
+		Description     string `json:"description"`
+		OwnerID         int64  `json:"ownerId"`
+		DueAt           string `json:"dueAt"`
+		EstimateMinutes int    `json:"estimateMinutes"`
+	}
+	if !decodeJSON(w, r, &input) {
+		return
+	}
+	input.Kind = strings.TrimSpace(input.Kind)
+	input.Title = strings.TrimSpace(input.Title)
+	input.Description = strings.TrimSpace(input.Description)
+	if input.Title == "" || len(input.Title) > 240 {
+		writeError(w, http.StatusBadRequest, "Название обязательно и не длиннее 240 символов")
+		return
+	}
+	if len(input.Description) > 100000 {
+		writeError(w, http.StatusBadRequest, "Описание слишком длинное")
+		return
+	}
+	if input.EstimateMinutes < 0 || input.EstimateMinutes > 525600 {
+		writeError(w, http.StatusBadRequest, "Некорректная оценка времени")
+		return
+	}
+	user := currentUser(r)
+	if input.OwnerID == 0 {
+		input.OwnerID = user.ID
+	}
+	if !s.userExists(r.Context(), input.OwnerID) {
+		writeError(w, http.StatusBadRequest, "Указанный участник не найден")
+		return
+	}
+	dueAt, err := normalizeDueAt(input.DueAt)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "Некорректный срок")
+		return
+	}
+	var databaseType, recordKind, status string
+	switch input.Kind {
+	case "preference":
+		databaseType, recordKind, status = "criterion", "preference", "draft"
+	case "limitation":
+		databaseType, recordKind, status = "criterion", "limitation", "draft"
+	case "rule":
+		databaseType, recordKind, status = "decision", "rule", "in_progress"
+	case "insight":
+		databaseType, recordKind, status = "decision", "insight", "draft"
+	case "task":
+		databaseType, status = "task", "planned"
+	case "idea":
+		databaseType, status = "idea", "inbox"
+	case "research":
+		databaseType, status = "research", "draft"
+	case "goal":
+		databaseType, status = "goal", "planned"
+	default:
+		writeError(w, http.StatusBadRequest, "Неизвестный вид результата")
+		return
+	}
+	var decisionID, decisionContent string
+	if err := s.store.db.QueryRowContext(r.Context(), `SELECT id, content FROM question_decisions WHERE question_id = ?`, questionID).Scan(&decisionID, &decisionContent); err != nil {
+		writeError(w, http.StatusConflict, "Сначала зафиксируйте совместный итог вопроса")
+		return
+	}
+	if input.Description == "" {
+		input.Description = decisionContent
+	}
+	outputID, err := newID()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось создать идентификатор")
+		return
+	}
+	derivationID, _ := newID()
+	linkID, _ := newID()
+	now := nowText()
+	tx, err := s.store.db.BeginTx(r.Context(), nil)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось начать создание результата")
+		return
+	}
+	defer tx.Rollback()
+	if _, err = tx.ExecContext(r.Context(), `INSERT INTO records(id, type, subtype, record_kind, title, description, status, author_id, owner_id, due_at, estimate_minutes, created_at, updated_at) VALUES(?, ?, '', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, outputID, databaseType, recordKind, input.Title, input.Description, status, user.ID, input.OwnerID, dueAt, input.EstimateMinutes, now, now); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось создать карточку результата")
+		return
+	}
+	if _, err = tx.ExecContext(r.Context(), `INSERT INTO record_links(id, source_id, target_id, relation_type, created_by, created_at) VALUES(?, ?, ?, 'produced', ?, ?)`, linkID, source.ID, outputID, user.ID, now); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось связать результат с источником")
+		return
+	}
+	if _, err = tx.ExecContext(r.Context(), `INSERT INTO record_derivations(id, output_record_id, source_record_id, source_question_id, source_decision_id, source_excerpt, created_by, created_at) VALUES(?, ?, ?, ?, ?, ?, ?, ?)`, derivationID, outputID, source.ID, questionID, decisionID, decisionContent, user.ID, now); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось сохранить происхождение результата")
+		return
+	}
+	if _, err = tx.ExecContext(r.Context(), `UPDATE records SET updated_at = ? WHERE id = ?`, now, source.ID); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось обновить источник")
+		return
+	}
+	details := map[string]any{"questionId": questionID, "decisionId": decisionID, "outputId": outputID, "outputType": input.Kind, "title": input.Title}
+	if err = writeActivity(r.Context(), tx, user.ID, source.Type, source.ID, "output_created", "Вывод превращён в рабочую сущность", details); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось записать историю источника")
+		return
+	}
+	if err = writeActivity(r.Context(), tx, user.ID, databaseType, outputID, "created_from_question", "Создано из совместного вывода", map[string]any{"sourceRecordId": source.ID, "questionId": questionID, "decisionId": decisionID}); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось записать историю результата")
+		return
+	}
+	if err = tx.Commit(); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось завершить создание результата")
+		return
+	}
+	created, _ := s.getRecord(r.Context(), outputID)
+	writeJSON(w, http.StatusCreated, created)
+}
+
 func (s *Server) handleArchiveQuestion(w http.ResponseWriter, r *http.Request) {
 	record, err := s.getRecord(r.Context(), r.PathValue("id"))
 	questionID := r.PathValue("questionId")
@@ -1960,6 +2150,10 @@ func (s *Server) handleCreateDefinition(w http.ResponseWriter, r *http.Request) 
 		}
 		if *input.ScopeType == "question_set" {
 			writeError(w, http.StatusBadRequest, "Структура карточки вопросов фиксирована")
+			return
+		}
+		if *input.ScopeType == "meeting" {
+			writeError(w, http.StatusBadRequest, "Встреча использует фиксированный рабочий формат")
 			return
 		}
 	}
