@@ -3,36 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#17201d">
+  <meta name="theme-color" content="#202724">
   <title>Контур бизнеса</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <div id="auth-root" class="auth-root" hidden>
-    <main class="auth-panel">
-      <div class="brand-mark"><span>К</span></div>
-      <div>
-        <p class="eyebrow">Рабочее пространство</p>
-        <h1>Контур бизнеса</h1>
-        <p class="muted">Идеи, решения и задачи в одной истории.</p>
-      </div>
-      <div class="segmented" role="tablist" aria-label="Вход или регистрация">
-        <button type="button" class="segment active" data-auth-mode="login">Вход</button>
-        <button type="button" class="segment" data-auth-mode="register">Регистрация</button>
-      </div>
-      <form id="auth-form" class="stack-form">
-        <label id="email-field" hidden>Почта<input name="email" type="email" autocomplete="email"></label>
-        <label><span id="login-label">Логин или почта</span><input name="login" autocomplete="username" required></label>
-        <label>Пароль<input name="password" type="password" autocomplete="current-password" minlength="8" required></label>
-        <button class="primary wide" type="submit" id="auth-submit">Войти</button>
-        <p id="auth-error" class="form-error" role="alert"></p>
-      </form>
-    </main>
+    <div class="auth-layout">
+      <section class="auth-intro">
+        <div class="auth-brand"><span class="brand-mark"><span class="brand-symbol"><i></i><i></i></span></span><span><strong>Контур</strong><small>пространство основателей</small></span></div>
+        <div class="auth-statement">
+          <p class="eyebrow">От мысли до результата</p>
+          <h1>Контур бизнеса</h1>
+          <p>Единое место для решений, задач и договорённостей команды.</p>
+        </div>
+        <p class="auth-caption">Рабочая память проекта</p>
+      </section>
+      <main class="auth-panel">
+        <div class="auth-panel-brand"><span class="brand-mark"><span class="brand-symbol"><i></i><i></i></span></span><strong>Контур</strong></div>
+        <div class="auth-heading">
+          <p class="eyebrow">Закрытое пространство</p>
+          <h2 id="auth-heading-title">Войдите в проект</h2>
+          <p class="muted" id="auth-heading-copy">Продолжите работу с того места, где остановились.</p>
+        </div>
+        <div class="segmented" role="tablist" aria-label="Вход или регистрация">
+          <button type="button" class="segment active" data-auth-mode="login">Вход</button>
+          <button type="button" class="segment" data-auth-mode="register">Регистрация</button>
+        </div>
+        <form id="auth-form" class="stack-form">
+          <label id="email-field" hidden>Почта<input name="email" type="email" autocomplete="email"></label>
+          <label><span id="login-label">Логин или почта</span><input name="login" autocomplete="username" required></label>
+          <label>Пароль<input name="password" type="password" autocomplete="current-password" minlength="8" required></label>
+          <button class="primary wide" type="submit" id="auth-submit">Войти</button>
+          <p id="auth-error" class="form-error" role="alert"></p>
+        </form>
+      </main>
+    </div>
   </div>
 
   <div id="app-root" class="app-shell" hidden>
     <aside class="sidebar">
-      <div class="brand"><span class="brand-mark small"><span>К</span></span><span><strong>Контур</strong><small>рабочее пространство</small></span></div>
+      <div class="brand"><span class="brand-mark small"><span class="brand-symbol"><i></i><i></i></span></span><span><strong>Контур</strong><small>пространство основателей</small></span></div>
       <nav id="main-nav" class="main-nav" aria-label="Разделы"></nav>
       <div class="sidebar-footer">
         <button type="button" class="user-button" id="profile-button"><span class="avatar" id="user-avatar"></span><span><strong id="user-name"></strong><small>Профиль</small></span></button>
