@@ -82,3 +82,7 @@ Production runbook: `docs/operations/BUSINESS_CONTROL_MVP_DEPLOYMENT_2026_08_12.
 Чистое развёртывание на новом сервере и отказ от общего nginx-доступа описаны в `docs/operations/BUSINESS_CONTROL_SERVER_MIGRATION_2026_08_13.md`.
 
 Исправления стабильности карточек и обновление рабочего интерфейса описаны в `docs/product/BUSINESS_CONTROL_USABILITY_RELEASE_2026_08_13.md`.
+
+Полная сверка стартовых требований, самостоятельно найденные продуктовые разрывы, целевая модель карточек и приоритетный roadmap находятся в `docs/product/BUSINESS_CONTROL_PRODUCT_GAP_AND_UX_AUDIT_2026_08_13.md`.
+
+Пошаговые правила работы в текущей версии и спецификация двухминутного onboarding находятся в `docs/product/BUSINESS_CONTROL_CURRENT_USAGE_AND_ONBOARDING_2026_08_13.md`.
