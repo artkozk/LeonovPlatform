@@ -62,6 +62,7 @@ func (s *Server) routes() {
 	s.mux.Handle("GET /api/records", s.requireAuth(http.HandlerFunc(s.handleListRecords)))
 	s.mux.Handle("POST /api/records", s.requireAuth(http.HandlerFunc(s.handleCreateRecord)))
 	s.mux.Handle("GET /api/records/{id}", s.requireAuth(http.HandlerFunc(s.handleGetRecord)))
+	s.mux.Handle("GET /api/records/{id}/relations", s.requireAuth(http.HandlerFunc(s.handleGetRecordRelations)))
 	s.mux.Handle("PATCH /api/records/{id}", s.requireAuth(http.HandlerFunc(s.handleUpdateRecord)))
 	s.mux.Handle("POST /api/records/{id}/archive", s.requireAuth(http.HandlerFunc(s.handleArchiveRecord)))
 	s.mux.Handle("GET /api/records/{id}/sections", s.requireAuth(http.HandlerFunc(s.handleSections)))
@@ -106,11 +107,12 @@ func (s *Server) requireAuth(next http.Handler) http.Handler {
 			return
 		}
 		var user User
+		var lastSeenAt string
 		err = s.store.db.QueryRowContext(r.Context(), `
-			SELECT u.id, u.email, u.username, u.created_at
+			SELECT u.id, u.email, u.username, u.created_at, s.last_seen_at
 			FROM sessions s JOIN users u ON u.id = s.user_id
 			WHERE s.token_hash = ? AND s.expires_at > ?`, hashToken(cookie.Value), nowText()).
-			Scan(&user.ID, &user.Email, &user.Username, &user.CreatedAt)
+			Scan(&user.ID, &user.Email, &user.Username, &user.CreatedAt, &lastSeenAt)
 		if errors.Is(err, sql.ErrNoRows) {
 			s.clearSessionCookie(w)
 			writeError(w, http.StatusUnauthorized, "Сессия истекла")
@@ -121,7 +123,10 @@ func (s *Server) requireAuth(next http.Handler) http.Handler {
 			writeError(w, http.StatusInternalServerError, "Не удалось проверить сессию")
 			return
 		}
-		_, _ = s.store.db.ExecContext(r.Context(), `UPDATE sessions SET last_seen_at = ? WHERE token_hash = ?`, nowText(), hashToken(cookie.Value))
+		lastSeen, parseErr := time.Parse(time.RFC3339Nano, lastSeenAt)
+		if parseErr != nil || time.Since(lastSeen) >= 5*time.Minute {
+			_, _ = s.store.db.ExecContext(r.Context(), `UPDATE sessions SET last_seen_at = ? WHERE token_hash = ?`, nowText(), hashToken(cookie.Value))
+		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), userContextKey, user)))
 	})
 }
@@ -540,6 +545,7 @@ func (s *Server) handleCreateRecord(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleGetRecord(w http.ResponseWriter, r *http.Request) {
+	startedAt := time.Now()
 	record, err := s.getRecord(r.Context(), r.PathValue("id"))
 	if errors.Is(err, sql.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "Карточка не найдена")
@@ -549,15 +555,63 @@ func (s *Server) handleGetRecord(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "Не удалось загрузить карточку")
 		return
 	}
-	sections, _ := s.listSections(r.Context(), record)
-	links, _ := s.listLinks(r.Context(), record.ID)
-	scores, _ := s.listScores(r.Context(), record.ID)
-	proofs, _ := s.listProofs(r.Context(), record.ID)
+	sections := make([]RecordSection, 0)
+	if record.Type != "question_set" {
+		sections, err = s.listSections(r.Context(), record)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Не удалось загрузить содержание карточки")
+			return
+		}
+	}
+	proofs := make([]Proof, 0)
+	if record.Type == "task" {
+		proofs, err = s.listProofs(r.Context(), record.ID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Не удалось загрузить доказательства задачи")
+			return
+		}
+	}
 	workflow := QuestionWorkflow{Questions: make([]QuestionItem, 0)}
 	if record.Type == "question_set" {
-		workflow, _ = s.listQuestionWorkflow(r.Context(), record.ID)
+		workflow, err = s.listQuestionWorkflow(r.Context(), record.ID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Не удалось загрузить вопросы")
+			return
+		}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"record": record, "sections": sections, "links": links, "scores": scores, "proofs": proofs, "questionWorkflow": workflow})
+	w.Header().Set("Server-Timing", fmt.Sprintf("record-detail;dur=%.2f", float64(time.Since(startedAt).Microseconds())/1000))
+	writeJSON(w, http.StatusOK, map[string]any{
+		"record": record, "sections": sections, "links": []RecordLink{}, "scores": []CriterionScore{},
+		"proofs": proofs, "questionWorkflow": workflow, "relationsLoaded": false,
+	})
+}
+
+func (s *Server) handleGetRecordRelations(w http.ResponseWriter, r *http.Request) {
+	startedAt := time.Now()
+	record, err := s.getRecord(r.Context(), r.PathValue("id"))
+	if errors.Is(err, sql.ErrNoRows) {
+		writeError(w, http.StatusNotFound, "Карточка не найдена")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось загрузить карточку")
+		return
+	}
+	links, err := s.listLinks(r.Context(), record.ID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось загрузить связи")
+		return
+	}
+	scores := make([]CriterionScore, 0)
+	if record.Type != "criterion" {
+		scores, err = s.listScores(r.Context(), record.ID)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Не удалось загрузить оценки")
+			return
+		}
+	}
+	w.Header().Set("Server-Timing", fmt.Sprintf("record-relations;dur=%.2f", float64(time.Since(startedAt).Microseconds())/1000))
+	writeJSON(w, http.StatusOK, map[string]any{"links": links, "scores": scores})
 }
 
 type updateRecordRequest struct {

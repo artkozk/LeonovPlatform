@@ -8,6 +8,7 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -78,6 +79,29 @@ func TestBusinessWorkflow(t *testing.T) {
 	}, http.StatusCreated, &links)
 	if len(links) != 1 || links[0].Record.ID != criterion.ID {
 		t.Fatalf("record links = %#v", links)
+	}
+	var ideaDetail struct {
+		Links           []RecordLink     `json:"links"`
+		Scores          []CriterionScore `json:"scores"`
+		RelationsLoaded bool             `json:"relationsLoaded"`
+	}
+	detailHeaders := requestGetJSONWithHeaders(t, artkozk, server.URL+"/api/records/"+idea.ID, &ideaDetail)
+	if ideaDetail.RelationsLoaded || len(ideaDetail.Links) != 0 || len(ideaDetail.Scores) != 0 {
+		t.Fatalf("initial detail must defer relations: %#v", ideaDetail)
+	}
+	if !strings.Contains(detailHeaders.Get("Server-Timing"), "record-detail") {
+		t.Fatalf("detail Server-Timing = %q", detailHeaders.Get("Server-Timing"))
+	}
+	var ideaRelations struct {
+		Links  []RecordLink     `json:"links"`
+		Scores []CriterionScore `json:"scores"`
+	}
+	relationHeaders := requestGetJSONWithHeaders(t, artkozk, server.URL+"/api/records/"+idea.ID+"/relations", &ideaRelations)
+	if len(ideaRelations.Links) != 1 || len(ideaRelations.Scores) != 1 {
+		t.Fatalf("lazy relations = %#v", ideaRelations)
+	}
+	if !strings.Contains(relationHeaders.Get("Server-Timing"), "record-relations") {
+		t.Fatalf("relations Server-Timing = %q", relationHeaders.Get("Server-Timing"))
 	}
 
 	task := createRecord(t, artkozk, server.URL, map[string]any{
@@ -189,6 +213,22 @@ func TestBusinessWorkflow(t *testing.T) {
 	if workflow.Resolved != 2 || workflow.Questions[1].Decision == nil || workflow.Questions[1].Decision.SourceAnswerID != nil {
 		t.Fatalf("custom joint decision = %#v", workflow)
 	}
+	decisionTask := createRecord(t, artkozk, server.URL, map[string]any{
+		"type": "task", "title": "Реализовать совместное решение", "ownerId": me.ID,
+	})
+	requestJSON(t, artkozk, http.MethodPost, server.URL+"/api/records/"+questionSet.ID+"/links", map[string]any{
+		"targetId": decisionTask.ID, "relationType": "leads_to", "reason": "Задача создана из совместного решения",
+	}, http.StatusCreated, &links)
+	requestJSON(t, artkozk, http.MethodGet, server.URL+"/api/records/"+questionSet.ID+"/relations", nil, http.StatusOK, &ideaRelations)
+	linkedDecisionTask := false
+	for _, link := range ideaRelations.Links {
+		if link.Record.ID == decisionTask.ID && link.RelationType == "leads_to" {
+			linkedDecisionTask = true
+		}
+	}
+	if !linkedDecisionTask {
+		t.Fatalf("question decision task link missing: %#v", ideaRelations.Links)
+	}
 	var completedQuestionSet Record
 	requestJSON(t, artkozk, http.MethodGet, server.URL+"/api/records/"+questionSet.ID, nil, http.StatusOK, &struct {
 		Record *Record `json:"record"`
@@ -294,4 +334,25 @@ func requestJSON(t *testing.T, client *http.Client, method, url string, body any
 			t.Fatalf("decode response %s: %v; body=%s", url, err, responseBody)
 		}
 	}
+}
+
+func requestGetJSONWithHeaders(t *testing.T, client *http.Client, url string, target any) http.Header {
+	t.Helper()
+	request, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		t.Fatalf("create request: %v", err)
+	}
+	response, err := client.Do(request)
+	if err != nil {
+		t.Fatalf("request GET %s: %v", url, err)
+	}
+	defer response.Body.Close()
+	responseBody, _ := io.ReadAll(response.Body)
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("GET %s status=%d want=%d body=%s", url, response.StatusCode, http.StatusOK, responseBody)
+	}
+	if err := json.Unmarshal(responseBody, target); err != nil {
+		t.Fatalf("decode response %s: %v; body=%s", url, err, responseBody)
+	}
+	return response.Header.Clone()
 }

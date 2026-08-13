@@ -68,7 +68,8 @@ const navItems = [
 const state = {
   me: null, users: [], records: [], notifications: [], activity: [], definitions: [],
   view: 'dashboard', search: '', statusFilter: '', ownerFilter: '', authMode: 'login', activeDetail: null,
-  activeRecordTab: 'overview', activeActivity: null, historyMode: 'feed',
+  activeRecordTab: 'overview', activeActivity: null, historyMode: 'feed', activeRecordRequest: 0,
+  detailCache: new Map(), detailRequests: new Map(),
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -209,6 +210,11 @@ async function loadData(silent = false) {
     api('/api/activity'), api('/api/section-definitions'),
   ]);
   const projectActivity = activity.filter((item) => typeMeta[item.entityType] || item.entityType === 'section_definition');
+  const recordsByID = new Map(records.map((record) => [record.id, record]));
+  state.detailCache.forEach((detail, id) => {
+    const current = recordsByID.get(id);
+    if (!current || current.updatedAt !== detail.record.updatedAt) state.detailCache.delete(id);
+  });
   Object.assign(state, { users, records, notifications, activity: projectActivity, definitions });
   $('#sync-state').textContent = 'На связи';
   render();
@@ -323,30 +329,45 @@ function renderDashboard() {
   const questionSets = active.filter((record) => record.type === 'question_set');
   const myTasks = tasks.filter((record) => record.ownerId === state.me.id);
   const attention = myTasks.filter((record) => ['overdue', 'urgent'].includes(deadlineState(record).className));
+  const focusTasks = myTasks.slice().sort((a, b) => {
+    const priority = { overdue: 0, urgent: 1, soon: 2, normal: 3, none: 4, done: 5 };
+    return priority[deadlineState(a).className] - priority[deadlineState(b).className] || sortByDeadline(a, b);
+  }).slice(0, 4);
+  const latestActivity = state.activity[0];
   $('#main-content').innerHTML = `
-    <section class="welcome-band">
-      <div><p class="eyebrow">Сегодня в проекте</p><h1>${attention.length ? `${attention.length} задач требуют вашего внимания` : 'Работа команды под контролем'}</h1><p>${attention.length ? 'Начните с просроченных и срочных задач.' : 'Зафиксируйте следующую мысль или продолжите активную работу.'}</p></div>
-      <div class="quick-actions"><button type="button" class="quick-action" data-quick-create="idea">${icon('lightbulb')}<span><strong>Записать идею</strong><small>Только название, детали позже</small></span></button><button type="button" class="quick-action" data-quick-create="task">${icon('checkSquare')}<span><strong>Поставить задачу</strong><small>Результат, исполнитель и срок</small></span></button><button type="button" class="quick-action" data-quick-create="question_set">${icon('messages')}<span><strong>Начать обсуждение</strong><small>Список вопросов и два ответа</small></span></button></div>
+    <section class="project-brief">
+      <div><p class="eyebrow">Рабочий контур · ${formatDate(new Date().toISOString())}</p><h1>${attention.length ? `${attention.length} ${attention.length === 1 ? 'задача требует' : 'задачи требуют'} внимания` : `В фокусе — следующая важная работа`}</h1><p>${attention.length ? 'Сначала разберите сроки, затем возвращайтесь к новым идеям.' : 'Двигайте активные задачи, фиксируйте решения и не теряйте новые мысли.'}</p></div>
+      <div class="project-pulse"><span><i></i> Проект активен</span><strong>${active.length}</strong><small>активных карточек</small>${latestActivity ? `<p>Последнее изменение ${formatDate(latestActivity.createdAt, true)}</p>` : ''}</div>
+    </section>
+    <section class="workbench-grid">
+      <article class="focus-panel">
+        <div class="section-heading inverse"><div><p class="eyebrow">Мой рабочий стол</p><h2>Фокус на сегодня</h2></div><button class="text-button" data-go="task">Все задачи ${icon('chevronRight')}</button></div>
+        <div class="focus-list">${focusTasks.length ? focusTasks.map((record, index) => renderFocusRecord(record, index === 0)).join('') : `<div class="focus-empty">${icon('check')}<strong>Срочных задач нет</strong><span>Можно зафиксировать следующий шаг.</span></div>`}</div>
+      </article>
+      <aside class="capture-panel">
+        <div><p class="eyebrow">Быстрое действие</p><h3>Зафиксировать и продолжить</h3><p>Достаточно названия. Остальное можно заполнить позже.</p></div>
+        <div class="quick-actions"><button type="button" class="quick-action idea" data-quick-create="idea"><span class="quick-icon">${icon('lightbulb')}</span><span><strong>Новая идея</strong><small>Сохранить мысль без оценки</small></span>${icon('chevronRight')}</button><button type="button" class="quick-action task" data-quick-create="task"><span class="quick-icon">${icon('checkSquare')}</span><span><strong>Общая задача</strong><small>Исполнитель, результат и срок</small></span>${icon('chevronRight')}</button><button type="button" class="quick-action discussion" data-quick-create="question_set"><span class="quick-icon">${icon('messages')}</span><span><strong>Карточка вопросов</strong><small>Два ответа и совместный итог</small></span>${icon('chevronRight')}</button></div>
+      </aside>
     </section>
     <section class="metrics-grid">
-      ${metric('Мои активные', myTasks.length, 'задач в работе', '', 'checkSquare')}
-      ${metric('Просрочено', overdue.length, overdue.length ? 'нужно пересмотреть' : 'всё по срокам', overdue.length ? 'danger' : '', 'clock')}
-      ${metric('Обсуждения', questionSets.length, 'карточек вопросов', '', 'messages')}
-      ${metric('Главные идеи', mainIdeas.length, 'текущий фокус', 'accent', 'lightbulb')}
+      ${metric('Мои активные', myTasks.length, 'задач в работе', 'blue', 'checkSquare')}
+      ${metric('Просрочено', overdue.length, overdue.length ? 'нужно пересмотреть' : 'всё по срокам', overdue.length ? 'danger' : 'coral', 'clock')}
+      ${metric('Обсуждения', questionSets.length, 'карточек вопросов', 'teal', 'messages')}
+      ${metric('Главные идеи', mainIdeas.length, 'текущий фокус', 'amber', 'lightbulb')}
     </section>
     <section class="dashboard-grid">
       <div class="section-panel">
-        <div class="section-heading"><div><p class="eyebrow">Команда</p><h3>Загрузка по задачам</h3></div></div>
+        <div class="section-heading"><div><p class="eyebrow">Команда</p><h3>Распределение работы</h3></div><span class="panel-note">${minutesLabel(tasks.reduce((sum, task) => sum + task.estimateMinutes, 0))} в плане</span></div>
         <div class="people-load">${state.users.map((user) => renderPersonLoad(user, tasks)).join('') || emptyState('Второй участник появится после регистрации.')}</div>
       </div>
       <div class="section-panel">
-        <div class="section-heading"><div><p class="eyebrow">Ближайшее</p><h3>Сроки и контроль</h3></div><button class="text-button" data-go="task">Все задачи</button></div>
+        <div class="section-heading"><div><p class="eyebrow">Командный радар</p><h3>Ближайшие сроки</h3></div><button class="text-button" data-go="task">Открыть список</button></div>
         <div class="compact-list">${tasks.slice().sort(sortByDeadline).slice(0, 7).map(renderCompactRecord).join('') || emptyState('Активных задач пока нет.')}</div>
       </div>
     </section>
-    <section class="section-panel">
+    <section class="section-panel activity-panel">
       <div class="section-heading"><div><p class="eyebrow">Лента проекта</p><h3>Последние изменения</h3></div><button class="text-button" data-go="history">Вся история</button></div>
-      <div class="activity-list">${state.activity.slice(0, 8).map(renderActivityItem).join('') || emptyState('История появится после первой карточки.')}</div>
+      <div class="activity-list">${state.activity.slice(0, 6).map(renderActivityItem).join('') || emptyState('История появится после первой карточки.')}</div>
     </section>`;
   bindOpenRecords();
   $$('[data-quick-create]').forEach((button) => button.addEventListener('click', () => openCreateDialog(button.dataset.quickCreate)));
@@ -355,6 +376,11 @@ function renderDashboard() {
 
 function metric(label, value, note, tone = '', iconName = 'dashboard') {
   return `<div class="metric ${tone}"><span class="metric-icon">${icon(iconName)}</span><span>${escapeHTML(label)}</span><strong>${value}</strong><small>${escapeHTML(note)}</small></div>`;
+}
+
+function renderFocusRecord(record, primary = false) {
+  const deadline = deadlineState(record);
+  return `<button type="button" class="focus-record ${primary ? 'primary-focus' : ''}" data-open-record="${record.id}"><span class="focus-marker">${icon('checkSquare')}</span><span class="focus-copy"><small>${primary ? 'Следующая задача' : escapeHTML(record.ownerUsername)}</small><strong>${escapeHTML(record.title)}</strong><em class="deadline ${deadline.className}">${escapeHTML(deadline.label)}</em></span><span class="focus-progress"><b>${record.progress}%</b><i><u style="width:${record.progress}%"></u></i></span>${icon('chevronRight', 'row-chevron')}</button>`;
 }
 
 function renderPersonLoad(user, tasks) {
@@ -372,7 +398,7 @@ function sortByDeadline(a, b) {
 
 function renderCompactRecord(record) {
   const deadline = deadlineState(record);
-  return `<button type="button" class="compact-record" data-open-record="${record.id}"><span class="type-icon">${icon(typeMeta[record.type].icon)}</span><span><strong>${escapeHTML(record.title)}</strong><small>${escapeHTML(record.ownerUsername)} · ${minutesLabel(record.estimateMinutes)}</small></span><em class="deadline ${deadline.className}">${escapeHTML(deadline.label)}</em>${icon('chevronRight', 'row-chevron')}</button>`;
+  return `<button type="button" class="compact-record" data-open-record="${record.id}"><span class="type-icon type-${record.type}">${icon(typeMeta[record.type].icon)}</span><span><strong>${escapeHTML(record.title)}</strong><small>${escapeHTML(record.ownerUsername)} · ${minutesLabel(record.estimateMinutes)}</small></span><em class="deadline ${deadline.className}">${escapeHTML(deadline.label)}</em>${icon('chevronRight', 'row-chevron')}</button>`;
 }
 
 function renderRecordList(type) {
@@ -406,7 +432,7 @@ function renderRecordRow(record) {
   const isPlannable = ['task', 'goal', 'question_set'].includes(record.type);
   const deadline = deadlineState(record);
   return `<button type="button" class="record-table row ${isPlannable ? '' : 'simple'}" data-open-record="${record.id}">
-    <span class="record-title"><i class="type-icon">${icon(typeMeta[record.type].icon)}</i><span><strong>${escapeHTML(record.title)}</strong><small>${escapeHTML(record.description || 'Без описания')}</small></span></span>
+    <span class="record-title"><i class="type-icon type-${record.type}">${icon(typeMeta[record.type].icon)}</i><span><strong>${escapeHTML(record.title)}</strong><small>${escapeHTML(record.description || 'Без описания')}</small></span></span>
     <span><b class="owner-chip">${escapeHTML(record.ownerUsername)}</b><small>создал ${escapeHTML(record.authorUsername)}</small></span>
     <span><em class="status status-${record.status}">${escapeHTML(statusLabels[record.status] || record.status)}</em></span>
     <span>${isPlannable ? `<em class="deadline ${deadline.className}">${escapeHTML(deadline.label)}</em><span class="progress-track"><i style="width:${record.progress}%"></i></span><small>${record.progress}% · ${minutesLabel(record.estimateMinutes)}</small>` : `<b>${formatDate(record.updatedAt, true)}</b><small>${record.type === 'idea' ? 'Одна карточка во всех списках' : typeMeta[record.type].singular}</small>`}</span>
@@ -418,18 +444,79 @@ function emptyState(text) {
 }
 
 function bindOpenRecords() {
-  $$('[data-open-record]').forEach((node) => node.addEventListener('click', () => openRecord(node.dataset.openRecord)));
+  $$('[data-open-record]').forEach((node) => {
+    node.addEventListener('click', () => openRecord(node.dataset.openRecord));
+    node.addEventListener('pointerenter', () => prefetchRecord(node.dataset.openRecord), { once: true });
+    node.addEventListener('focus', () => prefetchRecord(node.dataset.openRecord), { once: true });
+  });
   $$('[data-open-event]').forEach((node) => node.addEventListener('click', () => openActivity(node.dataset.openEvent)));
   $$('[data-owner-filter]').forEach((node) => node.addEventListener('click', () => { state.view = 'task'; state.ownerFilter = node.dataset.ownerFilter; render(); }));
 }
 
+function cachedRecordDetail(id) {
+  const detail = state.detailCache.get(id);
+  const summary = state.records.find((record) => record.id === id);
+  if (!detail || (summary && summary.updatedAt !== detail.record.updatedAt)) return null;
+  return detail;
+}
+
+async function fetchRecordDetail(id, force = false) {
+  if (!force) {
+    const cached = cachedRecordDetail(id);
+    if (cached) return cached;
+  }
+  if (state.detailRequests.has(id)) return state.detailRequests.get(id);
+  const request = api(`/api/records/${id}`).then((detail) => {
+    const previous = state.detailCache.get(id);
+    if (previous?.relationsLoaded && previous.record.updatedAt === detail.record.updatedAt) {
+      detail.links = previous.links;
+      detail.scores = previous.scores;
+      detail.relationsLoaded = true;
+    }
+    state.detailCache.set(id, detail);
+    return detail;
+  }).finally(() => state.detailRequests.delete(id));
+  state.detailRequests.set(id, request);
+  return request;
+}
+
+function prefetchRecord(id) {
+  if (!cachedRecordDetail(id) && !state.detailRequests.has(id)) fetchRecordDetail(id).catch(() => {});
+}
+
 async function openRecord(id) {
-  try {
-    state.activeDetail = await api(`/api/records/${id}`);
-    state.activeRecordTab = state.activeDetail.record.type === 'question_set' ? 'questions' : 'overview';
+  const requestID = ++state.activeRecordRequest;
+  const cached = cachedRecordDetail(id);
+  const summary = state.records.find((record) => record.id === id);
+  state.activeRecordTab = (cached?.record.type || summary?.type) === 'question_set' ? 'questions' : 'overview';
+  if (cached) {
+    state.activeDetail = cached;
     renderRecordDialog();
-    if (!$('#record-dialog').open) $('#record-dialog').showModal();
-  } catch (error) { toast(error.message, true); }
+  } else {
+    state.activeDetail = null;
+    renderRecordLoading(summary);
+  }
+  if (!$('#record-dialog').open) $('#record-dialog').showModal();
+  try {
+    const detail = await fetchRecordDetail(id, Boolean(cached));
+    if (requestID !== state.activeRecordRequest || !$('#record-dialog').open) return;
+    state.activeDetail = detail;
+    renderRecordDialog();
+  } catch (error) {
+    if (requestID === state.activeRecordRequest) renderRecordLoadError(id, error.message);
+  }
+}
+
+function renderRecordLoading(summary) {
+  const meta = typeMeta[summary?.type] || { singular: 'Карточка', icon: 'fileText' };
+  $('#record-dialog-content').innerHTML = `<div class="record-shell record-type-${summary?.type || 'document'} loading-shell"><div class="dialog-header record-dialog-header"><div><span class="record-kind">${icon(meta.icon)} ${escapeHTML(meta.singular)}</span><h2>${escapeHTML(summary?.title || 'Загружаем карточку')}</h2><p>Основные данные появятся сразу после ответа сервера</p></div><button type="button" class="close-button icon-button" data-close-dialog aria-label="Закрыть">${icon('x')}</button></div><div class="loading-tabs"><i></i><i></i><i></i></div><div class="dialog-layout"><div class="dialog-main"><div class="record-skeleton"><span class="skeleton-line wide"></span><span class="skeleton-line medium"></span><span class="skeleton-block"></span><div><span class="skeleton-line"></span><span class="skeleton-line short"></span></div></div></div><aside class="dialog-aside"><span class="skeleton-line"></span><span class="skeleton-line short"></span><span class="skeleton-line"></span></aside></div></div>`;
+  $('[data-close-dialog]').addEventListener('click', () => $('#record-dialog').close());
+}
+
+function renderRecordLoadError(id, message) {
+  $('#record-dialog-content').innerHTML = `<div class="record-load-error">${icon('help')}<h2>Карточка не загрузилась</h2><p>${escapeHTML(message)}</p><div><button type="button" class="primary" data-retry-record="${id}">Повторить</button><button type="button" class="secondary" data-close-dialog>Закрыть</button></div></div>`;
+  $('[data-retry-record]').addEventListener('click', () => openRecord(id));
+  $('[data-close-dialog]').addEventListener('click', () => $('#record-dialog').close());
 }
 
 function recordTabs(record, detail, activity) {
@@ -437,7 +524,7 @@ function recordTabs(record, detail, activity) {
   const tabs = [
     ['overview', 'Обзор', ''],
     ['content', 'Содержание', `${filledSections}/${detail.sections.length}`],
-    ['relations', 'Связи и оценка', `${detail.links.length}`],
+    ['relations', 'Связи и оценка', detail.relationsLoaded ? `${detail.links.length}` : ''],
     ['history', 'История', `${activity.length}`],
   ];
   if (record.type === 'question_set') {
@@ -512,7 +599,7 @@ function renderFounderAnswer(question, user, answer) {
 
 function renderJointDecision(question) {
   const source = question.decision.sourceAuthorUsername ? `Выбрано из ответа ${question.decision.sourceAuthorUsername}` : 'Сформулировано после обсуждения';
-  return `<section class="joint-decision"><span class="decision-icon">${icon('scale')}</span><div><p class="eyebrow">Совместное решение</p><blockquote>${escapeHTML(question.decision.content).replace(/\n/g, '<br>')}</blockquote><small>${escapeHTML(source)} · зафиксировал ${escapeHTML(question.decision.decidedByUsername)}</small></div><details><summary>${icon('edit')} Изменить итог</summary>${renderDecisionComposer(question, true)}</details></section>`;
+  return `<section class="joint-decision"><span class="decision-icon">${icon('scale')}</span><div><p class="eyebrow">Совместное решение</p><blockquote>${escapeHTML(question.decision.content).replace(/\n/g, '<br>')}</blockquote><small>${escapeHTML(source)} · зафиксировал ${escapeHTML(question.decision.decidedByUsername)}</small></div><div class="decision-actions"><button type="button" class="secondary" data-create-task-from-decision="${question.id}">${icon('checkSquare')} Создать задачу</button><details><summary>${icon('edit')} Изменить итог</summary>${renderDecisionComposer(question, true)}</details></div></section>`;
 }
 
 function renderDecisionComposer(question, compact = false) {
@@ -520,7 +607,10 @@ function renderDecisionComposer(question, compact = false) {
 }
 
 function renderRecordRelations(record, detail, criteria, targets) {
-  return `<div class="record-pane ${state.activeRecordTab === 'relations' ? 'active' : ''}" data-record-pane="relations"><section class="accordion-stack content-stack">${record.type !== 'criterion' ? renderCriteriaBlock(criteria, detail.scores, true) : ''}${renderLinksBlock(detail.links, targets, true)}</section></div>`;
+  const content = detail.relationsLoaded
+    ? `<section class="accordion-stack content-stack">${record.type !== 'criterion' ? renderCriteriaBlock(criteria, detail.scores, true) : ''}${renderLinksBlock(detail.links, targets, true)}</section>`
+    : `<div class="relations-loading"><span class="spinner"></span><strong>Подготавливаем связи</strong><small>Основная карточка уже доступна, эта часть загружается отдельно.</small></div>`;
+  return `<div class="record-pane ${state.activeRecordTab === 'relations' ? 'active' : ''}" data-record-pane="relations">${content}</div>`;
 }
 
 function renderRecordHistory(activity) {
@@ -537,7 +627,8 @@ function renderRecordDialog() {
   const activity = state.activity.filter((item) => item.entityId === record.id);
   const ideaActions = record.type === 'idea' ? `<div class="idea-actions">${['review', 'main', 'rejected'].map((status) => `<button type="button" class="stage-action ${status}" data-stage="${status}" ${record.status === status ? 'disabled' : ''}>${statusLabels[status]}</button>`).join('')}</div>` : '';
   $('#record-dialog-content').innerHTML = `
-    <div class="dialog-header record-dialog-header"><div><span class="record-kind">${typeMeta[record.type].singular} · ${record.id.slice(0, 8)}</span><h2>${escapeHTML(record.title)}</h2><p>Создал ${escapeHTML(record.authorUsername)} · ${formatDate(record.createdAt, true)}</p></div><button type="button" class="close-button" data-close-dialog aria-label="Закрыть">×</button></div>
+    <div class="record-shell record-type-${record.type}">
+    <div class="dialog-header record-dialog-header"><div><span class="record-kind">${icon(typeMeta[record.type].icon)} ${typeMeta[record.type].singular} · ${record.id.slice(0, 8)}</span><h2>${escapeHTML(record.title)}</h2><p>Создал ${escapeHTML(record.authorUsername)} · ${formatDate(record.createdAt, true)}</p></div><button type="button" class="close-button icon-button" data-close-dialog aria-label="Закрыть">${icon('x')}</button></div>
     ${ideaActions}
     <nav class="record-tabs" aria-label="Разделы карточки">${recordTabs(record, detail, activity)}</nav>
     <div class="dialog-layout">
@@ -556,7 +647,7 @@ function renderRecordDialog() {
         ${record.type === 'task' ? `<div class="fact"><span>Доказательств</span><strong>${record.proofCount}</strong></div>` : ''}
         ${record.type === 'question_set' ? `<div class="fact"><span>Решено вопросов</span><strong>${detail.questionWorkflow.resolved} / ${detail.questionWorkflow.questions.length}</strong></div>` : ''}
       </aside>
-    </div>`;
+    </div></div>`;
   bindRecordDialogEvents();
 }
 
@@ -625,10 +716,11 @@ function bindRecordDialogEvents() {
   const detail = state.activeDetail;
   const record = detail.record;
   $('[data-close-dialog]').addEventListener('click', () => $('#record-dialog').close());
-  $$('[data-record-tab]').forEach((button) => button.addEventListener('click', () => {
+  $$('[data-record-tab]').forEach((button) => button.addEventListener('click', async () => {
     state.activeRecordTab = button.dataset.recordTab;
     $$('.record-tab').forEach((tab) => tab.classList.toggle('active', tab.dataset.recordTab === state.activeRecordTab));
     $$('[data-record-pane]').forEach((pane) => pane.classList.toggle('active', pane.dataset.recordPane === state.activeRecordTab));
+    if (state.activeRecordTab === 'relations' && !state.activeDetail.relationsLoaded) await loadRecordRelations(record.id);
   }));
   const editForm = $('#record-edit-form');
   editForm.addEventListener('keydown', (event) => {
@@ -700,6 +792,13 @@ function bindRecordDialogEvents() {
     event.preventDefault(); const form = new FormData(event.currentTarget);
     await mutateDetail(`/api/records/${record.id}/questions/${event.currentTarget.dataset.customDecision}/decision`, { method: 'POST', body: JSON.stringify({ mode: 'custom', content: form.get('content') }) });
   }));
+  $$('[data-create-task-from-decision]').forEach((button) => button.addEventListener('click', () => {
+    const question = detail.questionWorkflow.questions.find((item) => item.id === button.dataset.createTaskFromDecision);
+    if (!question?.decision) return;
+    const title = `Реализовать решение: ${question.body}`.slice(0, 240);
+    const description = `Вопрос:\n${question.body}\n\nСовместное решение:\n${question.decision.content}`;
+    openCreateDialog('task', { title, description, sourceRecordId: record.id });
+  }));
   $$('[data-archive-question]').forEach((button) => button.addEventListener('click', async () => {
     const reason = await askText({ title: 'Архивировать вопрос', label: 'Почему вопрос больше не нужен?', required: true });
     if (!reason) return;
@@ -707,6 +806,20 @@ function bindRecordDialogEvents() {
   }));
   if ($('#proof-form')) $('#proof-form').addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateDetail(`/api/records/${record.id}/proofs`, { method: 'POST', body: JSON.stringify({ kind: form.get('kind'), content: form.get('content') }) }); });
   if ($('#complete-task')) $('#complete-task').addEventListener('click', async () => { await mutateRecord(`/api/records/${record.id}/complete`, { method: 'POST', body: JSON.stringify({ result: $('#completion-result').value, notifyPartners: $('#notify-on-complete').checked }) }); });
+}
+
+async function loadRecordRelations(recordID) {
+  try {
+    const relations = await api(`/api/records/${recordID}/relations`);
+    if (!state.activeDetail || state.activeDetail.record.id !== recordID) return;
+    state.activeDetail = { ...state.activeDetail, ...relations, relationsLoaded: true };
+    state.detailCache.set(recordID, state.activeDetail);
+    renderRecordDialog();
+  } catch (error) {
+    const loading = $('.relations-loading');
+    if (loading) loading.innerHTML = `${icon('help')}<strong>Связи не загрузились</strong><small>${escapeHTML(error.message)}</small><button type="button" class="secondary" data-retry-relations>Повторить</button>`;
+    $('[data-retry-relations]')?.addEventListener('click', () => loadRecordRelations(recordID));
+  }
 }
 
 function askText({ title, label, defaultValue = '', required = false }) {
@@ -723,16 +836,32 @@ function askText({ title, label, defaultValue = '', required = false }) {
 }
 
 async function mutateDetail(path, options) {
-  try { await api(path, options); state.activeDetail = await api(`/api/records/${state.activeDetail.record.id}`); await loadData(true); renderRecordDialog(); toast('Сохранено'); return true; } catch (error) { toast(error.message, true); return false; }
+  try {
+    const recordID = state.activeDetail.record.id;
+    await api(path, options);
+    state.detailCache.delete(recordID);
+    const [detail] = await Promise.all([fetchRecordDetail(recordID, true), loadData(true)]);
+    state.activeDetail = detail;
+    if (state.activeRecordTab === 'relations') {
+      const relations = await api(`/api/records/${recordID}/relations`);
+      state.activeDetail = { ...state.activeDetail, ...relations, relationsLoaded: true };
+      state.detailCache.set(recordID, state.activeDetail);
+    }
+    renderRecordDialog();
+    toast('Сохранено');
+    return true;
+  } catch (error) { toast(error.message, true); return false; }
 }
 
 async function mutateRecord(path, options, close = false, clearDraftOnSuccess = false) {
   try {
+    const recordID = state.activeDetail.record.id;
     await api(path, options);
-    if (clearDraftOnSuccess && state.activeDetail) clearRecordDraft(state.activeDetail.record.id);
-    await loadData(true);
+    if (clearDraftOnSuccess) clearRecordDraft(recordID);
+    state.detailCache.delete(recordID);
+    const [detail] = await Promise.all([close ? Promise.resolve(null) : fetchRecordDetail(recordID, true), loadData(true)]);
     if (close) $('#record-dialog').close();
-    else { state.activeDetail = await api(`/api/records/${state.activeDetail.record.id}`); renderRecordDialog(); }
+    else { state.activeDetail = detail; renderRecordDialog(); }
     toast('Сохранено');
     return true;
   } catch (error) {
@@ -754,15 +883,24 @@ function toggleCreateMenu() {
   }));
 }
 
-function openCreateDialog(initialType) {
+function openCreateDialog(initialType = 'idea', preset = {}) {
   const initialMeta = typeMeta[initialType];
-  $('#create-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">${icon(initialMeta.icon)} Новая запись</span><h2>${escapeHTML(initialMeta.singular)}</h2><p>${initialType === 'question_set' ? 'Одна карточка объединит список вопросов, отдельные ответы и совместные итоги.' : 'Сначала зафиксируйте главное. Детали можно добавить после создания.'}</p></div><button type="button" class="close-button icon-button" data-close-create aria-label="Закрыть">${icon('x')}</button></div><form id="create-record-form" class="card-form dialog-form"><div class="form-grid two"><label>Тип<select name="type">${Object.entries(typeMeta).map(([key, meta]) => `<option value="${key}" ${initialType === key ? 'selected' : ''}>${meta.singular}</option>`).join('')}</select></label><label>${initialType === 'question_set' ? 'Координатор' : 'Ответственный'}<select name="ownerId">${userOptions(state.me.id)}</select></label></div><label>${initialType === 'question_set' ? 'Название группы вопросов' : 'Название'}<input name="title" required maxlength="240" autofocus placeholder="${initialType === 'question_set' ? 'Например: Договорённости основателей' : ''}"></label><label>${initialType === 'question_set' ? 'Контекст обсуждения' : 'Описание'}<textarea name="description" rows="4" placeholder="${initialType === 'question_set' ? 'Зачем обсуждаем эти вопросы и к чему хотим прийти' : ''}"></textarea></label><div class="form-grid two"><label>Срок<input name="dueAt" type="datetime-local"></label><label>Оценка времени, минут<input name="estimateMinutes" type="number" min="0" value="0"></label></div><div class="form-actions"><button type="submit" class="primary">${icon('plus')} Создать</button><button type="button" class="secondary" data-close-create>Отмена</button></div></form>`;
+  $('#create-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">${icon(initialMeta.icon)} Новая запись</span><h2>${escapeHTML(initialMeta.singular)}</h2><p>${preset.sourceRecordId ? 'Задача будет автоматически связана с исходным обсуждением.' : initialType === 'question_set' ? 'Одна карточка объединит список вопросов, отдельные ответы и совместные итоги.' : 'Сначала зафиксируйте главное. Детали можно добавить после создания.'}</p></div><button type="button" class="close-button icon-button" data-close-create aria-label="Закрыть">${icon('x')}</button></div><form id="create-record-form" class="card-form dialog-form"><div class="form-grid two"><label>Тип<select name="type">${Object.entries(typeMeta).map(([key, meta]) => `<option value="${key}" ${initialType === key ? 'selected' : ''}>${meta.singular}</option>`).join('')}</select></label><label>${initialType === 'question_set' ? 'Координатор' : 'Ответственный'}<select name="ownerId">${userOptions(state.me.id)}</select></label></div><label>${initialType === 'question_set' ? 'Название группы вопросов' : 'Название'}<input name="title" required maxlength="240" autofocus value="${escapeHTML(preset.title || '')}" placeholder="${initialType === 'question_set' ? 'Например: Договорённости основателей' : ''}"></label><label>${initialType === 'question_set' ? 'Контекст обсуждения' : 'Описание'}<textarea name="description" rows="5" placeholder="${initialType === 'question_set' ? 'Зачем обсуждаем эти вопросы и к чему хотим прийти' : ''}">${escapeHTML(preset.description || '')}</textarea></label><div class="form-grid two"><label>Срок<input name="dueAt" type="datetime-local"></label><label>Оценка времени, минут<input name="estimateMinutes" type="number" min="0" value="0"></label></div>${preset.sourceRecordId ? `<div class="source-link-note">${icon('link')} После создания добавим связь «приводит к» с карточкой вопросов.</div>` : ''}<div class="form-actions"><button type="submit" class="primary">${icon('plus')} Создать</button><button type="button" class="secondary" data-close-create>Отмена</button></div></form>`;
   $$('[data-close-create]').forEach((button) => button.addEventListener('click', () => $('#create-dialog').close()));
   $('#create-record-form').addEventListener('submit', async (event) => {
     event.preventDefault(); const form = new FormData(event.currentTarget); const due = form.get('dueAt');
     try {
       const record = await api('/api/records', { method: 'POST', body: JSON.stringify({ type: form.get('type'), title: form.get('title'), description: form.get('description'), ownerId: Number(form.get('ownerId')), dueAt: due ? new Date(due).toISOString() : '', estimateMinutes: Number(form.get('estimateMinutes')) }) });
-      $('#create-dialog').close(); await loadData(true); toast('Карточка создана'); await openRecord(record.id);
+      let linkError = '';
+      if (preset.sourceRecordId) {
+        try {
+          await api(`/api/records/${preset.sourceRecordId}/links`, { method: 'POST', body: JSON.stringify({ targetId: record.id, relationType: 'leads_to', reason: 'Задача создана из совместного решения' }) });
+          state.detailCache.delete(preset.sourceRecordId);
+        } catch (error) {
+          linkError = `Задача создана, но связь не добавлена: ${error.message}`;
+        }
+      }
+      $('#create-dialog').close(); await loadData(true); toast(linkError || 'Карточка создана', Boolean(linkError)); await openRecord(record.id);
     } catch (error) { toast(error.message, true); }
   });
   $('#create-dialog').showModal();
