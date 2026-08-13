@@ -133,6 +133,49 @@ type Activity struct {
 	CreatedAt     string         `json:"createdAt"`
 }
 
+type QuestionAnswer struct {
+	ID             string `json:"id"`
+	QuestionID     string `json:"questionId"`
+	AuthorID       int64  `json:"authorId"`
+	AuthorUsername string `json:"authorUsername"`
+	Content        string `json:"content"`
+	CreatedAt      string `json:"createdAt"`
+	UpdatedAt      string `json:"updatedAt"`
+}
+
+type QuestionDecision struct {
+	ID                   string  `json:"id"`
+	QuestionID           string  `json:"questionId"`
+	Content              string  `json:"content"`
+	SourceAnswerID       *string `json:"sourceAnswerId"`
+	SourceAuthorUsername *string `json:"sourceAuthorUsername"`
+	DecidedBy            int64   `json:"decidedBy"`
+	DecidedByUsername    string  `json:"decidedByUsername"`
+	CreatedAt            string  `json:"createdAt"`
+	UpdatedAt            string  `json:"updatedAt"`
+}
+
+type QuestionItem struct {
+	ID        string            `json:"id"`
+	RecordID  string            `json:"recordId"`
+	Body      string            `json:"body"`
+	Status    string            `json:"status"`
+	SortOrder int               `json:"sortOrder"`
+	CreatedBy int64             `json:"createdBy"`
+	CreatedAt string            `json:"createdAt"`
+	UpdatedAt string            `json:"updatedAt"`
+	Answers   []QuestionAnswer  `json:"answers"`
+	Decision  *QuestionDecision `json:"decision"`
+}
+
+type QuestionWorkflow struct {
+	Questions []QuestionItem `json:"questions"`
+	UserCount int            `json:"userCount"`
+	Answered  int            `json:"answered"`
+	Expected  int            `json:"expected"`
+	Resolved  int            `json:"resolved"`
+}
+
 func OpenStore(path string) (*Store, error) {
 	if path != ":memory:" {
 		if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {

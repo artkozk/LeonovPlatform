@@ -21,10 +21,11 @@ import (
 const sessionCookieName = "business_session"
 
 var usernamePattern = regexp.MustCompile(`^[A-Za-z0-9_]{3,32}$`)
+var questionListPrefixPattern = regexp.MustCompile(`^\s*(?:[-*]\s+|[0-9]+[.)]\s+)`)
 
 var recordTypes = map[string]struct{}{
 	"goal": {}, "task": {}, "idea": {}, "criterion": {}, "research": {},
-	"decision": {}, "disagreement": {}, "document": {},
+	"decision": {}, "disagreement": {}, "document": {}, "question_set": {},
 }
 
 var recordStatuses = map[string]struct{}{
@@ -71,6 +72,10 @@ func (s *Server) routes() {
 	s.mux.Handle("POST /api/records/{id}/proofs", s.requireAuth(http.HandlerFunc(s.handleAddProof)))
 	s.mux.Handle("POST /api/records/{id}/complete", s.requireAuth(http.HandlerFunc(s.handleCompleteTask)))
 	s.mux.Handle("POST /api/records/{id}/notify", s.requireAuth(http.HandlerFunc(s.handleNotifyPartners)))
+	s.mux.Handle("POST /api/records/{id}/questions", s.requireAuth(http.HandlerFunc(s.handleAddQuestions)))
+	s.mux.Handle("PUT /api/records/{id}/questions/{questionId}/answer", s.requireAuth(http.HandlerFunc(s.handleSaveQuestionAnswer)))
+	s.mux.Handle("POST /api/records/{id}/questions/{questionId}/decision", s.requireAuth(http.HandlerFunc(s.handleSaveQuestionDecision)))
+	s.mux.Handle("POST /api/records/{id}/questions/{questionId}/archive", s.requireAuth(http.HandlerFunc(s.handleArchiveQuestion)))
 
 	s.mux.Handle("GET /api/section-definitions", s.requireAuth(http.HandlerFunc(s.handleListDefinitions)))
 	s.mux.Handle("POST /api/section-definitions", s.requireAuth(http.HandlerFunc(s.handleCreateDefinition)))
@@ -325,7 +330,7 @@ func (s *Server) handleUsers(w http.ResponseWriter, r *http.Request) {
 type recordScanner interface{ Scan(...any) error }
 
 const recordSelect = `
-	SELECT r.id, r.type, r.title, r.description, r.status,
+	SELECT r.id, CASE WHEN r.subtype = 'question_set' THEN 'question_set' ELSE r.type END, r.title, r.description, r.status,
 		r.author_id, author.username, r.owner_id, owner.username,
 		r.decision_maker_id, decision_maker.username, r.due_at,
 		r.estimate_minutes, r.progress, r.progress_note, r.result, r.completed_at,
@@ -371,8 +376,14 @@ func (s *Server) handleListRecords(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "Неизвестный тип карточки")
 			return
 		}
-		where = append(where, "r.type = ?")
-		args = append(args, recordType)
+		if recordType == "question_set" {
+			where = append(where, "r.subtype = 'question_set'")
+		} else if recordType == "document" {
+			where = append(where, "r.type = 'document' AND r.subtype = ''")
+		} else {
+			where = append(where, "r.type = ? AND r.subtype = ''")
+			args = append(args, recordType)
+		}
 	}
 	if status := strings.TrimSpace(r.URL.Query().Get("status")); status != "" {
 		if _, ok := recordStatuses[status]; !ok {
@@ -432,7 +443,7 @@ func defaultStatus(recordType string) string {
 	switch recordType {
 	case "idea":
 		return "inbox"
-	case "goal", "task":
+	case "goal", "task", "question_set":
 		return "planned"
 	default:
 		return "draft"
@@ -446,7 +457,7 @@ func validStatusForType(recordType, status string) bool {
 	switch recordType {
 	case "idea":
 		return status == "inbox" || status == "review" || status == "main" || status == "rejected"
-	case "goal", "task":
+	case "goal", "task", "question_set":
 		return status == "planned" || status == "in_progress" || status == "blocked" || status == "completed" || status == "postponed" || status == "cancelled"
 	default:
 		return status == "draft" || status == "in_progress" || status == "completed" || status == "cancelled"
@@ -504,7 +515,13 @@ func (s *Server) handleCreateRecord(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 	now := nowText()
-	_, err = tx.ExecContext(r.Context(), `INSERT INTO records(id, type, title, description, status, author_id, owner_id, decision_maker_id, due_at, estimate_minutes, created_at, updated_at) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, id, input.Type, input.Title, strings.TrimSpace(input.Description), input.Status, user.ID, input.OwnerID, input.DecisionMakerID, dueAt, input.EstimateMinutes, now, now)
+	databaseType := input.Type
+	subtype := ""
+	if input.Type == "question_set" {
+		databaseType = "document"
+		subtype = "question_set"
+	}
+	_, err = tx.ExecContext(r.Context(), `INSERT INTO records(id, type, subtype, title, description, status, author_id, owner_id, decision_maker_id, due_at, estimate_minutes, created_at, updated_at) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, id, databaseType, subtype, input.Title, strings.TrimSpace(input.Description), input.Status, user.ID, input.OwnerID, input.DecisionMakerID, dueAt, input.EstimateMinutes, now, now)
 	if err != nil {
 		log.Printf("create record: %v", err)
 		writeError(w, http.StatusInternalServerError, "Не удалось создать карточку")
@@ -536,7 +553,11 @@ func (s *Server) handleGetRecord(w http.ResponseWriter, r *http.Request) {
 	links, _ := s.listLinks(r.Context(), record.ID)
 	scores, _ := s.listScores(r.Context(), record.ID)
 	proofs, _ := s.listProofs(r.Context(), record.ID)
-	writeJSON(w, http.StatusOK, map[string]any{"record": record, "sections": sections, "links": links, "scores": scores, "proofs": proofs})
+	workflow := QuestionWorkflow{Questions: make([]QuestionItem, 0)}
+	if record.Type == "question_set" {
+		workflow, _ = s.listQuestionWorkflow(r.Context(), record.ID)
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"record": record, "sections": sections, "links": links, "scores": scores, "proofs": proofs, "questionWorkflow": workflow})
 }
 
 type updateRecordRequest struct {
@@ -604,6 +625,13 @@ func (s *Server) handleUpdateRecord(w http.ResponseWriter, r *http.Request) {
 		if before.Type == "task" && *input.Status == "completed" && before.Status != "completed" {
 			writeError(w, http.StatusBadRequest, "Задача завершается только с доказательством")
 			return
+		}
+		if before.Type == "question_set" && *input.Status == "completed" && before.Status != "completed" {
+			var total, unresolved int
+			if err := s.store.db.QueryRowContext(r.Context(), `SELECT COUNT(*), COALESCE(SUM(CASE WHEN status <> 'resolved' THEN 1 ELSE 0 END), 0) FROM question_items WHERE record_id = ? AND status <> 'archived'`, before.ID).Scan(&total, &unresolved); err != nil || total == 0 || unresolved > 0 {
+				writeError(w, http.StatusBadRequest, "Карточку можно завершить после общего решения по каждому вопросу")
+				return
+			}
 		}
 		if *input.Status != before.Status {
 			add("status", *input.Status)
@@ -928,7 +956,7 @@ func (s *Server) handleSaveSection(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) listLinks(ctx context.Context, recordID string) ([]RecordLink, error) {
-	rows, err := s.store.db.QueryContext(ctx, `SELECT l.id, l.source_id, l.target_id, l.relation_type, l.created_at, r.id, r.type, r.title, r.description, r.status, r.author_id, a.username, r.owner_id, o.username, r.decision_maker_id, dm.username, r.due_at, r.estimate_minutes, r.progress, r.progress_note, r.result, r.completed_at, r.created_at, r.updated_at, (SELECT COUNT(*) FROM task_proofs p WHERE p.record_id = r.id) FROM record_links l JOIN records r ON r.id = CASE WHEN l.source_id = ? THEN l.target_id ELSE l.source_id END JOIN users a ON a.id = r.author_id JOIN users o ON o.id = r.owner_id LEFT JOIN users dm ON dm.id = r.decision_maker_id WHERE l.active = 1 AND (l.source_id = ? OR l.target_id = ?) ORDER BY l.created_at DESC`, recordID, recordID, recordID)
+	rows, err := s.store.db.QueryContext(ctx, `SELECT l.id, l.source_id, l.target_id, l.relation_type, l.created_at, r.id, CASE WHEN r.subtype = 'question_set' THEN 'question_set' ELSE r.type END, r.title, r.description, r.status, r.author_id, a.username, r.owner_id, o.username, r.decision_maker_id, dm.username, r.due_at, r.estimate_minutes, r.progress, r.progress_note, r.result, r.completed_at, r.created_at, r.updated_at, (SELECT COUNT(*) FROM task_proofs p WHERE p.record_id = r.id) FROM record_links l JOIN records r ON r.id = CASE WHEN l.source_id = ? THEN l.target_id ELSE l.source_id END JOIN users a ON a.id = r.author_id JOIN users o ON o.id = r.owner_id LEFT JOIN users dm ON dm.id = r.decision_maker_id WHERE l.active = 1 AND (l.source_id = ? OR l.target_id = ?) ORDER BY l.created_at DESC`, recordID, recordID, recordID)
 	if err != nil {
 		return nil, err
 	}
@@ -1312,6 +1340,391 @@ func (s *Server) handleNotifyPartners(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"sent": true})
 }
 
+func (s *Server) questionBelongsToRecord(ctx context.Context, questionID, recordID string) bool {
+	var count int
+	return s.store.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM question_items WHERE id = ? AND record_id = ?`, questionID, recordID).Scan(&count) == nil && count == 1
+}
+
+func updateQuestionSetProgress(ctx context.Context, tx *sql.Tx, recordID, updatedAt string) (string, error) {
+	var total, resolved int
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*), COALESCE(SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END), 0) FROM question_items WHERE record_id = ? AND status <> 'archived'`, recordID).Scan(&total, &resolved); err != nil {
+		return "", err
+	}
+	var currentStatus string
+	if err := tx.QueryRowContext(ctx, `SELECT status FROM records WHERE id = ?`, recordID).Scan(&currentStatus); err != nil {
+		return "", err
+	}
+	progress := 0
+	if total > 0 {
+		progress = resolved * 100 / total
+	}
+	status := currentStatus
+	switch {
+	case currentStatus == "archived" || currentStatus == "cancelled":
+	case total == 0:
+		status = "planned"
+	case resolved == total:
+		status = "completed"
+	case currentStatus == "blocked" || currentStatus == "postponed":
+	default:
+		status = "in_progress"
+	}
+	_, err := tx.ExecContext(ctx, `UPDATE records SET progress = ?, status = ?, completed_at = CASE WHEN ? = 'completed' THEN COALESCE(completed_at, ?) WHEN ? IN ('archived', 'cancelled') THEN completed_at ELSE NULL END, updated_at = ? WHERE id = ?`, progress, status, status, updatedAt, status, updatedAt, recordID)
+	return status, err
+}
+
+func (s *Server) listQuestionWorkflow(ctx context.Context, recordID string) (QuestionWorkflow, error) {
+	workflow := QuestionWorkflow{Questions: make([]QuestionItem, 0)}
+	if err := s.store.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users`).Scan(&workflow.UserCount); err != nil {
+		return workflow, err
+	}
+	rows, err := s.store.db.QueryContext(ctx, `SELECT id, record_id, body, status, sort_order, created_by, created_at, updated_at FROM question_items WHERE record_id = ? AND status <> 'archived' ORDER BY sort_order, created_at`, recordID)
+	if err != nil {
+		return workflow, err
+	}
+	for rows.Next() {
+		var item QuestionItem
+		if err := rows.Scan(&item.ID, &item.RecordID, &item.Body, &item.Status, &item.SortOrder, &item.CreatedBy, &item.CreatedAt, &item.UpdatedAt); err != nil {
+			rows.Close()
+			return workflow, err
+		}
+		item.Answers = make([]QuestionAnswer, 0)
+		workflow.Questions = append(workflow.Questions, item)
+	}
+	if err := rows.Close(); err != nil {
+		return workflow, err
+	}
+	if err := rows.Err(); err != nil {
+		return workflow, err
+	}
+	for index := range workflow.Questions {
+		item := &workflow.Questions[index]
+		answerRows, err := s.store.db.QueryContext(ctx, `SELECT a.id, a.question_id, a.author_id, u.username, a.content, a.created_at, a.updated_at FROM question_answers a JOIN users u ON u.id = a.author_id WHERE a.question_id = ? ORDER BY u.username`, item.ID)
+		if err != nil {
+			return workflow, err
+		}
+		for answerRows.Next() {
+			var answer QuestionAnswer
+			if err := answerRows.Scan(&answer.ID, &answer.QuestionID, &answer.AuthorID, &answer.AuthorUsername, &answer.Content, &answer.CreatedAt, &answer.UpdatedAt); err != nil {
+				answerRows.Close()
+				return workflow, err
+			}
+			item.Answers = append(item.Answers, answer)
+		}
+		if err := answerRows.Close(); err != nil {
+			return workflow, err
+		}
+		var decision QuestionDecision
+		var sourceAnswerID, sourceAuthor sql.NullString
+		err = s.store.db.QueryRowContext(ctx, `SELECT d.id, d.question_id, d.content, d.source_answer_id, source_user.username, d.decided_by, decider.username, d.created_at, d.updated_at FROM question_decisions d JOIN users decider ON decider.id = d.decided_by LEFT JOIN question_answers source_answer ON source_answer.id = d.source_answer_id LEFT JOIN users source_user ON source_user.id = source_answer.author_id WHERE d.question_id = ?`, item.ID).Scan(&decision.ID, &decision.QuestionID, &decision.Content, &sourceAnswerID, &sourceAuthor, &decision.DecidedBy, &decision.DecidedByUsername, &decision.CreatedAt, &decision.UpdatedAt)
+		if err == nil {
+			if sourceAnswerID.Valid {
+				decision.SourceAnswerID = &sourceAnswerID.String
+			}
+			if sourceAuthor.Valid {
+				decision.SourceAuthorUsername = &sourceAuthor.String
+			}
+			item.Decision = &decision
+		} else if !errors.Is(err, sql.ErrNoRows) {
+			return workflow, err
+		}
+		workflow.Answered += len(item.Answers)
+		workflow.Expected += workflow.UserCount
+		if item.Decision != nil {
+			workflow.Resolved++
+		}
+	}
+	return workflow, nil
+}
+
+func splitQuestionInput(body string) []string {
+	lines := strings.Split(strings.ReplaceAll(body, "\r\n", "\n"), "\n")
+	questions := make([]string, 0, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		line = strings.TrimSpace(questionListPrefixPattern.ReplaceAllString(line, ""))
+		if line != "" {
+			questions = append(questions, line)
+		}
+	}
+	return questions
+}
+
+func (s *Server) handleAddQuestions(w http.ResponseWriter, r *http.Request) {
+	record, err := s.getRecord(r.Context(), r.PathValue("id"))
+	if err != nil || record.Type != "question_set" {
+		writeError(w, http.StatusNotFound, "Карточка вопросов не найдена")
+		return
+	}
+	var input struct {
+		Questions string `json:"questions"`
+	}
+	if !decodeJSON(w, r, &input) {
+		return
+	}
+	questions := splitQuestionInput(input.Questions)
+	if len(questions) == 0 || len(questions) > 100 {
+		writeError(w, http.StatusBadRequest, "Добавьте от 1 до 100 вопросов, каждый с новой строки")
+		return
+	}
+	for _, question := range questions {
+		if len(question) > 2000 {
+			writeError(w, http.StatusBadRequest, "Формулировка вопроса не должна превышать 2000 символов")
+			return
+		}
+	}
+	user := currentUser(r)
+	tx, err := s.store.db.BeginTx(r.Context(), nil)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось начать добавление вопросов")
+		return
+	}
+	defer tx.Rollback()
+	var sortOrder int
+	_ = tx.QueryRowContext(r.Context(), `SELECT COALESCE(MAX(sort_order), 0) FROM question_items WHERE record_id = ?`, record.ID).Scan(&sortOrder)
+	now := nowText()
+	ids := make([]string, 0, len(questions))
+	for _, question := range questions {
+		id, _ := newID()
+		sortOrder += 10
+		if _, err := tx.ExecContext(r.Context(), `INSERT INTO question_items(id, record_id, body, sort_order, created_by, created_at, updated_at) VALUES(?, ?, ?, ?, ?, ?, ?)`, id, record.ID, question, sortOrder, user.ID, now, now); err != nil {
+			writeError(w, http.StatusInternalServerError, "Не удалось добавить вопросы")
+			return
+		}
+		ids = append(ids, id)
+	}
+	newStatus, err := updateQuestionSetProgress(r.Context(), tx, record.ID, now)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось обновить карточку")
+		return
+	}
+	details := map[string]any{"count": len(questions), "questionIds": ids}
+	if newStatus != record.Status {
+		details["status"] = map[string]any{"before": record.Status, "after": newStatus}
+	}
+	if err := writeActivity(r.Context(), tx, user.ID, record.Type, record.ID, "questions_added", "", details); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось записать историю")
+		return
+	}
+	if err := tx.Commit(); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось завершить добавление")
+		return
+	}
+	workflow, _ := s.listQuestionWorkflow(r.Context(), record.ID)
+	writeJSON(w, http.StatusCreated, workflow)
+}
+
+func (s *Server) handleSaveQuestionAnswer(w http.ResponseWriter, r *http.Request) {
+	record, err := s.getRecord(r.Context(), r.PathValue("id"))
+	questionID := r.PathValue("questionId")
+	if err != nil || record.Type != "question_set" || !s.questionBelongsToRecord(r.Context(), questionID, record.ID) {
+		writeError(w, http.StatusNotFound, "Вопрос не найден")
+		return
+	}
+	var input struct {
+		Content string `json:"content"`
+	}
+	if !decodeJSON(w, r, &input) {
+		return
+	}
+	input.Content = strings.TrimSpace(input.Content)
+	if input.Content == "" || len(input.Content) > 50000 {
+		writeError(w, http.StatusBadRequest, "Напишите ответ не длиннее 50000 символов")
+		return
+	}
+	user := currentUser(r)
+	tx, err := s.store.db.BeginTx(r.Context(), nil)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось начать сохранение ответа")
+		return
+	}
+	defer tx.Rollback()
+	var answerID, before string
+	err = tx.QueryRowContext(r.Context(), `SELECT id, content FROM question_answers WHERE question_id = ? AND author_id = ?`, questionID, user.ID).Scan(&answerID, &before)
+	now := nowText()
+	if errors.Is(err, sql.ErrNoRows) {
+		answerID, _ = newID()
+		if _, err = tx.ExecContext(r.Context(), `INSERT INTO question_answers(id, question_id, author_id, content, created_at, updated_at) VALUES(?, ?, ?, ?, ?, ?)`, answerID, questionID, user.ID, input.Content, now, now); err != nil {
+			writeError(w, http.StatusInternalServerError, "Не удалось сохранить ответ")
+			return
+		}
+	} else if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось загрузить ответ")
+		return
+	} else if before != input.Content {
+		if _, err = tx.ExecContext(r.Context(), `UPDATE question_answers SET content = ?, updated_at = ? WHERE id = ?`, input.Content, now, answerID); err != nil {
+			writeError(w, http.StatusInternalServerError, "Не удалось обновить ответ")
+			return
+		}
+	}
+	if _, err := tx.ExecContext(r.Context(), `UPDATE records SET updated_at = ? WHERE id = ?`, now, record.ID); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось обновить карточку")
+		return
+	}
+	if err := writeActivity(r.Context(), tx, user.ID, record.Type, record.ID, "question_answered", "", map[string]any{"questionId": questionID, "answerId": answerID, "before": before, "after": input.Content}); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось записать историю")
+		return
+	}
+	if err := s.insertPartnerNotifications(r.Context(), tx, user, record, "Новый ответ на вопрос", user.Username+" ответил в карточке «"+record.Title+"»"); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось уведомить партнёра")
+		return
+	}
+	if err := tx.Commit(); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось завершить сохранение")
+		return
+	}
+	workflow, _ := s.listQuestionWorkflow(r.Context(), record.ID)
+	writeJSON(w, http.StatusOK, workflow)
+}
+
+func (s *Server) handleSaveQuestionDecision(w http.ResponseWriter, r *http.Request) {
+	record, err := s.getRecord(r.Context(), r.PathValue("id"))
+	questionID := r.PathValue("questionId")
+	if err != nil || record.Type != "question_set" || !s.questionBelongsToRecord(r.Context(), questionID, record.ID) {
+		writeError(w, http.StatusNotFound, "Вопрос не найден")
+		return
+	}
+	var input struct {
+		Mode     string  `json:"mode"`
+		AnswerID *string `json:"answerId"`
+		Content  string  `json:"content"`
+	}
+	if !decodeJSON(w, r, &input) {
+		return
+	}
+	input.Mode = strings.TrimSpace(input.Mode)
+	input.Content = strings.TrimSpace(input.Content)
+	var sourceAnswerID *string
+	if input.Mode == "answer" {
+		if input.AnswerID == nil {
+			writeError(w, http.StatusBadRequest, "Выберите ответ")
+			return
+		}
+		var answerContent string
+		if err := s.store.db.QueryRowContext(r.Context(), `SELECT content FROM question_answers WHERE id = ? AND question_id = ?`, *input.AnswerID, questionID).Scan(&answerContent); err != nil {
+			writeError(w, http.StatusBadRequest, "Выбранный ответ не найден")
+			return
+		}
+		input.Content = answerContent
+		sourceAnswerID = input.AnswerID
+	} else if input.Mode != "custom" {
+		writeError(w, http.StatusBadRequest, "Неизвестный способ решения")
+		return
+	}
+	if input.Content == "" || len(input.Content) > 50000 {
+		writeError(w, http.StatusBadRequest, "Итоговое решение обязательно")
+		return
+	}
+	var userCount, answerCount int
+	if err := s.store.db.QueryRowContext(r.Context(), `SELECT (SELECT COUNT(*) FROM users), (SELECT COUNT(*) FROM question_answers WHERE question_id = ?)`, questionID).Scan(&userCount, &answerCount); err != nil || userCount == 0 || answerCount < userCount {
+		writeError(w, http.StatusConflict, "Совместное решение можно зафиксировать после ответов всех основателей")
+		return
+	}
+	user := currentUser(r)
+	tx, err := s.store.db.BeginTx(r.Context(), nil)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось начать фиксацию решения")
+		return
+	}
+	defer tx.Rollback()
+	var decisionID, before string
+	err = tx.QueryRowContext(r.Context(), `SELECT id, content FROM question_decisions WHERE question_id = ?`, questionID).Scan(&decisionID, &before)
+	now := nowText()
+	if errors.Is(err, sql.ErrNoRows) {
+		decisionID, _ = newID()
+		if _, err = tx.ExecContext(r.Context(), `INSERT INTO question_decisions(id, question_id, content, source_answer_id, decided_by, created_at, updated_at) VALUES(?, ?, ?, ?, ?, ?, ?)`, decisionID, questionID, input.Content, sourceAnswerID, user.ID, now, now); err != nil {
+			writeError(w, http.StatusInternalServerError, "Не удалось сохранить решение")
+			return
+		}
+	} else if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось загрузить решение")
+		return
+	} else {
+		if _, err = tx.ExecContext(r.Context(), `UPDATE question_decisions SET content = ?, source_answer_id = ?, decided_by = ?, updated_at = ? WHERE id = ?`, input.Content, sourceAnswerID, user.ID, now, decisionID); err != nil {
+			writeError(w, http.StatusInternalServerError, "Не удалось обновить решение")
+			return
+		}
+	}
+	if _, err := tx.ExecContext(r.Context(), `UPDATE question_items SET status = 'resolved', updated_at = ? WHERE id = ?`, now, questionID); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось завершить вопрос")
+		return
+	}
+	newStatus, err := updateQuestionSetProgress(r.Context(), tx, record.ID, now)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось обновить карточку")
+		return
+	}
+	details := map[string]any{"questionId": questionID, "decisionId": decisionID, "mode": input.Mode, "sourceAnswerId": sourceAnswerID, "before": before, "after": input.Content}
+	if newStatus != record.Status {
+		details["status"] = map[string]any{"before": record.Status, "after": newStatus}
+	}
+	if err := writeActivity(r.Context(), tx, user.ID, record.Type, record.ID, "question_decided", "", details); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось записать историю")
+		return
+	}
+	if err := s.insertPartnerNotifications(r.Context(), tx, user, record, "Зафиксировано совместное решение", "В карточке «"+record.Title+"» появился итог по вопросу"); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось уведомить партнёра")
+		return
+	}
+	if err := tx.Commit(); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось завершить решение")
+		return
+	}
+	workflow, _ := s.listQuestionWorkflow(r.Context(), record.ID)
+	writeJSON(w, http.StatusOK, workflow)
+}
+
+func (s *Server) handleArchiveQuestion(w http.ResponseWriter, r *http.Request) {
+	record, err := s.getRecord(r.Context(), r.PathValue("id"))
+	questionID := r.PathValue("questionId")
+	if err != nil || record.Type != "question_set" || !s.questionBelongsToRecord(r.Context(), questionID, record.ID) {
+		writeError(w, http.StatusNotFound, "Вопрос не найден")
+		return
+	}
+	var input struct {
+		Reason string `json:"reason"`
+	}
+	if !decodeJSON(w, r, &input) {
+		return
+	}
+	input.Reason = strings.TrimSpace(input.Reason)
+	if input.Reason == "" {
+		writeError(w, http.StatusBadRequest, "Укажите причину архивации вопроса")
+		return
+	}
+	user := currentUser(r)
+	tx, err := s.store.db.BeginTx(r.Context(), nil)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось начать архивацию")
+		return
+	}
+	defer tx.Rollback()
+	now := nowText()
+	if _, err := tx.ExecContext(r.Context(), `UPDATE question_items SET status = 'archived', updated_at = ? WHERE id = ?`, now, questionID); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось архивировать вопрос")
+		return
+	}
+	newStatus, err := updateQuestionSetProgress(r.Context(), tx, record.ID, now)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось обновить карточку")
+		return
+	}
+	details := map[string]any{"questionId": questionID}
+	if newStatus != record.Status {
+		details["status"] = map[string]any{"before": record.Status, "after": newStatus}
+	}
+	if err := writeActivity(r.Context(), tx, user.ID, record.Type, record.ID, "question_archived", input.Reason, details); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось записать историю")
+		return
+	}
+	if err := tx.Commit(); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось завершить архивацию")
+		return
+	}
+	workflow, _ := s.listQuestionWorkflow(r.Context(), record.ID)
+	writeJSON(w, http.StatusOK, workflow)
+}
+
 func (s *Server) handleListDefinitions(w http.ResponseWriter, r *http.Request) {
 	rows, err := s.store.db.QueryContext(r.Context(), `SELECT id, key, name, scope_type, kind, active, sort_order FROM section_definitions ORDER BY active DESC, scope_type, sort_order, name`)
 	if err != nil {
@@ -1352,6 +1765,10 @@ func (s *Server) handleCreateDefinition(w http.ResponseWriter, r *http.Request) 
 	if input.ScopeType != nil {
 		if _, ok := recordTypes[*input.ScopeType]; !ok {
 			writeError(w, http.StatusBadRequest, "Неизвестный тип карточки")
+			return
+		}
+		if *input.ScopeType == "question_set" {
+			writeError(w, http.StatusBadRequest, "Структура карточки вопросов фиксирована")
 			return
 		}
 	}

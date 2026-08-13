@@ -129,6 +129,87 @@ func TestBusinessWorkflow(t *testing.T) {
 		t.Fatalf("completion notifications = %#v", notifications)
 	}
 
+	questionSet := createRecord(t, artkozk, server.URL, map[string]any{
+		"type": "question_set", "title": "Вопросы до начала совместной работы", "ownerId": me.ID,
+	})
+	if questionSet.Type != "question_set" || questionSet.Status != "planned" {
+		t.Fatalf("question set = %#v", questionSet)
+	}
+	var workflow QuestionWorkflow
+	requestJSON(t, artkozk, http.MethodPost, server.URL+"/api/records/"+questionSet.ID+"/questions", map[string]any{
+		"questions": "1. Как распределяем роли?\n2. Как принимаем спорные решения?",
+	}, http.StatusCreated, &workflow)
+	if len(workflow.Questions) != 2 || workflow.Expected != 4 || workflow.Answered != 0 {
+		t.Fatalf("question workflow after create = %#v", workflow)
+	}
+	var activeQuestionSet Record
+	requestJSON(t, artkozk, http.MethodGet, server.URL+"/api/records/"+questionSet.ID, nil, http.StatusOK, &struct {
+		Record *Record `json:"record"`
+	}{Record: &activeQuestionSet})
+	if activeQuestionSet.Status != "in_progress" {
+		t.Fatalf("question set with open questions status = %q, want in_progress", activeQuestionSet.Status)
+	}
+	firstQuestion := workflow.Questions[0]
+	requestJSON(t, artkozk, http.MethodPut, server.URL+"/api/records/"+questionSet.ID+"/questions/"+firstQuestion.ID+"/answer", map[string]any{
+		"content": "Я веду продукт и продажи.",
+	}, http.StatusOK, &workflow)
+	if workflow.Answered != 1 || len(workflow.Questions[0].Answers) != 1 {
+		t.Fatalf("first founder answer = %#v", workflow)
+	}
+	requestJSON(t, artkozk, http.MethodPost, server.URL+"/api/records/"+questionSet.ID+"/questions/"+firstQuestion.ID+"/decision", map[string]any{
+		"mode": "answer", "answerId": workflow.Questions[0].Answers[0].ID,
+	}, http.StatusConflict, nil)
+	requestJSON(t, sweetybboy, http.MethodPut, server.URL+"/api/records/"+questionSet.ID+"/questions/"+firstQuestion.ID+"/answer", map[string]any{
+		"content": "Я веду операции и финансы.",
+	}, http.StatusOK, &workflow)
+	if workflow.Answered != 2 || len(workflow.Questions[0].Answers) != 2 {
+		t.Fatalf("separate founder answers = %#v", workflow)
+	}
+	var artAnswerID string
+	for _, answer := range workflow.Questions[0].Answers {
+		if answer.AuthorUsername == "artkozk" {
+			artAnswerID = answer.ID
+		}
+	}
+	requestJSON(t, artkozk, http.MethodPost, server.URL+"/api/records/"+questionSet.ID+"/questions/"+firstQuestion.ID+"/decision", map[string]any{
+		"mode": "answer", "answerId": artAnswerID,
+	}, http.StatusOK, &workflow)
+	if workflow.Resolved != 1 || workflow.Questions[0].Decision == nil || workflow.Questions[0].Decision.SourceAnswerID == nil || *workflow.Questions[0].Decision.SourceAnswerID != artAnswerID {
+		t.Fatalf("decision selected from answer = %#v", workflow)
+	}
+	secondQuestion := workflow.Questions[1]
+	for clientIndex, client := range []*http.Client{artkozk, sweetybboy} {
+		requestJSON(t, client, http.MethodPut, server.URL+"/api/records/"+questionSet.ID+"/questions/"+secondQuestion.ID+"/answer", map[string]any{
+			"content": []string{"Решает владелец области.", "Решаем консенсусом."}[clientIndex],
+		}, http.StatusOK, &workflow)
+	}
+	requestJSON(t, sweetybboy, http.MethodPost, server.URL+"/api/records/"+questionSet.ID+"/questions/"+secondQuestion.ID+"/decision", map[string]any{
+		"mode": "custom", "content": "Сначала ищем консенсус, при тупике решает владелец области.",
+	}, http.StatusOK, &workflow)
+	if workflow.Resolved != 2 || workflow.Questions[1].Decision == nil || workflow.Questions[1].Decision.SourceAnswerID != nil {
+		t.Fatalf("custom joint decision = %#v", workflow)
+	}
+	var completedQuestionSet Record
+	requestJSON(t, artkozk, http.MethodGet, server.URL+"/api/records/"+questionSet.ID, nil, http.StatusOK, &struct {
+		Record *Record `json:"record"`
+	}{Record: &completedQuestionSet})
+	if completedQuestionSet.Status != "completed" {
+		t.Fatalf("question set must complete automatically = %#v", completedQuestionSet)
+	}
+	requestJSON(t, artkozk, http.MethodPost, server.URL+"/api/records/"+questionSet.ID+"/questions", map[string]any{
+		"questions": "Новый вопрос после завершения",
+	}, http.StatusCreated, &workflow)
+	requestJSON(t, artkozk, http.MethodGet, server.URL+"/api/records/"+questionSet.ID, nil, http.StatusOK, &struct {
+		Record *Record `json:"record"`
+	}{Record: &activeQuestionSet})
+	if activeQuestionSet.Status != "in_progress" || activeQuestionSet.Progress >= 100 {
+		t.Fatalf("new question must reopen workflow = %#v", activeQuestionSet)
+	}
+	newQuestion := workflow.Questions[len(workflow.Questions)-1]
+	requestJSON(t, artkozk, http.MethodPost, server.URL+"/api/records/"+questionSet.ID+"/questions/"+newQuestion.ID+"/archive", map[string]any{
+		"reason": "Вопрос добавлен по ошибке",
+	}, http.StatusOK, &workflow)
+
 	var activity []Activity
 	requestJSON(t, artkozk, http.MethodGet, server.URL+"/api/activity?entityId="+idea.ID, nil, http.StatusOK, &activity)
 	if len(activity) < 5 {
