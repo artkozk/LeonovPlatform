@@ -32,6 +32,7 @@ const navItems = [
 const state = {
   me: null, users: [], records: [], notifications: [], activity: [], definitions: [],
   view: 'dashboard', search: '', statusFilter: '', ownerFilter: '', authMode: 'login', activeDetail: null,
+  activeRecordTab: 'overview', activeActivity: null,
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -53,6 +54,41 @@ function toLocalInput(value) {
   const date = new Date(value);
   const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
   return local.toISOString().slice(0, 16);
+}
+
+function normalizedInstant(value) {
+  if (!value) return '';
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? String(value) : String(time);
+}
+
+function recordDraftKey(recordId) {
+  return `business-control:draft:${state.me?.id || 'anonymous'}:${recordId}`;
+}
+
+function loadRecordDraft(recordId) {
+  try { return JSON.parse(localStorage.getItem(recordDraftKey(recordId)) || 'null'); } catch (_) { return null; }
+}
+
+function saveRecordDraft(recordId, values) {
+  try { localStorage.setItem(recordDraftKey(recordId), JSON.stringify({ values, savedAt: new Date().toISOString() })); } catch (_) {}
+}
+
+function clearRecordDraft(recordId) {
+  try { localStorage.removeItem(recordDraftKey(recordId)); } catch (_) {}
+}
+
+function recordFormValues(form) {
+  const data = new FormData(form);
+  return Object.fromEntries([...data.entries()].map(([key, value]) => [key, String(value)]));
+}
+
+function applyRecordDraft(form, draft) {
+  Object.entries(draft?.values || {}).forEach(([name, value]) => {
+    const field = form.elements.namedItem(name);
+    if (field && name !== 'reason') field.value = value;
+  });
+  updateRecordFormState(form, state.activeDetail.record, true);
 }
 
 function minutesLabel(minutes) {
@@ -83,7 +119,9 @@ async function api(path, options = {}) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     if (response.status === 401 && !path.startsWith('/api/auth/')) showAuth();
-    throw new Error(data.error || 'Ошибка запроса');
+    const error = new Error(data.error || 'Ошибка запроса');
+    error.status = response.status;
+    throw error;
   }
   return data;
 }
@@ -148,6 +186,7 @@ function bindGlobalEvents() {
   $('#new-record-button').addEventListener('click', () => openCreateDialog(typeMeta[state.view] ? state.view : 'idea'));
   $('#menu-button').addEventListener('click', () => $('.sidebar').classList.toggle('open'));
   $('#record-dialog').addEventListener('click', (event) => { if (event.target === $('#record-dialog')) $('#record-dialog').close(); });
+  $('#event-dialog').addEventListener('click', (event) => { if (event.target === $('#event-dialog')) $('#event-dialog').close(); });
   $('#create-dialog').addEventListener('click', (event) => { if (event.target === $('#create-dialog')) $('#create-dialog').close(); });
   $('#reason-dialog').addEventListener('click', (event) => { if (event.target === $('#reason-dialog')) $('#reason-dialog').close('cancel'); });
   setInterval(async () => {
@@ -312,47 +351,78 @@ function emptyState(text) {
 
 function bindOpenRecords() {
   $$('[data-open-record]').forEach((node) => node.addEventListener('click', () => openRecord(node.dataset.openRecord)));
+  $$('[data-open-event]').forEach((node) => node.addEventListener('click', () => openActivity(node.dataset.openEvent)));
   $$('[data-owner-filter]').forEach((node) => node.addEventListener('click', () => { state.view = 'task'; state.ownerFilter = node.dataset.ownerFilter; render(); }));
 }
 
 async function openRecord(id) {
   try {
     state.activeDetail = await api(`/api/records/${id}`);
+    state.activeRecordTab = 'overview';
     renderRecordDialog();
-    $('#record-dialog').showModal();
+    if (!$('#record-dialog').open) $('#record-dialog').showModal();
   } catch (error) { toast(error.message, true); }
+}
+
+function recordTabs(record, detail, activity) {
+  const filledSections = detail.sections.filter((section) => section.content).length;
+  return [
+    ['overview', 'Обзор', ''],
+    ['content', 'Содержание', `${filledSections}/${detail.sections.length}`],
+    ['relations', 'Связи и оценка', `${detail.links.length}`],
+    ['history', 'История', `${activity.length}`],
+  ].map(([key, label, count]) => `<button type="button" class="record-tab ${state.activeRecordTab === key ? 'active' : ''}" data-record-tab="${key}"><span>${label}</span>${count ? `<b>${count}</b>` : ''}</button>`).join('');
+}
+
+function renderRecordOverview(record, statuses) {
+  const draft = loadRecordDraft(record.id);
+  return `<div class="record-pane ${state.activeRecordTab === 'overview' ? 'active' : ''}" data-record-pane="overview">
+    ${draft ? `<div class="draft-banner"><span><strong>Найден несохранённый черновик</strong><small>Можно восстановить текст или удалить черновик.</small></span><div><button type="button" class="secondary" data-restore-draft>Восстановить</button><button type="button" class="text-button" data-discard-draft>Удалить</button></div></div>` : ''}
+    <form id="record-edit-form" class="card-form record-overview-form">
+      <div class="form-grid two"><label>Название<input name="title" value="${escapeHTML(record.title)}" required></label><label>Статус<select name="status">${statuses.map((status) => `<option value="${status}" ${record.status === status ? 'selected' : ''}>${statusLabels[status]}</option>`).join('')}</select></label></div>
+      <label>Описание<textarea name="description" rows="5">${escapeHTML(record.description)}</textarea></label>
+      <details class="form-more"><summary>Ответственные, срок и ход работы</summary><div class="form-more-body">
+        <div class="form-grid three"><label>Ответственный<select name="ownerId">${userOptions(record.ownerId)}</select></label><label>Принимает решение<select name="decisionMakerId"><option value="">Не указан</option>${userOptions(record.decisionMakerId)}</select></label><label>Срок<input name="dueAt" type="datetime-local" value="${toLocalInput(record.dueAt)}"></label></div>
+        ${(record.type === 'task' || record.type === 'goal') ? `<div class="form-grid three"><label>Оценка, минут<input name="estimateMinutes" type="number" min="0" value="${record.estimateMinutes}"></label><label>Прогресс, %<input name="progress" type="number" min="0" max="100" value="${record.progress}"></label><label>Ход работы<input name="progressNote" value="${escapeHTML(record.progressNote)}" placeholder="Что уже сделано"></label></div><label>Результат<textarea name="result" rows="3">${escapeHTML(record.result)}</textarea></label>` : ''}
+      </div></details>
+      <label id="record-reason-field" class="reason-field" hidden>Причина изменения <input name="reason" placeholder="Почему изменился статус или срок"></label>
+      <div class="form-actions"><button type="submit" class="primary">Сохранить</button><span class="form-save-state" id="record-save-state">Изменений нет</span><button type="button" class="secondary" id="notify-partners">Уведомить</button><button type="button" class="danger-text" id="archive-record">В архив</button></div>
+    </form>
+    ${(record.type === 'task') ? renderProofBlock(record, state.activeDetail.proofs) : ''}
+  </div>`;
+}
+
+function renderRecordContent(detail) {
+  return `<div class="record-pane ${state.activeRecordTab === 'content' ? 'active' : ''}" data-record-pane="content"><section class="accordion-stack content-stack">${detail.sections.map(renderSection).join('')}<details class="accordion"><summary><span>Добавить свой раздел</span><small>Только для этой карточки</small></summary><form id="custom-section-form" class="inline-editor"><input name="title" placeholder="Название раздела" required><textarea name="content" rows="4" placeholder="Содержание"></textarea><button class="secondary" type="submit">Добавить раздел</button></form></details></section></div>`;
+}
+
+function renderRecordRelations(record, detail, criteria, targets) {
+  return `<div class="record-pane ${state.activeRecordTab === 'relations' ? 'active' : ''}" data-record-pane="relations"><section class="accordion-stack content-stack">${record.type !== 'criterion' ? renderCriteriaBlock(criteria, detail.scores, true) : ''}${renderLinksBlock(detail.links, targets, true)}</section></div>`;
+}
+
+function renderRecordHistory(activity) {
+  return `<div class="record-pane ${state.activeRecordTab === 'history' ? 'active' : ''}" data-record-pane="history"><section class="history-pane"><div class="section-heading"><div><p class="eyebrow">Аудит карточки</p><h3>${activity.length} событий</h3></div></div><div class="activity-list">${activity.map(renderActivityItem).join('') || emptyState('Изменений пока нет.')}</div></section></div>`;
 }
 
 function renderRecordDialog() {
   const detail = state.activeDetail;
   const record = detail.record;
-  const statuses = statusesByType[record.type] || statusesByType.default;
+  const statuses = [...(statusesByType[record.type] || statusesByType.default)];
+  if (!statuses.includes(record.status)) statuses.push(record.status);
   const allLinkTargets = state.records.filter((item) => item.id !== record.id && item.status !== 'archived');
   const criteria = state.records.filter((item) => item.type === 'criterion' && item.status !== 'archived');
   const activity = state.activity.filter((item) => item.entityId === record.id);
   const ideaActions = record.type === 'idea' ? `<div class="idea-actions">${['review', 'main', 'rejected'].map((status) => `<button type="button" class="stage-action ${status}" data-stage="${status}" ${record.status === status ? 'disabled' : ''}>${statusLabels[status]}</button>`).join('')}</div>` : '';
   $('#record-dialog-content').innerHTML = `
-    <div class="dialog-header"><div><span class="record-kind">${typeMeta[record.type].singular} · ${record.id.slice(0, 8)}</span><h2>${escapeHTML(record.title)}</h2><p>Создал ${escapeHTML(record.authorUsername)} · ${formatDate(record.createdAt, true)}</p></div><button type="button" class="close-button" data-close-dialog aria-label="Закрыть">×</button></div>
+    <div class="dialog-header record-dialog-header"><div><span class="record-kind">${typeMeta[record.type].singular} · ${record.id.slice(0, 8)}</span><h2>${escapeHTML(record.title)}</h2><p>Создал ${escapeHTML(record.authorUsername)} · ${formatDate(record.createdAt, true)}</p></div><button type="button" class="close-button" data-close-dialog aria-label="Закрыть">×</button></div>
     ${ideaActions}
+    <nav class="record-tabs" aria-label="Разделы карточки">${recordTabs(record, detail, activity)}</nav>
     <div class="dialog-layout">
       <div class="dialog-main">
-        <form id="record-edit-form" class="card-form">
-          <div class="form-grid two"><label>Название<input name="title" value="${escapeHTML(record.title)}" required></label><label>Статус<select name="status">${statuses.map((status) => `<option value="${status}" ${record.status === status ? 'selected' : ''}>${statusLabels[status]}</option>`).join('')}</select></label></div>
-          <label>Описание<textarea name="description" rows="4">${escapeHTML(record.description)}</textarea></label>
-          <div class="form-grid three"><label>Ответственный<select name="ownerId">${userOptions(record.ownerId)}</select></label><label>Принимает решение<select name="decisionMakerId"><option value="">Не указан</option>${userOptions(record.decisionMakerId)}</select></label><label>Срок<input name="dueAt" type="datetime-local" value="${toLocalInput(record.dueAt)}"></label></div>
-          ${(record.type === 'task' || record.type === 'goal') ? `<div class="form-grid three"><label>Оценка, минут<input name="estimateMinutes" type="number" min="0" value="${record.estimateMinutes}"></label><label>Прогресс, %<input name="progress" type="number" min="0" max="100" value="${record.progress}"></label><label>Текущий статус работы<input name="progressNote" value="${escapeHTML(record.progressNote)}" placeholder="Что уже сделано"></label></div>` : ''}
-          ${(record.type === 'task' || record.type === 'goal') ? `<label>Результат<textarea name="result" rows="3">${escapeHTML(record.result)}</textarea></label>` : ''}
-          <label>Причина изменения статуса или срока<input name="reason" placeholder="Обязательно при изменении статуса или срока"></label>
-          <div class="form-actions"><button type="submit" class="primary">Сохранить карточку</button><button type="button" class="secondary" id="notify-partners">Уведомить партнёра</button><button type="button" class="danger-text" id="archive-record">В архив</button></div>
-        </form>
-        <section class="accordion-stack">
-          ${detail.sections.map(renderSection).join('')}
-          <details class="accordion"><summary><span>Добавить свой раздел</span><small>Для этой карточки</small></summary><form id="custom-section-form" class="inline-editor"><input name="title" placeholder="Название раздела" required><textarea name="content" rows="4" placeholder="Содержание"></textarea><button class="secondary" type="submit">Добавить раздел</button></form></details>
-          ${record.type !== 'criterion' ? renderCriteriaBlock(criteria, detail.scores) : ''}
-          ${renderLinksBlock(detail.links, allLinkTargets)}
-          ${record.type === 'task' ? renderProofBlock(record, detail.proofs) : ''}
-          <details class="accordion"><summary><span>История карточки</span><small>${activity.length} событий</small></summary><div class="activity-list inside">${activity.map(renderActivityItem).join('') || emptyState('Изменений пока нет.')}</div></details>
-        </section>
+        ${renderRecordOverview(record, statuses)}
+        ${renderRecordContent(detail)}
+        ${renderRecordRelations(record, detail, criteria, allLinkTargets)}
+        ${renderRecordHistory(activity)}
       </div>
       <aside class="dialog-aside">
         <div class="fact"><span>Ответственный</span><strong>${escapeHTML(record.ownerUsername)}</strong></div>
@@ -373,50 +443,98 @@ function renderSection(section) {
   return `<details class="accordion"><summary><span>${escapeHTML(section.title)}</span><small>${section.content ? 'Заполнено' : 'Не заполнено'}</small></summary><form class="section-form inline-editor" data-section-id="${escapeHTML(section.id)}" data-definition-id="${escapeHTML(section.definitionId || '')}"><input name="title" value="${escapeHTML(section.title)}" ${section.definitionId ? 'readonly' : ''}><textarea name="content" rows="6" placeholder="Запишите факты, позиции и выводы">${escapeHTML(section.content)}</textarea><input name="reason" placeholder="Причина изменения (необязательно)"><button class="secondary" type="submit">Сохранить раздел</button></form></details>`;
 }
 
-function renderCriteriaBlock(criteria, scores) {
+function renderCriteriaBlock(criteria, scores, open = false) {
   const scoreMap = new Map(scores.map((score) => [score.criterionId, score]));
-  return `<details class="accordion"><summary><span>Оценка по критериям</span><small>${scores.length} оценок</small></summary><div class="criteria-list">${criteria.map((criterion) => { const current = scoreMap.get(criterion.id); return `<form class="criterion-form" data-criterion-id="${criterion.id}"><div><strong>${escapeHTML(criterion.title)}</strong><small>${escapeHTML(criterion.description)}</small></div><input name="score" type="number" min="0" max="10" value="${current?.score ?? 0}" aria-label="Оценка"><input name="note" value="${escapeHTML(current?.note || '')}" placeholder="Комментарий"><button class="secondary" type="submit">Оценить</button></form>`; }).join('') || emptyState('Сначала создайте критерии в отдельном разделе.')}</div></details>`;
+  return `<details class="accordion" ${open ? 'open' : ''}><summary><span>Оценка по критериям</span><small>${scores.length} оценок</small></summary><div class="criteria-list">${criteria.map((criterion) => { const current = scoreMap.get(criterion.id); return `<form class="criterion-form" data-criterion-id="${criterion.id}"><div><strong>${escapeHTML(criterion.title)}</strong><small>${escapeHTML(criterion.description)}</small></div><input name="score" type="number" min="0" max="10" value="${current?.score ?? 0}" aria-label="Оценка"><input name="note" value="${escapeHTML(current?.note || '')}" placeholder="Комментарий"><button class="secondary" type="submit">Оценить</button></form>`; }).join('') || emptyState('Сначала создайте критерии в отдельном разделе.')}</div></details>`;
 }
 
-function renderLinksBlock(links, targets) {
-  return `<details class="accordion"><summary><span>Связанные записи</span><small>${links.length} связей</small></summary><div class="linked-list">${links.map((link) => `<div class="linked-item"><button type="button" data-related-record="${link.record.id}"><i class="type-code">${typeMeta[link.record.type].code}</i><span><strong>${escapeHTML(link.record.title)}</strong><small>${escapeHTML(link.relationType)} · ${typeMeta[link.record.type].singular}</small></span></button><button type="button" class="remove-link" data-remove-link="${link.id}" aria-label="Убрать связь">×</button></div>`).join('') || emptyState('Связей пока нет.')}</div><form id="link-form" class="link-form"><select name="targetId" required><option value="">Выберите карточку</option>${targets.map((target) => `<option value="${target.id}">${typeMeta[target.type].singular}: ${escapeHTML(target.title)}</option>`).join('')}</select><input name="relationType" value="related" placeholder="Тип связи"><button class="secondary" type="submit">Связать</button></form></details>`;
+function renderLinksBlock(links, targets, open = false) {
+  return `<details class="accordion" ${open ? 'open' : ''}><summary><span>Связанные записи</span><small>${links.length} связей</small></summary><div class="linked-list">${links.map((link) => `<div class="linked-item"><button type="button" data-related-record="${link.record.id}"><i class="type-code">${typeMeta[link.record.type].code}</i><span><strong>${escapeHTML(link.record.title)}</strong><small>${escapeHTML(link.relationType)} · ${typeMeta[link.record.type].singular}</small></span></button><button type="button" class="remove-link" data-remove-link="${link.id}" aria-label="Убрать связь">×</button></div>`).join('') || emptyState('Связей пока нет.')}</div><form id="link-form" class="link-form"><select name="targetId" required><option value="">Выберите карточку</option>${targets.map((target) => `<option value="${target.id}">${typeMeta[target.type].singular}: ${escapeHTML(target.title)}</option>`).join('')}</select><input name="relationType" value="related" placeholder="Тип связи"><button class="secondary" type="submit">Связать</button></form></details>`;
 }
 
 function renderProofBlock(record, proofs) {
   return `<details class="accordion" open><summary><span>Доказательства выполнения</span><small>${proofs.length} приложено</small></summary><div class="proof-list">${proofs.map((proof) => `<article class="proof"><header><strong>${escapeHTML(proof.authorUsername)}</strong><time>${formatDate(proof.createdAt, true)}</time></header>${proof.kind === 'link' && /^https?:\/\//i.test(proof.content) ? `<a href="${escapeHTML(proof.content)}" target="_blank" rel="noreferrer">${escapeHTML(proof.content)}</a>` : `<p>${escapeHTML(proof.content).replace(/\n/g, '<br>')}</p>`}</article>`).join('') || emptyState('Ответственный должен приложить текст или ссылку до завершения задачи.')}</div>${record.ownerId === state.me.id ? `<form id="proof-form" class="proof-form"><select name="kind"><option value="text">Текст</option><option value="link">Ссылка</option></select><textarea name="content" rows="4" placeholder="Вопросы, цели, результат или ссылка на материал" required></textarea><button class="secondary" type="submit">Добавить доказательство</button></form><div class="completion-box"><label>Итог задачи<textarea id="completion-result" rows="3" placeholder="Кратко опишите полученный результат"></textarea></label><label class="check"><input id="notify-on-complete" type="checkbox" checked> Уведомить партнёра о выполнении</label><button type="button" class="success" id="complete-task" ${proofs.length ? '' : 'disabled'}>Завершить задачу</button></div>` : ''}</details>`;
 }
 
+function buildRecordUpdate(form, record) {
+  const values = recordFormValues(form);
+  const body = { expectedUpdatedAt: record.updatedAt };
+  const compare = (key, next, previous) => { if (String(next ?? '') !== String(previous ?? '')) body[key] = next; };
+  compare('title', values.title.trim(), record.title);
+  compare('description', values.description.trim(), record.description);
+  compare('status', values.status, record.status);
+  compare('ownerId', Number(values.ownerId), record.ownerId);
+  if (values.decisionMakerId) compare('decisionMakerId', Number(values.decisionMakerId), record.decisionMakerId);
+  else if (record.decisionMakerId) body.clearDecisionMaker = true;
+  const dueISO = values.dueAt ? new Date(values.dueAt).toISOString() : '';
+  if (normalizedInstant(dueISO) !== normalizedInstant(record.dueAt)) body.dueAt = dueISO;
+  if ('estimateMinutes' in values) compare('estimateMinutes', Number(values.estimateMinutes), record.estimateMinutes);
+  if ('progress' in values) compare('progress', Number(values.progress), record.progress);
+  if ('progressNote' in values) compare('progressNote', values.progressNote.trim(), record.progressNote);
+  if ('result' in values) compare('result', values.result.trim(), record.result);
+  const substantiveKeys = Object.keys(body).filter((key) => key !== 'expectedUpdatedAt');
+  const reasonRequired = Object.prototype.hasOwnProperty.call(body, 'status') || Object.prototype.hasOwnProperty.call(body, 'dueAt');
+  if (reasonRequired) body.reason = values.reason.trim();
+  return { body, substantiveKeys, reasonRequired, values };
+}
+
+function updateRecordFormState(form, record, persist = false) {
+  const { substantiveKeys, reasonRequired, values } = buildRecordUpdate(form, record);
+  const reasonField = $('#record-reason-field');
+  if (reasonField) {
+    reasonField.hidden = !reasonRequired;
+    reasonField.querySelector('input').required = reasonRequired;
+  }
+  const status = $('#record-save-state');
+  if (status) status.textContent = substantiveKeys.length ? 'Есть несохранённые изменения' : 'Изменений нет';
+  form.classList.toggle('dirty', substantiveKeys.length > 0);
+  if (persist && substantiveKeys.length) saveRecordDraft(record.id, values);
+  if (persist && !substantiveKeys.length) clearRecordDraft(record.id);
+}
+
 function bindRecordDialogEvents() {
   const detail = state.activeDetail;
   const record = detail.record;
   $('[data-close-dialog]').addEventListener('click', () => $('#record-dialog').close());
-  $('#record-edit-form').addEventListener('submit', async (event) => {
+  $$('[data-record-tab]').forEach((button) => button.addEventListener('click', () => {
+    state.activeRecordTab = button.dataset.recordTab;
+    $$('.record-tab').forEach((tab) => tab.classList.toggle('active', tab.dataset.recordTab === state.activeRecordTab));
+    $$('[data-record-pane]').forEach((pane) => pane.classList.toggle('active', pane.dataset.recordPane === state.activeRecordTab));
+  }));
+  const editForm = $('#record-edit-form');
+  editForm.addEventListener('keydown', (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+      event.preventDefault();
+      editForm.requestSubmit();
+    }
+  });
+  editForm.addEventListener('input', () => updateRecordFormState(editForm, record, true));
+  editForm.addEventListener('change', () => updateRecordFormState(editForm, record, true));
+  $('[data-restore-draft]')?.addEventListener('click', () => {
+    applyRecordDraft(editForm, loadRecordDraft(record.id));
+    $('[data-restore-draft]').closest('.draft-banner').remove();
+    toast('Черновик восстановлен');
+  });
+  $('[data-discard-draft]')?.addEventListener('click', () => {
+    clearRecordDraft(record.id);
+    $('[data-discard-draft]').closest('.draft-banner').remove();
+    toast('Черновик удалён');
+  });
+  editForm.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const body = {};
-    const compare = (key, next, previous) => { if (String(next ?? '') !== String(previous ?? '')) body[key] = next; };
-    compare('title', form.get('title').trim(), record.title);
-    compare('description', form.get('description').trim(), record.description);
-    compare('status', form.get('status'), record.status);
-    compare('ownerId', Number(form.get('ownerId')), record.ownerId);
-    const decisionMaker = form.get('decisionMakerId');
-    if (decisionMaker) compare('decisionMakerId', Number(decisionMaker), record.decisionMakerId);
-    else if (record.decisionMakerId) body.clearDecisionMaker = true;
-    const dueValue = form.get('dueAt');
-    const dueISO = dueValue ? new Date(dueValue).toISOString() : '';
-    compare('dueAt', dueISO, record.dueAt || '');
-    if (form.has('estimateMinutes')) compare('estimateMinutes', Number(form.get('estimateMinutes')), record.estimateMinutes);
-    if (form.has('progress')) compare('progress', Number(form.get('progress')), record.progress);
-    if (form.has('progressNote')) compare('progressNote', form.get('progressNote').trim(), record.progressNote);
-    if (form.has('result')) compare('result', form.get('result').trim(), record.result);
-    body.reason = form.get('reason').trim();
-    if (Object.keys(body).length === 1) return toast('Изменений нет');
-    await mutateRecord(`/api/records/${record.id}`, { method: 'PATCH', body: JSON.stringify(body) });
+    const { body, substantiveKeys, reasonRequired } = buildRecordUpdate(event.currentTarget, record);
+    if (!substantiveKeys.length) return toast('Изменений нет');
+    if (reasonRequired && !body.reason) {
+      $('#record-reason-field').hidden = false;
+      event.currentTarget.elements.reason.focus();
+      return toast('Укажите причину изменения статуса или срока', true);
+    }
+    await mutateRecord(`/api/records/${record.id}`, { method: 'PATCH', body: JSON.stringify(body) }, false, true);
   });
   $$('[data-stage]').forEach((button) => button.addEventListener('click', async () => {
     const reason = await askText({ title: 'Причина решения', label: `Почему идея переходит в статус «${statusLabels[button.dataset.stage]}»?`, required: true });
     if (reason === null) return;
-    await mutateRecord(`/api/records/${record.id}`, { method: 'PATCH', body: JSON.stringify({ status: button.dataset.stage, reason }) });
+    await mutateRecord(`/api/records/${record.id}`, { method: 'PATCH', body: JSON.stringify({ status: button.dataset.stage, reason, expectedUpdatedAt: record.updatedAt }) });
   }));
   $('#notify-partners').addEventListener('click', async () => {
     const message = await askText({ title: 'Уведомить партнёра', label: 'Сообщение', defaultValue: `Посмотри карточку «${record.title}»`, required: true });
@@ -432,11 +550,12 @@ function bindRecordDialogEvents() {
     event.preventDefault(); const form = new FormData(event.currentTarget);
     await mutateDetail(`/api/records/${record.id}/sections`, { method: 'POST', body: JSON.stringify({ sectionId: event.currentTarget.dataset.sectionId, definitionId: event.currentTarget.dataset.definitionId || null, title: form.get('title'), content: form.get('content'), reason: form.get('reason') }) });
   }));
-  $('#custom-section-form').addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateDetail(`/api/records/${record.id}/sections`, { method: 'POST', body: JSON.stringify({ title: form.get('title'), content: form.get('content') }) }); });
+  $('#custom-section-form')?.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateDetail(`/api/records/${record.id}/sections`, { method: 'POST', body: JSON.stringify({ title: form.get('title'), content: form.get('content') }) }); });
   $$('.criterion-form').forEach((formNode) => formNode.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateDetail(`/api/records/${record.id}/criteria/${event.currentTarget.dataset.criterionId}`, { method: 'PUT', body: JSON.stringify({ score: Number(form.get('score')), note: form.get('note'), reason: '' }) }); }));
-  $('#link-form').addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateDetail(`/api/records/${record.id}/links`, { method: 'POST', body: JSON.stringify({ targetId: form.get('targetId'), relationType: form.get('relationType') }) }); });
+  $('#link-form')?.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateDetail(`/api/records/${record.id}/links`, { method: 'POST', body: JSON.stringify({ targetId: form.get('targetId'), relationType: form.get('relationType') }) }); });
   $$('[data-remove-link]').forEach((button) => button.addEventListener('click', async () => { const reason = await askText({ title: 'Убрать связь', label: 'Почему связь больше не актуальна?', required: true }); if (!reason) return; await mutateDetail(`/api/records/${record.id}/links/${button.dataset.removeLink}/remove`, { method: 'POST', body: JSON.stringify({ reason }) }); }));
   $$('[data-related-record]').forEach((button) => button.addEventListener('click', () => openRecord(button.dataset.relatedRecord)));
+  $$('[data-open-event]', $('#record-dialog')).forEach((button) => button.addEventListener('click', () => openActivity(button.dataset.openEvent)));
   if ($('#proof-form')) $('#proof-form').addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateDetail(`/api/records/${record.id}/proofs`, { method: 'POST', body: JSON.stringify({ kind: form.get('kind'), content: form.get('content') }) }); });
   if ($('#complete-task')) $('#complete-task').addEventListener('click', async () => { await mutateRecord(`/api/records/${record.id}/complete`, { method: 'POST', body: JSON.stringify({ result: $('#completion-result').value, notifyPartners: $('#notify-on-complete').checked }) }); });
 }
@@ -455,11 +574,22 @@ function askText({ title, label, defaultValue = '', required = false }) {
 }
 
 async function mutateDetail(path, options) {
-  try { await api(path, options); state.activeDetail = await api(`/api/records/${state.activeDetail.record.id}`); await loadData(true); renderRecordDialog(); toast('Сохранено'); } catch (error) { toast(error.message, true); }
+  try { await api(path, options); state.activeDetail = await api(`/api/records/${state.activeDetail.record.id}`); await loadData(true); renderRecordDialog(); toast('Сохранено'); return true; } catch (error) { toast(error.message, true); return false; }
 }
 
-async function mutateRecord(path, options, close = false) {
-  try { await api(path, options); await loadData(true); if (close) $('#record-dialog').close(); else { state.activeDetail = await api(`/api/records/${state.activeDetail.record.id}`); renderRecordDialog(); } toast('Сохранено'); } catch (error) { toast(error.message, true); }
+async function mutateRecord(path, options, close = false, clearDraftOnSuccess = false) {
+  try {
+    await api(path, options);
+    if (clearDraftOnSuccess && state.activeDetail) clearRecordDraft(state.activeDetail.record.id);
+    await loadData(true);
+    if (close) $('#record-dialog').close();
+    else { state.activeDetail = await api(`/api/records/${state.activeDetail.record.id}`); renderRecordDialog(); }
+    toast('Сохранено');
+    return true;
+  } catch (error) {
+    toast(error.message, true);
+    return false;
+  }
 }
 
 function openCreateDialog(initialType) {
@@ -479,27 +609,38 @@ function actionLabel(action) {
   return ({ created: 'создал карточку', profile_updated: 'изменил профиль', updated: 'изменил карточку', archived: 'перенёс в архив', section_updated: 'обновил раздел', link_created: 'создал связь', link_removed: 'убрал связь', criterion_scored: 'оценил по критерию', proof_added: 'добавил доказательство', completed: 'завершил задачу', partners_notified: 'уведомил партнёра' }[action] || action);
 }
 
-function formatActivityValue(value) {
+function formatActivityValue(value, truncate = true) {
   if (value === null || value === undefined || value === '') return 'не указано';
   if (typeof value === 'object') return JSON.stringify(value);
   const text = String(value);
-  return text.length > 140 ? `${text.slice(0, 137)}…` : text;
+  return truncate && text.length > 140 ? `${text.slice(0, 137)}…` : text;
 }
 
-function activityDisplayValue(field, value) {
+function activityDisplayValue(field, value, truncate = true) {
   if (field === 'status' && value) return statusLabels[value] || value;
   if ((field === 'ownerId' || field === 'decisionMakerId') && value) return state.users.find((user) => user.id === Number(value))?.username || value;
   if (field === 'dueAt' && value) return formatDate(value, true);
   if (field === 'estimateMinutes' && value !== null && value !== undefined) return minutesLabel(Number(value));
   if (field === 'progress' && value !== null && value !== undefined) return `${value}%`;
-  return formatActivityValue(value);
+  return formatActivityValue(value, truncate);
 }
 
-function activityChanges(item) {
+function activityChanges(item, full = false) {
   const fieldLabels = { username: 'Логин', title: 'Название', description: 'Описание', status: 'Статус', ownerId: 'Ответственный', decisionMakerId: 'Принимает решение', dueAt: 'Срок', estimateMinutes: 'Оценка времени', progress: 'Прогресс', progressNote: 'Ход работы', result: 'Результат' };
   const changes = Object.entries(item.details || {}).filter(([, value]) => value && typeof value === 'object' && Object.prototype.hasOwnProperty.call(value, 'before') && Object.prototype.hasOwnProperty.call(value, 'after'));
+  if (!changes.length && Object.prototype.hasOwnProperty.call(item.details || {}, 'before') && Object.prototype.hasOwnProperty.call(item.details || {}, 'after')) {
+    changes.push([item.details?.section || 'Содержание', { before: item.details.before, after: item.details.after }]);
+  }
   if (!changes.length) return '';
-  return changes.map(([field, value]) => `<span class="change-line"><b>${escapeHTML(fieldLabels[field] || field)}:</b> <del>${escapeHTML(activityDisplayValue(field, value.before))}</del><i>→</i><ins>${escapeHTML(activityDisplayValue(field, value.after))}</ins></span>`).join('');
+  return changes.map(([field, value]) => `<span class="change-line"><b>${escapeHTML(fieldLabels[field] || field)}:</b> <del>${escapeHTML(activityDisplayValue(field, value.before, !full))}</del><i>→</i><ins>${escapeHTML(activityDisplayValue(field, value.after, !full))}</ins></span>`).join('');
+}
+
+function activityDetails(item) {
+  const changedFields = new Set(Object.entries(item.details || {}).filter(([, value]) => value && typeof value === 'object' && Object.prototype.hasOwnProperty.call(value, 'before') && Object.prototype.hasOwnProperty.call(value, 'after')).map(([field]) => field));
+  const fieldLabels = { title: 'Название', status: 'Статус', ownerId: 'Ответственный', targetId: 'Связанная карточка', relationType: 'Тип связи', section: 'Раздел', score: 'Оценка', note: 'Комментарий', kind: 'Тип доказательства', proofCount: 'Доказательств', result: 'Результат', message: 'Сообщение' };
+  const details = Object.entries(item.details || {}).filter(([field]) => !changedFields.has(field) && !['before', 'after'].includes(field));
+  if (!details.length) return '';
+  return `<dl class="event-details">${details.map(([field, value]) => `<div><dt>${escapeHTML(fieldLabels[field] || field)}</dt><dd>${escapeHTML(activityDisplayValue(field, value, false))}</dd></div>`).join('')}</dl>`;
 }
 
 function recordTitleByActivity(item) {
@@ -507,7 +648,18 @@ function recordTitleByActivity(item) {
 }
 
 function renderActivityItem(item) {
-  return `<button type="button" class="activity-item" ${state.records.some((record) => record.id === item.entityId) ? `data-open-record="${item.entityId}"` : ''}><span class="avatar tiny">${escapeHTML(item.actorUsername.slice(0, 2).toUpperCase())}</span><span><strong>${escapeHTML(item.actorUsername)} ${escapeHTML(actionLabel(item.action))}</strong><small>${escapeHTML(recordTitleByActivity(item))}${item.reason ? ` · Причина: ${escapeHTML(item.reason)}` : ''}</small>${activityChanges(item)}</span><time>${formatDate(item.createdAt, true)}</time></button>`;
+  return `<button type="button" class="activity-item" data-open-event="${item.id}"><span class="avatar tiny">${escapeHTML(item.actorUsername.slice(0, 2).toUpperCase())}</span><span><strong>${escapeHTML(item.actorUsername)} ${escapeHTML(actionLabel(item.action))}</strong><small>${escapeHTML(recordTitleByActivity(item))}${item.reason ? ` · Причина: ${escapeHTML(item.reason)}` : ''}</small>${activityChanges(item)}</span><time>${formatDate(item.createdAt, true)}</time><span class="activity-arrow" aria-hidden="true">›</span></button>`;
+}
+
+function openActivity(id) {
+  const item = state.activity.find((activity) => activity.id === id);
+  if (!item) return toast('Событие не найдено', true);
+  state.activeActivity = item;
+  const record = state.records.find((candidate) => candidate.id === item.entityId);
+  $('#event-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">Событие · ${formatDate(item.createdAt, true)}</span><h2>${escapeHTML(actionLabel(item.action))}</h2><p>${escapeHTML(item.actorUsername)} · ${escapeHTML(typeMeta[item.entityType]?.singular || item.entityType)}</p></div><button type="button" class="close-button" data-close-event aria-label="Закрыть">×</button></div><div class="event-body"><section class="event-summary"><span class="avatar">${escapeHTML(item.actorUsername.slice(0, 2).toUpperCase())}</span><div><p class="eyebrow">Связанная запись</p><h3>${escapeHTML(recordTitleByActivity(item))}</h3>${item.reason ? `<p class="event-reason"><b>Причина:</b> ${escapeHTML(item.reason)}</p>` : ''}</div></section>${activityChanges(item, true) ? `<section class="event-section"><p class="eyebrow">Что изменилось</p><div class="event-change-list">${activityChanges(item, true)}</div></section>` : ''}${activityDetails(item) ? `<section class="event-section"><p class="eyebrow">Подробности</p>${activityDetails(item)}</section>` : ''}<div class="form-actions">${record ? `<button type="button" class="primary" data-event-record="${record.id}">Открыть карточку</button>` : ''}<button type="button" class="secondary" data-close-event>Закрыть</button></div></div>`;
+  $$('[data-close-event]', $('#event-dialog')).forEach((button) => button.addEventListener('click', () => $('#event-dialog').close()));
+  $('[data-event-record]')?.addEventListener('click', async (event) => { $('#event-dialog').close(); await openRecord(event.currentTarget.dataset.eventRecord); });
+  if (!$('#event-dialog').open) $('#event-dialog').showModal();
 }
 
 function renderHistory() {

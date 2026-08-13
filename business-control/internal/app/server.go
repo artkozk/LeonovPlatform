@@ -552,6 +552,7 @@ type updateRecordRequest struct {
 	ProgressNote       *string `json:"progressNote"`
 	Result             *string `json:"result"`
 	Reason             string  `json:"reason"`
+	ExpectedUpdatedAt  *string `json:"expectedUpdatedAt"`
 }
 
 func (s *Server) handleUpdateRecord(w http.ResponseWriter, r *http.Request) {
@@ -568,13 +569,14 @@ func (s *Server) handleUpdateRecord(w http.ResponseWriter, r *http.Request) {
 	if !decodeJSON(w, r, &input) {
 		return
 	}
-	if (input.Status != nil || input.DueAt != nil) && strings.TrimSpace(input.Reason) == "" {
-		writeError(w, http.StatusBadRequest, "Укажите причину изменения статуса или срока")
+	if input.ExpectedUpdatedAt != nil && *input.ExpectedUpdatedAt != before.UpdatedAt {
+		writeError(w, http.StatusConflict, "Карточка уже изменена другим пользователем. Обновите её и повторите правку")
 		return
 	}
 	updates := make([]string, 0)
 	args := make([]any, 0)
 	changes := make(map[string]any)
+	reasonRequired := false
 	add := func(column string, value any) { updates = append(updates, column+" = ?"); args = append(args, value) }
 	if input.Title != nil {
 		value := strings.TrimSpace(*input.Title)
@@ -582,31 +584,38 @@ func (s *Server) handleUpdateRecord(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "Некорректное название")
 			return
 		}
-		add("title", value)
-		changes["title"] = map[string]any{"before": before.Title, "after": value}
+		if value != before.Title {
+			add("title", value)
+			changes["title"] = map[string]any{"before": before.Title, "after": value}
+		}
 	}
 	if input.Description != nil {
 		value := strings.TrimSpace(*input.Description)
-		add("description", value)
-		changes["description"] = map[string]any{"before": before.Description, "after": value}
+		if value != before.Description {
+			add("description", value)
+			changes["description"] = map[string]any{"before": before.Description, "after": value}
+		}
 	}
 	if input.Status != nil {
 		if !validStatusForType(before.Type, *input.Status) {
 			writeError(w, http.StatusBadRequest, "Статус не подходит типу карточки")
 			return
 		}
-		if before.Type == "task" && *input.Status == "completed" {
+		if before.Type == "task" && *input.Status == "completed" && before.Status != "completed" {
 			writeError(w, http.StatusBadRequest, "Задача завершается только с доказательством")
 			return
 		}
-		add("status", *input.Status)
-		changes["status"] = map[string]any{"before": before.Status, "after": *input.Status}
-		if *input.Status == "archived" {
-			add("archived_at", nowText())
-		}
-		if *input.Status == "completed" {
-			add("completed_at", nowText())
-			add("progress", 100)
+		if *input.Status != before.Status {
+			add("status", *input.Status)
+			changes["status"] = map[string]any{"before": before.Status, "after": *input.Status}
+			reasonRequired = true
+			if *input.Status == "archived" {
+				add("archived_at", nowText())
+			}
+			if *input.Status == "completed" {
+				add("completed_at", nowText())
+				add("progress", 100)
+			}
 		}
 	}
 	if input.OwnerID != nil {
@@ -614,17 +623,21 @@ func (s *Server) handleUpdateRecord(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "Ответственный не найден")
 			return
 		}
-		add("owner_id", *input.OwnerID)
-		changes["ownerId"] = map[string]any{"before": before.OwnerID, "after": *input.OwnerID}
+		if *input.OwnerID != before.OwnerID {
+			add("owner_id", *input.OwnerID)
+			changes["ownerId"] = map[string]any{"before": before.OwnerID, "after": *input.OwnerID}
+		}
 	}
 	if input.DecisionMakerID != nil {
 		if !s.userExists(r.Context(), *input.DecisionMakerID) {
 			writeError(w, http.StatusBadRequest, "Участник не найден")
 			return
 		}
-		add("decision_maker_id", *input.DecisionMakerID)
-		changes["decisionMakerId"] = map[string]any{"before": before.DecisionMakerID, "after": *input.DecisionMakerID}
-	} else if input.ClearDecisionMaker {
+		if before.DecisionMakerID == nil || *before.DecisionMakerID != *input.DecisionMakerID {
+			add("decision_maker_id", *input.DecisionMakerID)
+			changes["decisionMakerId"] = map[string]any{"before": before.DecisionMakerID, "after": *input.DecisionMakerID}
+		}
+	} else if input.ClearDecisionMaker && before.DecisionMakerID != nil {
 		add("decision_maker_id", nil)
 		changes["decisionMakerId"] = map[string]any{"before": before.DecisionMakerID, "after": nil}
 	}
@@ -634,38 +647,53 @@ func (s *Server) handleUpdateRecord(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "Некорректный срок")
 			return
 		}
-		add("due_at", dueAt)
-		changes["dueAt"] = map[string]any{"before": before.DueAt, "after": dueAt}
+		if !nullableStringEqual(before.DueAt, dueAt) {
+			add("due_at", dueAt)
+			changes["dueAt"] = map[string]any{"before": before.DueAt, "after": dueAt}
+			reasonRequired = true
+		}
 	}
 	if input.EstimateMinutes != nil {
 		if *input.EstimateMinutes < 0 || *input.EstimateMinutes > 525600 {
 			writeError(w, http.StatusBadRequest, "Некорректная оценка времени")
 			return
 		}
-		add("estimate_minutes", *input.EstimateMinutes)
-		changes["estimateMinutes"] = map[string]any{"before": before.EstimateMinutes, "after": *input.EstimateMinutes}
+		if *input.EstimateMinutes != before.EstimateMinutes {
+			add("estimate_minutes", *input.EstimateMinutes)
+			changes["estimateMinutes"] = map[string]any{"before": before.EstimateMinutes, "after": *input.EstimateMinutes}
+		}
 	}
 	if input.Progress != nil {
 		if *input.Progress < 0 || *input.Progress > 100 {
 			writeError(w, http.StatusBadRequest, "Прогресс должен быть от 0 до 100")
 			return
 		}
-		add("progress", *input.Progress)
-		changes["progress"] = map[string]any{"before": before.Progress, "after": *input.Progress}
-		if input.Status == nil && before.Status == "planned" && *input.Progress > 0 {
-			add("status", "in_progress")
-			changes["status"] = map[string]any{"before": before.Status, "after": "in_progress"}
+		if *input.Progress != before.Progress {
+			add("progress", *input.Progress)
+			changes["progress"] = map[string]any{"before": before.Progress, "after": *input.Progress}
+			if input.Status == nil && before.Status == "planned" && *input.Progress > 0 {
+				add("status", "in_progress")
+				changes["status"] = map[string]any{"before": before.Status, "after": "in_progress"}
+			}
 		}
 	}
 	if input.ProgressNote != nil {
 		value := strings.TrimSpace(*input.ProgressNote)
-		add("progress_note", value)
-		changes["progressNote"] = map[string]any{"before": before.ProgressNote, "after": value}
+		if value != before.ProgressNote {
+			add("progress_note", value)
+			changes["progressNote"] = map[string]any{"before": before.ProgressNote, "after": value}
+		}
 	}
 	if input.Result != nil {
 		value := strings.TrimSpace(*input.Result)
-		add("result", value)
-		changes["result"] = map[string]any{"before": before.Result, "after": value}
+		if value != before.Result {
+			add("result", value)
+			changes["result"] = map[string]any{"before": before.Result, "after": value}
+		}
+	}
+	if reasonRequired && strings.TrimSpace(input.Reason) == "" {
+		writeError(w, http.StatusBadRequest, "Укажите причину фактического изменения статуса или срока")
+		return
 	}
 	if len(updates) == 0 {
 		writeError(w, http.StatusBadRequest, "Нет изменений")
@@ -695,6 +723,13 @@ func (s *Server) handleUpdateRecord(w http.ResponseWriter, r *http.Request) {
 	}
 	after, _ := s.getRecord(r.Context(), before.ID)
 	writeJSON(w, http.StatusOK, after)
+}
+
+func nullableStringEqual(left, right *string) bool {
+	if left == nil || right == nil {
+		return left == nil && right == nil
+	}
+	return *left == *right
 }
 
 func (s *Server) handleArchiveRecord(w http.ResponseWriter, r *http.Request) {

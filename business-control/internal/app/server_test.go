@@ -85,6 +85,24 @@ func TestBusinessWorkflow(t *testing.T) {
 		"estimateMinutes": 90, "dueAt": "2026-08-12T12:00:00Z",
 	})
 
+	var taskEdited Record
+	requestJSON(t, artkozk, http.MethodPatch, server.URL+"/api/records/"+task.ID, map[string]any{
+		"title": "Расписать вопросы к совместной работе", "dueAt": "2026-08-12T12:00:00.000Z",
+		"expectedUpdatedAt": task.UpdatedAt,
+	}, http.StatusOK, &taskEdited)
+	if taskEdited.Title != "Расписать вопросы к совместной работе" || taskEdited.DueAt == nil || *taskEdited.DueAt != "2026-08-12T12:00:00Z" {
+		t.Fatalf("same deadline update changed deadline or failed without reason: %#v", taskEdited)
+	}
+
+	requestJSON(t, artkozk, http.MethodPatch, server.URL+"/api/records/"+task.ID, map[string]any{
+		"dueAt": "2026-08-13T12:00:00Z", "expectedUpdatedAt": taskEdited.UpdatedAt,
+	}, http.StatusBadRequest, nil)
+
+	requestJSON(t, artkozk, http.MethodPatch, server.URL+"/api/records/"+task.ID, map[string]any{
+		"description": "Конфликтующая старая версия", "expectedUpdatedAt": task.UpdatedAt,
+	}, http.StatusConflict, nil)
+	task = taskEdited
+
 	requestJSON(t, sweetybboy, http.MethodPost, server.URL+"/api/records/"+task.ID+"/complete", map[string]any{
 		"result": "Вопросы готовы", "notifyPartners": true,
 	}, http.StatusConflict, nil)
