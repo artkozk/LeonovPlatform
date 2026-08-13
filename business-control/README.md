@@ -96,3 +96,5 @@ Production runbook: `docs/operations/BUSINESS_CONTROL_MVP_DEPLOYMENT_2026_08_12.
 Фактическое production-развёртывание этого релиза и проверенный rollback описаны в `docs/operations/BUSINESS_CONTROL_QUESTION_WORKFLOW_DEPLOY_2026_08_13.md`.
 
 Редизайн рабочего обзора, оптимизация открытия карточек и продолжение цепочки «совместное решение → задача» описаны в `docs/product/BUSINESS_CONTROL_FOCUS_UI_AND_CARD_PERFORMANCE_2026_08_13.md`.
+
+Фактическое production-развёртывание оптимизированного релиза, резервные копии и точка rollback описаны в `docs/operations/BUSINESS_CONTROL_FOCUS_UI_DEPLOY_2026_08_13.md`.
