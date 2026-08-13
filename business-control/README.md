@@ -108,3 +108,5 @@ Production runbook: `docs/operations/BUSINESS_CONTROL_MVP_DEPLOYMENT_2026_08_12.
 Фактическое production-развёртывание преобразования, проверка существующей карточки и точки восстановления описаны в `docs/operations/BUSINESS_CONTROL_QUESTION_CONVERSION_DEPLOY_2026_08_13.md`.
 
 Новая визуальная система, причины выбранной иерархии, адаптивные правила и исправления индикаторов прогресса описаны в `docs/product/BUSINESS_CONTROL_INTERFACE_REDESIGN_2026_08_13.md`.
+
+Фактическое production-развёртывание редизайна, выполненные проверки и rollback описаны в `docs/operations/BUSINESS_CONTROL_INTERFACE_REDESIGN_DEPLOY_2026_08_13.md`.
