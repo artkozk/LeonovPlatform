@@ -113,3 +113,5 @@ Production runbook: `docs/operations/BUSINESS_CONTROL_MVP_DEPLOYMENT_2026_08_12.
 Фактическое production-развёртывание редизайна, выполненные проверки и rollback описаны в `docs/operations/BUSINESS_CONTROL_INTERFACE_REDESIGN_DEPLOY_2026_08_13.md`.
 
 Актуальные визуальные правила, перенесённые из продуктового референса, их применение к обзору, карточкам и mobile-режиму описаны в `docs/product/BUSINESS_CONTROL_REFERENCE_VISUAL_SYSTEM_2026_08_13.md`.
+
+Фактическое production-развёртывание этой визуальной системы, резервная копия, проверки и rollback описаны в `docs/operations/BUSINESS_CONTROL_REFERENCE_VISUAL_DEPLOY_2026_08_13.md`.
