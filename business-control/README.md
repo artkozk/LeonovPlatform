@@ -88,3 +88,5 @@ Production runbook: `docs/operations/BUSINESS_CONTROL_MVP_DEPLOYMENT_2026_08_12.
 Пошаговые правила работы в текущей версии и спецификация двухминутного onboarding находятся в `docs/product/BUSINESS_CONTROL_CURRENT_USAGE_AND_ONBOARDING_2026_08_13.md`.
 
 Специализированная цепочка групп вопросов, независимых ответов основателей, совместных решений и обновлённый интерфейс описаны в `docs/product/BUSINESS_CONTROL_QUESTION_WORKFLOW_AND_UI_RELEASE_2026_08_13.md`.
+
+Фактическое production-развёртывание этого релиза и проверенный rollback описаны в `docs/operations/BUSINESS_CONTROL_QUESTION_WORKFLOW_DEPLOY_2026_08_13.md`.
