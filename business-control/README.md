@@ -125,3 +125,5 @@ Production runbook: `docs/operations/BUSINESS_CONTROL_MVP_DEPLOYMENT_2026_08_12.
 Актуальная причинная модель вопросов, встреч, правил и контекстных переходов, а также новая визуальная система «тихого управления» описаны в `docs/product/BUSINESS_CONTROL_TRACEABLE_WORK_AND_QUIET_SYSTEM_UI_2026_08_14.md`.
 
 Техническая схема `record_kind`, неизменяемого происхождения результатов и виртуального типа встреч описана в `docs/architecture/BUSINESS_CONTROL_TRACEABLE_OUTCOMES_DATA_MODEL_2026_08_14.md`.
+
+Фактическое production-развёртывание причинных цепочек и quiet-system UI, включая проверенный автоматический rollback, backup до миграции и финальные smoke-проверки, описано в `docs/operations/BUSINESS_CONTROL_TRACEABLE_WORK_DEPLOY_2026_08_14.md`.
