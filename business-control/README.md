@@ -103,3 +103,5 @@ Production runbook: `docs/operations/BUSINESS_CONTROL_MVP_DEPLOYMENT_2026_08_12.
 Фактическое production-развёртывание оптимизированного релиза, резервные копии и точка rollback описаны в `docs/operations/BUSINESS_CONTROL_FOCUS_UI_DEPLOY_2026_08_13.md`.
 
 Безопасное преобразование задачи в карточку вопросов, персональная очередь ответов и защита совместного решения описаны в `docs/product/BUSINESS_CONTROL_QUESTION_CONVERSION_AND_INBOX_2026_08_13.md`.
+
+Фактическое production-развёртывание преобразования, проверка существующей карточки и точки восстановления описаны в `docs/operations/BUSINESS_CONTROL_QUESTION_CONVERSION_DEPLOY_2026_08_13.md`.
