@@ -40,3 +40,60 @@ TCP-соединение или HTTP 200 от общего health не дока�
 ## Фактический production-результат
 
 Этот раздел дополняется после развёртывания. Исторический план не удаляется; release path, rollback path, хеши, состояние AI, БД, systemd, nginx, домена и backup будут записаны отдельным подразделом.
+
+## Фактический production-результат
+
+Развёртывание выполнено только на разрешённом основном хосте `159.194.231.150`.
+
+```text
+release=/opt/business-control/releases/20260815-ai-proxy-694acaa
+previous=/opt/business-control/releases/20260814-production-quality-384b395
+binary_sha256=de230d7eefbea65a149801263c6551aeffef86389d9fc610e495a7875549d88e
+pre_release_backup=/var/lib/business-control/backups/business-control-20260814-213020-pre-ai-proxy.db
+pre_release_backup_sha256=96e55451cec5ca170c9e3a170314627f64546eccf55c456bd8bf50f481c0bd20
+```
+
+Реальный AI smoke через локальный backend и повторно через публичный HTTPS-домен:
+
+```text
+provider=gemini
+model=gemini-2.5-flash
+route=proxy
+providerAvailable=true
+source=gemini
+suggestion_source=gemini
+GET https://control.e-rd.ru/api/health -> 200 {"status":"ok"}
+```
+
+Проверки процесса и данных:
+
+```text
+business-control=active
+nginx=active
+business-control NRestarts=0
+business-control ExecMainStatus=0
+business-control-backup.timer=enabled/active
+database integrity=ok
+foreign key violations=0
+/etc/business-control.env owner=root:root mode=0600
+AI_PROXY_URL entries=1
+application warnings after deploy=0
+nginx warnings after deploy=0
+```
+
+Первый запрос общего health в retry-loop снова попал в короткий промежуток до открытия локального порта. Последующий запрос прошёл; это предусмотренный retry, а не ошибка сервиса. Успешный процесс имеет `NRestarts=0`.
+
+После записи production-задачи создана и проверена новая зашифрованная копия:
+
+```text
+/var/backups/business-control/business-control-20260814-213313.tar.gz.enc
+SHA-256: 69698954d9695974d21d65c27afe35f31a7786cde29becbe65be23ddede5ce7e
+owner=root:root
+mode=0600
+bytes=71424
+plaintext archives in encrypted backup directory=0
+```
+
+В платформе от имени `artkozk` создана задача `Подключить рабочий Gemini через серверный прокси` (`da39096f74eae32582f076ebe4f9d8c1`). Она связана с корневой веткой разработки платформы, имеет `priority=high`, план `120` минут, факт `90` минут, предметное Markdown-доказательство, итоговый результат, `status=completed`, `progress=100%` и уведомление второго основателя. Последний зашифрованный backup включает карточку, доказательство и activity.
+
+Временные smoke-сессии и загруженные файлы из `/tmp` удалены. Неуспешный release-каталог первого прогона удалён после проверки, активный и rollback-релизы сохранены.
