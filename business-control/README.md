@@ -141,3 +141,5 @@ Production runbook: `docs/operations/BUSINESS_CONTROL_MVP_DEPLOYMENT_2026_08_12.
 Единая очередь работы, права личных и общих карточек, иерархия, граф, активность, план/факт, Groq-ready подсказки и мобильные сценарии описаны в `docs/product/BUSINESS_CONTROL_CONNECTED_COFUNDER_WORKSPACE_2026_08_14.md`.
 
 Технические инварианты миграций, API, прав, графа, heartbeat активности и Groq fallback описаны в `docs/architecture/BUSINESS_CONTROL_GRAPH_HIERARCHY_ACTIVITY_AI_2026_08_14.md`.
+
+Фактическое production-развёртывание связанного рабочего пространства, backup, миграции, smoke, созданные задачи разработки и rollback описаны в `docs/operations/BUSINESS_CONTROL_CONNECTED_WORK_DEPLOY_2026_08_14.md`.
