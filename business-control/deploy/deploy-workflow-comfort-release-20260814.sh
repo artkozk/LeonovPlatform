@@ -13,6 +13,7 @@ BACKUP_TIMER="${BACKUP_TIMER:-/tmp/business-control-backup.timer}"
 DATABASE="/var/lib/business-control/business-control.db"
 UPLOADS="/var/lib/business-control/uploads"
 BACKUP_DIR="/var/lib/business-control/backups"
+ENCRYPTED_BACKUP_DIR="/var/backups/business-control"
 ENV_FILE="/etc/business-control.env"
 BACKUP_KEY_FILE="/etc/business-control-backup.key"
 PREVIOUS_RELEASE="$(readlink -f "$APP_ROOT/current")"
@@ -59,6 +60,7 @@ test -f "$ENV_FILE"
 grep -Eq '^GEMINI_API_KEY=.+$' "$ENV_FILE"
 
 install -d -o business-control -g business-control -m 0750 "$UPLOADS" "$BACKUP_DIR"
+install -d -o root -g root -m 0700 "$ENCRYPTED_BACKUP_DIR"
 install -d -o root -g root -m 0755 "$RELEASE_DIR"
 if [[ ! -s "$BACKUP_KEY_FILE" ]]; then
   umask 077
