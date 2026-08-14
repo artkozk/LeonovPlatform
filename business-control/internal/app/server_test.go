@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -536,6 +537,39 @@ func TestCollaborationHierarchyActivityAndSuggestion(t *testing.T) {
 	}, http.StatusOK, &suggestion)
 	if suggestion.Priority != "critical" || suggestion.Workstream != "platform" || suggestion.Source != "heuristic" {
 		t.Fatalf("heuristic suggestion = %#v", suggestion)
+	}
+}
+
+func TestPlatformReleaseTaskSeed(t *testing.T) {
+	store, err := OpenStore(filepath.Join(t.TempDir(), "release-seed.db"))
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	defer store.Close()
+	server := httptest.NewServer(NewServer(store, Config{SessionLifetime: 24 * 60 * 60 * 1e9}))
+	defer server.Close()
+	register(t, testClient(t), server.URL, "artkozk@example.test", "artkozk")
+
+	seedPath := filepath.Join("..", "..", "deploy", "seed-platform-release-tasks-20260814.sql")
+	seed, err := os.ReadFile(seedPath)
+	if err != nil {
+		t.Fatalf("read release seed: %v", err)
+	}
+	if _, err := store.db.Exec(string(seed)); err != nil {
+		t.Fatalf("apply release seed: %v", err)
+	}
+	if _, err := store.db.Exec(string(seed)); err != nil {
+		t.Fatalf("release seed must be idempotent: %v", err)
+	}
+	var platformRecords, completedTasks, pendingTasks, proofs int
+	if err := store.db.QueryRow(`SELECT COUNT(*) FROM records WHERE workstream = 'platform'`).Scan(&platformRecords); err != nil {
+		t.Fatalf("count platform records: %v", err)
+	}
+	_ = store.db.QueryRow(`SELECT COUNT(*) FROM records WHERE type = 'task' AND workstream = 'platform' AND status = 'completed'`).Scan(&completedTasks)
+	_ = store.db.QueryRow(`SELECT COUNT(*) FROM records WHERE type = 'task' AND workstream = 'platform' AND status = 'planned'`).Scan(&pendingTasks)
+	_ = store.db.QueryRow(`SELECT COUNT(*) FROM task_proofs WHERE record_id LIKE 'd004d7e%'`).Scan(&proofs)
+	if platformRecords != 8 || completedTasks != 6 || pendingTasks != 1 || proofs != 6 {
+		t.Fatalf("release seed counts: records=%d completed=%d pending=%d proofs=%d", platformRecords, completedTasks, pendingTasks, proofs)
 	}
 }
 
