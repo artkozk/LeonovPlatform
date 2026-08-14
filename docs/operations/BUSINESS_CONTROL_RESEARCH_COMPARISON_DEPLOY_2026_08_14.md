@@ -147,3 +147,47 @@ journalctl -u business-control --since=-10min -p err --no-pager
 ```
 
 После отката доменный health-check и доступность frontend-assets проверяются отдельно через HTTPS. Старый бинарник не должен запускаться на post-release БД без подтверждения обратной совместимости; именно поэтому штатный откат возвращает и бинарник, и snapshot базы одновременно.
+
+## Hotfix горячих клавиш Markdown
+
+После замечания о неработающих `Ctrl+B` и `Ctrl+K` выпущен отдельный hotfix без изменения схемы данных.
+
+- Коммит: `c229888 feat(business-control): add markdown keyboard shortcuts`.
+- Release: `/opt/business-control/releases/20260814-markdown-shortcuts-c229888`.
+- Предыдущий release: `/opt/business-control/releases/20260814-research-comparison-df1c2be`.
+- Backup: `/var/lib/business-control/backups/business-control-20260814-140126-pre-research-comparison.db`.
+- SHA-256 backup: `a8ffa2ef489156785357d0a2f39867ba52d8b9f910cddc8866bb71ca3581aea4`.
+- SHA-256 Linux-бинарника: `1aa186851ff05eb80d3dea389dec0ca23314b6c80345603b7aa080228d5ea40a`.
+
+В реальном браузере проверены `Ctrl+B`, `Ctrl+I`, `Ctrl+K`, `Ctrl+Backtick`, `Ctrl+Alt+2`, `Ctrl+Shift+7`, `Ctrl+Shift+8` и `Ctrl+Shift+.`. Для `Ctrl+K` отдельно подтверждено, что фокус остаётся в textarea, выделение преобразуется в `[текст](https://)`, диапазон выделения перемещается на адрес, а глобальный поиск не получает фокус. Панель содержит девять кнопок, на desktop имеет одинаковые `clientWidth=294` и `scrollWidth=294`, поэтому не обрезается. Новых browser warning/error после прогона нет.
+
+Локальные проверки:
+
+```text
+node --check web/app.js    ok
+go test ./...             ok
+go vet ./...              ok
+git diff --check          ok
+Linux amd64 build         ok
+```
+
+Dry-run применил seed дважды на копии актуальной production-БД. Оба запуска вернули `shortcut_task=1`, `integrity_check=ok` и `foreign_key_violations=0`. До hotfix пользователь уже добавил ещё два варианта исследования: общее число активных вариантов `Выбора сервера` стало равно четырём. После production-переключения оно осталось равно четырём, что подтверждает сохранность параллельно введённых данных.
+
+Финальный smoke:
+
+```text
+current release                 20260814-markdown-shortcuts-c229888
+systemd service                 active
+local /api/health               {"status":"ok"}
+public /api/health              200
+markdownShortcutAction marker   1
+KeyK link marker                1
+SQLite integrity_check          ok
+foreign key violations          0
+shortcut platform task          completed, 100%
+shortcut task proofs            1
+active research options         4
+journal errors за 10 минут      0
+```
+
+Для отката именно hotfix используются предыдущий release `/opt/business-control/releases/20260814-research-comparison-df1c2be` и backup `/var/lib/business-control/backups/business-control-20260814-140126-pre-research-comparison.db`. Предупреждение о сохранении новых post-release записей перед восстановлением snapshot остаётся обязательным.
