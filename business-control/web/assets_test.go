@@ -113,10 +113,13 @@ func TestResearchComparisonAndSafeMarkdownAssetsAreEmbedded(t *testing.T) {
 	}
 	for _, marker := range [][]byte{
 		[]byte("function renderMarkdown"),
+		[]byte("function markdownShortcutAction"),
 		[]byte("function renderResearchComparison"),
 		[]byte("function renderResearchOptionCard"),
 		[]byte("/research-options"),
 		[]byte("DOMPurify.sanitize"),
+		[]byte("KeyK: 'link'"),
+		[]byte("event.code === 'Enter'"),
 	} {
 		if !bytes.Contains(app, marker) {
 			t.Fatalf("app.js does not contain research/markdown marker %q", marker)

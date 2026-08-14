@@ -84,6 +84,8 @@ test "$(sqlite3 "$DATABASE" 'SELECT COUNT(*) FROM pragma_foreign_key_check;')" =
 test "$(sqlite3 "$DATABASE" "SELECT COUNT(*) FROM schema_migrations WHERE version='006_research_comparison.sql';")" = "1"
 test "$(sqlite3 "$DATABASE" "SELECT COUNT(*) FROM records WHERE id='c214f200000000000000000000000031' AND status='completed';")" = "1"
 test "$(sqlite3 "$DATABASE" "SELECT COUNT(*) FROM task_proofs WHERE id='c214f200000000000000000000000032';")" = "1"
+test "$(sqlite3 "$DATABASE" "SELECT COUNT(*) FROM records WHERE id='c314f300000000000000000000000031' AND status='completed';")" = "1"
+test "$(sqlite3 "$DATABASE" "SELECT COUNT(*) FROM task_proofs WHERE id='c314f300000000000000000000000032';")" = "1"
 
 target_id="$(sqlite3 "$DATABASE" "SELECT r.id FROM records r JOIN users u ON u.id=r.author_id WHERE r.type='research' AND trim(r.title)='Выбор сервера' COLLATE NOCASE AND u.username='artkozk' COLLATE NOCASE ORDER BY r.updated_at DESC LIMIT 1;")"
 if [[ -n "$target_id" ]]; then

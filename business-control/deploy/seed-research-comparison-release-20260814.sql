@@ -98,12 +98,51 @@ SELECT 'c214f200000000000000000000000033', id, 'task', 'c214f2000000000000000000
 FROM users
 WHERE username='artkozk' COLLATE NOCASE;
 
+INSERT OR IGNORE INTO records(
+  id, type, subtype, record_kind, title, description, status,
+  author_id, owner_id, priority, workstream, edit_policy, parent_id,
+  estimate_minutes, actual_minutes, progress, progress_note, result,
+  completed_at, created_at, updated_at
+)
+SELECT
+  'c314f300000000000000000000000031', 'task', '', '',
+  'Добавить горячие клавиши Markdown-редактора',
+  'Поддержать полужирный текст, курсив, ссылки, код, заголовки, списки, цитаты и сохранение с клавиатуры; не допустить перехвата Ctrl+K глобальным поиском внутри редактора.',
+  'completed', id, id, 'high', 'platform', 'owner_only',
+  CASE WHEN EXISTS(SELECT 1 FROM records WHERE id='d004d7e0000000000000000000000001')
+       THEN 'd004d7e0000000000000000000000001' ELSE NULL END,
+  60, 55, 100,
+  'Сочетания используют KeyboardEvent.code и работают при русской и английской раскладке.',
+  'Горячие клавиши Markdown проверены в реальном браузере; Ctrl+K внутри редактора создаёт ссылку и не открывает глобальный поиск.',
+  strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now')
+FROM users
+WHERE username='artkozk' COLLATE NOCASE;
+
+INSERT OR IGNORE INTO task_proofs(id, record_id, author_id, kind, content, created_at)
+SELECT 'c314f300000000000000000000000032', 'c314f300000000000000000000000031', id, 'text',
+       'Проверены Ctrl+B, Ctrl+I, Ctrl+K, Ctrl+`, заголовки, списки, цитата, повторное снятие форматирования и Ctrl+Enter без ошибок консоли.',
+       strftime('%Y-%m-%dT%H:%M:%fZ','now')
+FROM users
+WHERE username='artkozk' COLLATE NOCASE;
+
+INSERT OR IGNORE INTO activity(id, actor_id, entity_type, entity_id, action, details_json, reason, created_at)
+SELECT 'c314f300000000000000000000000033', id, 'task', 'c314f300000000000000000000000031',
+       'completed',
+       '{"status":{"before":"in_progress","after":"completed"},"workstream":"platform"}',
+       'Горячие клавиши Markdown выпущены и проверены',
+       strftime('%Y-%m-%dT%H:%M:%fZ','now')
+FROM users
+WHERE username='artkozk' COLLATE NOCASE;
+
 DROP TABLE release_research_target;
 COMMIT;
 
 SELECT 'release_task=' || COUNT(*)
 FROM records
 WHERE id='c214f200000000000000000000000031' AND status='completed';
+SELECT 'shortcut_task=' || COUNT(*)
+FROM records
+WHERE id='c314f300000000000000000000000031' AND status='completed';
 SELECT 'research_fields=' || COUNT(*)
 FROM research_option_fields f
 JOIN records r ON r.id=f.record_id

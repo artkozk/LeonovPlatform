@@ -152,7 +152,7 @@ function renderMarkdown(value, empty = 'Не заполнено') {
 
 function markdownEditor(name, label, value, rows = 6, placeholder = '', suffix = '') {
   const id = `markdown-${String(name).replace(/[^a-z0-9_-]/gi, '-')}-${suffix || 'main'}`;
-  return `<div class="markdown-editor"><label for="${escapeHTML(id)}">${escapeHTML(label)}</label><div class="markdown-toolbar" role="toolbar" aria-label="Инструменты Markdown"><button type="button" data-md="bold" title="Полужирный"><b>B</b></button><button type="button" data-md="heading" title="Заголовок">H</button><button type="button" data-md="list" title="Список">${icon('menu')}</button><button type="button" data-md="quote" title="Цитата">❯</button><button type="button" data-md="note" title="Примечание">i</button><button type="button" data-md="link" title="Ссылка">${icon('link')}</button></div><textarea id="${escapeHTML(id)}" name="${escapeHTML(name)}" rows="${rows}" placeholder="${escapeHTML(placeholder)}">${escapeHTML(value || '')}</textarea></div>`;
+  return `<div class="markdown-editor"><label for="${escapeHTML(id)}">${escapeHTML(label)}</label><div class="markdown-toolbar" role="toolbar" aria-label="Инструменты Markdown"><button type="button" data-md="bold" title="Полужирный (Ctrl+B)" aria-label="Полужирный"><b>B</b></button><button type="button" data-md="italic" title="Курсив (Ctrl+I)" aria-label="Курсив"><i>I</i></button><button type="button" data-md="heading2" title="Заголовок второго уровня (Ctrl+Alt+2)" aria-label="Заголовок второго уровня">H2</button><button type="button" data-md="list" title="Маркированный список (Ctrl+Shift+8)" aria-label="Маркированный список">${icon('menu')}</button><button type="button" data-md="ordered" title="Нумерованный список (Ctrl+Shift+7)" aria-label="Нумерованный список">1.</button><button type="button" data-md="quote" title="Цитата (Ctrl+Shift+.)" aria-label="Цитата">❯</button><button type="button" data-md="code" title="Встроенный код (Ctrl+&#96;)" aria-label="Встроенный код">&lt;/&gt;</button><button type="button" data-md="note" title="Примечание" aria-label="Примечание">i</button><button type="button" data-md="link" title="Ссылка (Ctrl+K)" aria-label="Ссылка">${icon('link')}</button></div><textarea id="${escapeHTML(id)}" name="${escapeHTML(name)}" rows="${rows}" placeholder="${escapeHTML(placeholder)}">${escapeHTML(value || '')}</textarea></div>`;
 }
 
 function applyMarkdownAction(textarea, action) {
@@ -165,22 +165,58 @@ function applyMarkdownAction(textarea, action) {
     textarea.setRangeText(text, from, to, 'preserve');
     textarea.setSelectionRange(selectionStart, selectionEnd);
   };
+  const wrap = (open, close, placeholder) => {
+    const wrappedBefore = textarea.value.slice(Math.max(0, start - open.length), start) === open;
+    const wrappedAfter = textarea.value.slice(end, end + close.length) === close;
+    if (selected && wrappedBefore && wrappedAfter) {
+      replace(start - open.length, end + close.length, selected, start - open.length, end - open.length);
+      return;
+    }
+    const content = selected || placeholder;
+    const text = `${open}${content}${close}`;
+    replace(start, end, text, start + open.length, start + open.length + content.length);
+  };
   if (action === 'bold') {
-    const text = `**${selected || 'текст'}**`;
-    replace(start, end, text, start + 2, start + text.length - 2);
+    wrap('**', '**', 'текст');
+  } else if (action === 'italic') {
+    wrap('*', '*', 'текст');
+  } else if (action === 'code') {
+    wrap('`', '`', 'код');
   } else if (action === 'link') {
     const text = `[${selected || 'название'}](https://)`;
     replace(start, end, text, start + text.indexOf('https://'), start + text.indexOf('https://') + 8);
   } else {
-    const prefixes = { heading: '## ', list: '- ', quote: '> ', note: '> **Примечание:** ' };
     const to = lineEnd === -1 ? textarea.value.length : lineEnd;
     const lines = textarea.value.slice(lineStart, to).split('\n');
-    const prefix = prefixes[action] || '';
-    const text = lines.map((line) => `${prefix}${line}`).join('\n');
-    replace(lineStart, to, text, lineStart + prefix.length, lineStart + text.length);
+    const headingLevel = action.startsWith('heading') ? Number(action.replace('heading', '')) || 2 : 0;
+    const patterns = { list: /^[-*+]\s+/, ordered: /^\d+[.)]\s+/, quote: /^>\s?/, note: /^>\s?\*\*Примечание:\*\*\s?/ };
+    const pattern = headingLevel ? /^#{1,6}\s+/ : patterns[action];
+    const allPrefixed = pattern && lines.every((line) => !line.trim() || pattern.test(line));
+    const text = lines.map((line, index) => {
+      if (!line.trim()) return line;
+      if (allPrefixed) return line.replace(pattern, '');
+      const clean = pattern ? line.replace(pattern, '') : line;
+      if (headingLevel) return `${'#'.repeat(headingLevel)} ${clean}`;
+      if (action === 'ordered') return `${index + 1}. ${clean}`;
+      const prefixes = { list: '- ', quote: '> ', note: '> **Примечание:** ' };
+      return `${prefixes[action] || ''}${clean}`;
+    }).join('\n');
+    const firstPrefixLength = text.match(/^(?:#{1,6}\s+|[-*+]\s+|\d+[.)]\s+|>\s?(?:\*\*Примечание:\*\*\s?)?)/)?.[0].length || 0;
+    replace(lineStart, to, text, lineStart + firstPrefixLength, lineStart + text.length);
   }
   textarea.focus();
   textarea.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function markdownShortcutAction(event) {
+  const command = event.ctrlKey || event.metaKey;
+  if (!command) return '';
+  if (event.altKey && !event.shiftKey && /^Digit[1-3]$/.test(event.code)) return `heading${event.code.slice(-1)}`;
+  if (event.shiftKey && !event.altKey && event.code === 'Digit7') return 'ordered';
+  if (event.shiftKey && !event.altKey && event.code === 'Digit8') return 'list';
+  if (event.shiftKey && !event.altKey && event.code === 'Period') return 'quote';
+  if (event.altKey || event.shiftKey) return '';
+  return ({ KeyB: 'bold', KeyI: 'italic', KeyK: 'link', Backquote: 'code' })[event.code] || '';
 }
 
 function bindMarkdownEditors(root = document) {
@@ -188,8 +224,15 @@ function bindMarkdownEditors(root = document) {
     const textarea = $('textarea', editor);
     $$('[data-md]', editor).forEach((button) => button.addEventListener('click', () => applyMarkdownAction(textarea, button.dataset.md)));
     textarea?.addEventListener('keydown', (event) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
-        event.preventDefault(); applyMarkdownAction(textarea, 'bold');
+      const action = markdownShortcutAction(event);
+      if (action) {
+        event.preventDefault();
+        event.stopPropagation();
+        applyMarkdownAction(textarea, action);
+      } else if ((event.ctrlKey || event.metaKey) && event.code === 'Enter') {
+        event.preventDefault();
+        event.stopPropagation();
+        textarea.closest('form')?.requestSubmit();
       }
     });
   });
@@ -503,7 +546,7 @@ function bindGlobalEvents() {
   });
   globalSearchInput.addEventListener('focus', () => { if (globalSearchInput.value.trim()) runGlobalSearch(globalSearchInput.value); });
   document.addEventListener('keydown', (event) => {
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+    if ((event.ctrlKey || event.metaKey) && event.code === 'KeyK' && !event.target.closest('.markdown-editor')) {
       event.preventDefault(); globalSearchInput.focus(); globalSearchInput.select();
     }
     if (event.key === 'Escape') {
