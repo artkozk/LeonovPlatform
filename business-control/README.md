@@ -171,4 +171,6 @@ Production runbook: `docs/operations/BUSINESS_CONTROL_MVP_DEPLOYMENT_2026_08_12.
 
 Актуальная полировка бренда, Onest, карточки-досье, custom select, карты, подвижных шаблонов и mobile UX описана в `docs/product/BUSINESS_CONTROL_VISUAL_INTERACTION_REFINEMENT_2026_08_14.md`.
 
-Перед AI/visual-релизом SQL seed обязательно проверяется на копии production БД скриптом `deploy/validate-ai-visual-refinement-20260814.sh`. Переключение версии выполняет `deploy/deploy-ai-visual-refinement-20260814.sh`: он проверяет наличие server-only Groq-конфигурации, создаёт консистентный SQLite backup и при ошибке восстанавливает одновременно предыдущий бинарник и базу.
+Перед AI/visual-релизом SQL seed обязательно проверяется на копии production БД скриптом `deploy/validate-ai-visual-refinement-20260814.sh`. Переключение версии выполняет `deploy/deploy-ai-visual-refinement-20260814.sh`: он не требует активировать недоступный внешний AI, создаёт консистентный SQLite backup и при ошибке восстанавливает одновременно предыдущий бинарник и базу. Groq включается отдельно только после успешной server-side проверки, чтобы `403` провайдера не замедлял рабочий fallback.
+
+Фактическое production-развёртывание AI/visual-релиза, проверка БД и домена, внешний `403 Forbidden` Groq, безопасный fallback и точка отката описаны в `docs/operations/BUSINESS_CONTROL_AI_VISUAL_REFINEMENT_DEPLOY_2026_08_14.md`.
