@@ -1172,7 +1172,11 @@ func (s *Server) handleAIHealth(w http.ResponseWriter, r *http.Request) {
 	} else if s.config.GroqAPIKey != "" {
 		provider, model, configured = "groq", s.config.GroqModel, true
 	}
-	response := map[string]any{"configured": configured, "providerAvailable": false, "provider": provider, "model": model, "checkedAt": nowText(), "source": "heuristic"}
+	route := "direct"
+	if strings.TrimSpace(s.config.AIProxyURL) != "" {
+		route = "proxy"
+	}
+	response := map[string]any{"configured": configured, "providerAvailable": false, "provider": provider, "model": model, "route": route, "checkedAt": nowText(), "source": "heuristic"}
 	if !configured {
 		response["message"] = "Внешняя модель не настроена; локальные правила активны"
 		writeJSON(w, http.StatusOK, response)
@@ -1190,7 +1194,11 @@ func (s *Server) handleAIHealth(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, response)
 		return
 	}
-	response["providerAvailable"], response["source"], response["message"] = true, provider, "Внешний AI отвечает и прошёл серверную валидацию"
+	successMessage := "Внешний AI отвечает и прошёл серверную валидацию"
+	if route == "proxy" {
+		successMessage = "Gemini отвечает через серверный прокси и прошёл валидацию"
+	}
+	response["providerAvailable"], response["source"], response["message"] = true, provider, successMessage
 	writeJSON(w, http.StatusOK, response)
 }
 
@@ -1203,8 +1211,10 @@ func aiUnavailableMessage(provider string, err error) string {
 		return "Ключ внешнего AI отклонён; локальный анализ активен"
 	case strings.Contains(message, "RESOURCE_EXHAUSTED"), strings.Contains(message, "STATUS 429"):
 		return "Квота внешнего AI исчерпана; локальный анализ активен"
+	case strings.Contains(message, "INVALID AI PROXY"):
+		return "Прокси внешнего AI настроен неверно; локальный анализ активен"
 	case provider == "gemini":
-		return "Google Vertex AI временно недоступен; локальный анализ активен"
+		return "Google Gemini API временно недоступен; локальный анализ активен"
 	default:
 		return "Внешний AI временно недоступен; локальный анализ активен"
 	}

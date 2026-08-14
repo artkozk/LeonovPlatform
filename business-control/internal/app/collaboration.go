@@ -270,7 +270,7 @@ func (s *Server) geminiJSON(ctx context.Context, systemInstruction, prompt strin
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-goog-api-key", s.config.GeminiAPIKey)
-	response, err := http.DefaultClient.Do(req)
+	response, err := s.doAIRequest(req)
 	if err != nil {
 		return "", err
 	}
@@ -383,7 +383,7 @@ func (s *Server) groqSuggestion(ctx context.Context, recordType, title, descript
 	}
 	req.Header.Set("Authorization", "Bearer "+s.config.GroqAPIKey)
 	req.Header.Set("Content-Type", "application/json")
-	response, err := http.DefaultClient.Do(req)
+	response, err := s.doAIRequest(req)
 	if err != nil {
 		return RecordSuggestion{}, err
 	}
@@ -646,7 +646,7 @@ func (s *Server) groqRecordAnalysis(ctx context.Context, record Record) (AIRecor
 	}
 	req.Header.Set("Authorization", "Bearer "+s.config.GroqAPIKey)
 	req.Header.Set("Content-Type", "application/json")
-	response, err := http.DefaultClient.Do(req)
+	response, err := s.doAIRequest(req)
 	if err != nil {
 		return AIRecordAnalysis{}, err
 	}

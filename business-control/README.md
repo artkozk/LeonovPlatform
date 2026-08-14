@@ -225,3 +225,11 @@ Production BizFlow разрешено хранить и запускать то�
 Gemini теперь настроен как Google Vertex AI Express Mode с моделью `gemini-2.5-flash`. Фактический server-side preflight подтвердил корректный проект и вернул `BILLING_DISABLED`; до включения биллинга профиль показывает точную причину, а локальная эвристика остаётся активной. Ключ по-прежнему хранится только в root-only server env.
 
 Атомарное развёртывание этого релиза без повторного seed, backup, rollback и production smoke описаны в `docs/operations/BUSINESS_CONTROL_PRODUCTION_QUALITY_DEPLOY_2026_08_14.md` и выполняются скриптом `deploy/deploy-production-quality-release-20260814.sh`.
+
+## Актуальное подключение Gemini от 15 августа 2026 года
+
+Исторический абзац выше про Vertex AI и выключенный биллинг сохраняет результат предыдущей проверки, но больше не описывает активный маршрут. Production использует Gemini Developer API с моделью `gemini-2.5-flash` через отдельный серверный HTTP-прокси. Vertex, Google Cloud billing и OAuth для этого маршрута не требуются.
+
+`AI_PROXY_URL` хранится только в root-only `/etc/business-control.env`. Один и тот же отдельный `http.Client` обслуживает Gemini и резервный Groq, поэтому внешние AI-вызовы не обходят заданный прокси. Если адрес прокси некорректен, транспорт закрывается с ошибкой и включается локальная эвристика; прямой внешний запрос не выполняется. API диагностики сообщает только `route=proxy`, не возвращая адрес или учётные данные.
+
+Архитектурные границы и модель угроз описаны в `docs/architecture/BUSINESS_CONTROL_AI_PROXY_ROUTE_2026_08_15.md`. Атомарное развёртывание и обязательный реальный AI smoke выполняются `deploy/deploy-ai-proxy-release-20260815.sh` и фиксируются в `docs/operations/BUSINESS_CONTROL_AI_PROXY_DEPLOY_2026_08_15.md`.

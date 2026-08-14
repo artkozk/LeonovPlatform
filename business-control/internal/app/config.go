@@ -19,6 +19,7 @@ type Config struct {
 	GeminiAPIKey     string
 	GeminiModel      string
 	GeminiBaseURL    string
+	AIProxyURL       string
 	UploadPath       string
 }
 
@@ -34,7 +35,8 @@ func LoadConfig() Config {
 		GroqBaseURL:      strings.TrimRight(envOr("GROQ_BASE_URL", "https://api.groq.com/openai/v1"), "/"),
 		GeminiAPIKey:     strings.TrimSpace(os.Getenv("GEMINI_API_KEY")),
 		GeminiModel:      envOr("GEMINI_MODEL", "gemini-2.5-flash"),
-		GeminiBaseURL:    strings.TrimRight(envOr("GEMINI_BASE_URL", "https://aiplatform.googleapis.com/v1/publishers/google"), "/"),
+		GeminiBaseURL:    strings.TrimRight(envOr("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"), "/"),
+		AIProxyURL:       strings.TrimSpace(os.Getenv("AI_PROXY_URL")),
 		UploadPath:       envOr("BUSINESS_UPLOAD_PATH", "./data/uploads"),
 	}
 }

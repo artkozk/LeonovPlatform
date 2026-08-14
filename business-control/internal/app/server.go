@@ -36,9 +36,11 @@ var recordStatuses = map[string]struct{}{
 }
 
 type Server struct {
-	store  *Store
-	config Config
-	mux    *http.ServeMux
+	store       *Store
+	config      Config
+	mux         *http.ServeMux
+	aiClient    *http.Client
+	aiClientErr error
 }
 
 type contextKey string
@@ -46,7 +48,8 @@ type contextKey string
 const userContextKey contextKey = "user"
 
 func NewServer(store *Store, config Config) http.Handler {
-	server := &Server{store: store, config: config, mux: http.NewServeMux()}
+	aiClient, aiClientErr := newAIHTTPClient(config.AIProxyURL)
+	server := &Server{store: store, config: config, mux: http.NewServeMux(), aiClient: aiClient, aiClientErr: aiClientErr}
 	server.routes()
 	return server.securityHeaders(server.mux)
 }
