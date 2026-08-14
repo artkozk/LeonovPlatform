@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +16,19 @@ func TestGeminiRequestUsesConfiguredProxy(t *testing.T) {
 		proxyCalled = true
 		if r.Header.Get("x-goog-api-key") != "test-key" {
 			t.Fatalf("Gemini API key header was not forwarded through the proxy")
+		}
+		var payload struct {
+			GenerationConfig struct {
+				ThinkingConfig *struct {
+					ThinkingBudget int `json:"thinkingBudget"`
+				} `json:"thinkingConfig"`
+			} `json:"generationConfig"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			t.Fatalf("decode Gemini payload: %v", err)
+		}
+		if payload.GenerationConfig.ThinkingConfig == nil || payload.GenerationConfig.ThinkingConfig.ThinkingBudget != 0 {
+			t.Fatalf("thinking config = %#v", payload.GenerationConfig.ThinkingConfig)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"candidates":[{"content":{"parts":[{"text":"{\"priority\":\"normal\"}"}]}}]}`))

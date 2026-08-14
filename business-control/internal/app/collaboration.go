@@ -260,6 +260,7 @@ func (s *Server) geminiJSON(ctx context.Context, systemInstruction, prompt strin
 			"temperature":      0.15,
 			"maxOutputTokens":  maxTokens,
 			"responseMimeType": "application/json",
+			"thinkingConfig":   map[string]int{"thinkingBudget": 0},
 		},
 	}
 	body, _ := json.Marshal(payload)
