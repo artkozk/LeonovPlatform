@@ -133,3 +133,66 @@ Backup key не следует ротировать без расшифровк�
 Фактический preflight с `159.194.231.150` вернул `400 FAILED_PRECONDITION: User location is not supported for the API use`. Ключ распознан endpoint Google, но Gemini Developer API применяет региональное ограничение по IP вызывающего сервера. Россия отсутствует в официальном списке доступных стран.
 
 План выше требовал `providerAvailable=true`. После полученного факта правило скорректировано без удаления исторического плана: deployment принимает `provider=gemini`, `configured=true` и один из двух честных результатов. `source=gemini` завершает задачу внешнего AI; `source=heuristic` оставляет её заблокированной и подтверждает, что недоступность Google не блокирует продукт. Обход через второй сервер запрещён требованием конфиденциальности. Официальная альтернатива Google Enterprise/Vertex требует отдельной OAuth-конфигурации, которой в переданных данных нет.
+
+## Фактический production-результат 14 августа 2026 года
+
+Развёртывание выполнено только на основном сервере `159.194.231.150`. Другие серверы не использовались для запуска приложения, хранения исходного кода, базы, вложений, секретов или резервных копий.
+
+Активный неизменяемый release:
+
+```text
+/opt/business-control/releases/20260814-workflow-comfort-fcd6196
+```
+
+Предыдущий release, сохранённый для атомарного возврата:
+
+```text
+/opt/business-control/releases/20260814-comparison-ux-5e0bcd8
+```
+
+Первый production-прогон штатно выполнил rollback. Причина не относилась к приложению или данным: systemd unit резервного копирования получил `ReadWritePaths=/var/backups/business-control` раньше создания самого каталога. Скрипт исправлен так, чтобы сначала создавать root-only каталог с режимом `0700`, затем устанавливать и запускать unit. Повторный прогон завершился успешно. Этот случай подтверждает работоспособность автоматического восстановления DB, binary и symlink при ошибке после начала операции.
+
+Согласованная pre-release копия SQLite:
+
+```text
+/var/lib/business-control/backups/business-control-20260814-174944-pre-workflow-comfort.db
+SHA-256: dfd501a41c60f7b7a86d8593145b21dcb7a5645d052b1fd7530301f525c00cc8
+```
+
+Проверки production DB после миграции и seed:
+
+```text
+schema_migrations=7
+workflow_release_completed=7
+workflow_release_blocked=1
+workflow_release_proofs=8
+workflow_release_activity=8
+foreign_key_violations=0
+integrity_check=ok
+```
+
+Историческое ожидание `8` завершённых задач в разделе предварительной проверки выше было уточнено после официального Gemini preflight: семь функций завершены, а восьмая задача интеграции внешнего провайдера остаётся в `blocked`. Это нужно, чтобы состояние проекта отражало реальность, а локальный fallback не выдавался за успешный ответ Gemini.
+
+Создан и немедленно проверен расшифровкой локальный архив:
+
+```text
+/var/backups/business-control/business-control-20260814-174946.tar.gz.enc
+mode=0600
+owner=root:root
+plaintext files in backup directory=0
+```
+
+Во время создания архив был расшифрован во временный root-only каталог, после чего `sha256sum -c MANIFEST.sha256` и `PRAGMA integrity_check` завершились успешно. `business-control-backup.timer` имеет состояния `enabled` и `active`. `/etc/business-control.env` и `/etc/business-control-backup.key` принадлежат `root:root` и имеют режим `0600`.
+
+AI health подтвердил `configured=true`, `provider=gemini`, модель `gemini-3.6-flash`, но Google вернул региональный `400`. Поэтому production сообщает `providerAvailable=false`, `source=heuristic`: AI-подсказки продолжают работать локально, а внешняя модель не используется и не имитируется. В журнале сервиса после запуска присутствуют только успешный старт и диагностическое сообщение `gemini health: gemini status 400`.
+
+Внешняя проверка домена завершилась успешно:
+
+```text
+GET https://control.e-rd.ru/api/health -> {"status":"ok"}
+HTML title -> BizFlow
+CSS -> /styles.css?v=20260814-workflow-comfort
+JS -> /app.js?v=20260814-workflow-comfort
+```
+
+Таким образом, рабочий процесс, данные и резервные копии находятся на единственном разрешённом сервере, релиз доступен через основной домен, а ограничение внешнего AI изолировано локальным fallback и явно отражено в проектных задачах.
