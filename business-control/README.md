@@ -155,3 +155,5 @@ Production runbook: `docs/operations/BUSINESS_CONTROL_MVP_DEPLOYMENT_2026_08_12.
 Постоянная инструкция самостоятельного продуктового аудита находится в `docs/product/BUSINESS_CONTROL_AUTONOMOUS_PRODUCT_AUDIT_PROMPT_2026_08_14.md`.
 
 Найденные без участия пользователя проблемы, исправления навигации, очереди, карточек, истории, профиля и мобильной карты описаны в `docs/product/BUSINESS_CONTROL_AUTONOMOUS_USABILITY_AUDIT_RELEASE_2026_08_14.md`.
+
+Фактическое production-развёртывание автономного аудита, SQL dry-run, резервные копии, задачи разработки, проверки домена и rollback описаны в `docs/operations/BUSINESS_CONTROL_AUTONOMOUS_AUDIT_DEPLOY_2026_08_14.md`.
