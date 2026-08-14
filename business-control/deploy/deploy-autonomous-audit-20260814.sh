@@ -36,7 +36,7 @@ chmod 0640 "$BACKUP"
 test "$(sqlite3 "$BACKUP" 'PRAGMA integrity_check;')" = "ok"
 
 install -o root -g root -m 0755 "$STAGED_BINARY" "$RELEASE_DIR/business-control"
-sqlite3 "$DATABASE" < "$SEED_SQL"
+sqlite3 -bail "$DATABASE" < "$SEED_SQL"
 chown business-control:business-control "$DATABASE" "$DATABASE-wal" "$DATABASE-shm" 2>/dev/null || true
 ln -sfn "$RELEASE_DIR" "$APP_ROOT/current.next"
 mv -Tf "$APP_ROOT/current.next" "$APP_ROOT/current"
