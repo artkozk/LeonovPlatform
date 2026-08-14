@@ -123,6 +123,20 @@ owner=business-control:business-control
 mode=0640
 ```
 
+После применения миграций, фиксации задач и финальной проверки запущен штатный `business-control-backup.service`. Он повторно выполнил SQLite backup и собственный `integrity_check`.
+
+Проверенная копия готового production-состояния:
+
+```text
+/var/lib/business-control/backups/business-control-20260814-001303.db
+size=303104 bytes
+sha256=e459e83351f7c071636cf03adcbfdb595df3445030573fe70147669f76cec308
+owner=business-control:business-control
+mode=0640
+```
+
+После этой копии повторно подтверждены `business-control.service=active` и публичный `{"status":"ok"}`. Загруженные deployment binary, shell и SQL файлы удалены из `/tmp`; release directory и резервные копии сохранены.
+
 ## 6. Миграции
 
 После запуска список миграций:
