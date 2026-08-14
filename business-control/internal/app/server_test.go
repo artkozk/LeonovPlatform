@@ -546,6 +546,90 @@ func TestCollaborationHierarchyActivityAndSuggestion(t *testing.T) {
 	}
 }
 
+func TestGroqSuggestionAndRecordAnalysisContract(t *testing.T) {
+	var parentID string
+	groq := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer test-secret" {
+			t.Errorf("groq authorization header = %q", r.Header.Get("Authorization"))
+		}
+		var payload struct {
+			Messages []struct {
+				Content string `json:"content"`
+			} `json:"messages"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			t.Errorf("decode groq payload: %v", err)
+		}
+		prompt := payload.Messages[len(payload.Messages)-1].Content
+		content := `{"priority":"high","workstream":"platform","parentId":"` + parentID + `","estimateMinutes":95,"confidence":0.86,"reason":"Связано с развитием платформы"}`
+		if strings.Contains(prompt, "suggestedOutputs") {
+			content = `{"summary":"Нужно превратить заметки встречи в проверяемую работу.","gaps":["Не указан критерий готовности."],"risks":["Нет срока у следующего шага."],"nextAction":"Согласовать прототип карты связей.","priority":"high","estimateMinutes":120,"confidence":0.82,"suggestedLinks":[{"recordId":"` + parentID + `","relationType":"depends_on","reason":"Работа продолжает ветку платформы."}],"suggestedOutputs":[{"type":"task","kind":"","title":"Согласовать прототип карты связей","description":"Проверить перемещение веток и масштабирование.","priority":"high","estimateMinutes":120,"reason":"Это предметный результат встречи."}]}`
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"choices": []any{map[string]any{"message": map[string]any{"content": content}}}})
+	}))
+	defer groq.Close()
+
+	store, err := OpenStore(filepath.Join(t.TempDir(), "groq-contract.db"))
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	defer store.Close()
+	server := httptest.NewServer(NewServer(store, Config{SessionLifetime: 24 * 60 * 60 * 1e9, GroqAPIKey: "test-secret", GroqModel: "test-model", GroqBaseURL: groq.URL}))
+	defer server.Close()
+	client := testClient(t)
+	register(t, client, server.URL, "artkozk@example.test", "artkozk")
+	parent := createRecord(t, client, server.URL, map[string]any{"type": "goal", "title": "Развитие платформы", "isRoot": true, "workstream": "platform"})
+	parentID = parent.ID
+
+	var suggestion RecordSuggestion
+	requestJSON(t, client, http.MethodPost, server.URL+"/api/ai/suggest-record", map[string]any{"type": "task", "title": "Доработать карту"}, http.StatusOK, &suggestion)
+	if suggestion.Source != "groq" || suggestion.ParentID != parent.ID || suggestion.EstimateMinutes != 95 || suggestion.Confidence != 0.86 {
+		t.Fatalf("groq suggestion = %#v", suggestion)
+	}
+
+	meeting := createRecord(t, client, server.URL, map[string]any{"type": "meeting", "title": "Разбор карты связей", "description": "Нужно проверить перемещение веток", "workstream": "platform"})
+	var analysis AIRecordAnalysis
+	requestJSON(t, client, http.MethodPost, server.URL+"/api/records/"+meeting.ID+"/ai-analysis", nil, http.StatusOK, &analysis)
+	if analysis.Source != "groq" || analysis.NextAction == "" || len(analysis.SuggestedLinks) != 1 || analysis.SuggestedLinks[0].Title != parent.Title || len(analysis.SuggestedOutputs) != 1 || analysis.SuggestedOutputs[0].EstimateMinutes != 120 {
+		t.Fatalf("groq analysis = %#v", analysis)
+	}
+}
+
+func TestSectionDefinitionReorderPersistsOneOrderedList(t *testing.T) {
+	store, err := OpenStore(filepath.Join(t.TempDir(), "definition-order.db"))
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	defer store.Close()
+	server := httptest.NewServer(NewServer(store, Config{SessionLifetime: 24 * 60 * 60 * 1e9}))
+	defer server.Close()
+	client := testClient(t)
+	register(t, client, server.URL, "artkozk@example.test", "artkozk")
+	var definitions []SectionDefinition
+	requestJSON(t, client, http.MethodGet, server.URL+"/api/section-definitions", nil, http.StatusOK, &definitions)
+	orderedIDs := make([]string, 0)
+	for _, definition := range definitions {
+		if definition.ScopeType != nil && *definition.ScopeType == "idea" && definition.Active {
+			orderedIDs = append(orderedIDs, definition.ID)
+		}
+	}
+	for left, right := 0, len(orderedIDs)-1; left < right; left, right = left+1, right-1 {
+		orderedIDs[left], orderedIDs[right] = orderedIDs[right], orderedIDs[left]
+	}
+	requestJSON(t, client, http.MethodPost, server.URL+"/api/section-definitions/reorder", map[string]any{"scopeType": "idea", "orderedIds": orderedIDs}, http.StatusOK, nil)
+	definitions = nil
+	requestJSON(t, client, http.MethodGet, server.URL+"/api/section-definitions", nil, http.StatusOK, &definitions)
+	actual := make([]string, 0)
+	for _, definition := range definitions {
+		if definition.ScopeType != nil && *definition.ScopeType == "idea" && definition.Active {
+			actual = append(actual, definition.ID)
+		}
+	}
+	if strings.Join(actual, ",") != strings.Join(orderedIDs, ",") {
+		t.Fatalf("definition order = %v, want %v", actual, orderedIDs)
+	}
+}
+
 func TestPlatformReleaseTaskSeed(t *testing.T) {
 	store, err := OpenStore(filepath.Join(t.TempDir(), "release-seed.db"))
 	if err != nil {
@@ -576,6 +660,37 @@ func TestPlatformReleaseTaskSeed(t *testing.T) {
 	_ = store.db.QueryRow(`SELECT COUNT(*) FROM task_proofs WHERE record_id LIKE 'd004d7e%'`).Scan(&proofs)
 	if platformRecords != 8 || completedTasks != 6 || pendingTasks != 1 || proofs != 6 {
 		t.Fatalf("release seed counts: records=%d completed=%d pending=%d proofs=%d", platformRecords, completedTasks, pendingTasks, proofs)
+	}
+}
+
+func TestAIVisualRefinementTaskSeed(t *testing.T) {
+	store, err := OpenStore(filepath.Join(t.TempDir(), "ai-visual-refinement-seed.db"))
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	defer store.Close()
+	server := httptest.NewServer(NewServer(store, Config{SessionLifetime: 24 * 60 * 60 * 1e9}))
+	defer server.Close()
+	register(t, testClient(t), server.URL, "artkozk@example.test", "artkozk")
+
+	for _, name := range []string{"seed-platform-release-tasks-20260814.sql", "seed-ai-visual-refinement-tasks-20260814.sql", "seed-ai-visual-refinement-tasks-20260814.sql"} {
+		seed, readErr := os.ReadFile(filepath.Join("..", "..", "deploy", name))
+		if readErr != nil {
+			t.Fatalf("read %s: %v", name, readErr)
+		}
+		if _, execErr := store.db.Exec(string(seed)); execErr != nil {
+			t.Fatalf("apply %s: %v", name, execErr)
+		}
+	}
+
+	var tasks, proofs, groqProgress, rootProgress int
+	var groqStatus, rootTitle string
+	_ = store.db.QueryRow(`SELECT COUNT(*) FROM records WHERE id LIKE 'a114f10%'`).Scan(&tasks)
+	_ = store.db.QueryRow(`SELECT COUNT(*) FROM task_proofs WHERE record_id LIKE 'a114f10%'`).Scan(&proofs)
+	_ = store.db.QueryRow(`SELECT status, progress FROM records WHERE id = 'd004d7e0000000000000000000000008'`).Scan(&groqStatus, &groqProgress)
+	_ = store.db.QueryRow(`SELECT title, progress FROM records WHERE id = 'd004d7e0000000000000000000000001'`).Scan(&rootTitle, &rootProgress)
+	if tasks != 4 || proofs != 4 || groqStatus != "completed" || groqProgress != 100 || rootTitle != "Развитие платформы «BizFlow»" || rootProgress != 72 {
+		t.Fatalf("refinement seed: tasks=%d proofs=%d groq=%s/%d root=%q/%d", tasks, proofs, groqStatus, groqProgress, rootTitle, rootProgress)
 	}
 }
 

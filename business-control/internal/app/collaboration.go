@@ -129,11 +129,43 @@ func (s *Server) listUserActivity(ctx context.Context, userID int64, limit int) 
 }
 
 type RecordSuggestion struct {
-	Priority   string `json:"priority"`
-	Workstream string `json:"workstream"`
-	ParentID   string `json:"parentId"`
-	Reason     string `json:"reason"`
-	Source     string `json:"source"`
+	Priority        string  `json:"priority"`
+	Workstream      string  `json:"workstream"`
+	ParentID        string  `json:"parentId"`
+	EstimateMinutes int     `json:"estimateMinutes"`
+	Confidence      float64 `json:"confidence"`
+	Reason          string  `json:"reason"`
+	Source          string  `json:"source"`
+}
+
+type AISuggestedLink struct {
+	RecordID     string `json:"recordId"`
+	Title        string `json:"title"`
+	RelationType string `json:"relationType"`
+	Reason       string `json:"reason"`
+}
+
+type AISuggestedOutput struct {
+	Type            string `json:"type"`
+	Kind            string `json:"kind"`
+	Title           string `json:"title"`
+	Description     string `json:"description"`
+	Priority        string `json:"priority"`
+	EstimateMinutes int    `json:"estimateMinutes"`
+	Reason          string `json:"reason"`
+}
+
+type AIRecordAnalysis struct {
+	Summary          string              `json:"summary"`
+	Gaps             []string            `json:"gaps"`
+	Risks            []string            `json:"risks"`
+	NextAction       string              `json:"nextAction"`
+	Priority         string              `json:"priority"`
+	EstimateMinutes  int                 `json:"estimateMinutes"`
+	SuggestedLinks   []AISuggestedLink   `json:"suggestedLinks"`
+	SuggestedOutputs []AISuggestedOutput `json:"suggestedOutputs"`
+	Confidence       float64             `json:"confidence"`
+	Source           string              `json:"source"`
 }
 
 func (s *Server) handleSuggestRecord(w http.ResponseWriter, r *http.Request) {
@@ -178,7 +210,21 @@ func (s *Server) heuristicSuggestion(ctx context.Context, recordType, title, des
 	if candidate != "" {
 		parentID = candidate
 	}
-	return RecordSuggestion{Priority: priority, Workstream: workstream, ParentID: parentID, Reason: "Предложено по формулировке и текущим корневым карточкам. Проверьте перед сохранением.", Source: "heuristic"}
+	return RecordSuggestion{Priority: priority, Workstream: workstream, ParentID: parentID, EstimateMinutes: heuristicEstimate(recordType, text), Confidence: 0.45, Reason: "Предложено по формулировке и текущим корневым карточкам. Проверьте перед сохранением.", Source: "heuristic"}
+}
+
+func heuristicEstimate(recordType, text string) int {
+	base := map[string]int{"task": 60, "question_set": 90, "meeting": 60, "research": 180, "decision": 45, "disagreement": 90, "goal": 240}[recordType]
+	if base == 0 {
+		base = 30
+	}
+	if strings.Contains(text, "аудит") || strings.Contains(text, "исследован") || strings.Contains(text, "анализ") {
+		base *= 2
+	}
+	if strings.Contains(text, "быстр") || strings.Contains(text, "коротк") {
+		base = max(15, base/2)
+	}
+	return base
 }
 
 func (s *Server) groqSuggestion(ctx context.Context, recordType, title, description string) (RecordSuggestion, error) {
@@ -197,7 +243,7 @@ func (s *Server) groqSuggestion(ctx context.Context, recordType, title, descript
 	}
 	parentRows.Close()
 	parentJSON, _ := json.Marshal(parents)
-	prompt := fmt.Sprintf("Определи priority (low|normal|high|critical), workstream (business|platform|operations) и parentId из списка или пустую строку. Верни только JSON {priority,workstream,parentId,reason}. Тип: %s. Название: %s. Описание: %s. Возможные родители: %s", recordType, title, description, parentJSON)
+	prompt := fmt.Sprintf("Определи priority (low|normal|high|critical), workstream (business|platform|operations), parentId из списка или пустую строку и реалистичную estimateMinutes. Верни только JSON {priority,workstream,parentId,estimateMinutes,confidence,reason}. confidence от 0 до 1. Тип: %s. Название: %s. Описание: %s. Возможные родители: %s", recordType, title, description, parentJSON)
 	payload := map[string]any{
 		"model":                 s.config.GroqModel,
 		"messages":              []map[string]string{{"role": "system", "content": "Ты помощник закрытой системы двух сооснователей. Не выдумывай идентификаторы. Ответ только валидным JSON."}, {"role": "user", "content": prompt}},
@@ -206,7 +252,7 @@ func (s *Server) groqSuggestion(ctx context.Context, recordType, title, descript
 		"response_format":       map[string]string{"type": "json_object"},
 	}
 	body, _ := json.Marshal(payload)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.groq.com/openai/v1/chat/completions", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.groqURL()+"/chat/completions", bytes.NewReader(body))
 	if err != nil {
 		return RecordSuggestion{}, err
 	}
@@ -235,7 +281,7 @@ func (s *Server) groqSuggestion(ctx context.Context, recordType, title, descript
 	if err := json.Unmarshal([]byte(completion.Choices[0].Message.Content), &suggestion); err != nil {
 		return RecordSuggestion{}, err
 	}
-	if !validPriority(suggestion.Priority) || !validWorkstream(suggestion.Workstream) {
+	if !validPriority(suggestion.Priority) || !validWorkstream(suggestion.Workstream) || suggestion.EstimateMinutes < 0 || suggestion.EstimateMinutes > 525600 {
 		return RecordSuggestion{}, errors.New("invalid groq suggestion")
 	}
 	if suggestion.ParentID != "" {
@@ -244,5 +290,202 @@ func (s *Server) groqSuggestion(ctx context.Context, recordType, title, descript
 		}
 	}
 	suggestion.Source = "groq"
+	if suggestion.Confidence < 0 || suggestion.Confidence > 1 {
+		suggestion.Confidence = 0.7
+	}
 	return suggestion, nil
+}
+
+func (s *Server) groqURL() string {
+	if strings.TrimSpace(s.config.GroqBaseURL) == "" {
+		return "https://api.groq.com/openai/v1"
+	}
+	return strings.TrimRight(s.config.GroqBaseURL, "/")
+}
+
+func (s *Server) handleAnalyzeRecord(w http.ResponseWriter, r *http.Request) {
+	record, err := s.getRecord(r.Context(), r.PathValue("id"))
+	if errors.Is(err, sql.ErrNoRows) {
+		writeError(w, http.StatusNotFound, "Карточка не найдена")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось загрузить карточку")
+		return
+	}
+	analysis := s.heuristicRecordAnalysis(r.Context(), record)
+	if s.config.GroqAPIKey != "" {
+		if aiAnalysis, aiErr := s.groqRecordAnalysis(r.Context(), record); aiErr == nil {
+			analysis = aiAnalysis
+		}
+	}
+	writeJSON(w, http.StatusOK, analysis)
+}
+
+func (s *Server) heuristicRecordAnalysis(ctx context.Context, record Record) AIRecordAnalysis {
+	gaps := make([]string, 0)
+	risks := make([]string, 0)
+	if strings.TrimSpace(record.Description) == "" {
+		gaps = append(gaps, "Не зафиксирован контекст или ожидаемый результат.")
+	}
+	if record.EstimateMinutes == 0 && record.Type != "idea" && record.Type != "criterion" && record.Type != "document" {
+		gaps = append(gaps, "Нет оценки времени, поэтому нагрузку команды нельзя проверить.")
+	}
+	if record.DueAt == nil && (record.Type == "task" || record.Type == "question_set" || record.Type == "research" || record.Type == "goal") {
+		gaps = append(gaps, "Не указан срок выполнения.")
+	}
+	if record.ParentID == nil && !record.IsRoot {
+		gaps = append(gaps, "Карточка не закреплена в причинно-следственной ветке.")
+	}
+	if record.Status == "blocked" {
+		risks = append(risks, "Работа заблокирована, но из статуса не видно следующего действия по разблокировке.")
+	}
+	if record.Priority == "critical" && record.DueAt == nil {
+		risks = append(risks, "Критический приоритет не подкреплён сроком.")
+	}
+	if record.DueAt != nil {
+		if due, parseErr := time.Parse(time.RFC3339Nano, *record.DueAt); parseErr == nil && due.Before(time.Now().UTC()) && record.Status != "completed" && record.Status != "cancelled" && record.Status != "archived" {
+			risks = append(risks, "Срок уже прошёл, а карточка остаётся активной.")
+		}
+	}
+	nextAction := "Уточнить ожидаемый результат и зафиксировать ближайшее проверяемое действие."
+	if record.Status == "planned" {
+		nextAction = "Назначить первый конкретный шаг и перевести карточку в работу."
+	} else if record.Status == "in_progress" && strings.TrimSpace(record.ProgressNote) != "" {
+		nextAction = "Проверить текущее обновление и зафиксировать следующий измеримый шаг."
+	} else if record.Type == "idea" {
+		nextAction = "Связать идею хотя бы с одной целью или критерием и определить, что нужно исследовать."
+	} else if record.Type == "meeting" {
+		nextAction = "Выделить из заметок решения, задачи и ограничения, затем создать связанные карточки."
+	}
+	links := make([]AISuggestedLink, 0)
+	if record.ParentID != nil {
+		if parent, parentErr := s.getRecord(ctx, *record.ParentID); parentErr == nil {
+			links = append(links, AISuggestedLink{RecordID: parent.ID, Title: parent.Title, RelationType: "depends_on", Reason: "Текущий родитель задаёт контекст этой работы."})
+		}
+	}
+	outputs := make([]AISuggestedOutput, 0)
+	if record.Type == "meeting" && strings.TrimSpace(record.Description) != "" {
+		outputs = append(outputs, AISuggestedOutput{Type: "decision", Title: "Зафиксировать итог встречи: " + record.Title, Description: record.Description, Priority: "normal", EstimateMinutes: 30, Reason: "Встреча должна завершаться предметным решением или следующей работой."})
+	}
+	summary := strings.TrimSpace(record.Description)
+	if summary == "" {
+		summary = "Карточка «" + record.Title + "» пока содержит только название."
+	}
+	return AIRecordAnalysis{Summary: summary, Gaps: gaps, Risks: risks, NextAction: nextAction, Priority: record.Priority, EstimateMinutes: max(record.EstimateMinutes, heuristicEstimate(record.Type, strings.ToLower(record.Title+" "+record.Description))), SuggestedLinks: links, SuggestedOutputs: outputs, Confidence: 0.45, Source: "heuristic"}
+}
+
+func (s *Server) groqRecordAnalysis(ctx context.Context, record Record) (AIRecordAnalysis, error) {
+	ctx, cancel := context.WithTimeout(ctx, 18*time.Second)
+	defer cancel()
+	rows, err := s.store.db.QueryContext(ctx, `SELECT id, CASE WHEN subtype = 'question_set' THEN 'question_set' WHEN record_kind = 'meeting' THEN 'meeting' ELSE type END, title, description, status, workstream FROM records WHERE id <> ? AND status NOT IN ('archived', 'cancelled') ORDER BY updated_at DESC LIMIT 60`, record.ID)
+	if err != nil {
+		return AIRecordAnalysis{}, err
+	}
+	candidates := make([]map[string]string, 0)
+	validCandidateIDs := make(map[string]string)
+	for rows.Next() {
+		var id, recordType, title, description, status, workstream string
+		if rows.Scan(&id, &recordType, &title, &description, &status, &workstream) == nil {
+			candidates = append(candidates, map[string]string{"id": id, "type": recordType, "title": title, "description": description, "status": status, "workstream": workstream})
+			validCandidateIDs[id] = title
+		}
+	}
+	rows.Close()
+	candidateJSON, _ := json.Marshal(candidates)
+	recordJSON, _ := json.Marshal(map[string]any{
+		"id":              record.ID,
+		"type":            record.Type,
+		"kind":            record.Kind,
+		"title":           record.Title,
+		"description":     record.Description,
+		"status":          record.Status,
+		"dueAt":           record.DueAt,
+		"priority":        record.Priority,
+		"workstream":      record.Workstream,
+		"parentId":        record.ParentID,
+		"isRoot":          record.IsRoot,
+		"estimateMinutes": record.EstimateMinutes,
+		"actualMinutes":   record.ActualMinutes,
+		"progress":        record.Progress,
+		"progressNote":    record.ProgressNote,
+		"result":          record.Result,
+	})
+	prompt := fmt.Sprintf(`Разбери рабочую карточку и верни только JSON:
+{"summary":"...","gaps":["..."],"risks":["..."],"nextAction":"...","priority":"low|normal|high|critical","estimateMinutes":60,"confidence":0.8,"suggestedLinks":[{"recordId":"id из списка","relationType":"related|supports|depends_on|result_of|leads_to","reason":"..."}],"suggestedOutputs":[{"type":"task|idea|criterion|research|decision|goal","kind":"|preference|limitation|rule|insight","title":"...","description":"...","priority":"low|normal|high|critical","estimateMinutes":60,"reason":"..."}]}.
+Не меняй факты, не выдумывай ID, не предлагай больше 4 связей и 5 новых сущностей. Для встречи извлекай из заметок только предметные решения, задачи, критерии, ограничения и идеи. Для обычной карточки suggestedOutputs оставь пустым, если из текста не следует самостоятельная работа. Карточка: %s. Доступные связи: %s`, recordJSON, candidateJSON)
+	payload := map[string]any{
+		"model":                 s.config.GroqModel,
+		"messages":              []map[string]string{{"role": "system", "content": "Ты аналитик закрытого рабочего пространства двух сооснователей. Отделяй факт от предположения, давай короткие проверяемые рекомендации и никогда не применяй изменения сам."}, {"role": "user", "content": prompt}},
+		"temperature":           0.15,
+		"max_completion_tokens": 1500,
+		"response_format":       map[string]string{"type": "json_object"},
+	}
+	body, _ := json.Marshal(payload)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.groqURL()+"/chat/completions", bytes.NewReader(body))
+	if err != nil {
+		return AIRecordAnalysis{}, err
+	}
+	req.Header.Set("Authorization", "Bearer "+s.config.GroqAPIKey)
+	req.Header.Set("Content-Type", "application/json")
+	response, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return AIRecordAnalysis{}, err
+	}
+	defer response.Body.Close()
+	responseBody, _ := io.ReadAll(io.LimitReader(response.Body, 2<<20))
+	if response.StatusCode != http.StatusOK {
+		return AIRecordAnalysis{}, fmt.Errorf("groq status %d", response.StatusCode)
+	}
+	var completion struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	if err := json.Unmarshal(responseBody, &completion); err != nil || len(completion.Choices) == 0 {
+		return AIRecordAnalysis{}, errors.New("invalid groq response")
+	}
+	var analysis AIRecordAnalysis
+	if err := json.Unmarshal([]byte(completion.Choices[0].Message.Content), &analysis); err != nil {
+		return AIRecordAnalysis{}, err
+	}
+	if strings.TrimSpace(analysis.Summary) == "" || strings.TrimSpace(analysis.NextAction) == "" || !validPriority(analysis.Priority) || analysis.EstimateMinutes < 0 || analysis.EstimateMinutes > 525600 {
+		return AIRecordAnalysis{}, errors.New("invalid groq analysis")
+	}
+	if len(analysis.Gaps) > 6 {
+		analysis.Gaps = analysis.Gaps[:6]
+	}
+	if len(analysis.Risks) > 6 {
+		analysis.Risks = analysis.Risks[:6]
+	}
+	validRelations := map[string]bool{"related": true, "supports": true, "depends_on": true, "result_of": true, "leads_to": true}
+	validatedLinks := make([]AISuggestedLink, 0, min(4, len(analysis.SuggestedLinks)))
+	for _, link := range analysis.SuggestedLinks {
+		if title, ok := validCandidateIDs[link.RecordID]; ok && validRelations[link.RelationType] && len(validatedLinks) < 4 {
+			link.Title = title
+			validatedLinks = append(validatedLinks, link)
+		}
+	}
+	analysis.SuggestedLinks = validatedLinks
+	validatedOutputs := make([]AISuggestedOutput, 0, min(5, len(analysis.SuggestedOutputs)))
+	for _, output := range analysis.SuggestedOutputs {
+		if _, ok := recordTypes[output.Type]; !ok || output.Type == "question_set" || output.Type == "meeting" || strings.TrimSpace(output.Title) == "" || len(output.Title) > 240 || !validPriority(output.Priority) || output.EstimateMinutes < 0 || output.EstimateMinutes > 525600 {
+			continue
+		}
+		if !validRecordKind(output.Type, output.Kind) {
+			continue
+		}
+		validatedOutputs = append(validatedOutputs, output)
+		if len(validatedOutputs) == 5 {
+			break
+		}
+	}
+	analysis.SuggestedOutputs = validatedOutputs
+	if analysis.Confidence < 0 || analysis.Confidence > 1 {
+		analysis.Confidence = 0.7
+	}
+	analysis.Source = "groq"
+	return analysis, nil
 }

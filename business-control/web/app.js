@@ -45,6 +45,9 @@ const iconPaths = {
   rotate: '<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/>',
   flag: '<path d="M5 22V4M5 4h11l-1 4 1 4H5"/>',
   lock: '<rect width="16" height="11" x="4" y="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+  sparkles: '<path d="m12 3-1.2 3.3L7.5 7.5l3.3 1.2L12 12l1.2-3.3 3.3-1.2-3.3-1.2Z"/><path d="m18.5 13-.8 2.2-2.2.8 2.2.8.8 2.2.8-2.2 2.2-.8-2.2-.8ZM5.5 14l-.6 1.6-1.6.6 1.6.6.6 1.6.6-1.6 1.6-.6-1.6-.6Z"/>',
+  trash: '<path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 11v6M14 11v6"/>',
+  grip: '<circle cx="8" cy="7" r="1"/><circle cx="16" cy="7" r="1"/><circle cx="8" cy="12" r="1"/><circle cx="16" cy="12" r="1"/><circle cx="8" cy="17" r="1"/><circle cx="16" cy="17" r="1"/>',
 };
 
 function icon(name, className = '') {
@@ -94,10 +97,109 @@ const state = {
   recordWorkspace: [], activeWorkspaceRecordId: '', focusQuestionId: '',
   detailCache: new Map(), detailRequests: new Map(), searchTimer: null, suppressOverlayPop: false,
   presenceInteractions: 0, presenceLastSentAt: Date.now(), lastInteractionAt: Date.now(), aiSuggestionTimer: null,
+  recordEditMode: false, aiAnalyses: new Map(), aiAnalysisLoading: '', graphDragGroup: null, graphMovingGroup: false,
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+
+function closeCustomSelects(except = null) {
+  $$('.custom-select.open').forEach((control) => {
+    if (control !== except) {
+      control.classList.remove('open');
+      control.querySelector('.custom-select-trigger')?.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
+
+function syncCustomSelect(select) {
+  const control = select.closest('.custom-select');
+  if (!control) return;
+  const selected = select.options[select.selectedIndex];
+  const trigger = $('.custom-select-trigger', control);
+  trigger.querySelector('span').textContent = selected?.textContent || 'Выберите';
+  trigger.disabled = select.disabled;
+  $$('.custom-select-option', control).forEach((option) => {
+    const active = option.dataset.value === select.value;
+    option.classList.toggle('selected', active);
+    option.setAttribute('aria-selected', String(active));
+  });
+}
+
+function enhanceSelect(select) {
+  if (select.dataset.enhanced === 'true' || select.multiple || select.closest('.custom-select')) return;
+  select.dataset.enhanced = 'true';
+  const control = document.createElement('div');
+  control.className = 'custom-select';
+  select.parentNode.insertBefore(control, select);
+  control.appendChild(select);
+  select.classList.add('custom-select-native');
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'custom-select-trigger';
+  trigger.setAttribute('aria-haspopup', 'listbox');
+  trigger.setAttribute('aria-expanded', 'false');
+  trigger.innerHTML = `<span></span>${icon('chevronRight')}`;
+  const menu = document.createElement('div');
+  menu.className = 'custom-select-menu';
+  menu.setAttribute('role', 'listbox');
+  [...select.options].forEach((sourceOption) => {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.className = 'custom-select-option';
+    option.dataset.value = sourceOption.value;
+    option.setAttribute('role', 'option');
+    option.disabled = sourceOption.disabled;
+    option.innerHTML = `<span>${escapeHTML(sourceOption.textContent)}</span>${icon('check')}`;
+    option.addEventListener('click', () => {
+      select.value = sourceOption.value;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      syncCustomSelect(select);
+      closeCustomSelects();
+      trigger.focus();
+    });
+    menu.appendChild(option);
+  });
+  control.append(trigger, menu);
+  control.addEventListener('click', (event) => {
+    if (event.target === control && control.classList.contains('open')) closeCustomSelects();
+  });
+  trigger.addEventListener('click', () => {
+    const willOpen = !control.classList.contains('open');
+    closeCustomSelects(control);
+    control.classList.toggle('open', willOpen);
+    trigger.setAttribute('aria-expanded', String(willOpen));
+    if (willOpen) $('.custom-select-option.selected', control)?.focus({ preventScroll: true });
+  });
+  trigger.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      control.classList.add('open');
+      trigger.setAttribute('aria-expanded', 'true');
+      const options = $$('.custom-select-option:not(:disabled)', control);
+      const selectedIndex = Math.max(0, options.findIndex((option) => option.classList.contains('selected')));
+      options[event.key === 'ArrowDown' ? selectedIndex : Math.max(0, selectedIndex - 1)]?.focus();
+    }
+  });
+  menu.addEventListener('keydown', (event) => {
+    const options = $$('.custom-select-option:not(:disabled)', control);
+    const index = options.indexOf(document.activeElement);
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const next = event.key === 'ArrowDown' ? Math.min(options.length - 1, index + 1) : Math.max(0, index - 1);
+      options[next]?.focus();
+    } else if (event.key === 'Escape') {
+      closeCustomSelects();
+      trigger.focus();
+    }
+  });
+  select.addEventListener('change', () => syncCustomSelect(select));
+  syncCustomSelect(select);
+}
+
+function enhanceSelects(root = document) {
+  $$('select:not([data-native-select])', root).forEach(enhanceSelect);
+}
 
 function escapeHTML(value = '') {
   return String(value).replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
@@ -257,6 +359,15 @@ function showApp() {
 
 async function bootstrap() {
   bindGlobalEvents();
+  enhanceSelects(document);
+  const selectObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => mutation.addedNodes.forEach((node) => {
+      if (!(node instanceof Element)) return;
+      if (node.matches('select')) enhanceSelect(node);
+      enhanceSelects(node);
+    }));
+  });
+  selectObserver.observe(document.body, { childList: true, subtree: true });
   try {
     state.me = await api('/api/me');
     showApp();
@@ -304,6 +415,7 @@ function bindGlobalEvents() {
       event.preventDefault(); globalSearchInput.focus(); globalSearchInput.select();
     }
     if (event.key === 'Escape') {
+      closeCustomSelects();
       if (!$('#global-search-results').hidden) $('#global-search-results').hidden = true;
       $('.work-filter-menu[open]')?.removeAttribute('open');
       $('.work-create-menu[open]')?.removeAttribute('open');
@@ -311,6 +423,7 @@ function bindGlobalEvents() {
     }
   });
   document.addEventListener('click', (event) => {
+    if (!event.target.closest('.custom-select')) closeCustomSelects();
     if (!event.target.closest('.create-control')) $('#create-menu').hidden = true;
     if (!event.target.closest('#global-search')) $('#global-search-results').hidden = true;
     if (!event.target.closest('.work-filter-menu')) $('.work-filter-menu[open]')?.removeAttribute('open');
@@ -318,6 +431,7 @@ function bindGlobalEvents() {
     if (!event.target.closest('.record-more-actions')) $('.record-more-actions[open]')?.removeAttribute('open');
   });
   $('#menu-button').addEventListener('click', () => setSidebarOpen(!$('.sidebar').classList.contains('open')));
+  $('#sidebar-close').addEventListener('click', () => setSidebarOpen(false));
   $('#sidebar-backdrop').addEventListener('click', () => setSidebarOpen(false));
   bindSidebarSwipe();
   $('#record-dialog').addEventListener('click', (event) => { if (event.target === $('#record-dialog')) $('#record-dialog').close(); });
@@ -344,7 +458,7 @@ function bindGlobalEvents() {
     state.graphResizeTimer = setTimeout(() => {
       if (!state.graphInstance || state.view !== 'graph') return;
       state.graphInstance.resize();
-      state.graphInstance.fit(undefined, window.innerWidth <= 560 ? 34 : 64);
+      state.graphInstance.fit(undefined, window.innerWidth <= 560 ? 26 : 48);
     }, 140);
   });
   ['pointerdown', 'keydown', 'touchstart'].forEach((eventName) => document.addEventListener(eventName, () => {
@@ -566,14 +680,14 @@ function renderPersonLoad(user, tasks) {
 
 function renderPrinciples() {
   const groups = [
-    { kind: 'preference', title: 'Что нам подходит', copy: 'Положительные критерии выбора сфер и идей.', icon: 'target' },
-    { kind: 'limitation', title: 'Чего избегаем', copy: 'Ограничения, которые идея не должна нарушать.', icon: 'archive' },
-    { kind: 'rule', title: 'Как принимаем решения', copy: 'Договорённости, к которым возвращаемся при разногласиях.', icon: 'scale' },
+    { kind: 'preference', title: 'Что нам подходит', copy: 'Положительные критерии выбора сфер и идей.', example: 'Например: спрос можно проверить без больших вложений.', icon: 'target' },
+    { kind: 'limitation', title: 'Чего избегаем', copy: 'Ограничения, которые идея не должна нарушать.', example: 'Например: бизнес не требует постоянной публичности основателя.', icon: 'archive' },
+    { kind: 'rule', title: 'Как принимаем решения', copy: 'Договорённости, к которым возвращаемся при разногласиях.', example: 'Например: контрольное решение принимает владелец направления.', icon: 'scale' },
   ];
   const records = state.records.filter((record) => (['preference', 'limitation', 'rule'].includes(record.kind) || (record.type === 'criterion' && !record.kind)) && record.status !== 'archived');
   $('#main-content').innerHTML = `<div class="page-heading"><div><p class="eyebrow">Основа отбора</p><h1>Правила и критерии</h1><p>Рабочие выводы, которые влияют на выбор идей и совместные решения.</p></div></div><div class="principle-grid">${groups.map((group) => {
     const items = records.filter((record) => record.kind === group.kind || (group.kind === 'preference' && record.type === 'criterion' && !record.kind));
-    return `<section class="principle-column"><header><span class="type-icon">${icon(group.icon)}</span><div><h3>${group.title}</h3><p>${group.copy}</p></div><b>${items.length}</b></header><div class="principle-list">${items.map((record) => `<button type="button" data-open-record="${record.id}"><strong>${escapeHTML(record.title)}</strong><span>${escapeHTML(record.description || 'Без пояснения')}</span>${icon('chevronRight')}</button>`).join('') || emptyState('Пока ничего не зафиксировано.')}</div><button type="button" class="text-button principle-add" data-create-principle="${group.kind}">${icon('plus')} Добавить</button></section>`;
+    return `<section class="principle-column"><header><span class="type-icon">${icon(group.icon)}</span><div><h3>${group.title}</h3><p>${group.copy}</p></div><b>${items.length}</b></header><div class="principle-list">${items.map((record) => `<button type="button" data-open-record="${record.id}"><strong>${escapeHTML(record.title)}</strong><span>${escapeHTML(record.description || 'Без пояснения')}</span>${icon('chevronRight')}</button>`).join('') || `<div class="principle-empty"><p>${escapeHTML(group.example)}</p><button type="button" data-create-principle="${group.kind}">${icon('plus')} Добавить первый пункт</button></div>`}</div>${items.length ? `<button type="button" class="text-button principle-add" data-create-principle="${group.kind}">${icon('plus')} Добавить</button>` : ''}</section>`;
   }).join('')}</div>`;
   bindOpenRecords();
   $$('[data-create-principle]').forEach((button) => button.addEventListener('click', () => openCreateDialog(button.dataset.createPrinciple === 'rule' ? 'decision' : 'criterion', { kind: button.dataset.createPrinciple })));
@@ -721,7 +835,7 @@ async function renderGraph() {
         <div class="graph-icon-actions"><button type="button" class="icon-button" id="graph-relayout" title="Перестроить карту" aria-label="Перестроить карту">${icon('rotate')}</button><button type="button" class="icon-button" id="graph-fit" title="Показать карту целиком" aria-label="Показать карту целиком">${icon('maximize')}</button></div>
       </header>
       <div class="graph-stage"><div id="relationship-graph" role="application" aria-label="Интерактивная карта связей"><div class="graph-loading"><span class="spinner"></span><strong>Строим карту проекта</strong></div></div><aside id="graph-inspector" class="graph-inspector ${state.graphSelectedId ? 'open' : ''}">${renderGraphInspector()}</aside></div>
-      <footer class="graph-legend"><span><i class="legend-card"></i> Карточка</span><span><i class="legend-question"></i> Вопрос</span><span><i class="legend-answer"></i> Ответ</span><span><i class="legend-decision"></i> Итог</span><em>Колесо или жест: масштаб · перетаскивание: перемещение · двойное нажатие: открыть</em></footer>
+      <footer class="graph-legend"><span><i class="legend-card"></i> Карточка</span><span><i class="legend-question"></i> Вопрос</span><span><i class="legend-answer"></i> Ответ</span><span><i class="legend-decision"></i> Итог</span><em>Масштаб: колесо или жест · перетаскивание родителя двигает ветку · двойное нажатие открывает карточку</em></footer>
     </section>`;
   bindGraphControls();
   try {
@@ -744,17 +858,26 @@ function graphVisibleElements() {
   }
   if (state.graphFocusRecordId) {
     const root = `record:${state.graphFocusRecordId}`;
-    const adjacency = new Map(data.nodes.map((node) => [node.id, new Set()]));
+    const outgoing = new Map(data.nodes.map((node) => [node.id, new Set()]));
+    const incoming = new Map(data.nodes.map((node) => [node.id, new Set()]));
     data.edges.forEach((edge) => {
-      adjacency.get(edge.source)?.add(edge.target);
-      adjacency.get(edge.target)?.add(edge.source);
+      outgoing.get(edge.source)?.add(edge.target);
+      incoming.get(edge.target)?.add(edge.source);
     });
     const local = new Set([root]);
-    let frontier = [root];
+    let descendants = [root];
+    let ancestors = [root];
     for (let depth = 0; depth < state.graphDepth; depth += 1) {
-      const next = [];
-      frontier.forEach((id) => (adjacency.get(id) || []).forEach((neighbor) => { if (!local.has(neighbor)) { local.add(neighbor); next.push(neighbor); } }));
-      frontier = next;
+      const nextDescendants = [];
+      const nextAncestors = [];
+      descendants.forEach((id) => (outgoing.get(id) || []).forEach((neighbor) => {
+        if (!local.has(neighbor)) { local.add(neighbor); nextDescendants.push(neighbor); }
+      }));
+      ancestors.forEach((id) => (incoming.get(id) || []).forEach((neighbor) => {
+        if (!local.has(neighbor)) { local.add(neighbor); nextAncestors.push(neighbor); }
+      }));
+      descendants = nextDescendants;
+      ancestors = nextAncestors;
     }
     allowed = new Set([...allowed].filter((id) => local.has(id)));
   }
@@ -763,48 +886,134 @@ function graphVisibleElements() {
   return { nodes, edges };
 }
 
-function graphNodeSize(node) {
-  if (node.entityKind !== 'record') return node.entityKind === 'joint_decision' ? 44 : 34;
-  const degree = (state.graphData?.edges || []).filter((edge) => edge.source === node.id || edge.target === node.id).length;
-  return Math.min(66, 42 + degree * 3);
+function graphNodeLabel(node) {
+  const kind = typeMeta[node.type]?.singular || (node.entityKind === 'question' ? 'Вопрос' : node.entityKind === 'answer' ? 'Ответ' : node.entityKind === 'joint_decision' ? 'Совместный итог' : 'Карточка');
+  const title = String(node.title || '').replace(/\s+/g, ' ').trim();
+  return `${kind}\n${title.length > 48 ? `${title.slice(0, 45)}…` : title}`;
+}
+
+function graphPositionKey() {
+  return `business-control:graph-positions:${state.me?.id || 'anonymous'}:v2`;
+}
+
+function loadGraphPositions() {
+  try { return JSON.parse(localStorage.getItem(graphPositionKey()) || '{}'); } catch (_) { return {}; }
+}
+
+function saveGraphPositions(cy = state.graphInstance) {
+  if (!cy) return;
+  const positions = loadGraphPositions();
+  cy.nodes().forEach((node) => { positions[node.id()] = node.position(); });
+  try { localStorage.setItem(graphPositionKey(), JSON.stringify(positions)); } catch (_) {}
+}
+
+function clearGraphPositions() {
+  try { localStorage.removeItem(graphPositionKey()); } catch (_) {}
+}
+
+function graphHierarchyDescendants(cy, rootID) {
+  const result = new Set();
+  let frontier = [rootID];
+  while (frontier.length) {
+    const parentID = frontier.shift();
+    cy.edges(`[relationType = "parent_of"][source = "${parentID}"]`).forEach((edge) => {
+      const childID = edge.target().id();
+      if (!result.has(childID)) { result.add(childID); frontier.push(childID); }
+    });
+  }
+  return [...result];
+}
+
+function graphLayoutOptions(randomize = false, nodeCount = state.graphInstance?.nodes().length || 0) {
+  const compact = nodeCount > 0 && nodeCount <= 40;
+  return { name: 'cose', animate: true, animationDuration: 460, randomize, nodeRepulsion: compact ? 7200 : 12500, idealEdgeLength: compact ? 125 : 175, edgeElasticity: 80, gravity: compact ? .18 : .12, componentSpacing: compact ? 86 : 120, nestingFactor: 1.2, fit: true, padding: window.innerWidth <= 560 ? 28 : 48 };
+}
+
+function updateGraphZoomStyles() {
+  const cy = state.graphInstance;
+  if (!cy) return;
+  const zoom = cy.zoom();
+  cy.nodes().toggleClass('zoom-compact', zoom < .58).toggleClass('zoom-hidden', zoom < .46);
+  cy.edges().toggleClass('zoom-hidden', zoom < .68);
+}
+
+function ensureReadableGraphView(cy) {
+  if (!cy || cy.nodes().length > 40 || cy.zoom() >= .68) return;
+  cy.zoom(.68);
+  cy.center(cy.nodes());
 }
 
 function mountGraph() {
   if (!window.cytoscape) throw new Error('Модуль визуализации не загружен');
   if (state.graphInstance) state.graphInstance.destroy();
   const { nodes, edges } = graphVisibleElements();
+  const savedPositions = loadGraphPositions();
+  const positioned = nodes.filter((node) => savedPositions[node.id]).length;
+  const usePreset = nodes.length > 0 && positioned / nodes.length >= .75;
+  const positionedPoints = Object.values(savedPositions).filter((position) => Number.isFinite(position?.x) && Number.isFinite(position?.y));
+  const savedCenter = positionedPoints.length ? positionedPoints.reduce((total, position) => ({ x: total.x + position.x / positionedPoints.length, y: total.y + position.y / positionedPoints.length }), { x: 0, y: 0 }) : { x: 0, y: 0 };
+  const fallbackPosition = (index) => {
+    const angle = index * 2.399963;
+    const radius = 190 + Math.sqrt(index + 1) * 72;
+    return { x: savedCenter.x + Math.cos(angle) * radius, y: savedCenter.y + Math.sin(angle) * radius };
+  };
   const elements = [
-    ...nodes.map((node) => ({ data: { ...node, label: node.title, size: graphNodeSize(node) }, classes: `kind-${node.entityKind} type-${node.type} ${node.status === 'archived' ? 'is-archived' : ''}` })),
+    ...nodes.map((node, index) => ({ data: { ...node, label: graphNodeLabel(node) }, position: savedPositions[node.id] || fallbackPosition(index), classes: `kind-${node.entityKind} type-${node.type} ${node.isRoot ? 'is-root' : ''} ${node.status === 'archived' ? 'is-archived' : ''}` })),
     ...edges.map((edge) => ({ data: { id: edge.id, source: edge.source, target: edge.target, label: edge.label, relationType: edge.relationType }, classes: `relation-${edge.relationType}` })),
   ];
   const container = $('#relationship-graph');
   container.innerHTML = '';
   const cy = window.cytoscape({
-    container, elements, minZoom: .18, maxZoom: 2.4, wheelSensitivity: .18,
+    container, elements, minZoom: .16, maxZoom: 2.2, wheelSensitivity: .12, boxSelectionEnabled: true,
     style: [
-      { selector: 'node', style: { width: 'data(size)', height: 'data(size)', label: 'data(label)', 'font-family': 'Inter Local, sans-serif', 'font-size': 11, 'font-weight': 600, color: '#25302b', 'text-wrap': 'wrap', 'text-max-width': 150, 'text-valign': 'bottom', 'text-margin-y': 9, 'background-color': '#f6f6f1', 'border-width': 2, 'border-color': '#73867e', 'overlay-opacity': 0 } },
-      { selector: 'node.kind-question', style: { shape: 'round-rectangle', width: 42, height: 42, 'background-color': '#e6edf0', 'border-color': '#547b88', 'font-size': 10 } },
-      { selector: 'node.kind-answer', style: { shape: 'ellipse', width: 32, height: 32, 'background-color': '#f5f0de', 'border-color': '#a87a25', 'font-size': 9 } },
-      { selector: 'node.kind-joint_decision', style: { shape: 'diamond', width: 44, height: 44, 'background-color': '#dceae3', 'border-color': '#26705a', 'font-size': 10 } },
-      { selector: 'node.type-idea', style: { 'background-color': '#fbefd4', 'border-color': '#aa711d' } },
-      { selector: 'node.type-goal', style: { 'background-color': '#f6e5dc', 'border-color': '#b85c3e' } },
-      { selector: 'node.type-task', style: { 'background-color': '#dce9e4', 'border-color': '#1f6657' } },
-      { selector: 'node.type-question_set', style: { 'background-color': '#e1e9ec', 'border-color': '#456b78' } },
-      { selector: 'node.type-criterion', style: { 'background-color': '#ebe7dd', 'border-color': '#6d6654' } },
-      { selector: 'node:selected', style: { 'border-width': 4, 'border-color': '#101714', 'background-color': '#ffffff', 'underlay-color': '#1f6657', 'underlay-opacity': .13, 'underlay-padding': 9 } },
-      { selector: 'edge', style: { width: 1.5, 'curve-style': 'bezier', 'line-color': '#aab4af', 'target-arrow-color': '#aab4af', 'target-arrow-shape': 'triangle', 'arrow-scale': .7, label: 'data(label)', 'font-family': 'Inter Local, sans-serif', 'font-size': 8, color: '#66716c', 'text-background-color': '#e9ebe8', 'text-background-opacity': .85, 'text-background-padding': 3, 'text-rotation': 'autorotate', 'overlay-opacity': 0 } },
-      { selector: 'edge.relation-produced, edge.relation-leads_to', style: { width: 2.3, 'line-color': '#4c8172', 'target-arrow-color': '#4c8172' } },
-      { selector: '.is-dimmed', style: { opacity: .12, 'text-opacity': 0 } },
-      { selector: '.is-neighbor', style: { 'border-width': 3, 'border-color': '#1f6657' } },
-      { selector: '.link-source', style: { 'border-width': 5, 'border-color': '#c33f51', 'underlay-color': '#c33f51', 'underlay-opacity': .12, 'underlay-padding': 10 } },
+      { selector: 'node', style: { shape: 'round-rectangle', width: 166, height: 60, label: 'data(label)', 'font-family': 'Onest Local, sans-serif', 'font-size': 12, 'font-weight': 560, color: '#18201d', 'text-wrap': 'wrap', 'text-max-width': 142, 'text-valign': 'center', 'text-halign': 'center', 'line-height': 1.25, 'background-color': '#faf9f5', 'border-width': 1.5, 'border-color': '#9aa8a1', 'overlay-opacity': 0, 'transition-property': 'opacity, border-width, border-color, background-color', 'transition-duration': '.18s' } },
+      { selector: 'node.is-root', style: { width: 190, height: 70, 'font-size': 13, 'font-weight': 650, 'background-color': '#f0f6f3', 'border-width': 2.5, 'border-color': '#126a55' } },
+      { selector: 'node.kind-question', style: { width: 150, height: 52, 'background-color': '#edf3f5', 'border-color': '#557987' } },
+      { selector: 'node.kind-answer', style: { width: 132, height: 46, 'background-color': '#f8f1df', 'border-color': '#aa791f', 'font-size': 11 } },
+      { selector: 'node.kind-joint_decision', style: { width: 152, height: 54, 'background-color': '#e7f1ec', 'border-color': '#126a55' } },
+      { selector: 'node.type-idea', style: { 'background-color': '#fbf3df', 'border-color': '#a97725' } },
+      { selector: 'node.type-goal', style: { 'background-color': '#f7ece7', 'border-color': '#a95f45' } },
+      { selector: 'node.type-task', style: { 'background-color': '#eef5f2', 'border-color': '#357665' } },
+      { selector: 'node.type-question_set', style: { 'background-color': '#edf3f5', 'border-color': '#557987' } },
+      { selector: 'node.type-criterion', style: { 'background-color': '#f1efe8', 'border-color': '#716b5a' } },
+      { selector: 'node.type-decision', style: { 'background-color': '#f0eff5', 'border-color': '#706c86' } },
+      { selector: 'node:selected', style: { 'border-width': 3, 'border-color': '#101714', 'background-color': '#ffffff', 'underlay-color': '#126a55', 'underlay-opacity': .12, 'underlay-padding': 8 } },
+      { selector: 'edge', style: { width: 1.4, 'curve-style': 'bezier', 'line-color': '#b4bdb8', 'target-arrow-color': '#b4bdb8', 'target-arrow-shape': 'triangle', 'arrow-scale': .65, label: 'data(label)', 'font-family': 'Onest Local, sans-serif', 'font-size': 9, color: '#5f6964', 'text-opacity': 0, 'text-background-color': '#f3f2ed', 'text-background-opacity': .92, 'text-background-padding': 4, 'text-rotation': 'autorotate', 'overlay-opacity': 0, 'transition-property': 'opacity, line-color, width, text-opacity', 'transition-duration': '.18s' } },
+      { selector: 'edge.relation-produced, edge.relation-leads_to', style: { width: 2.1, 'line-color': '#6b9789', 'target-arrow-color': '#6b9789' } },
+      { selector: '.is-dimmed', style: { opacity: .08, 'text-opacity': 0 } },
+      { selector: 'node.is-path', style: { 'border-width': 2.5, 'border-color': '#126a55' } },
+      { selector: 'edge.is-path', style: { width: 2.4, 'line-color': '#4e8777', 'target-arrow-color': '#4e8777', 'text-opacity': 1 } },
+      { selector: 'edge.show-label', style: { 'text-opacity': 1 } },
+      { selector: 'node.zoom-compact', style: { 'font-size': 12 } },
+      { selector: 'node.zoom-hidden', style: { 'text-opacity': 0 } },
+      { selector: 'edge.zoom-hidden', style: { 'text-opacity': 0 } },
+      { selector: '.link-source', style: { 'border-width': 4, 'border-color': '#bf4250', 'underlay-color': '#bf4250', 'underlay-opacity': .12, 'underlay-padding': 9 } },
     ],
-    layout: { name: nodes.length > 1 ? 'cose' : 'grid', animate: nodes.length < 120, animationDuration: 720, randomize: true, nodeRepulsion: 8000, idealEdgeLength: 105, edgeElasticity: 90, gravity: .18, componentSpacing: 90, fit: true, padding: 70 },
+    layout: usePreset ? { name: 'preset', fit: true, padding: window.innerWidth <= 560 ? 28 : 48, animate: false } : (nodes.length > 1 ? graphLayoutOptions(true, nodes.length) : { name: 'grid', fit: true, padding: 48 }),
   });
   state.graphInstance = cy;
+  cy.one('layoutstop', () => { ensureReadableGraphView(cy); saveGraphPositions(cy); updateGraphZoomStyles(); });
+  cy.ready(() => requestAnimationFrame(() => saveGraphPositions(cy)));
+  cy.on('zoom', updateGraphZoomStyles);
   cy.on('tap', 'node', (event) => selectGraphNode(event.target.id()));
   cy.on('mouseover', 'node', (event) => highlightGraphNeighborhood(event.target));
-  cy.on('mouseout', 'node', () => applyGraphSearch());
+  cy.on('mouseout', 'node', applyGraphEmphasis);
   cy.on('tap', (event) => { if (event.target === cy) selectGraphNode(''); });
+  cy.on('grab', 'node', (event) => {
+    const node = event.target;
+    const descendants = graphHierarchyDescendants(cy, node.id());
+    state.graphDragGroup = { rootID: node.id(), start: node.position(), positions: new Map(descendants.map((id) => [id, { ...cy.$id(id).position() }])) };
+  });
+  cy.on('drag', 'node', (event) => {
+    const group = state.graphDragGroup;
+    if (!group || group.rootID !== event.target.id() || state.graphMovingGroup) return;
+    const position = event.target.position();
+    const dx = position.x - group.start.x; const dy = position.y - group.start.y;
+    state.graphMovingGroup = true;
+    group.positions.forEach((start, id) => cy.$id(id).position({ x: start.x + dx, y: start.y + dy }));
+    state.graphMovingGroup = false;
+  });
+  cy.on('free', 'node', () => { saveGraphPositions(cy); state.graphDragGroup = null; });
   let lastTapped = { id: '', time: 0 };
   cy.on('tap', 'node', (event) => {
     const now = Date.now(); const id = event.target.id();
@@ -813,28 +1022,69 @@ function mountGraph() {
   });
   if (state.graphSelectedId && cy.$id(state.graphSelectedId).length) selectGraphNode(state.graphSelectedId, true);
   else if (state.graphFocusRecordId && cy.$id(`record:${state.graphFocusRecordId}`).length) selectGraphNode(`record:${state.graphFocusRecordId}`, true);
-  applyGraphSearch();
+  applyGraphEmphasis();
+  updateGraphZoomStyles();
 }
 
 function highlightGraphNeighborhood(node) {
   const cy = state.graphInstance;
   if (!cy) return;
-  cy.elements().addClass('is-dimmed').removeClass('is-neighbor');
-  const neighborhood = node.closedNeighborhood();
-  neighborhood.removeClass('is-dimmed').addClass('is-neighbor');
-  node.removeClass('is-neighbor');
+  cy.elements().addClass('is-dimmed').removeClass('is-path show-label');
+  node.closedNeighborhood().removeClass('is-dimmed').addClass('is-path');
+  node.connectedEdges().addClass('show-label');
+  node.removeClass('is-path');
+}
+
+function graphBranchElements(nodeID) {
+  const cy = state.graphInstance;
+  const nodeIDs = new Set([nodeID]);
+  const walk = (direction) => {
+    let frontier = [nodeID];
+    while (frontier.length) {
+      const current = frontier.shift();
+      const selector = direction === 'down' ? `[relationType = "parent_of"][source = "${current}"]` : `[relationType = "parent_of"][target = "${current}"]`;
+      cy.edges(selector).forEach((edge) => {
+        const next = direction === 'down' ? edge.target().id() : edge.source().id();
+        if (!nodeIDs.has(next)) { nodeIDs.add(next); frontier.push(next); }
+      });
+    }
+  };
+  walk('down'); walk('up');
+  cy.$id(nodeID).connectedEdges().forEach((edge) => nodeIDs.add(edge.source().id() === nodeID ? edge.target().id() : edge.source().id()));
+  const nodes = cy.nodes().filter((node) => nodeIDs.has(node.id()));
+  const edges = cy.edges().filter((edge) => nodeIDs.has(edge.source().id()) && nodeIDs.has(edge.target().id()));
+  return nodes.union(edges);
+}
+
+function applyGraphEmphasis() {
+  const cy = state.graphInstance;
+  if (!cy) return;
+  cy.elements().removeClass('is-dimmed is-path show-label');
+  const query = state.graphSearch.trim().toLowerCase();
+  if (query) {
+    const matches = cy.nodes().filter((node) => `${node.data('title')} ${node.data('description') || ''}`.toLowerCase().includes(query));
+    cy.elements().addClass('is-dimmed');
+    matches.forEach((node) => node.closedNeighborhood().removeClass('is-dimmed'));
+    matches.connectedEdges().addClass('show-label');
+    return;
+  }
+  if (state.graphSelectedId && cy.$id(state.graphSelectedId).length) {
+    const branch = graphBranchElements(state.graphSelectedId);
+    cy.elements().addClass('is-dimmed');
+    branch.removeClass('is-dimmed').addClass('is-path');
+    cy.$id(state.graphSelectedId).removeClass('is-path');
+  }
+  updateGraphZoomStyles();
 }
 
 function applyGraphSearch() {
   const cy = state.graphInstance;
   if (!cy) return;
-  cy.elements().removeClass('is-dimmed is-neighbor');
+  applyGraphEmphasis();
   const query = state.graphSearch.trim().toLowerCase();
   if (!query) return;
   const matches = cy.nodes().filter((node) => `${node.data('title')} ${node.data('description') || ''}`.toLowerCase().includes(query));
-  cy.elements().addClass('is-dimmed');
-  matches.forEach((node) => node.closedNeighborhood().removeClass('is-dimmed'));
-  if (matches.length) cy.animate({ fit: { eles: matches, padding: 120 }, duration: 260 });
+  if (matches.length) cy.animate({ fit: { eles: matches, padding: 120 }, duration: 220 });
 }
 
 function selectGraphNode(id, skipCenter = false) {
@@ -844,8 +1094,9 @@ function selectGraphNode(id, skipCenter = false) {
   cy.$(':selected').unselect();
   if (id && cy.$id(id).length) {
     cy.$id(id).select();
-    if (!skipCenter) cy.animate({ center: { eles: cy.$id(id) }, zoom: Math.max(cy.zoom(), .9), duration: 240 });
+    if (!skipCenter) cy.animate({ center: { eles: cy.$id(id) }, zoom: Math.max(cy.zoom(), .78), duration: 210 });
   }
+  applyGraphEmphasis();
   $('#graph-inspector').innerHTML = renderGraphInspector();
   bindGraphInspector();
   $('#graph-inspector').classList.toggle('open', Boolean(id));
@@ -874,8 +1125,14 @@ function bindGraphControls() {
   $('#graph-type-filter').addEventListener('change', (event) => { state.graphTypeFilter = event.target.value; mountGraph(); });
   $('#graph-discussions').addEventListener('change', (event) => { state.graphShowDiscussion = event.target.checked; mountGraph(); });
   $('#graph-depth')?.addEventListener('input', (event) => { state.graphDepth = Number(event.target.value); event.target.nextElementSibling.textContent = String(state.graphDepth); mountGraph(); });
-  $('#graph-fit').addEventListener('click', () => state.graphInstance?.animate({ fit: { eles: state.graphInstance.elements(':visible'), padding: 70 }, duration: 320 }));
-  $('#graph-relayout').addEventListener('click', () => state.graphInstance?.layout({ name: 'cose', animate: true, animationDuration: 650, randomize: true, nodeRepulsion: 8000, idealEdgeLength: 105, gravity: .18, fit: true, padding: 70 }).run());
+  $('#graph-fit').addEventListener('click', () => state.graphInstance?.animate({ fit: { eles: state.graphInstance.elements(':visible'), padding: window.innerWidth <= 560 ? 28 : 48 }, duration: 260 }));
+  $('#graph-relayout').addEventListener('click', () => {
+    if (!state.graphInstance) return;
+    clearGraphPositions();
+    const layout = state.graphInstance.layout(graphLayoutOptions(true));
+    state.graphInstance.one('layoutstop', () => { ensureReadableGraphView(state.graphInstance); saveGraphPositions(); updateGraphZoomStyles(); });
+    layout.run();
+  });
 }
 
 function bindGraphInspector() {
@@ -1038,6 +1295,7 @@ function addRecordWorkspaceItem(id, summary, preserve) {
 
 async function openRecord(id, options = {}) {
   const requestID = ++state.activeRecordRequest;
+  if (state.activeWorkspaceRecordId !== id || options.edit !== true) state.recordEditMode = Boolean(options.edit);
   const cached = cachedRecordDetail(id);
   const summary = state.records.find((record) => record.id === id);
   const preserveWorkspace = Boolean(options.workspace || ($('#record-dialog').open && state.recordWorkspace.length));
@@ -1143,6 +1401,64 @@ function renderHierarchyPanel(record) {
   </section>`;
 }
 
+function dossierProperty(label, value, field, canEdit, tone = '') {
+  const tag = canEdit && field ? 'button' : 'div';
+  return `<${tag} ${canEdit && field ? `type="button" data-edit-field="${field}"` : ''} class="dossier-property ${tone}"><span>${escapeHTML(label)}</span><strong>${escapeHTML(value || 'Не указано')}</strong>${canEdit && field ? icon('edit') : ''}</${tag}>`;
+}
+
+function renderAIAnalysis(record, canEdit) {
+  if (state.aiAnalysisLoading === record.id) {
+    return `<section class="ai-analysis loading"><span class="spinner"></span><div><strong>AI разбирает карточку</strong><p>Проверяем контекст, риски, связи и следующий предметный результат.</p></div></section>`;
+  }
+  const analysis = state.aiAnalyses.get(record.id);
+  if (!analysis) return '';
+  const source = analysis.source === 'groq' ? 'Groq' : 'локальные правила';
+  return `<section class="ai-analysis">
+    <header><span>${icon('sparkles')}</span><div><p class="eyebrow">AI-разбор · ${escapeHTML(source)}</p><h3>Что требует внимания</h3></div><b>${Math.round((analysis.confidence || 0) * 100)}%</b></header>
+    <p class="ai-summary">${escapeHTML(analysis.summary)}</p>
+    <div class="ai-analysis-grid">
+      <div><span>Пробелы</span>${analysis.gaps.length ? `<ul>${analysis.gaps.map((item) => `<li>${escapeHTML(item)}</li>`).join('')}</ul>` : '<p>Критичных пробелов не найдено.</p>'}</div>
+      <div class="ai-risks"><span>Риски</span>${analysis.risks.length ? `<ul>${analysis.risks.map((item) => `<li>${escapeHTML(item)}</li>`).join('')}</ul>` : '<p>Явных рисков не найдено.</p>'}</div>
+    </div>
+    <div class="ai-next"><span>Следующий проверяемый шаг</span><strong>${escapeHTML(analysis.nextAction)}</strong><div>${canEdit ? `<button type="button" class="secondary" data-ai-create-next>${icon('plus')} Создать задачу</button>` : ''}${canEdit && (analysis.priority !== record.priority || analysis.estimateMinutes !== record.estimateMinutes) ? `<button type="button" class="secondary" data-ai-apply-plan>${icon('check')} Применить ${escapeHTML(priorityLabels[analysis.priority])}, ${minutesLabel(analysis.estimateMinutes)}</button>` : ''}</div></div>
+    ${analysis.suggestedLinks.length ? `<div class="ai-proposals"><span>Предлагаемые связи</span>${analysis.suggestedLinks.map((link) => `<button type="button" data-ai-link="${link.recordId}" data-ai-relation="${link.relationType}" ${canEdit ? '' : 'disabled'}><strong>${escapeHTML(link.title)}</strong><small>${escapeHTML(link.reason)}</small>${icon('link')}</button>`).join('')}</div>` : ''}
+    ${analysis.suggestedOutputs.length ? `<div class="ai-proposals"><span>Из заметок можно создать</span>${analysis.suggestedOutputs.map((output, index) => `<button type="button" data-ai-output-index="${index}" ${canEdit ? '' : 'disabled'}><strong>${escapeHTML(typeMeta[output.type]?.singular || 'Карточка')}: ${escapeHTML(output.title)}</strong><small>${escapeHTML(output.reason)}</small>${icon('plus')}</button>`).join('')}</div>` : ''}
+    <p class="ai-disclaimer">AI предлагает структуру, но не меняет факты, решения и сроки без вашего действия.</p>
+  </section>`;
+}
+
+function renderRecordReadOverview(record, options) {
+  const { language, hasDeadline, hasDecisionMaker, hasPriority, hasEstimate, hasManualProgress, hasResult, hasExecution, dueLabel, canEdit } = options;
+  const origin = state.activeDetail.derivation;
+  const draft = loadRecordDraft(record.id);
+  const ownerLabel = language.owner;
+  const deadline = deadlineState(record);
+  return `<div class="record-pane ${state.activeRecordTab === 'overview' ? 'active' : ''}" data-record-pane="overview">
+    ${origin ? `<button type="button" class="origin-trace" data-related-record="${origin.sourceRecordId}"><span>${icon('link')}</span><span><small>Создано из совместного вывода</small><strong>${escapeHTML(origin.questionBody)}</strong><em>${escapeHTML(origin.decisionContent)}</em></span>${icon('chevronRight')}</button>` : ''}
+    ${draft ? `<div class="draft-banner"><span><strong>Есть несохранённый черновик</strong><small>Продолжите редактирование или удалите локальную версию.</small></span><div><button type="button" class="secondary" data-open-record-edit>Продолжить</button><button type="button" class="text-button" data-discard-draft>Удалить</button></div></div>` : ''}
+    ${canEdit ? '' : `<div class="access-banner">${icon('lock')}<span><strong>Личная карточка ${escapeHTML(record.ownerUsername)}</strong><small>Просмотр доступен команде, изменять содержание может только ответственный.</small></span></div>`}
+    ${renderHierarchyPanel(record)}
+    <article class="record-dossier">
+      <section class="dossier-section dossier-context"><header><div><p class="eyebrow">Содержание</p><h3>${escapeHTML(language.description)}</h3></div>${canEdit ? `<button type="button" class="icon-button" data-edit-field="description" aria-label="Изменить описание" title="Изменить описание">${icon('edit')}</button>` : ''}</header><p class="${record.description ? '' : 'empty-copy'}">${escapeHTML(record.description || 'Контекст пока не заполнен.')}</p></section>
+      ${hasExecution ? `<section class="dossier-section"><header><div><p class="eyebrow">Контроль</p><h3>${record.type === 'question_set' ? 'Обсуждение и срок' : record.type === 'meeting' ? 'Организация встречи' : 'Исполнение'}</h3></div></header><div class="dossier-properties">
+        ${dossierProperty(ownerLabel, record.ownerUsername, 'ownerId', canEdit)}
+        ${dossierProperty('Статус', statusLabels[record.status] || record.status, record.type === 'question_set' ? '' : 'status', canEdit)}
+        ${hasDeadline ? dossierProperty(dueLabel, deadline.label, 'dueAt', canEdit, deadline.className) : ''}
+        ${hasPriority ? dossierProperty('Приоритет', priorityLabels[record.priority || 'normal'], 'priority', canEdit, `priority-${record.priority || 'normal'}`) : ''}
+        ${hasEstimate ? dossierProperty('План', minutesLabel(record.estimateMinutes), 'estimateMinutes', canEdit) + dossierProperty('Факт', minutesLabel(record.actualMinutes), 'actualMinutes', canEdit) : ''}
+        ${hasManualProgress ? dossierProperty('Прогресс', `${record.progress}%`, 'progress', canEdit) : ''}
+        ${hasDecisionMaker ? dossierProperty('Принимает решение', record.decisionMakerUsername || 'Не указан', 'decisionMakerId', canEdit) : ''}
+      </div>${record.progressNote ? `<div class="dossier-note"><span>Последнее обновление</span><p>${escapeHTML(record.progressNote)}</p></div>` : ''}</section>` : `<section class="dossier-section"><header><div><p class="eyebrow">Ответственность</p><h3>Владелец карточки</h3></div></header><div class="dossier-properties">${dossierProperty(ownerLabel, record.ownerUsername, 'ownerId', canEdit)}${dossierProperty('Статус', statusLabels[record.status] || record.status, 'status', canEdit)}</div></section>`}
+      ${hasResult ? `<section class="dossier-section dossier-result"><header><div><p class="eyebrow">Результат</p><h3>${record.type === 'research' ? 'Вывод исследования' : record.type === 'decision' ? 'Принятое решение' : record.type === 'disagreement' ? 'Результат разбора' : 'Достигнутый результат'}</h3></div>${canEdit ? `<button type="button" class="icon-button" data-edit-field="result" aria-label="Изменить результат" title="Изменить результат">${icon('edit')}</button>` : ''}</header><p class="${record.result ? '' : 'empty-copy'}">${escapeHTML(record.result || 'Результат ещё не зафиксирован.')}</p></section>` : ''}
+      <section class="dossier-meta"><span>${escapeHTML(workstreamLabels[record.workstream || 'business'])}</span><span>${record.editPolicy === 'owner_only' ? 'Личная карточка' : 'Общая карточка'}</span><span>${record.isRoot ? 'Корень ветки' : record.parentId ? 'Есть родитель' : 'Без родителя'}</span><button type="button" data-edit-field="workstream" ${canEdit ? '' : 'disabled'}>${icon('settings')} Настроить</button></section>
+    </article>
+    <div class="record-read-actions">${canEdit ? `<button type="button" class="primary" data-open-record-edit>${icon('edit')} Редактировать</button>` : ''}<button type="button" class="secondary" id="notify-partners">${icon('bell')} Уведомить</button><button type="button" class="secondary ai-action" data-analyze-record>${icon('sparkles')} AI-разбор</button><details class="record-more-actions"><summary class="icon-button" aria-label="Другие действия">•••</summary><div>${record.type === 'task' ? `<button type="button" id="convert-to-questions">${icon('messages')} Сделать карточкой вопросов</button>` : ''}${canEdit ? `<button type="button" class="danger-text" id="archive-record">${icon('archive')} В архив</button>` : ''}</div></details></div>
+    ${renderAIAnalysis(record, canEdit)}
+    ${renderNextActions(record)}
+    ${record.type === 'task' ? renderProofBlock(record, state.activeDetail.proofs) : ''}
+  </div>`;
+}
+
 function renderRecordOverview(record, statuses) {
   const draft = loadRecordDraft(record.id);
   const language = {
@@ -1171,6 +1487,9 @@ function renderRecordOverview(record, statuses) {
   const canEdit = record.editPolicy !== 'owner_only' || record.ownerId === state.me.id;
   const canManageAccess = record.ownerId === state.me.id;
   const parentOptions = state.records.filter((item) => item.id !== record.id && item.status !== 'archived').map((item) => `<option value="${item.id}" ${record.parentId === item.id ? 'selected' : ''}>${escapeHTML(typeMeta[item.type]?.singular || 'Карточка')}: ${escapeHTML(item.title)}</option>`).join('');
+  if (!state.recordEditMode) {
+    return renderRecordReadOverview(record, { language, hasDeadline, hasDecisionMaker, hasPriority, hasEstimate, hasManualProgress, hasResult, hasExecution, dueLabel, canEdit });
+  }
   return `<div class="record-pane ${state.activeRecordTab === 'overview' ? 'active' : ''}" data-record-pane="overview">
     ${origin ? `<button type="button" class="origin-trace" data-related-record="${origin.sourceRecordId}"><span>${icon('link')}</span><span><small>Создано из совместного вывода</small><strong>${escapeHTML(origin.questionBody)}</strong><em>${escapeHTML(origin.decisionContent)}</em></span>${icon('chevronRight')}</button>` : ''}
     ${draft ? `<div class="draft-banner"><span><strong>Найден несохранённый черновик</strong><small>Можно восстановить текст или удалить черновик.</small></span><div><button type="button" class="secondary" data-restore-draft>Восстановить</button><button type="button" class="text-button" data-discard-draft>Удалить</button></div></div>` : ''}
@@ -1188,10 +1507,8 @@ function renderRecordOverview(record, statuses) {
       </section>` : `<div class="form-grid one"><label>${language.owner}<select name="ownerId" ${canManageAccess ? '' : 'disabled'}>${userOptions(record.ownerId)}</select></label></div>`}
       <details class="form-more organization-fields"><summary>Доступ и место в проекте</summary><div class="form-more-body"><div class="form-grid three"><label>Направление<select name="workstream">${Object.entries(workstreamLabels).map(([value, label]) => `<option value="${value}" ${record.workstream === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Кто может изменять<select name="editPolicy" ${canManageAccess ? '' : 'disabled'}>${Object.entries(editPolicyLabels).map(([value, label]) => `<option value="${value}" ${record.editPolicy === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Родительская карточка<select name="parentId"><option value="">Без родителя</option>${parentOptions}</select></label></div><label class="root-toggle"><input name="isRoot" type="checkbox" ${record.isRoot ? 'checked' : ''}> <span><strong>Сделать новым корнем</strong><small>Карточка станет самостоятельным началом новой крупной ветки и потеряет текущего родителя.</small></span></label></div></details>
       <label id="record-reason-field" class="reason-field" hidden>Причина изменения <input name="reason" placeholder="Почему изменился статус или срок"></label>
-      <div class="form-actions record-form-actions"><button type="submit" class="primary">${icon('check')} Сохранить</button><span class="form-save-state" id="record-save-state">Изменений нет</span><button type="button" class="secondary" id="notify-partners">${icon('bell')} Уведомить</button><details class="record-more-actions"><summary class="icon-button" aria-label="Другие действия">•••</summary><div>${record.type === 'task' ? `<button type="button" id="convert-to-questions">${icon('messages')} Сделать карточкой вопросов</button>` : ''}<button type="button" class="danger-text" id="archive-record">${icon('archive')} В архив</button></div></details></div>
+      <div class="form-actions record-form-actions"><button type="submit" class="primary">${icon('check')} Сохранить</button><button type="button" class="secondary" data-cancel-record-edit>Отмена</button><span class="form-save-state" id="record-save-state">Изменений нет</span></div>
     </form>
-    ${renderNextActions(record)}
-    ${(record.type === 'task') ? renderProofBlock(record, state.activeDetail.proofs) : ''}
   </div>`;
 }
 
@@ -1274,7 +1591,7 @@ function renderRecordDialog() {
   $('#record-dialog-content').innerHTML = `
     <div class="record-shell record-type-${record.type} ${state.recordWorkspace.length > 1 ? 'has-workspace' : ''}">
     ${renderRecordWorkspace()}
-    <div class="dialog-header record-dialog-header"><div><span class="record-kind">${icon(typeMeta[record.type].icon)} ${typeMeta[record.type].singular}</span><h2>${escapeHTML(record.title)}</h2><p>Создал ${escapeHTML(record.authorUsername)} · ${formatDate(record.createdAt, true)}</p></div><div class="record-header-actions"><button type="button" class="icon-button" data-record-graph="${record.id}" title="Открыть локальную карту" aria-label="Открыть локальную карту">${icon('network')}</button><button type="button" class="close-button icon-button" data-close-dialog aria-label="Закрыть">${icon('x')}</button></div></div>
+    <div class="dialog-header record-dialog-header"><div><span class="record-kind">${icon(typeMeta[record.type].icon)} ${typeMeta[record.type].singular}</span><h2>${escapeHTML(record.title)}</h2><p>Создал ${escapeHTML(record.authorUsername)} · ${formatDate(record.createdAt, true)}</p></div><div class="record-header-actions">${canEdit && !state.recordEditMode ? `<button type="button" class="secondary record-header-edit" data-open-record-edit>${icon('edit')} Редактировать</button>` : ''}<button type="button" class="icon-button" data-record-graph="${record.id}" title="Открыть локальную карту" aria-label="Открыть локальную карту">${icon('network')}</button><button type="button" class="close-button icon-button" data-close-dialog aria-label="Закрыть">${icon('x')}</button></div></div>
     ${ideaActions}
     <nav class="record-tabs" aria-label="Разделы карточки">${recordTabs(record, detail, activity)}</nav>
     ${renderRecordContextStrip(record)}
@@ -1314,9 +1631,10 @@ function renderRecordDialog() {
 }
 
 function applyRecordAccess(record, canEdit) {
-  if (canEdit) return;
   const root = $('#record-dialog');
-  const mutationSelectors = ['#record-edit-form input', '#record-edit-form select', '#record-edit-form textarea', '#record-edit-form button', '.section-form input', '.section-form textarea', '.section-form button', '#custom-section-form input', '#custom-section-form textarea', '#custom-section-form button', '.criterion-form input', '.criterion-form button', '#link-form select', '#link-form button', '[data-remove-link]', '[data-create-linked]', '[data-create-from-record]', '#add-questions-form textarea', '#add-questions-form button', '[data-select-answer]', '[data-custom-decision] textarea', '[data-custom-decision] button', '[data-create-output]', '[data-archive-question]', '#notify-partners', '#archive-record', '#convert-to-questions'];
+  root.classList.remove('record-readonly');
+  if (canEdit) return;
+  const mutationSelectors = ['#record-edit-form input', '#record-edit-form select', '#record-edit-form textarea', '#record-edit-form button', '.section-form input', '.section-form textarea', '.section-form button', '#custom-section-form input', '#custom-section-form textarea', '#custom-section-form button', '.criterion-form input', '.criterion-form button', '#link-form select', '#link-form button', '[data-remove-link]', '[data-create-linked]', '[data-create-from-record]', '[data-ai-link]', '[data-ai-apply-plan]', '[data-ai-create-next]', '[data-ai-output-index]', '[data-open-record-edit]', '[data-edit-field]', '#add-questions-form textarea', '#add-questions-form button', '[data-select-answer]', '[data-custom-decision] textarea', '[data-custom-decision] button', '[data-create-output]', '[data-archive-question]', '#notify-partners', '#archive-record', '#convert-to-questions'];
   $$(mutationSelectors.join(','), root).forEach((node) => { node.disabled = true; node.setAttribute('aria-disabled', 'true'); });
   root.classList.add('record-readonly');
 }
@@ -1411,55 +1729,107 @@ function bindRecordDialogEvents() {
     if (state.activeRecordTab === 'relations' && !state.activeDetail.relationsLoaded) await loadRecordRelations(record.id);
     if (state.activeRecordTab === 'history' && !state.activeDetail.activityLoaded) await loadRecordActivity(record.id);
   }));
+  const startEditing = (field = '') => {
+    state.recordEditMode = true;
+    renderRecordDialog();
+    requestAnimationFrame(() => {
+      const form = $('#record-edit-form');
+      const input = field ? form?.elements.namedItem(field) : form?.elements.namedItem('title');
+      if (!input) return;
+      const trigger = input.closest('.custom-select')?.querySelector('.custom-select-trigger');
+      (trigger || input).focus();
+      if (typeof input.select === 'function' && !trigger) input.select();
+    });
+  };
+  $$('[data-open-record-edit]').forEach((button) => button.addEventListener('click', () => startEditing()));
+  $$('[data-edit-field]').forEach((button) => button.addEventListener('click', () => startEditing(button.dataset.editField)));
   const editForm = $('#record-edit-form');
-  const rootToggle = editForm.elements.isRoot;
-  const parentSelect = editForm.elements.parentId;
-  rootToggle?.addEventListener('change', () => {
-    if (rootToggle.checked && parentSelect) parentSelect.value = '';
-  });
-  parentSelect?.addEventListener('change', () => {
-    if (parentSelect.value && rootToggle) rootToggle.checked = false;
-  });
-  editForm.addEventListener('keydown', (event) => {
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+  if (editForm) {
+    const rootToggle = editForm.elements.isRoot;
+    const parentSelect = editForm.elements.parentId;
+    rootToggle?.addEventListener('change', () => {
+      if (rootToggle.checked && parentSelect) { parentSelect.value = ''; syncCustomSelect(parentSelect); }
+    });
+    parentSelect?.addEventListener('change', () => {
+      if (parentSelect.value && rootToggle) rootToggle.checked = false;
+    });
+    editForm.addEventListener('keydown', (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+        event.preventDefault();
+        editForm.requestSubmit();
+      }
+    });
+    editForm.addEventListener('input', () => updateRecordFormState(editForm, record, true));
+    editForm.addEventListener('change', () => updateRecordFormState(editForm, record, true));
+    $('[data-restore-draft]')?.addEventListener('click', () => {
+      applyRecordDraft(editForm, loadRecordDraft(record.id));
+      $('[data-restore-draft]').closest('.draft-banner').remove();
+      toast('Черновик восстановлен');
+    });
+    $('[data-cancel-record-edit]')?.addEventListener('click', () => { state.recordEditMode = false; renderRecordDialog(); });
+    editForm.addEventListener('submit', async (event) => {
       event.preventDefault();
-      editForm.requestSubmit();
-    }
-  });
-  editForm.addEventListener('input', () => updateRecordFormState(editForm, record, true));
-  editForm.addEventListener('change', () => updateRecordFormState(editForm, record, true));
-  $('[data-restore-draft]')?.addEventListener('click', () => {
-    applyRecordDraft(editForm, loadRecordDraft(record.id));
-    $('[data-restore-draft]').closest('.draft-banner').remove();
-    toast('Черновик восстановлен');
-  });
+      const { body, substantiveKeys, reasonRequired } = buildRecordUpdate(event.currentTarget, record);
+      if (!substantiveKeys.length) return toast('Изменений нет');
+      if (reasonRequired && !body.reason) {
+        $('#record-reason-field').hidden = false;
+        event.currentTarget.elements.reason.focus();
+        return toast('Укажите причину изменения статуса или срока', true);
+      }
+      await mutateRecord(`/api/records/${record.id}`, { method: 'PATCH', body: JSON.stringify(body) }, false, true);
+    });
+  }
   $('[data-discard-draft]')?.addEventListener('click', () => {
     clearRecordDraft(record.id);
     $('[data-discard-draft]').closest('.draft-banner').remove();
     toast('Черновик удалён');
   });
-  editForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const { body, substantiveKeys, reasonRequired } = buildRecordUpdate(event.currentTarget, record);
-    if (!substantiveKeys.length) return toast('Изменений нет');
-    if (reasonRequired && !body.reason) {
-      $('#record-reason-field').hidden = false;
-      event.currentTarget.elements.reason.focus();
-      return toast('Укажите причину изменения статуса или срока', true);
+  $('[data-analyze-record]')?.addEventListener('click', async () => {
+    state.aiAnalysisLoading = record.id;
+    renderRecordDialog();
+    try {
+      const analysis = await api(`/api/records/${record.id}/ai-analysis`, { method: 'POST' });
+      state.aiAnalyses.set(record.id, analysis);
+      toast(analysis.source === 'groq' ? 'AI-разбор готов' : 'Локальный разбор готов');
+    } catch (error) {
+      toast(error.message, true);
+    } finally {
+      state.aiAnalysisLoading = '';
+      if (state.activeDetail?.record.id === record.id) renderRecordDialog();
     }
-    await mutateRecord(`/api/records/${record.id}`, { method: 'PATCH', body: JSON.stringify(body) }, false, true);
   });
+  $('[data-ai-apply-plan]')?.addEventListener('click', async () => {
+    const analysis = state.aiAnalyses.get(record.id);
+    if (!analysis) return;
+    const body = { expectedUpdatedAt: record.updatedAt };
+    if (analysis.priority !== record.priority) body.priority = analysis.priority;
+    if (analysis.estimateMinutes !== record.estimateMinutes) body.estimateMinutes = analysis.estimateMinutes;
+    await mutateRecord(`/api/records/${record.id}`, { method: 'PATCH', body: JSON.stringify(body) });
+  });
+  $('[data-ai-create-next]')?.addEventListener('click', () => {
+    const analysis = state.aiAnalyses.get(record.id);
+    if (!analysis) return;
+    openCreateDialog('task', { title: analysis.nextAction, description: `Следующий шаг по карточке «${record.title}».\n\n${analysis.nextAction}`, sourceRecordId: record.id, relationType: 'leads_to', reason: 'Следующий шаг предложен AI и подтверждён пользователем', priority: analysis.priority, estimateMinutes: analysis.estimateMinutes });
+  });
+  $$('[data-ai-link]').forEach((button) => button.addEventListener('click', async () => {
+    await mutateDetail(`/api/records/${record.id}/links`, { method: 'POST', body: JSON.stringify({ targetId: button.dataset.aiLink, relationType: button.dataset.aiRelation }) });
+  }));
+  $$('[data-ai-output-index]').forEach((button) => button.addEventListener('click', () => {
+    const output = state.aiAnalyses.get(record.id)?.suggestedOutputs?.[Number(button.dataset.aiOutputIndex)];
+    if (!output) return;
+    openCreateDialog(output.type, { kind: output.kind, title: output.title, description: output.description, priority: output.priority, estimateMinutes: output.estimateMinutes, sourceRecordId: record.id, relationType: 'produced', reason: 'Сущность извлечена AI из карточки и подтверждена пользователем' });
+  }));
   $$('[data-stage]').forEach((button) => button.addEventListener('click', async () => {
     const reason = await askText({ title: 'Причина решения', label: `Почему идея переходит в статус «${statusLabels[button.dataset.stage]}»?`, required: true });
     if (reason === null) return;
     await mutateRecord(`/api/records/${record.id}`, { method: 'PATCH', body: JSON.stringify({ status: button.dataset.stage, reason, expectedUpdatedAt: record.updatedAt }) });
   }));
-  $('#notify-partners').addEventListener('click', async () => {
+  $('#notify-partners')?.addEventListener('click', async () => {
     const message = await askText({ title: 'Уведомить партнёра', label: 'Сообщение', defaultValue: `Посмотри карточку «${record.title}»`, required: true });
     if (message === null) return;
     try { await api(`/api/records/${record.id}/notify`, { method: 'POST', body: JSON.stringify({ message }) }); toast('Уведомление отправлено'); await loadData(true); } catch (error) { toast(error.message, true); }
   });
-  $('#archive-record').addEventListener('click', async () => {
+  $('#archive-record')?.addEventListener('click', async () => {
     const reason = await askText({ title: 'Перенести в архив', label: 'Почему карточка больше не активна?', required: true });
     if (!reason) return;
     await mutateRecord(`/api/records/${record.id}/archive`, { method: 'POST', body: JSON.stringify({ reason }) }, true);
@@ -1603,6 +1973,8 @@ async function mutateRecord(path, options, close = false, clearDraftOnSuccess = 
     const recordID = state.activeDetail.record.id;
     await api(path, options);
     if (clearDraftOnSuccess) clearRecordDraft(recordID);
+    if (clearDraftOnSuccess) state.recordEditMode = false;
+    state.aiAnalyses.delete(recordID);
     state.detailCache.delete(recordID);
     const [detail] = await Promise.all([close ? Promise.resolve(null) : fetchRecordDetail(recordID, true), loadData(true)]);
     if (close) $('#record-dialog').close();
@@ -1641,7 +2013,7 @@ function openCreateDialog(initialType = 'idea', preset = {}) {
   const descriptionLabel = preset.kind === 'limitation' ? 'Как применять ограничение' : preset.kind === 'rule' ? 'Формулировка и область действия' : initialType === 'question_set' ? 'Зачем обсуждаем' : initialType === 'meeting' ? 'Повестка и заметки' : initialType === 'task' ? 'Ожидаемый результат' : 'Краткое описание';
   const parentOptions = state.records.filter((record) => record.status !== 'archived').map((record) => `<option value="${record.id}" ${defaultParentID === record.id ? 'selected' : ''}>${escapeHTML(typeMeta[record.type]?.singular || 'Карточка')}: ${escapeHTML(record.title)}</option>`).join('');
   const planned = ['task', 'goal', 'research', 'question_set', 'meeting', 'decision', 'disagreement'].includes(initialType);
-  $('#create-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">${icon(initialMeta.icon)} Новая запись</span><h2>${escapeHTML(displayName)}</h2></div><button type="button" class="close-button icon-button" data-close-create aria-label="Закрыть">${icon('x')}</button></div><form id="create-record-form" class="card-form dialog-form"><label>${titleLabel}<input name="title" required maxlength="240" autofocus value="${escapeHTML(preset.title || '')}" placeholder="${initialType === 'question_set' ? 'Например: Договорённости основателей' : ''}"></label><label>${descriptionLabel}<textarea name="description" rows="5">${escapeHTML(preset.description || '')}</textarea></label><input type="hidden" name="type" value="${initialType}"><input type="hidden" name="kind" value="${escapeHTML(preset.kind || '')}">${planned ? `<div class="form-grid two"><label>${initialType === 'question_set' ? 'Координатор' : initialType === 'meeting' ? 'Организатор' : 'Ответственный'}<select name="ownerId">${userOptions(state.me.id)}</select></label><label>${initialType === 'meeting' ? 'Дата и время' : 'Срок'}<input name="dueAt" type="datetime-local"></label></div><div class="form-grid two"><label>Приоритет<select name="priority">${Object.entries(priorityLabels).map(([value, label]) => `<option value="${value}" ${value === 'normal' ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Оценка времени, минут<input name="estimateMinutes" type="number" min="0" value="0"></label></div>` : `<input type="hidden" name="ownerId" value="${state.me.id}"><input type="hidden" name="priority" value="normal"><input type="hidden" name="estimateMinutes" value="0">`}<details class="form-more create-organization" ${sourceRecord ? 'open' : ''}><summary>Место в проекте и доступ</summary><div class="form-more-body"><div class="form-grid three"><label>Направление<select name="workstream">${Object.entries(workstreamLabels).map(([value, label]) => `<option value="${value}" ${defaultWorkstream === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Доступ к изменениям<select name="editPolicy">${Object.entries(editPolicyLabels).map(([value, label]) => `<option value="${value}" ${defaultEditPolicy === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Родитель<select name="parentId"><option value="">Без родителя</option>${parentOptions}</select></label></div><label class="root-toggle"><input name="isRoot" type="checkbox" ${preset.isRoot ? 'checked' : ''}> <span><strong>Новый корень</strong><small>Начать самостоятельную крупную ветку вместо продолжения текущей цепочки.</small></span></label></div></details><div class="ai-suggestion"><span class="ai-suggestion-icon">AI</span><span><strong>Структура карточки</strong><small id="ai-suggestion-status">После названия система предложит приоритет, направление и место в иерархии.</small></span><button type="button" class="secondary" data-ai-suggest>Предложить</button></div><div class="form-actions"><button type="submit" class="primary">${icon('plus')} Создать</button><button type="button" class="secondary" data-close-create>Отмена</button></div></form>`;
+  $('#create-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">${icon(initialMeta.icon)} Новая запись</span><h2>${escapeHTML(displayName)}</h2></div><button type="button" class="close-button icon-button" data-close-create aria-label="Закрыть">${icon('x')}</button></div><form id="create-record-form" class="card-form dialog-form"><label>${titleLabel}<input name="title" required maxlength="240" autofocus value="${escapeHTML(preset.title || '')}" placeholder="${initialType === 'question_set' ? 'Например: Договорённости основателей' : ''}"></label><label>${descriptionLabel}<textarea name="description" rows="5">${escapeHTML(preset.description || '')}</textarea></label><input type="hidden" name="type" value="${initialType}"><input type="hidden" name="kind" value="${escapeHTML(preset.kind || '')}">${planned ? `<div class="form-grid two"><label>${initialType === 'question_set' ? 'Координатор' : initialType === 'meeting' ? 'Организатор' : 'Ответственный'}<select name="ownerId">${userOptions(state.me.id)}</select></label><label>${initialType === 'meeting' ? 'Дата и время' : 'Срок'}<input name="dueAt" type="datetime-local"></label></div><div class="form-grid two"><label>Приоритет<select name="priority">${Object.entries(priorityLabels).map(([value, label]) => `<option value="${value}" ${value === (preset.priority || 'normal') ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Оценка времени, минут<input name="estimateMinutes" type="number" min="0" value="${Number(preset.estimateMinutes || 0)}"></label></div>` : `<input type="hidden" name="ownerId" value="${state.me.id}"><input type="hidden" name="priority" value="${escapeHTML(preset.priority || 'normal')}"><input type="hidden" name="estimateMinutes" value="${Number(preset.estimateMinutes || 0)}">`}<details class="form-more create-organization" ${sourceRecord ? 'open' : ''}><summary>Место в проекте и доступ</summary><div class="form-more-body"><div class="form-grid three"><label>Направление<select name="workstream">${Object.entries(workstreamLabels).map(([value, label]) => `<option value="${value}" ${defaultWorkstream === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Доступ к изменениям<select name="editPolicy">${Object.entries(editPolicyLabels).map(([value, label]) => `<option value="${value}" ${defaultEditPolicy === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Родитель<select name="parentId"><option value="">Без родителя</option>${parentOptions}</select></label></div><label class="root-toggle"><input name="isRoot" type="checkbox" ${preset.isRoot ? 'checked' : ''}> <span><strong>Новый корень</strong><small>Начать самостоятельную крупную ветку вместо продолжения текущей цепочки.</small></span></label></div></details><div class="ai-suggestion"><span class="ai-suggestion-icon">${icon('sparkles')}</span><span><strong>AI-структура</strong><small id="ai-suggestion-status">После названия система предложит приоритет, оценку времени, направление и место в иерархии.</small></span><button type="button" class="secondary" data-ai-suggest>Предложить</button></div><div class="form-actions"><button type="submit" class="primary">${icon('plus')} Создать</button><button type="button" class="secondary" data-close-create>Отмена</button></div></form>`;
   $$('[data-close-create]').forEach((button) => button.addEventListener('click', () => $('#create-dialog').close()));
   const createForm = $('#create-record-form');
   bindCreateSuggestion(createForm, initialType);
@@ -1665,11 +2037,11 @@ function openCreateDialog(initialType = 'idea', preset = {}) {
 }
 
 function bindCreateSuggestion(form, recordType) {
-  const tracked = ['priority', 'workstream', 'parentId'];
+  const tracked = ['priority', 'workstream', 'parentId', 'estimateMinutes'];
   tracked.forEach((name) => form.elements[name]?.addEventListener('change', () => { form.elements[name].dataset.userChanged = 'true'; }));
   const root = form.elements.isRoot;
   const parent = form.elements.parentId;
-  root?.addEventListener('change', () => { if (root.checked && parent) parent.value = ''; });
+  root?.addEventListener('change', () => { if (root.checked && parent) { parent.value = ''; syncCustomSelect(parent); } });
   parent?.addEventListener('change', () => { if (parent.value && root) root.checked = false; });
   let requestNumber = 0;
   const suggest = async (force = false) => {
@@ -1683,12 +2055,15 @@ function bindCreateSuggestion(form, recordType) {
       if (currentRequest !== requestNumber || !form.isConnected) return;
       tracked.forEach((name) => {
         const field = form.elements[name];
-        if (field && (force || field.dataset.userChanged !== 'true') && suggestion[name] !== undefined) field.value = suggestion[name];
+        if (field && (force || field.dataset.userChanged !== 'true') && suggestion[name] !== undefined) {
+          field.value = suggestion[name];
+          if (field.tagName === 'SELECT') syncCustomSelect(field);
+        }
       });
       if (suggestion.parentId && root) root.checked = false;
       const parentTitle = suggestion.parentId ? state.records.find((record) => record.id === suggestion.parentId)?.title : '';
       const source = suggestion.source === 'groq' ? 'Groq' : 'локальная модель';
-      status.textContent = `${source}: ${priorityLabels[suggestion.priority]}, ${workstreamLabels[suggestion.workstream]}${parentTitle ? `, ветка «${parentTitle}»` : ', без родителя'}. ${suggestion.reason}`;
+      status.textContent = `${source}: ${priorityLabels[suggestion.priority]}, ${minutesLabel(suggestion.estimateMinutes)}, ${workstreamLabels[suggestion.workstream]}${parentTitle ? `, ветка «${parentTitle}»` : ', без родителя'}. ${suggestion.reason}`;
     } catch (error) {
       if (currentRequest === requestNumber) status.textContent = `Не удалось получить предложение: ${error.message}`;
     }
@@ -1702,7 +2077,7 @@ function bindCreateSuggestion(form, recordType) {
 }
 
 function actionLabel(action) {
-  return ({ created: 'создал карточку', profile_updated: 'изменил профиль', updated: 'изменил карточку', converted_to_questions: 'преобразовал в карточку вопросов', archived: 'перенёс в архив', section_updated: 'обновил раздел', link_created: 'создал связь', link_removed: 'убрал связь', criterion_scored: 'оценил по критерию', proof_added: 'добавил доказательство', completed: 'завершил задачу', partners_notified: 'уведомил партнёра', questions_added: 'добавил вопросы', question_answered: 'ответил на вопрос', question_decided: 'зафиксировал совместное решение', question_archived: 'архивировал вопрос', output_created: 'превратил вывод в рабочую карточку', created_from_question: 'создал карточку из совместного вывода' }[action] || action);
+  return ({ created: 'создал карточку', profile_updated: 'изменил профиль', updated: 'изменил карточку', reordered: 'изменил порядок блоков', converted_to_questions: 'преобразовал в карточку вопросов', archived: 'перенёс в архив', section_updated: 'обновил раздел', link_created: 'создал связь', link_removed: 'убрал связь', criterion_scored: 'оценил по критерию', proof_added: 'добавил доказательство', completed: 'завершил задачу', partners_notified: 'уведомил партнёра', questions_added: 'добавил вопросы', question_answered: 'ответил на вопрос', question_decided: 'зафиксировал совместное решение', question_archived: 'архивировал вопрос', output_created: 'превратил вывод в рабочую карточку', created_from_question: 'создал карточку из совместного вывода' }[action] || action);
 }
 
 function activityActionLabel(item) {
@@ -1877,10 +2252,114 @@ function renderStructure() {
   const selectedType = state.structureType || 'idea';
   state.structureType = selectedType;
   const definitions = state.definitions.filter((definition) => definition.scopeType === selectedType || !definition.scopeType);
-  $('#main-content').innerHTML = `<div class="page-heading"><div><p class="eyebrow">Настройки</p><h1>Шаблоны карточек</h1><p>Выберите тип и настройте дополнительные смысловые блоки. Основные поля карточки не меняются.</p></div></div><div class="template-editor"><aside>${configurableTypes.map(([key, meta]) => `<button type="button" data-structure-type="${key}" class="${selectedType === key ? 'active' : ''}">${icon(meta.icon)}<span>${meta.label}</span><b>${state.definitions.filter((definition) => definition.scopeType === key && definition.active).length}</b></button>`).join('')}</aside><section><header><div><h2>${typeMeta[selectedType].label}</h2><p>Блоки появляются во вкладке «Содержание» карточек этого типа.</p></div><button type="button" class="secondary" data-add-template-block>${icon('plus')} Добавить блок</button></header><div class="template-block-list">${definitions.map((definition) => `<article class="template-block ${definition.active ? '' : 'inactive'}"><span class="drag-handle">⋮⋮</span><div><strong>${escapeHTML(definition.name)}</strong><small>${definition.scopeType ? `Только ${typeMeta[definition.scopeType].label.toLowerCase()}` : 'Во всех карточках'}</small></div><button type="button" class="text-button" data-toggle-definition="${definition.id}" data-active="${definition.active}">${definition.active ? 'Скрыть' : 'Вернуть'}</button></article>`).join('') || emptyState('Дополнительных блоков нет.')}</div></section></div>`;
+  const active = definitions.filter((definition) => definition.active).sort((a, b) => a.sortOrder - b.sortOrder);
+  const hidden = definitions.filter((definition) => !definition.active).sort((a, b) => a.sortOrder - b.sortOrder);
+  $('#main-content').innerHTML = `<div class="page-heading template-heading"><div><p class="eyebrow">Настройки структуры</p><h1>Шаблоны карточек</h1><p>Перетащите блоки в нужный порядок. Это меняет только смысловую структуру новых и существующих карточек, а не их данные.</p></div></div><div class="template-editor"><aside>${configurableTypes.map(([key, meta]) => `<button type="button" data-structure-type="${key}" class="${selectedType === key ? 'active' : ''}">${icon(meta.icon)}<span>${meta.label}</span><b>${state.definitions.filter((definition) => definition.scopeType === key && definition.active).length}</b></button>`).join('')}</aside><section><header><div><p class="eyebrow">Содержание карточки</p><h2>${typeMeta[selectedType].label}</h2><p>Верхний блок появится первым во вкладке «Содержание».</p></div></header><div class="template-block-list" data-template-list>${active.map((definition) => `<article class="template-block" draggable="true" data-template-block="${definition.id}" data-scope-type="${definition.scopeType || ''}"><button type="button" class="drag-handle" aria-label="Перетащить блок «${escapeHTML(definition.name)}»" title="Перетащить блок">${icon('grip')}</button><div><strong>${escapeHTML(definition.name)}</strong><small>${definition.scopeType ? `Только ${typeMeta[definition.scopeType].label.toLowerCase()}` : 'Общий блок для всех карточек'}</small></div><span class="template-position">${icon('check')}</span></article>`).join('') || `<div class="guided-empty template-empty">${icon('settings')}<h3>Содержательных блоков пока нет</h3><p>Добавьте первый блок, чтобы карточка не превращалась в свободную заметку.</p></div>`}<div class="template-drop-actions"><button type="button" class="template-add" data-add-template-block>${icon('plus')}<span><strong>Добавить блок</strong><small>Новый смысловой раздел карточки</small></span></button><div class="template-trash" data-template-trash>${icon('trash')}<span><strong>Убрать из шаблона</strong><small>Блок можно восстановить позже</small></span></div></div></div>${hidden.length ? `<details class="hidden-template-blocks"><summary>Скрытые блоки <b>${hidden.length}</b></summary><div>${hidden.map((definition) => `<button type="button" data-restore-definition="${definition.id}">${icon('rotate')}<span><strong>${escapeHTML(definition.name)}</strong><small>Вернуть в шаблон</small></span></button>`).join('')}</div></details>` : ''}</section></div>`;
   $$('[data-structure-type]').forEach((button) => button.addEventListener('click', () => { state.structureType = button.dataset.structureType; renderStructure(); }));
   $('[data-add-template-block]').addEventListener('click', async () => { const name = await askText({ title: `Новый блок для «${typeMeta[selectedType].label}»`, label: 'Название смыслового блока', required: true }); if (!name) return; try { await api('/api/section-definitions', { method: 'POST', body: JSON.stringify({ name, scopeType: selectedType, kind: 'universal' }) }); await loadData(true); state.structureType = selectedType; renderStructure(); toast('Блок добавлен'); } catch (error) { toast(error.message, true); } });
-  $$('[data-toggle-definition]').forEach((button) => button.addEventListener('click', async () => { try { await api(`/api/section-definitions/${button.dataset.toggleDefinition}`, { method: 'PATCH', body: JSON.stringify({ active: button.dataset.active !== 'true', reason: button.dataset.active === 'true' ? 'Пункт больше не используется в новых карточках' : 'Пункт снова нужен' }) }); await loadData(true); toast('Структура обновлена'); } catch (error) { toast(error.message, true); } }));
+  $$('[data-restore-definition]').forEach((button) => button.addEventListener('click', async () => { try { await api(`/api/section-definitions/${button.dataset.restoreDefinition}`, { method: 'PATCH', body: JSON.stringify({ active: true, reason: 'Пункт снова нужен в шаблоне' }) }); await loadData(true); state.structureType = selectedType; renderStructure(); toast('Блок возвращён'); } catch (error) { toast(error.message, true); } }));
+  bindTemplateDrag(selectedType);
+}
+
+async function saveTemplateOrder(scopeType, list) {
+  const orderedIds = $$('[data-template-block]', list).filter((row) => row.dataset.scopeType === scopeType).map((row) => row.dataset.templateBlock);
+  if (!orderedIds.length) return;
+  await api('/api/section-definitions/reorder', { method: 'POST', body: JSON.stringify({ scopeType, orderedIds }) });
+  orderedIds.forEach((id, index) => {
+    const definition = state.definitions.find((item) => item.id === id);
+    if (definition) definition.sortOrder = (index + 1) * 10;
+  });
+}
+
+function bindTemplateDrag(scopeType) {
+  const list = $('[data-template-list]');
+  const trash = $('[data-template-trash]');
+  if (!list || !trash) return;
+  let dragged = null;
+  let droppedInTrash = false;
+  let pointerDrag = null;
+  const clearTargets = () => $$('[data-template-block]', list).forEach((row) => row.classList.remove('drop-before', 'drop-after'));
+  const begin = (row) => {
+    dragged = row; droppedInTrash = false;
+    row.classList.add('dragging'); list.classList.add('is-dragging');
+  };
+  const finish = async () => {
+    if (!dragged) return;
+    const moved = dragged;
+    list.classList.remove('is-dragging'); trash.classList.remove('active'); clearTargets();
+    document.body.classList.remove('template-pointer-drag');
+    moved.classList.remove('dragging'); dragged = null;
+    if (droppedInTrash) { droppedInTrash = false; return; }
+    try { await saveTemplateOrder(scopeType, list); toast('Порядок блоков сохранён'); } catch (error) { toast(error.message, true); renderStructure(); }
+  };
+  const hideDragged = async () => {
+    if (!dragged) return;
+    const id = dragged.dataset.templateBlock;
+    droppedInTrash = true; trash.classList.remove('active'); dragged.classList.add('removing');
+    try {
+      await api(`/api/section-definitions/${id}`, { method: 'PATCH', body: JSON.stringify({ active: false, reason: 'Блок убран из шаблона через зону удаления' }) });
+      await loadData(true); state.structureType = scopeType; renderStructure(); toast('Блок скрыт. Его можно вернуть ниже списка');
+    } catch (error) { droppedInTrash = false; toast(error.message, true); renderStructure(); }
+  };
+  $$('[data-template-block]', list).forEach((row) => {
+    row.addEventListener('dragstart', (event) => {
+      if (row.dataset.scopeType !== scopeType) { event.preventDefault(); return; }
+      begin(row);
+      event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', row.dataset.templateBlock);
+    });
+    row.addEventListener('dragover', (event) => {
+      if (!dragged || row === dragged) return;
+      event.preventDefault(); clearTargets();
+      const before = event.clientY < row.getBoundingClientRect().top + row.offsetHeight / 2;
+      row.classList.add(before ? 'drop-before' : 'drop-after');
+      list.insertBefore(dragged, before ? row : row.nextSibling);
+    });
+    row.addEventListener('dragend', finish);
+    const handle = $('.drag-handle', row);
+    handle?.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse' || row.dataset.scopeType !== scopeType) return;
+      event.preventDefault(); begin(row); document.body.classList.add('template-pointer-drag');
+      pointerDrag = { id: event.pointerId, handle };
+      handle.setPointerCapture?.(event.pointerId);
+    });
+    handle?.addEventListener('pointermove', (event) => {
+      if (!pointerDrag || pointerDrag.id !== event.pointerId || !dragged) return;
+      event.preventDefault();
+      const target = document.elementFromPoint(event.clientX, event.clientY);
+      const overTrash = target?.closest('[data-template-trash]');
+      trash.classList.toggle('active', Boolean(overTrash));
+      if (overTrash) { clearTargets(); return; }
+      const targetRow = target?.closest('[data-template-block]');
+      if (!targetRow || targetRow === dragged || !list.contains(targetRow)) return;
+      clearTargets();
+      const before = event.clientY < targetRow.getBoundingClientRect().top + targetRow.offsetHeight / 2;
+      targetRow.classList.add(before ? 'drop-before' : 'drop-after');
+      list.insertBefore(dragged, before ? targetRow : targetRow.nextSibling);
+    });
+    const endPointerDrag = async (event) => {
+      if (!pointerDrag || pointerDrag.id !== event.pointerId) return;
+      const remove = trash.classList.contains('active');
+      pointerDrag.handle.releasePointerCapture?.(event.pointerId); pointerDrag = null;
+      if (remove) await hideDragged(); else await finish();
+    };
+    handle?.addEventListener('pointerup', endPointerDrag);
+    handle?.addEventListener('pointercancel', async () => { pointerDrag = null; await finish(); });
+    handle?.addEventListener('keydown', async (event) => {
+      if (!['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+      event.preventDefault();
+      const sibling = event.key === 'ArrowUp' ? row.previousElementSibling : row.nextElementSibling;
+      if (!sibling?.matches('[data-template-block]')) return;
+      if (event.key === 'ArrowUp') list.insertBefore(row, sibling); else list.insertBefore(sibling, row);
+      try { await saveTemplateOrder(scopeType, list); renderStructure(); toast('Порядок блоков сохранён'); } catch (error) { toast(error.message, true); }
+    });
+  });
+  trash.addEventListener('dragover', (event) => { if (!dragged) return; event.preventDefault(); trash.classList.add('active'); event.dataTransfer.dropEffect = 'move'; });
+  trash.addEventListener('dragleave', () => trash.classList.remove('active'));
+  trash.addEventListener('drop', async (event) => {
+    event.preventDefault();
+    if (!dragged) return;
+    await hideDragged();
+  });
 }
 
 function renderNotifications() {
@@ -1894,11 +2373,12 @@ const onboardingSteps = [
   { icon: 'lock', label: 'Личное и общее', title: 'Доступ задаётся для каждой карточки', text: 'Общую карточку ведут оба основателя. В личной карточке партнёр видит ход работы, но изменить содержание может только ответственный.' },
   { icon: 'messages', label: 'Совместные вопросы', title: 'Одна карточка хранит список вопросов', text: 'Каждый основатель отвечает отдельно. После двух ответов зафиксируйте общий итог и превратите его в критерий, ограничение, правило, идею или задачу.' },
   { icon: 'network', label: 'Причины и следствия', title: 'Продолжайте цепочку из исходной карточки', text: 'Создавайте следующий объект через «Продолжить цепочку». Родитель виден в иерархии, а полная причинная картина открывается на карте связей.' },
+  { icon: 'sparkles', label: 'AI без автопилота', title: 'Нейросеть предлагает, основатель подтверждает', text: 'AI помогает оценить время, приоритет, пробелы, риски и возможные связи. Ни одно поле, решение или новая карточка не меняются без вашего явного действия.' },
   { icon: 'history', label: 'Ничего не исчезает', title: 'Статус меняет представление, а не объект', text: 'Срок, статус, причина, автор и результат остаются в истории. Завершённая задача требует доказательства, а архив не удаляет карточку.' },
 ];
 
 function onboardingKey() {
-  return `business-control:onboarding:${state.me?.id || 'anonymous'}:v3`;
+  return `business-control:onboarding:${state.me?.id || 'anonymous'}:v4`;
 }
 
 function maybeShowOnboarding() {

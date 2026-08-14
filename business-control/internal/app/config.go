@@ -15,6 +15,7 @@ type Config struct {
 	AllowedUsernames map[string]struct{}
 	GroqAPIKey       string
 	GroqModel        string
+	GroqBaseURL      string
 }
 
 func LoadConfig() Config {
@@ -26,6 +27,7 @@ func LoadConfig() Config {
 		AllowedUsernames: parseAllowedUsernames(os.Getenv("BUSINESS_ALLOWED_USERNAMES")),
 		GroqAPIKey:       strings.TrimSpace(os.Getenv("GROQ_API_KEY")),
 		GroqModel:        envOr("GROQ_MODEL", "openai/gpt-oss-20b"),
+		GroqBaseURL:      strings.TrimRight(envOr("GROQ_BASE_URL", "https://api.groq.com/openai/v1"), "/"),
 	}
 }
 

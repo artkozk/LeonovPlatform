@@ -39,11 +39,45 @@ func TestObjectFirstWorkflowAssetsAreEmbedded(t *testing.T) {
 	if _, err := Files.ReadFile("fonts/Inter-Regular.woff2"); err != nil {
 		t.Fatalf("embedded Inter font missing: %v", err)
 	}
+	if _, err := Files.ReadFile("fonts/Onest-Variable.ttf"); err != nil {
+		t.Fatalf("embedded Onest font missing: %v", err)
+	}
 	if library, err := Files.ReadFile("vendor/cytoscape-3.34.1.min.js"); err != nil || len(library) < 400_000 {
 		t.Fatalf("embedded Cytoscape library missing or incomplete: bytes=%d err=%v", len(library), err)
 	}
 	if _, err := Files.ReadFile("vendor/CYTOSCAPE-LICENSE.txt"); err != nil {
 		t.Fatalf("embedded Cytoscape license missing: %v", err)
+	}
+}
+
+func TestRefinedInteractionAssetsAreEmbedded(t *testing.T) {
+	app, err := Files.ReadFile("app.js")
+	if err != nil {
+		t.Fatalf("read app.js: %v", err)
+	}
+	for _, marker := range [][]byte{
+		[]byte("function enhanceSelect"),
+		[]byte("function renderRecordReadOverview"),
+		[]byte("function renderAIAnalysis"),
+		[]byte("function graphHierarchyDescendants"),
+		[]byte("function saveGraphPositions"),
+		[]byte("function bindTemplateDrag"),
+		[]byte("pointerDrag"),
+		[]byte("sidebar-close"),
+		[]byte("/api/section-definitions/reorder"),
+	} {
+		if !bytes.Contains(app, marker) {
+			t.Fatalf("app.js does not contain refined interaction marker %q", marker)
+		}
+	}
+	styles, err := Files.ReadFile("styles.css")
+	if err != nil {
+		t.Fatalf("read styles.css: %v", err)
+	}
+	for _, marker := range [][]byte{[]byte("Onest Local"), []byte(".record-dossier"), []byte(".template-trash"), []byte(".custom-select-menu")} {
+		if !bytes.Contains(styles, marker) {
+			t.Fatalf("styles.css does not contain refined visual marker %q", marker)
+		}
 	}
 }
 

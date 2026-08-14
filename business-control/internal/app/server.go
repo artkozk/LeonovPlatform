@@ -64,6 +64,7 @@ func (s *Server) routes() {
 	s.mux.Handle("GET /api/graph", s.requireAuth(http.HandlerFunc(s.handleGraph)))
 	s.mux.Handle("GET /api/search", s.requireAuth(http.HandlerFunc(s.handleSearch)))
 	s.mux.Handle("POST /api/ai/suggest-record", s.requireAuth(http.HandlerFunc(s.handleSuggestRecord)))
+	s.mux.Handle("POST /api/records/{id}/ai-analysis", s.requireAuth(http.HandlerFunc(s.handleAnalyzeRecord)))
 
 	s.mux.Handle("GET /api/records", s.requireAuth(http.HandlerFunc(s.handleListRecords)))
 	s.mux.Handle("POST /api/records", s.requireAuth(http.HandlerFunc(s.handleCreateRecord)))
@@ -89,6 +90,7 @@ func (s *Server) routes() {
 
 	s.mux.Handle("GET /api/section-definitions", s.requireAuth(http.HandlerFunc(s.handleListDefinitions)))
 	s.mux.Handle("POST /api/section-definitions", s.requireAuth(http.HandlerFunc(s.handleCreateDefinition)))
+	s.mux.Handle("POST /api/section-definitions/reorder", s.requireAuth(http.HandlerFunc(s.handleReorderDefinitions)))
 	s.mux.Handle("PATCH /api/section-definitions/{id}", s.requireAuth(http.HandlerFunc(s.handleUpdateDefinition)))
 	s.mux.Handle("GET /api/notifications", s.requireAuth(http.HandlerFunc(s.handleNotifications)))
 	s.mux.Handle("POST /api/notifications/read-all", s.requireAuth(http.HandlerFunc(s.handleReadAllNotifications)))
@@ -2475,6 +2477,65 @@ func (s *Server) handleUpdateDefinition(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"updated": true})
+}
+
+func (s *Server) handleReorderDefinitions(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		ScopeType  string   `json:"scopeType"`
+		OrderedIDs []string `json:"orderedIds"`
+	}
+	if !decodeJSON(w, r, &input) {
+		return
+	}
+	if _, ok := recordTypes[input.ScopeType]; !ok || len(input.OrderedIDs) == 0 || len(input.OrderedIDs) > 100 {
+		writeError(w, http.StatusBadRequest, "Некорректный порядок блоков")
+		return
+	}
+	seen := make(map[string]struct{}, len(input.OrderedIDs))
+	for _, id := range input.OrderedIDs {
+		id = strings.TrimSpace(id)
+		if id == "" {
+			writeError(w, http.StatusBadRequest, "Некорректный идентификатор блока")
+			return
+		}
+		if _, exists := seen[id]; exists {
+			writeError(w, http.StatusBadRequest, "Порядок содержит повторяющийся блок")
+			return
+		}
+		seen[id] = struct{}{}
+	}
+	var expected int
+	if err := s.store.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM section_definitions WHERE scope_type = ? AND active = 1`, input.ScopeType).Scan(&expected); err != nil || expected != len(input.OrderedIDs) {
+		writeError(w, http.StatusConflict, "Состав блоков изменился. Обновите страницу и повторите")
+		return
+	}
+	tx, err := s.store.db.BeginTx(r.Context(), nil)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось начать перестановку")
+		return
+	}
+	defer tx.Rollback()
+	for index, id := range input.OrderedIDs {
+		result, updateErr := tx.ExecContext(r.Context(), `UPDATE section_definitions SET sort_order = ?, updated_at = ? WHERE id = ? AND scope_type = ? AND active = 1`, (index+1)*10, nowText(), id, input.ScopeType)
+		if updateErr != nil {
+			writeError(w, http.StatusInternalServerError, "Не удалось сохранить порядок")
+			return
+		}
+		if affected, _ := result.RowsAffected(); affected != 1 {
+			writeError(w, http.StatusConflict, "Состав блоков изменился. Обновите страницу и повторите")
+			return
+		}
+	}
+	user := currentUser(r)
+	if err := writeActivity(r.Context(), tx, user.ID, "section_definition", input.ScopeType, "reordered", "", map[string]any{"scopeType": input.ScopeType, "orderedIds": input.OrderedIDs}); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось записать историю")
+		return
+	}
+	if err := tx.Commit(); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось завершить перестановку")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"updated": len(input.OrderedIDs)})
 }
 
 func (s *Server) handleNotifications(w http.ResponseWriter, r *http.Request) {
