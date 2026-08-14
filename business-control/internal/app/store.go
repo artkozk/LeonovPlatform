@@ -48,7 +48,13 @@ type Record struct {
 	DecisionMakerID   *int64  `json:"decisionMakerId"`
 	DecisionMakerName *string `json:"decisionMakerUsername"`
 	DueAt             *string `json:"dueAt"`
+	Priority          string  `json:"priority"`
+	Workstream        string  `json:"workstream"`
+	EditPolicy        string  `json:"editPolicy"`
+	ParentID          *string `json:"parentId"`
+	IsRoot            bool    `json:"isRoot"`
 	EstimateMinutes   int     `json:"estimateMinutes"`
+	ActualMinutes     int     `json:"actualMinutes"`
 	Progress          int     `json:"progress"`
 	ProgressNote      string  `json:"progressNote"`
 	Result            string  `json:"result"`

@@ -8,6 +8,7 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -366,6 +367,176 @@ func TestQuestionDecisionWaitsForSecondFounder(t *testing.T) {
 	requestJSON(t, client, http.MethodPost, server.URL+"/api/records/"+questionSet.ID+"/questions/"+question.ID+"/decision", map[string]any{
 		"mode": "answer", "answerId": answerID,
 	}, http.StatusConflict, nil)
+}
+
+func TestGraphSearchAndPriority(t *testing.T) {
+	store, err := OpenStore(filepath.Join(t.TempDir(), "graph.db"))
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	defer store.Close()
+
+	server := httptest.NewServer(NewServer(store, Config{SessionLifetime: 24 * 60 * 60 * 1e9}))
+	defer server.Close()
+	client := testClient(t)
+	partnerClient := testClient(t)
+	user := register(t, client, server.URL, "founder@example.test", "founder")
+	register(t, partnerClient, server.URL, "partner@example.test", "partner")
+
+	questionSet := createRecord(t, client, server.URL, map[string]any{
+		"type": "question_set", "title": "Вопросы о ролях", "ownerId": user.ID,
+		"priority": "critical", "dueAt": "2026-08-18T12:00:00Z", "estimateMinutes": 120,
+	})
+	if questionSet.Priority != "critical" {
+		t.Fatalf("created priority = %q, want critical", questionSet.Priority)
+	}
+
+	var workflow QuestionWorkflow
+	requestJSON(t, client, http.MethodPost, server.URL+"/api/records/"+questionSet.ID+"/questions", map[string]any{
+		"questions": "Кто принимает контрольное решение?",
+	}, http.StatusCreated, &workflow)
+	if len(workflow.Questions) != 1 {
+		t.Fatalf("questions = %#v", workflow.Questions)
+	}
+	question := workflow.Questions[0]
+	requestJSON(t, client, http.MethodPut, server.URL+"/api/records/"+questionSet.ID+"/questions/"+question.ID+"/answer", map[string]any{
+		"content": "Контрольное решение принимает владелец направления.",
+	}, http.StatusOK, &workflow)
+	requestJSON(t, partnerClient, http.MethodPut, server.URL+"/api/records/"+questionSet.ID+"/questions/"+question.ID+"/answer", map[string]any{
+		"content": "Согласен, если владелец направления заранее назначен.",
+	}, http.StatusOK, &workflow)
+	requestJSON(t, client, http.MethodPost, server.URL+"/api/records/"+questionSet.ID+"/questions/"+question.ID+"/decision", map[string]any{
+		"mode": "answer", "answerId": workflow.Questions[0].Answers[0].ID,
+	}, http.StatusOK, &workflow)
+
+	var graph GraphResponse
+	graphHeaders := requestGetJSONWithHeaders(t, client, server.URL+"/api/graph", &graph)
+	if !strings.Contains(graphHeaders.Get("Server-Timing"), "graph") {
+		t.Fatalf("graph Server-Timing = %q", graphHeaders.Get("Server-Timing"))
+	}
+	wantNodeKinds := map[string]bool{"record": false, "question": false, "answer": false, "joint_decision": false}
+	for _, node := range graph.Nodes {
+		if _, ok := wantNodeKinds[node.EntityKind]; ok {
+			wantNodeKinds[node.EntityKind] = true
+		}
+	}
+	for kind, found := range wantNodeKinds {
+		if !found {
+			t.Fatalf("graph missing %s node: %#v", kind, graph.Nodes)
+		}
+	}
+	if len(graph.Edges) < 3 {
+		t.Fatalf("graph edges = %d, want question workflow chain", len(graph.Edges))
+	}
+
+	var search []SearchResult
+	requestJSON(t, client, http.MethodGet, server.URL+"/api/search?q="+"%D0%BA%D0%BE%D0%BD%D1%82%D1%80%D0%BE%D0%BB%D1%8C%D0%BD%D0%BE%D0%B5", nil, http.StatusOK, &search)
+	if len(search) < 2 {
+		t.Fatalf("global search must find question, answer and/or decision: %#v", search)
+	}
+	foundQuestion := false
+	for _, result := range search {
+		if result.EntityKind == "question" && result.RecordID == questionSet.ID {
+			foundQuestion = true
+		}
+	}
+	if !foundQuestion {
+		t.Fatalf("global search did not return the question: %#v", search)
+	}
+
+	var updated Record
+	requestJSON(t, client, http.MethodPatch, server.URL+"/api/records/"+questionSet.ID, map[string]any{
+		"priority": "high",
+	}, http.StatusOK, &updated)
+	if updated.Priority != "high" {
+		t.Fatalf("updated priority = %q, want high", updated.Priority)
+	}
+}
+
+func TestCollaborationHierarchyActivityAndSuggestion(t *testing.T) {
+	store, err := OpenStore(filepath.Join(t.TempDir(), "collaboration.db"))
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	defer store.Close()
+	server := httptest.NewServer(NewServer(store, Config{SessionLifetime: 24 * 60 * 60 * 1e9}))
+	defer server.Close()
+	ownerClient := testClient(t)
+	partnerClient := testClient(t)
+	owner := register(t, ownerClient, server.URL, "owner@example.test", "owner")
+	partner := register(t, partnerClient, server.URL, "partner@example.test", "partner")
+
+	root := createRecord(t, ownerClient, server.URL, map[string]any{
+		"type": "goal", "title": "Развитие платформы", "ownerId": owner.ID,
+		"workstream": "platform", "priority": "high", "isRoot": true,
+	})
+	if root.Workstream != "platform" || root.Priority != "high" || !root.IsRoot {
+		t.Fatalf("root classification = %#v", root)
+	}
+	privateTask := createRecord(t, ownerClient, server.URL, map[string]any{
+		"type": "task", "title": "Личная проверка архитектуры", "ownerId": owner.ID,
+		"workstream": "platform", "editPolicy": "owner_only", "parentId": root.ID,
+		"estimateMinutes": 60, "actualMinutes": 20,
+	})
+	if privateTask.ParentID == nil || *privateTask.ParentID != root.ID || privateTask.EditPolicy != "owner_only" || privateTask.ActualMinutes != 20 {
+		t.Fatalf("private task hierarchy = %#v", privateTask)
+	}
+	requestJSON(t, partnerClient, http.MethodPatch, server.URL+"/api/records/"+privateTask.ID, map[string]any{
+		"progress": 40, "expectedUpdatedAt": privateTask.UpdatedAt,
+	}, http.StatusForbidden, nil)
+	requestJSON(t, partnerClient, http.MethodPost, server.URL+"/api/records/"+privateTask.ID+"/proofs", map[string]any{
+		"kind": "text", "content": "Попытка изменить личную задачу",
+	}, http.StatusForbidden, nil)
+
+	sharedTask := createRecord(t, ownerClient, server.URL, map[string]any{
+		"type": "task", "title": "Общий прогон мобильного интерфейса", "ownerId": owner.ID,
+		"workstream": "platform", "editPolicy": "shared", "parentId": root.ID, "estimateMinutes": 90,
+	})
+	var sharedUpdated Record
+	requestJSON(t, partnerClient, http.MethodPatch, server.URL+"/api/records/"+sharedTask.ID, map[string]any{
+		"progress": 50, "progressNote": "Проверена половина сценариев", "expectedUpdatedAt": sharedTask.UpdatedAt,
+	}, http.StatusOK, &sharedUpdated)
+	if sharedUpdated.Progress != 50 {
+		t.Fatalf("shared task update = %#v", sharedUpdated)
+	}
+	requestJSON(t, partnerClient, http.MethodPatch, server.URL+"/api/records/"+sharedTask.ID, map[string]any{
+		"editPolicy": "owner_only", "expectedUpdatedAt": sharedUpdated.UpdatedAt,
+	}, http.StatusForbidden, nil)
+	var sharedProofs []Proof
+	requestJSON(t, partnerClient, http.MethodPost, server.URL+"/api/records/"+sharedTask.ID+"/proofs", map[string]any{
+		"kind": "text", "content": "Проверены мобильные диалоги",
+	}, http.StatusCreated, &sharedProofs)
+	requestJSON(t, partnerClient, http.MethodPost, server.URL+"/api/records/"+sharedTask.ID+"/complete", map[string]any{
+		"result": "Мобильный прогон завершён",
+	}, http.StatusOK, &sharedUpdated)
+
+	requestJSON(t, ownerClient, http.MethodPatch, server.URL+"/api/records/"+root.ID, map[string]any{
+		"parentId": privateTask.ID, "expectedUpdatedAt": root.UpdatedAt,
+	}, http.StatusBadRequest, nil)
+	var promoted Record
+	requestJSON(t, ownerClient, http.MethodPatch, server.URL+"/api/records/"+privateTask.ID, map[string]any{
+		"isRoot": true, "expectedUpdatedAt": privateTask.UpdatedAt,
+	}, http.StatusOK, &promoted)
+	if !promoted.IsRoot || promoted.ParentID != nil {
+		t.Fatalf("promoted root = %#v", promoted)
+	}
+
+	requestJSON(t, partnerClient, http.MethodPost, server.URL+"/api/presence", map[string]any{
+		"activeSeconds": 45, "interactions": 12,
+	}, http.StatusNoContent, nil)
+	var profile UserProfile
+	requestJSON(t, ownerClient, http.MethodGet, server.URL+"/api/users/"+strconv.FormatInt(partner.ID, 10)+"/profile", nil, http.StatusOK, &profile)
+	if profile.ActiveSeconds30Days != 45 || profile.Interactions30Days != 12 || len(profile.Activity) != 1 {
+		t.Fatalf("partner activity profile = %#v", profile)
+	}
+
+	var suggestion RecordSuggestion
+	requestJSON(t, ownerClient, http.MethodPost, server.URL+"/api/ai/suggest-record", map[string]any{
+		"type": "task", "title": "Критичный баг интерфейса платформы",
+	}, http.StatusOK, &suggestion)
+	if suggestion.Priority != "critical" || suggestion.Workstream != "platform" || suggestion.Source != "heuristic" {
+		t.Fatalf("heuristic suggestion = %#v", suggestion)
+	}
 }
 
 func testClient(t *testing.T) *http.Client {

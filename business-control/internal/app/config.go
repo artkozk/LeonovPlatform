@@ -13,6 +13,8 @@ type Config struct {
 	CookieSecure     bool
 	SessionLifetime  time.Duration
 	AllowedUsernames map[string]struct{}
+	GroqAPIKey       string
+	GroqModel        string
 }
 
 func LoadConfig() Config {
@@ -22,6 +24,8 @@ func LoadConfig() Config {
 		CookieSecure:     envBool("BUSINESS_COOKIE_SECURE", false),
 		SessionLifetime:  90 * 24 * time.Hour,
 		AllowedUsernames: parseAllowedUsernames(os.Getenv("BUSINESS_ALLOWED_USERNAMES")),
+		GroqAPIKey:       strings.TrimSpace(os.Getenv("GROQ_API_KEY")),
+		GroqModel:        envOr("GROQ_MODEL", "openai/gpt-oss-20b"),
 	}
 }
 

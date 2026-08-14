@@ -59,6 +59,11 @@ func (s *Server) routes() {
 	s.mux.Handle("GET /api/me", s.requireAuth(http.HandlerFunc(s.handleMe)))
 	s.mux.Handle("PATCH /api/me", s.requireAuth(http.HandlerFunc(s.handleUpdateMe)))
 	s.mux.Handle("GET /api/users", s.requireAuth(http.HandlerFunc(s.handleUsers)))
+	s.mux.Handle("GET /api/users/{id}/profile", s.requireAuth(http.HandlerFunc(s.handleUserProfile)))
+	s.mux.Handle("POST /api/presence", s.requireAuth(http.HandlerFunc(s.handlePresence)))
+	s.mux.Handle("GET /api/graph", s.requireAuth(http.HandlerFunc(s.handleGraph)))
+	s.mux.Handle("GET /api/search", s.requireAuth(http.HandlerFunc(s.handleSearch)))
+	s.mux.Handle("POST /api/ai/suggest-record", s.requireAuth(http.HandlerFunc(s.handleSuggestRecord)))
 
 	s.mux.Handle("GET /api/records", s.requireAuth(http.HandlerFunc(s.handleListRecords)))
 	s.mux.Handle("POST /api/records", s.requireAuth(http.HandlerFunc(s.handleCreateRecord)))
@@ -342,7 +347,8 @@ const recordSelect = `
 	SELECT r.id, CASE WHEN r.subtype = 'question_set' THEN 'question_set' WHEN r.record_kind = 'meeting' THEN 'meeting' ELSE r.type END, r.record_kind, r.title, r.description, r.status,
 		r.author_id, author.username, r.owner_id, owner.username,
 		r.decision_maker_id, decision_maker.username, r.due_at,
-		r.estimate_minutes, r.progress, r.progress_note, r.result, r.completed_at,
+		r.priority, r.workstream, r.edit_policy, r.parent_id, r.is_root,
+		r.estimate_minutes, r.actual_minutes, r.progress, r.progress_note, r.result, r.completed_at,
 		r.created_at, r.updated_at,
 		(SELECT COUNT(*) FROM task_proofs p WHERE p.record_id = r.id)
 	FROM records r
@@ -353,10 +359,12 @@ const recordSelect = `
 func scanRecord(scanner recordScanner) (Record, error) {
 	var record Record
 	var decisionMakerID sql.NullInt64
-	var decisionMakerName, dueAt, completedAt sql.NullString
+	var decisionMakerName, dueAt, parentID, completedAt sql.NullString
+	var isRoot int
 	err := scanner.Scan(&record.ID, &record.Type, &record.Kind, &record.Title, &record.Description, &record.Status,
 		&record.AuthorID, &record.AuthorUsername, &record.OwnerID, &record.OwnerUsername,
-		&decisionMakerID, &decisionMakerName, &dueAt, &record.EstimateMinutes, &record.Progress,
+		&decisionMakerID, &decisionMakerName, &dueAt, &record.Priority, &record.Workstream, &record.EditPolicy, &parentID, &isRoot,
+		&record.EstimateMinutes, &record.ActualMinutes, &record.Progress,
 		&record.ProgressNote, &record.Result, &completedAt, &record.CreatedAt, &record.UpdatedAt, &record.ProofCount)
 	if decisionMakerID.Valid {
 		record.DecisionMakerID = &decisionMakerID.Int64
@@ -367,6 +375,10 @@ func scanRecord(scanner recordScanner) (Record, error) {
 	if dueAt.Valid {
 		record.DueAt = &dueAt.String
 	}
+	if parentID.Valid {
+		record.ParentID = &parentID.String
+	}
+	record.IsRoot = isRoot == 1
 	if completedAt.Valid {
 		record.CompletedAt = &completedAt.String
 	}
@@ -447,7 +459,13 @@ type createRecordRequest struct {
 	OwnerID         int64  `json:"ownerId"`
 	DecisionMakerID *int64 `json:"decisionMakerId"`
 	DueAt           string `json:"dueAt"`
+	Priority        string `json:"priority"`
+	Workstream      string `json:"workstream"`
+	EditPolicy      string `json:"editPolicy"`
+	ParentID        string `json:"parentId"`
+	IsRoot          bool   `json:"isRoot"`
 	EstimateMinutes int    `json:"estimateMinutes"`
+	ActualMinutes   int    `json:"actualMinutes"`
 	Kind            string `json:"kind"`
 }
 
@@ -474,6 +492,26 @@ func validStatusForType(recordType, status string) bool {
 	default:
 		return status == "draft" || status == "in_progress" || status == "completed" || status == "cancelled"
 	}
+}
+
+func validPriority(priority string) bool {
+	return priority == "low" || priority == "normal" || priority == "high" || priority == "critical"
+}
+
+func validWorkstream(workstream string) bool {
+	return workstream == "business" || workstream == "platform" || workstream == "operations"
+}
+
+func validEditPolicy(editPolicy string) bool {
+	return editPolicy == "shared" || editPolicy == "owner_only"
+}
+
+func (s *Server) requireRecordEdit(w http.ResponseWriter, r *http.Request, record Record) bool {
+	if record.EditPolicy == "owner_only" && currentUser(r).ID != record.OwnerID {
+		writeError(w, http.StatusForbidden, "Эту карточку может изменять только её ответственный")
+		return false
+	}
+	return true
 }
 
 func validRecordKind(databaseType, kind string) bool {
@@ -525,6 +563,40 @@ func (s *Server) handleCreateRecord(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "Некорректная оценка времени")
 		return
 	}
+	if input.Priority == "" {
+		input.Priority = "normal"
+	}
+	if !validPriority(input.Priority) {
+		writeError(w, http.StatusBadRequest, "Некорректный приоритет")
+		return
+	}
+	if input.Workstream == "" {
+		input.Workstream = "business"
+	}
+	if !validWorkstream(input.Workstream) {
+		writeError(w, http.StatusBadRequest, "Некорректное направление работы")
+		return
+	}
+	if input.EditPolicy == "" {
+		input.EditPolicy = "shared"
+	}
+	if !validEditPolicy(input.EditPolicy) {
+		writeError(w, http.StatusBadRequest, "Некорректный режим доступа")
+		return
+	}
+	if input.ActualMinutes < 0 || input.ActualMinutes > 525600 {
+		writeError(w, http.StatusBadRequest, "Некорректное фактическое время")
+		return
+	}
+	var parentID any
+	if strings.TrimSpace(input.ParentID) != "" {
+		if _, err := s.getRecord(r.Context(), strings.TrimSpace(input.ParentID)); err != nil {
+			writeError(w, http.StatusBadRequest, "Родительская карточка не найдена")
+			return
+		}
+		parentID = strings.TrimSpace(input.ParentID)
+		input.IsRoot = false
+	}
 	dueAt, err := normalizeDueAt(input.DueAt)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "Некорректный срок")
@@ -557,7 +629,7 @@ func (s *Server) handleCreateRecord(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "Некорректный вид карточки")
 		return
 	}
-	_, err = tx.ExecContext(r.Context(), `INSERT INTO records(id, type, subtype, record_kind, title, description, status, author_id, owner_id, decision_maker_id, due_at, estimate_minutes, created_at, updated_at) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, id, databaseType, subtype, recordKind, input.Title, strings.TrimSpace(input.Description), input.Status, user.ID, input.OwnerID, input.DecisionMakerID, dueAt, input.EstimateMinutes, now, now)
+	_, err = tx.ExecContext(r.Context(), `INSERT INTO records(id, type, subtype, record_kind, title, description, status, author_id, owner_id, decision_maker_id, due_at, priority, workstream, edit_policy, parent_id, is_root, estimate_minutes, actual_minutes, created_at, updated_at) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, id, databaseType, subtype, recordKind, input.Title, strings.TrimSpace(input.Description), input.Status, user.ID, input.OwnerID, input.DecisionMakerID, dueAt, input.Priority, input.Workstream, input.EditPolicy, parentID, input.IsRoot, input.EstimateMinutes, input.ActualMinutes, now, now)
 	if err != nil {
 		log.Printf("create record: %v", err)
 		writeError(w, http.StatusInternalServerError, "Не удалось создать карточку")
@@ -668,7 +740,14 @@ type updateRecordRequest struct {
 	DecisionMakerID    *int64  `json:"decisionMakerId"`
 	ClearDecisionMaker bool    `json:"clearDecisionMaker"`
 	DueAt              *string `json:"dueAt"`
+	Priority           *string `json:"priority"`
+	Workstream         *string `json:"workstream"`
+	EditPolicy         *string `json:"editPolicy"`
+	ParentID           *string `json:"parentId"`
+	ClearParent        bool    `json:"clearParent"`
+	IsRoot             *bool   `json:"isRoot"`
 	EstimateMinutes    *int    `json:"estimateMinutes"`
+	ActualMinutes      *int    `json:"actualMinutes"`
 	Progress           *int    `json:"progress"`
 	ProgressNote       *string `json:"progressNote"`
 	Result             *string `json:"result"`
@@ -686,8 +765,15 @@ func (s *Server) handleUpdateRecord(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "Не удалось загрузить карточку")
 		return
 	}
+	if !s.requireRecordEdit(w, r, before) {
+		return
+	}
 	var input updateRecordRequest
 	if !decodeJSON(w, r, &input) {
+		return
+	}
+	if currentUser(r).ID != before.OwnerID && (input.OwnerID != nil || input.EditPolicy != nil) {
+		writeError(w, http.StatusForbidden, "Только текущий ответственный может менять владельца и режим доступа")
 		return
 	}
 	if input.ExpectedUpdatedAt != nil && *input.ExpectedUpdatedAt != before.UpdatedAt {
@@ -781,6 +867,77 @@ func (s *Server) handleUpdateRecord(w http.ResponseWriter, r *http.Request) {
 			reasonRequired = true
 		}
 	}
+	if input.Priority != nil {
+		if !validPriority(*input.Priority) {
+			writeError(w, http.StatusBadRequest, "Некорректный приоритет")
+			return
+		}
+		if *input.Priority != before.Priority {
+			add("priority", *input.Priority)
+			changes["priority"] = map[string]any{"before": before.Priority, "after": *input.Priority}
+		}
+	}
+	if input.Workstream != nil {
+		if !validWorkstream(*input.Workstream) {
+			writeError(w, http.StatusBadRequest, "Некорректное направление работы")
+			return
+		}
+		if *input.Workstream != before.Workstream {
+			add("workstream", *input.Workstream)
+			changes["workstream"] = map[string]any{"before": before.Workstream, "after": *input.Workstream}
+		}
+	}
+	if input.EditPolicy != nil {
+		if !validEditPolicy(*input.EditPolicy) {
+			writeError(w, http.StatusBadRequest, "Некорректный режим доступа")
+			return
+		}
+		if *input.EditPolicy != before.EditPolicy {
+			add("edit_policy", *input.EditPolicy)
+			changes["editPolicy"] = map[string]any{"before": before.EditPolicy, "after": *input.EditPolicy}
+		}
+	}
+	if input.ParentID != nil {
+		parentID := strings.TrimSpace(*input.ParentID)
+		if parentID == before.ID {
+			writeError(w, http.StatusBadRequest, "Карточка не может быть родителем самой себе")
+			return
+		}
+		if parentID == "" {
+			input.ClearParent = true
+		} else {
+			if _, err := s.getRecord(r.Context(), parentID); err != nil {
+				writeError(w, http.StatusBadRequest, "Родительская карточка не найдена")
+				return
+			}
+			createsCycle, err := s.parentCreatesCycle(r.Context(), before.ID, parentID)
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, "Не удалось проверить иерархию")
+				return
+			}
+			if createsCycle {
+				writeError(w, http.StatusBadRequest, "Такая иерархия создаёт цикл")
+				return
+			}
+			if before.ParentID == nil || *before.ParentID != parentID {
+				add("parent_id", parentID)
+				add("is_root", 0)
+				changes["parentId"] = map[string]any{"before": before.ParentID, "after": parentID}
+			}
+		}
+	}
+	if input.ClearParent && before.ParentID != nil {
+		add("parent_id", nil)
+		changes["parentId"] = map[string]any{"before": before.ParentID, "after": nil}
+	}
+	if input.IsRoot != nil && *input.IsRoot != before.IsRoot {
+		add("is_root", *input.IsRoot)
+		changes["isRoot"] = map[string]any{"before": before.IsRoot, "after": *input.IsRoot}
+		if *input.IsRoot && before.ParentID != nil && !input.ClearParent {
+			add("parent_id", nil)
+			changes["parentId"] = map[string]any{"before": before.ParentID, "after": nil}
+		}
+	}
 	if input.EstimateMinutes != nil {
 		if *input.EstimateMinutes < 0 || *input.EstimateMinutes > 525600 {
 			writeError(w, http.StatusBadRequest, "Некорректная оценка времени")
@@ -789,6 +946,16 @@ func (s *Server) handleUpdateRecord(w http.ResponseWriter, r *http.Request) {
 		if *input.EstimateMinutes != before.EstimateMinutes {
 			add("estimate_minutes", *input.EstimateMinutes)
 			changes["estimateMinutes"] = map[string]any{"before": before.EstimateMinutes, "after": *input.EstimateMinutes}
+		}
+	}
+	if input.ActualMinutes != nil {
+		if *input.ActualMinutes < 0 || *input.ActualMinutes > 525600 {
+			writeError(w, http.StatusBadRequest, "Некорректное фактическое время")
+			return
+		}
+		if *input.ActualMinutes != before.ActualMinutes {
+			add("actual_minutes", *input.ActualMinutes)
+			changes["actualMinutes"] = map[string]any{"before": before.ActualMinutes, "after": *input.ActualMinutes}
 		}
 	}
 	if input.Progress != nil {
@@ -858,6 +1025,25 @@ func nullableStringEqual(left, right *string) bool {
 		return left == nil && right == nil
 	}
 	return *left == *right
+}
+
+func (s *Server) parentCreatesCycle(ctx context.Context, childID, parentID string) (bool, error) {
+	current := parentID
+	for depth := 0; depth < 256 && current != ""; depth++ {
+		if current == childID {
+			return true, nil
+		}
+		var next sql.NullString
+		err := s.store.db.QueryRowContext(ctx, `SELECT parent_id FROM records WHERE id = ?`, current).Scan(&next)
+		if err != nil {
+			return false, err
+		}
+		if !next.Valid {
+			return false, nil
+		}
+		current = next.String
+	}
+	return current != "", nil
 }
 
 func (s *Server) handleConvertToQuestions(w http.ResponseWriter, r *http.Request) {
@@ -981,6 +1167,9 @@ func (s *Server) handleUpdateRecordWithInput(w http.ResponseWriter, r *http.Requ
 		writeError(w, http.StatusInternalServerError, "Не удалось загрузить карточку")
 		return
 	}
+	if !s.requireRecordEdit(w, r, record) {
+		return
+	}
 	tx, err := s.store.db.BeginTx(r.Context(), nil)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Не удалось начать архивацию")
@@ -1072,6 +1261,9 @@ func (s *Server) handleSaveSection(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "Не удалось загрузить карточку")
 		return
 	}
+	if !s.requireRecordEdit(w, r, record) {
+		return
+	}
 	var input struct {
 		DefinitionID *string `json:"definitionId"`
 		SectionID    string  `json:"sectionId"`
@@ -1151,7 +1343,7 @@ func (s *Server) handleSaveSection(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) listLinks(ctx context.Context, recordID string) ([]RecordLink, error) {
-	rows, err := s.store.db.QueryContext(ctx, `SELECT l.id, l.source_id, l.target_id, l.relation_type, l.created_at, r.id, CASE WHEN r.subtype = 'question_set' THEN 'question_set' WHEN r.record_kind = 'meeting' THEN 'meeting' ELSE r.type END, r.record_kind, r.title, r.description, r.status, r.author_id, a.username, r.owner_id, o.username, r.decision_maker_id, dm.username, r.due_at, r.estimate_minutes, r.progress, r.progress_note, r.result, r.completed_at, r.created_at, r.updated_at, (SELECT COUNT(*) FROM task_proofs p WHERE p.record_id = r.id) FROM record_links l JOIN records r ON r.id = CASE WHEN l.source_id = ? THEN l.target_id ELSE l.source_id END JOIN users a ON a.id = r.author_id JOIN users o ON o.id = r.owner_id LEFT JOIN users dm ON dm.id = r.decision_maker_id WHERE l.active = 1 AND (l.source_id = ? OR l.target_id = ?) ORDER BY l.created_at DESC`, recordID, recordID, recordID)
+	rows, err := s.store.db.QueryContext(ctx, `SELECT l.id, l.source_id, l.target_id, l.relation_type, l.created_at, r.id, CASE WHEN r.subtype = 'question_set' THEN 'question_set' WHEN r.record_kind = 'meeting' THEN 'meeting' ELSE r.type END, r.record_kind, r.title, r.description, r.status, r.author_id, a.username, r.owner_id, o.username, r.decision_maker_id, dm.username, r.due_at, r.priority, r.workstream, r.edit_policy, r.parent_id, r.is_root, r.estimate_minutes, r.actual_minutes, r.progress, r.progress_note, r.result, r.completed_at, r.created_at, r.updated_at, (SELECT COUNT(*) FROM task_proofs p WHERE p.record_id = r.id) FROM record_links l JOIN records r ON r.id = CASE WHEN l.source_id = ? THEN l.target_id ELSE l.source_id END JOIN users a ON a.id = r.author_id JOIN users o ON o.id = r.owner_id LEFT JOIN users dm ON dm.id = r.decision_maker_id WHERE l.active = 1 AND (l.source_id = ? OR l.target_id = ?) ORDER BY l.created_at DESC`, recordID, recordID, recordID)
 	if err != nil {
 		return nil, err
 	}
@@ -1160,8 +1352,9 @@ func (s *Server) listLinks(ctx context.Context, recordID string) ([]RecordLink, 
 	for rows.Next() {
 		var link RecordLink
 		var dmID sql.NullInt64
-		var dmName, dueAt, completedAt sql.NullString
-		if err := rows.Scan(&link.ID, &link.SourceID, &link.TargetID, &link.RelationType, &link.CreatedAt, &link.Record.ID, &link.Record.Type, &link.Record.Kind, &link.Record.Title, &link.Record.Description, &link.Record.Status, &link.Record.AuthorID, &link.Record.AuthorUsername, &link.Record.OwnerID, &link.Record.OwnerUsername, &dmID, &dmName, &dueAt, &link.Record.EstimateMinutes, &link.Record.Progress, &link.Record.ProgressNote, &link.Record.Result, &completedAt, &link.Record.CreatedAt, &link.Record.UpdatedAt, &link.Record.ProofCount); err != nil {
+		var dmName, dueAt, parentID, completedAt sql.NullString
+		var isRoot int
+		if err := rows.Scan(&link.ID, &link.SourceID, &link.TargetID, &link.RelationType, &link.CreatedAt, &link.Record.ID, &link.Record.Type, &link.Record.Kind, &link.Record.Title, &link.Record.Description, &link.Record.Status, &link.Record.AuthorID, &link.Record.AuthorUsername, &link.Record.OwnerID, &link.Record.OwnerUsername, &dmID, &dmName, &dueAt, &link.Record.Priority, &link.Record.Workstream, &link.Record.EditPolicy, &parentID, &isRoot, &link.Record.EstimateMinutes, &link.Record.ActualMinutes, &link.Record.Progress, &link.Record.ProgressNote, &link.Record.Result, &completedAt, &link.Record.CreatedAt, &link.Record.UpdatedAt, &link.Record.ProofCount); err != nil {
 			return nil, err
 		}
 		if dmID.Valid {
@@ -1173,6 +1366,10 @@ func (s *Server) listLinks(ctx context.Context, recordID string) ([]RecordLink, 
 		if dueAt.Valid {
 			link.Record.DueAt = &dueAt.String
 		}
+		if parentID.Valid {
+			link.Record.ParentID = &parentID.String
+		}
+		link.Record.IsRoot = isRoot == 1
 		if completedAt.Valid {
 			link.Record.CompletedAt = &completedAt.String
 		}
@@ -1185,6 +1382,13 @@ func (s *Server) handleCreateLink(w http.ResponseWriter, r *http.Request) {
 	source, err := s.getRecord(r.Context(), r.PathValue("id"))
 	if errors.Is(err, sql.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "Карточка не найдена")
+		return
+	}
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось загрузить карточку")
+		return
+	}
+	if !s.requireRecordEdit(w, r, source) {
 		return
 	}
 	var input struct {
@@ -1243,6 +1447,9 @@ func (s *Server) handleRemoveLink(w http.ResponseWriter, r *http.Request) {
 	record, err := s.getRecord(r.Context(), r.PathValue("id"))
 	if err != nil {
 		writeError(w, http.StatusNotFound, "Карточка не найдена")
+		return
+	}
+	if !s.requireRecordEdit(w, r, record) {
 		return
 	}
 	var input struct {
@@ -1305,6 +1512,9 @@ func (s *Server) handleScoreCriterion(w http.ResponseWriter, r *http.Request) {
 	record, err := s.getRecord(r.Context(), r.PathValue("id"))
 	if err != nil {
 		writeError(w, http.StatusNotFound, "Карточка не найдена")
+		return
+	}
+	if !s.requireRecordEdit(w, r, record) {
 		return
 	}
 	criterion, err := s.getRecord(r.Context(), r.PathValue("criterionId"))
@@ -1374,7 +1584,7 @@ func (s *Server) handleAddProof(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := currentUser(r)
-	if record.OwnerID != user.ID {
+	if record.OwnerID != user.ID && record.EditPolicy != "shared" {
 		writeError(w, http.StatusForbidden, "Доказательство добавляет ответственный за задачу")
 		return
 	}
@@ -1425,7 +1635,7 @@ func (s *Server) handleCompleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := currentUser(r)
-	if record.OwnerID != user.ID {
+	if record.OwnerID != user.ID && record.EditPolicy != "shared" {
 		writeError(w, http.StatusForbidden, "Задачу завершает назначенный ответственный")
 		return
 	}
@@ -1501,6 +1711,9 @@ func (s *Server) handleNotifyPartners(w http.ResponseWriter, r *http.Request) {
 	record, err := s.getRecord(r.Context(), r.PathValue("id"))
 	if err != nil {
 		writeError(w, http.StatusNotFound, "Карточка не найдена")
+		return
+	}
+	if !s.requireRecordEdit(w, r, record) {
 		return
 	}
 	user := currentUser(r)
@@ -1714,6 +1927,9 @@ func (s *Server) handleAddQuestions(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "Карточка вопросов не найдена")
 		return
 	}
+	if !s.requireRecordEdit(w, r, record) {
+		return
+	}
 	var input struct {
 		Questions string `json:"questions"`
 	}
@@ -1842,6 +2058,9 @@ func (s *Server) handleSaveQuestionDecision(w http.ResponseWriter, r *http.Reque
 		writeError(w, http.StatusNotFound, "Вопрос не найден")
 		return
 	}
+	if !s.requireRecordEdit(w, r, record) {
+		return
+	}
 	var input struct {
 		Mode     string  `json:"mode"`
 		AnswerID *string `json:"answerId"`
@@ -1939,6 +2158,9 @@ func (s *Server) handleCreateQuestionOutput(w http.ResponseWriter, r *http.Reque
 		writeError(w, http.StatusNotFound, "Вопрос не найден")
 		return
 	}
+	if !s.requireRecordEdit(w, r, source) {
+		return
+	}
 	var input struct {
 		Kind            string `json:"kind"`
 		Title           string `json:"title"`
@@ -2022,7 +2244,7 @@ func (s *Server) handleCreateQuestionOutput(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	defer tx.Rollback()
-	if _, err = tx.ExecContext(r.Context(), `INSERT INTO records(id, type, subtype, record_kind, title, description, status, author_id, owner_id, due_at, estimate_minutes, created_at, updated_at) VALUES(?, ?, '', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, outputID, databaseType, recordKind, input.Title, input.Description, status, user.ID, input.OwnerID, dueAt, input.EstimateMinutes, now, now); err != nil {
+	if _, err = tx.ExecContext(r.Context(), `INSERT INTO records(id, type, subtype, record_kind, title, description, status, author_id, owner_id, due_at, workstream, parent_id, estimate_minutes, created_at, updated_at) VALUES(?, ?, '', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, outputID, databaseType, recordKind, input.Title, input.Description, status, user.ID, input.OwnerID, dueAt, source.Workstream, source.ID, input.EstimateMinutes, now, now); err != nil {
 		writeError(w, http.StatusInternalServerError, "Не удалось создать карточку результата")
 		return
 	}
@@ -2060,6 +2282,9 @@ func (s *Server) handleArchiveQuestion(w http.ResponseWriter, r *http.Request) {
 	questionID := r.PathValue("questionId")
 	if err != nil || record.Type != "question_set" || !s.questionBelongsToRecord(r.Context(), questionID, record.ID) {
 		writeError(w, http.StatusNotFound, "Вопрос не найден")
+		return
+	}
+	if !s.requireRecordEdit(w, r, record) {
 		return
 	}
 	var input struct {
