@@ -2521,6 +2521,14 @@ func (s *Server) handleReadAllNotifications(w http.ResponseWriter, r *http.Reque
 func (s *Server) handleActivity(w http.ResponseWriter, r *http.Request) {
 	where := []string{"1 = 1"}
 	args := make([]any, 0)
+	limit := 200
+	if value, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && value > 0 {
+		limit = min(value, 500)
+	}
+	offset := 0
+	if value, err := strconv.Atoi(r.URL.Query().Get("offset")); err == nil && value > 0 {
+		offset = min(value, 50000)
+	}
 	if entityType := strings.TrimSpace(r.URL.Query().Get("entityType")); entityType != "" {
 		where = append(where, "a.entity_type = ?")
 		args = append(args, entityType)
@@ -2529,7 +2537,8 @@ func (s *Server) handleActivity(w http.ResponseWriter, r *http.Request) {
 		where = append(where, "a.entity_id = ?")
 		args = append(args, entityID)
 	}
-	rows, err := s.store.db.QueryContext(r.Context(), `SELECT a.id, a.actor_id, u.username, a.entity_type, a.entity_id, a.action, a.details_json, a.reason, a.created_at FROM activity a JOIN users u ON u.id = a.actor_id WHERE `+strings.Join(where, " AND ")+` ORDER BY a.created_at DESC LIMIT 500`, args...)
+	args = append(args, limit, offset)
+	rows, err := s.store.db.QueryContext(r.Context(), `SELECT a.id, a.actor_id, u.username, a.entity_type, a.entity_id, a.action, a.details_json, a.reason, a.created_at FROM activity a JOIN users u ON u.id = a.actor_id WHERE `+strings.Join(where, " AND ")+` ORDER BY a.created_at DESC LIMIT ? OFFSET ?`, args...)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Не удалось загрузить историю")
 		return

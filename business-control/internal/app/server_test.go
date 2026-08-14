@@ -317,6 +317,12 @@ func TestBusinessWorkflow(t *testing.T) {
 	if len(activity) < 5 {
 		t.Fatalf("idea activity entries = %d, want at least 5", len(activity))
 	}
+	var firstActivityPage, secondActivityPage []Activity
+	requestJSON(t, artkozk, http.MethodGet, server.URL+"/api/activity?entityId="+idea.ID+"&limit=1", nil, http.StatusOK, &firstActivityPage)
+	requestJSON(t, artkozk, http.MethodGet, server.URL+"/api/activity?entityId="+idea.ID+"&limit=1&offset=1", nil, http.StatusOK, &secondActivityPage)
+	if len(firstActivityPage) != 1 || len(secondActivityPage) != 1 || firstActivityPage[0].ID == secondActivityPage[0].ID {
+		t.Fatalf("activity pagination returned overlapping pages: first=%#v second=%#v", firstActivityPage, secondActivityPage)
+	}
 	foundStatusTransition := false
 	for _, item := range activity {
 		if item.Action != "updated" {

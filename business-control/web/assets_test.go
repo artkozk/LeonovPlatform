@@ -46,3 +46,28 @@ func TestObjectFirstWorkflowAssetsAreEmbedded(t *testing.T) {
 		t.Fatalf("embedded Cytoscape license missing: %v", err)
 	}
 }
+
+func TestAutonomousAuditNavigationAndWorkQueueStayUnified(t *testing.T) {
+	app, err := Files.ReadFile("app.js")
+	if err != nil {
+		t.Fatalf("read app.js: %v", err)
+	}
+	for _, marker := range [][]byte{
+		[]byte("function sortWorkHierarchy"),
+		[]byte("function renderHierarchyPanel"),
+		[]byte("work-filter-popover"),
+		[]byte("estimateInsight"),
+		[]byte("historyScope"),
+		[]byte("Срок и приоритет обсуждения"),
+	} {
+		if !bytes.Contains(app, marker) {
+			t.Fatalf("app.js does not contain autonomous audit marker %q", marker)
+		}
+	}
+	if bytes.Contains(app, []byte("['meeting', 'Встречи', 'calendar', 'Работа']")) {
+		t.Fatal("meetings must be a work queue filter, not a duplicate sidebar workspace")
+	}
+	if bytes.Contains(app, []byte("renderWorkList(); });\n  $$('[data-work-scope]")) {
+		t.Fatal("work search must be debounced instead of redrawing synchronously on every character")
+	}
+}
