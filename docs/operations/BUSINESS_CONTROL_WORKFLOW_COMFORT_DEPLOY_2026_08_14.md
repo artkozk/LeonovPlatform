@@ -196,3 +196,56 @@ JS -> /app.js?v=20260814-workflow-comfort
 ```
 
 Таким образом, рабочий процесс, данные и резервные копии находятся на единственном разрешённом сервере, релиз доступен через основной домен, а ограничение внешнего AI изолировано локальным fallback и явно отражено в проектных задачах.
+
+## Корректирующий production-релиз режима чтения
+
+После основного workflow-релиза выполнено отдельное исправление чтения и визуального редактора. Исторические сведения выше не удаляются: они описывают состояние и проверку предыдущей версии. Новая версия развёрнута только на `159.194.231.150`; другие серверы не использовались для сборки, запуска, хранения данных, секретов или резервных копий.
+
+Активный release:
+
+```text
+/opt/business-control/releases/20260814-rich-reader-c45f878
+```
+
+Предыдущий release для атомарного rollback:
+
+```text
+/opt/business-control/releases/20260814-workflow-comfort-fcd6196
+```
+
+Согласованная pre-release копия SQLite:
+
+```text
+/var/lib/business-control/backups/business-control-20260814-184702-pre-workflow-comfort.db
+SHA-256: 794da5400f337f0ed60deb3bdb9a6ab103cf014bf93a50831080cd3ec6a842c6
+```
+
+После переключения создан и проверен штатным скриптом новый зашифрованный архив:
+
+```text
+/var/backups/business-control/business-control-20260814-184705.tar.gz.enc
+mode=0600
+owner=root:root
+plaintext files in encrypted backup directory=0
+```
+
+Production-проверки:
+
+```text
+service=active/running
+NRestarts=0
+ExecMainStatus=0
+database integrity=ok
+foreign key violations=0
+backup timer=enabled/active
+GET https://control.e-rd.ru/ -> 200
+GET https://control.e-rd.ru/api/health -> {"status":"ok"}
+HTML title -> BizFlow
+CSS -> /styles.css?v=20260814-rich-reader
+JS -> /app.js?v=20260814-rich-reader
+binary SHA-256 -> f017de5d93f8a92ac1c014d546d60a4750bc80eb82bfe3bf97b2a60ba95fb515
+```
+
+AI health снова вернул настроенный `provider=gemini`, модель `gemini-3.6-flash`, `providerAvailable=false` и `source=heuristic`. Причина остаётся внешней: официальный endpoint Google отвечает региональным `400`. Новый интерфейс профиля показывает активный источник как `Локальный анализ активен`, а Gemini и модель оставляет в диагностической строке. Это изменение не подключает новый провайдер и не маскирует fallback под внешний AI.
+
+Groq не включён в production: ранее переданный ключ получил официальный `403 Forbidden` при server-side preflight. Для Vertex AI переданных API key и project number недостаточно, потому что официальный вызов требует OAuth/service account. Прокси и второй сервер не применяются из-за требования конфиденциальности.
