@@ -132,9 +132,9 @@ const state = {
   recordWorkspace: [], activeWorkspaceRecordId: '', focusQuestionId: '',
   detailCache: new Map(), detailRequests: new Map(), searchTimer: null, suppressOverlayPop: false,
   presenceInteractions: 0, presenceLastSentAt: Date.now(), lastInteractionAt: Date.now(), aiSuggestionTimer: null,
-  recordEditMode: false, aiAnalyses: new Map(), aiAnalysisLoading: '',
+  recordEditMode: false, editingQuestionAnswerId: '', aiAnalyses: new Map(), aiAnalysisLoading: '',
   researchComparisons: new Map(), researchComparisonRequests: new Map(), activeResearchOptionId: '',
-  savedViews: [], noteContents: new Map(), noteSequence: 0,
+  savedViews: [],
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -144,7 +144,8 @@ function renderMarkdown(value, empty = 'Не заполнено') {
   const source = String(value || '').trim();
   if (!source) return `<p class="markdown-empty">${escapeHTML(empty)}</p>`;
   if (!window.marked?.parse || !window.DOMPurify?.sanitize) return `<p>${escapeHTML(source).replace(/\n/g, '<br>')}</p>`;
-  const parsed = window.marked.parse(source.replace(/^[\u200B-\u200F\uFEFF]/, ''), { gfm: true, breaks: true });
+  const normalized = source.replace(/^[\u200B-\u200F\uFEFF]/, '').replace(/\*{4}/g, '**\n\n**');
+  const parsed = window.marked.parse(normalized, { gfm: true, breaks: true });
   const clean = window.DOMPurify.sanitize(parsed, { USE_PROFILES: { html: true }, FORBID_TAGS: ['style'] });
   const template = document.createElement('template');
   template.innerHTML = clean;
@@ -156,10 +157,8 @@ function renderMarkdown(value, empty = 'Не заполнено') {
   return template.innerHTML;
 }
 
-function markdownView(value, empty = 'Не заполнено', title = 'Текст карточки') {
-  const key = `note-${++state.noteSequence}`;
-  state.noteContents.set(key, { title, value: String(value || '') });
-  return `<div class="markdown-view"><div class="markdown-body">${renderMarkdown(value, empty)}</div><button type="button" class="markdown-expand icon-button" data-open-note-view="${key}" title="Открыть как карточку" aria-label="Открыть как карточку">${icon('maximize')}</button></div>`;
+function markdownView(value, empty = 'Не заполнено') {
+  return `<div class="markdown-view"><div class="markdown-body">${renderMarkdown(value, empty)}</div><button type="button" class="markdown-inline-expand" data-toggle-markdown hidden aria-expanded="false">${icon('chevronRight')} <span>Показать полностью</span></button></div>`;
 }
 
 function markdownPlain(value, empty = '') {
@@ -181,77 +180,77 @@ function markdownPlain(value, empty = '') {
 
 function markdownEditor(name, label, value, rows = 6, placeholder = '', suffix = '') {
   const id = `markdown-${String(name).replace(/[^a-z0-9_-]/gi, '-')}-${suffix || 'main'}`;
-  return `<div class="markdown-editor"><label for="${escapeHTML(id)}">${escapeHTML(label)}</label><div class="markdown-toolbar" role="toolbar" aria-label="Инструменты Markdown"><button type="button" data-md="bold" title="Полужирный (Ctrl+B)" aria-label="Полужирный"><b>B</b></button><button type="button" data-md="italic" title="Курсив (Ctrl+I)" aria-label="Курсив"><i>I</i></button><button type="button" data-md="heading2" title="Заголовок второго уровня (Ctrl+Alt+2)" aria-label="Заголовок второго уровня">H2</button><button type="button" data-md="list" title="Маркированный список (Ctrl+Shift+8)" aria-label="Маркированный список">${icon('menu')}</button><button type="button" data-md="ordered" title="Нумерованный список (Ctrl+Shift+7)" aria-label="Нумерованный список">1.</button><button type="button" data-md="quote" title="Цитата (Ctrl+Shift+.)" aria-label="Цитата">❯</button><button type="button" data-md="code" title="Встроенный код (Ctrl+&#96;)" aria-label="Встроенный код">&lt;/&gt;</button><button type="button" data-md="note" title="Примечание" aria-label="Примечание">i</button><button type="button" data-md="link" title="Ссылка (Ctrl+K)" aria-label="Ссылка">${icon('link')}</button><span class="markdown-toolbar-spacer"></span><button type="button" data-open-notebook title="Открыть блокнот" aria-label="Открыть блокнот">${icon('maximize')}</button></div><textarea id="${escapeHTML(id)}" name="${escapeHTML(name)}" rows="${rows}" placeholder="${escapeHTML(placeholder)}">${escapeHTML(value || '')}</textarea></div>`;
+  const content = String(value || '').trim() ? renderMarkdown(value, '') : '';
+  return `<div class="markdown-editor"><label for="${escapeHTML(id)}">${escapeHTML(label)}</label><div class="markdown-toolbar" role="toolbar" aria-label="Форматирование текста"><button type="button" data-md="bold" title="Полужирный (Ctrl+B)" aria-label="Полужирный"><b>B</b></button><button type="button" data-md="italic" title="Курсив (Ctrl+I)" aria-label="Курсив"><i>I</i></button><button type="button" data-md="heading2" title="Заголовок второго уровня (Ctrl+Alt+2)" aria-label="Заголовок второго уровня">H2</button><button type="button" data-md="list" title="Маркированный список (Ctrl+Shift+8)" aria-label="Маркированный список">${icon('menu')}</button><button type="button" data-md="ordered" title="Нумерованный список (Ctrl+Shift+7)" aria-label="Нумерованный список">1.</button><button type="button" data-md="quote" title="Цитата (Ctrl+Shift+.)" aria-label="Цитата">❯</button><button type="button" data-md="code" title="Блок кода (Ctrl+&#96;)" aria-label="Блок кода">&lt;/&gt;</button><button type="button" data-md="note" title="Примечание" aria-label="Примечание">i</button><button type="button" data-md="link" title="Ссылка (Ctrl+K)" aria-label="Ссылка">${icon('link')}</button><span class="markdown-toolbar-spacer"></span><button type="button" data-open-notebook title="Развернуть редактор" aria-label="Развернуть редактор">${icon('maximize')}</button></div><div id="${escapeHTML(id)}" class="markdown-rich-editor markdown-body" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="${escapeHTML(placeholder)}" style="--editor-rows:${Math.max(3, Number(rows) || 6)}">${content}</div><textarea class="markdown-source" name="${escapeHTML(name)}" hidden tabindex="-1" aria-hidden="true">${escapeHTML(value || '')}</textarea></div>`;
 }
 
-function openNotebook({ title, value = '', editable = false, onSave = null }) {
+function openNotebook({ title, value = '', onSave = null }) {
   const dialog = $('#notebook-dialog');
   const content = $('#notebook-dialog-content');
-  content.innerHTML = `<div class="notebook-shell"><header><div><p class="eyebrow">${editable ? 'Редактор Markdown' : 'Просмотр карточки'}</p><h2>${escapeHTML(title)}</h2></div><button type="button" class="icon-button" data-close-notebook aria-label="Закрыть">${icon('x')}</button></header><div class="notebook-body">${editable ? `${markdownEditor('notebookValue', 'Содержание', value, 22, 'Фиксируйте структуру, аргументы и выводы', 'fullscreen')}<aside class="notebook-preview"><span>Предпросмотр</span><div class="markdown-body" id="notebook-preview">${renderMarkdown(value)}</div></aside>` : `<article class="notebook-reading markdown-body">${renderMarkdown(value)}</article>`}</div>${editable ? `<footer><span>Ctrl+Enter — применить в исходное поле</span><div><button type="button" class="secondary" data-close-notebook>Отмена</button><button type="button" class="primary" data-save-notebook>${icon('check')} Применить</button></div></footer>` : ''}</div>`;
+  content.innerHTML = `<div class="notebook-shell"><header><div><p class="eyebrow">Расширенный редактор</p><h2>${escapeHTML(title)}</h2></div><button type="button" class="icon-button" data-close-notebook aria-label="Закрыть">${icon('x')}</button></header><div class="notebook-body editor-only">${markdownEditor('notebookValue', 'Содержание', value, 22, 'Фиксируйте структуру, аргументы и выводы', 'fullscreen')}</div><footer><span>Ctrl+Enter — применить изменения</span><div><button type="button" class="secondary" data-close-notebook>Отмена</button><button type="button" class="primary" data-save-notebook>${icon('check')} Применить</button></div></footer></div>`;
   $$('[data-close-notebook]', dialog).forEach((button) => button.addEventListener('click', () => dialog.close()));
-  if (editable) {
-    bindMarkdownEditors(dialog);
-    const textarea = $('textarea[name="notebookValue"]', dialog);
-    const preview = $('#notebook-preview', dialog);
-    textarea.addEventListener('input', () => { preview.innerHTML = renderMarkdown(textarea.value); });
-    const save = () => { onSave?.(textarea.value); dialog.close(); };
-    $('[data-save-notebook]', dialog).addEventListener('click', save);
-    textarea.addEventListener('keydown', (event) => { if ((event.ctrlKey || event.metaKey) && event.code === 'Enter') { event.preventDefault(); save(); } });
-  }
+  bindMarkdownEditors(dialog);
+  const textarea = $('textarea[name="notebookValue"]', dialog);
+  const richEditor = $('.markdown-rich-editor', dialog);
+  const save = () => { onSave?.(textarea.value); dialog.close(); };
+  $('[data-save-notebook]', dialog).addEventListener('click', save);
+  richEditor.addEventListener('keydown', (event) => { if ((event.ctrlKey || event.metaKey) && event.code === 'Enter') { event.preventDefault(); save(); } });
   openModal(dialog);
 }
 
-function applyMarkdownAction(textarea, action) {
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const selected = textarea.value.slice(start, end);
-  const lineStart = textarea.value.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
-  const lineEnd = textarea.value.indexOf('\n', end);
-  const replace = (from, to, text, selectionStart, selectionEnd) => {
-    textarea.setRangeText(text, from, to, 'preserve');
-    textarea.setSelectionRange(selectionStart, selectionEnd);
-  };
-  const wrap = (open, close, placeholder) => {
-    const wrappedBefore = textarea.value.slice(Math.max(0, start - open.length), start) === open;
-    const wrappedAfter = textarea.value.slice(end, end + close.length) === close;
-    if (selected && wrappedBefore && wrappedAfter) {
-      replace(start - open.length, end + close.length, selected, start - open.length, end - open.length);
-      return;
+function richTextToMarkdown(root) {
+  const children = (node) => [...node.childNodes].map(serialize).join('');
+  const serialize = (node) => {
+    if (node.nodeType === Node.TEXT_NODE) return String(node.nodeValue || '').replace(/\u00a0/g, ' ');
+    if (node.nodeType !== Node.ELEMENT_NODE) return '';
+    const tag = node.tagName.toLowerCase();
+    const body = children(node);
+    if (tag === 'br') return '\n';
+    if (tag === 'strong' || tag === 'b') return `**${body}**`;
+    if (tag === 'em' || tag === 'i') return `*${body}*`;
+    if (tag === 's' || tag === 'del') return `~~${body}~~`;
+    if (tag === 'code' && node.parentElement?.tagName.toLowerCase() !== 'pre') return `\`${body.replace(/`/g, '\\`')}\``;
+    if (tag === 'a') return `[${body || node.getAttribute('href') || 'ссылка'}](${node.getAttribute('href') || ''})`;
+    if (/^h[1-6]$/.test(tag)) return `${'#'.repeat(Number(tag.slice(1)))} ${body.trim()}\n\n`;
+    if (tag === 'p' || tag === 'div') return `${body.trimEnd()}\n\n`;
+    if (tag === 'blockquote') return `${body.trim().split('\n').map((line) => `> ${line}`).join('\n')}\n\n`;
+    if (tag === 'pre') return `\`\`\`\n${node.textContent || ''}\n\`\`\`\n\n`;
+    if (tag === 'ul' || tag === 'ol') {
+      const ordered = tag === 'ol';
+      return `${[...node.children].filter((item) => item.tagName.toLowerCase() === 'li').map((item, index) => `${ordered ? `${index + 1}.` : '-'} ${children(item).trim()}`).join('\n')}\n\n`;
     }
-    const content = selected || placeholder;
-    const text = `${open}${content}${close}`;
-    replace(start, end, text, start + open.length, start + open.length + content.length);
+    if (tag === 'li') return body;
+    return body;
   };
-  if (action === 'bold') {
-    wrap('**', '**', 'текст');
-  } else if (action === 'italic') {
-    wrap('*', '*', 'текст');
-  } else if (action === 'code') {
-    wrap('`', '`', 'код');
-  } else if (action === 'link') {
-    const text = `[${selected || 'название'}](https://)`;
-    replace(start, end, text, start + text.indexOf('https://'), start + text.indexOf('https://') + 8);
-  } else {
-    const to = lineEnd === -1 ? textarea.value.length : lineEnd;
-    const lines = textarea.value.slice(lineStart, to).split('\n');
-    const headingLevel = action.startsWith('heading') ? Number(action.replace('heading', '')) || 2 : 0;
-    const patterns = { list: /^[-*+]\s+/, ordered: /^\d+[.)]\s+/, quote: /^>\s?/, note: /^>\s?\*\*Примечание:\*\*\s?/ };
-    const pattern = headingLevel ? /^#{1,6}\s+/ : patterns[action];
-    const allPrefixed = pattern && lines.every((line) => !line.trim() || pattern.test(line));
-    const text = lines.map((line, index) => {
-      if (!line.trim()) return line;
-      if (allPrefixed) return line.replace(pattern, '');
-      const clean = pattern ? line.replace(pattern, '') : line;
-      if (headingLevel) return `${'#'.repeat(headingLevel)} ${clean}`;
-      if (action === 'ordered') return `${index + 1}. ${clean}`;
-      const prefixes = { list: '- ', quote: '> ', note: '> **Примечание:** ' };
-      return `${prefixes[action] || ''}${clean}`;
-    }).join('\n');
-    const firstPrefixLength = text.match(/^(?:#{1,6}\s+|[-*+]\s+|\d+[.)]\s+|>\s?(?:\*\*Примечание:\*\*\s?)?)/)?.[0].length || 0;
-    replace(lineStart, to, text, lineStart + firstPrefixLength, lineStart + text.length);
+  return children(root)
+    .replace(/\*{4}/g, '**\n\n**')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function setMarkdownEditorValue(editor, value, notify = true) {
+  const source = $('.markdown-source', editor);
+  const rich = $('.markdown-rich-editor', editor);
+  source.value = String(value || '');
+  rich.innerHTML = source.value.trim() ? renderMarkdown(source.value, '') : '';
+  if (notify) rich.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertReplacementText' }));
+}
+
+function applyRichTextAction(editor, action) {
+  editor.focus();
+  const commands = { bold: 'bold', italic: 'italic', list: 'insertUnorderedList', ordered: 'insertOrderedList' };
+  if (commands[action]) document.execCommand(commands[action], false);
+  else if (action === 'heading2') document.execCommand('formatBlock', false, 'h2');
+  else if (action === 'quote' || action === 'note') document.execCommand('formatBlock', false, 'blockquote');
+  else if (action === 'code') document.execCommand('formatBlock', false, 'pre');
+  else if (action === 'link') {
+    const selection = window.getSelection();
+    const url = window.prompt('Адрес ссылки', 'https://');
+    if (!url) return;
+    if (selection?.isCollapsed) document.execCommand('insertHTML', false, `<a href="${escapeHTML(url)}">${escapeHTML(url)}</a>`);
+    else document.execCommand('createLink', false, url);
   }
-  textarea.focus();
-  textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  editor.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'formatSetBlockTextDirection' }));
 }
 
 function markdownShortcutAction(event) {
@@ -267,23 +266,100 @@ function markdownShortcutAction(event) {
 
 function bindMarkdownEditors(root = document) {
   $$('.markdown-editor', root).forEach((editor) => {
-    const textarea = $('textarea', editor);
-    $$('[data-md]', editor).forEach((button) => button.addEventListener('click', () => applyMarkdownAction(textarea, button.dataset.md)));
-    $('[data-open-notebook]', editor)?.addEventListener('click', () => openNotebook({ title: editor.querySelector('label')?.textContent || 'Блокнот', value: textarea.value, editable: true, onSave: (value) => { textarea.value = value; textarea.dispatchEvent(new Event('input', { bubbles: true })); } }));
-    textarea?.addEventListener('keydown', (event) => {
+    if (editor.dataset.markdownBound === 'true') return;
+    editor.dataset.markdownBound = 'true';
+    const textarea = $('.markdown-source', editor);
+    const richEditor = $('.markdown-rich-editor', editor);
+    let restoringHistory = false;
+    let historyIndex = 0;
+    let editorHistory = [{ html: richEditor.innerHTML, source: textarea.value }];
+    const sync = () => {
+      textarea.value = richTextToMarkdown(richEditor);
+      if (!restoringHistory) {
+        const current = editorHistory[historyIndex];
+        if (!current || current.html !== richEditor.innerHTML || current.source !== textarea.value) {
+          editorHistory = editorHistory.slice(0, historyIndex + 1);
+          editorHistory.push({ html: richEditor.innerHTML, source: textarea.value });
+          if (editorHistory.length > 120) editorHistory.shift();
+          historyIndex = editorHistory.length - 1;
+        }
+      }
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    const restoreHistory = (direction) => {
+      const nextIndex = Math.max(0, Math.min(editorHistory.length - 1, historyIndex + direction));
+      if (nextIndex === historyIndex) return;
+      historyIndex = nextIndex;
+      const snapshot = editorHistory[historyIndex];
+      restoringHistory = true;
+      richEditor.innerHTML = snapshot.html;
+      textarea.value = snapshot.source;
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      restoringHistory = false;
+      richEditor.focus();
+    };
+    $$('[data-md]', editor).forEach((button) => {
+      button.addEventListener('mousedown', (event) => event.preventDefault());
+      button.addEventListener('click', () => applyRichTextAction(richEditor, button.dataset.md));
+    });
+    $('[data-open-notebook]', editor)?.addEventListener('click', () => openNotebook({ title: editor.querySelector('label')?.textContent || 'Редактор', value: textarea.value, onSave: (value) => setMarkdownEditorValue(editor, value) }));
+    richEditor.addEventListener('input', sync);
+    richEditor.addEventListener('paste', (event) => {
+      event.preventDefault();
+      document.execCommand('insertText', false, event.clipboardData?.getData('text/plain') || '');
+    });
+    richEditor.addEventListener('beforeinput', (event) => {
+      if (event.inputType !== 'historyUndo' && event.inputType !== 'historyRedo') return;
+      event.preventDefault();
+      restoreHistory(event.inputType === 'historyRedo' ? 1 : -1);
+    });
+    richEditor.addEventListener('keydown', (event) => {
+      const shortcutKey = String(event.key || '').toLowerCase();
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && (event.code === 'KeyZ' || shortcutKey === 'z')) {
+        event.preventDefault();
+        event.stopPropagation();
+        restoreHistory(event.shiftKey ? 1 : -1);
+        return;
+      }
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && (event.code === 'KeyY' || shortcutKey === 'y')) {
+        event.preventDefault();
+        event.stopPropagation();
+        restoreHistory(1);
+        return;
+      }
       const action = markdownShortcutAction(event);
       if (action) {
         event.preventDefault();
         event.stopPropagation();
-        applyMarkdownAction(textarea, action);
+        applyRichTextAction(richEditor, action);
       } else if ((event.ctrlKey || event.metaKey) && event.code === 'Enter') {
         event.preventDefault();
         event.stopPropagation();
-        textarea.closest('form')?.requestSubmit();
+        editor.closest('form')?.requestSubmit();
       }
     });
   });
-  $$('[data-open-note-view]', root).forEach((button) => button.addEventListener('click', () => { const note = state.noteContents.get(button.dataset.openNoteView); if (note) openNotebook({ title: note.title, value: note.value }); }));
+  bindMarkdownViews(root);
+}
+
+function bindMarkdownViews(root = document) {
+  $$('.markdown-view', root).forEach((view) => {
+    if (view.dataset.markdownViewBound === 'true') return;
+    view.dataset.markdownViewBound = 'true';
+    const body = $('.markdown-body', view);
+    const button = $('[data-toggle-markdown]', view);
+    requestAnimationFrame(() => {
+      const threshold = Number.parseFloat(getComputedStyle(view).getPropertyValue('--markdown-collapse-height')) || 440;
+      if (body.scrollHeight <= threshold + 8) return;
+      view.classList.add('is-collapsible');
+      button.hidden = false;
+    });
+    button.addEventListener('click', () => {
+      const expanded = view.classList.toggle('is-expanded');
+      button.setAttribute('aria-expanded', String(expanded));
+      $('span', button).textContent = expanded ? 'Свернуть' : 'Показать полностью';
+    });
+  });
 }
 
 function closeCustomSelects(except = null) {
@@ -1859,6 +1935,7 @@ function addRecordWorkspaceItem(id, summary, preserve) {
 
 async function openRecord(id, options = {}) {
   const requestID = ++state.activeRecordRequest;
+  if (state.activeWorkspaceRecordId !== id) state.editingQuestionAnswerId = '';
   if (state.activeWorkspaceRecordId !== id || options.edit !== true) {
     state.recordEditMode = Boolean(options.edit);
     state.activeResearchOptionId = '';
@@ -2189,7 +2266,12 @@ function renderMissingFounder() {
 
 function renderFounderAnswer(question, user, answer) {
   const isMe = user.id === state.me.id;
-  return `<section class="answer-panel ${answer ? 'answered' : ''}"><header><span class="avatar">${escapeHTML(user.username.slice(0, 2).toUpperCase())}</span><span><strong>${escapeHTML(user.username)}</strong><small>${answer ? `Ответ обновлён ${formatDate(answer.updatedAt, true)}` : 'Ответа пока нет'}</small></span>${answer ? `<span class="answer-ready">${icon('check')} Готово</span>` : ''}</header>${isMe ? `<form class="answer-form" data-question-answer="${question.id}">${markdownEditor('content', 'Ваш ответ', answer?.content || '', 7, 'Развёрнутая позиция, аргументы и примеры', `answer-${question.id}`)}<button type="submit" class="secondary">${icon('send')} ${answer ? 'Обновить ответ' : 'Отправить ответ'}</button></form>` : answer ? markdownView(answer.content, 'Ответ пуст.', `Ответ ${user.username}`) : `<div class="answer-placeholder">Ожидаем позицию партнёра</div>`}</section>`;
+  const editing = isMe && (!answer || state.editingQuestionAnswerId === question.id);
+  const controls = answer ? `<span class="answer-ready">${icon('check')} Готово</span>${isMe ? `<button type="button" class="icon-button answer-edit" data-edit-question-answer="${question.id}" title="Изменить ответ" aria-label="Изменить ответ">${icon('edit')}</button>` : ''}` : '';
+  const content = editing
+    ? `<form class="answer-form" data-question-answer="${question.id}">${markdownEditor('content', 'Ваш ответ', answer?.content || '', 7, 'Развёрнутая позиция, аргументы и примеры', `answer-${question.id}`)}<div class="answer-form-actions"><button type="submit" class="secondary">${icon('send')} ${answer ? 'Сохранить ответ' : 'Отправить ответ'}</button>${answer ? `<button type="button" class="text-button" data-cancel-question-answer="${question.id}">Отмена</button>` : ''}</div></form>`
+    : answer ? `<div class="answer-read">${markdownView(answer.content, 'Ответ пуст.')}</div>` : `<div class="answer-placeholder">Ожидаем позицию партнёра</div>`;
+  return `<section class="answer-panel ${answer ? 'answered' : ''}"><header><span class="avatar">${escapeHTML(user.username.slice(0, 2).toUpperCase())}</span><span><strong>${escapeHTML(user.username)}</strong><small>${answer ? `Ответ обновлён ${formatDate(answer.updatedAt, true)}` : 'Ответа пока нет'}</small></span>${controls}</header>${content}</section>`;
 }
 
 function renderJointDecision(question) {
@@ -2279,7 +2361,6 @@ function renderRecordContextStrip(record) {
 function renderRecordDialog() {
   const detail = state.activeDetail;
   const record = detail.record;
-	state.noteContents.clear();
   const statuses = [...(statusesByType[record.type] || statusesByType.default)];
   if (!statuses.includes(record.status)) statuses.push(record.status);
   const allLinkTargets = state.records.filter((item) => item.id !== record.id && item.status !== 'archived');
@@ -2632,9 +2713,25 @@ function bindRecordDialogEvents() {
     event.preventDefault(); const form = new FormData(event.currentTarget);
     await mutateDetail(`/api/records/${record.id}/questions`, { method: 'POST', body: JSON.stringify({ questions: form.get('questions') }) });
   });
+  $$('[data-edit-question-answer]').forEach((button) => button.addEventListener('click', () => {
+    state.editingQuestionAnswerId = button.dataset.editQuestionAnswer;
+    renderRecordDialog();
+    requestAnimationFrame(() => $(`[data-question-answer="${CSS.escape(state.editingQuestionAnswerId)}"] .markdown-rich-editor`)?.focus());
+  }));
+  $$('[data-cancel-question-answer]').forEach((button) => button.addEventListener('click', () => {
+    state.editingQuestionAnswerId = '';
+    renderRecordDialog();
+  }));
   $$('[data-question-answer]').forEach((formNode) => formNode.addEventListener('submit', async (event) => {
     event.preventDefault(); const form = new FormData(event.currentTarget);
-    await mutateDetail(`/api/records/${record.id}/questions/${event.currentTarget.dataset.questionAnswer}/answer`, { method: 'PUT', body: JSON.stringify({ content: form.get('content') }) });
+    const questionID = event.currentTarget.dataset.questionAnswer;
+    const previousEditing = state.editingQuestionAnswerId;
+    state.editingQuestionAnswerId = '';
+    const saved = await mutateDetail(`/api/records/${record.id}/questions/${questionID}/answer`, { method: 'PUT', body: JSON.stringify({ content: form.get('content') }) });
+    if (!saved) {
+      state.editingQuestionAnswerId = previousEditing || questionID;
+      renderRecordDialog();
+    }
   }));
   $$('[data-select-answer]').forEach((button) => button.addEventListener('click', async () => {
     await mutateDetail(`/api/records/${record.id}/questions/${button.dataset.questionId}/decision`, { method: 'POST', body: JSON.stringify({ mode: 'answer', answerId: button.dataset.selectAnswer }) });
@@ -3079,9 +3176,14 @@ async function openProfile(userId) {
     $$('[data-open-event]', dialog).forEach((button) => button.addEventListener('click', () => openActivity(button.dataset.openEvent, recentActions.get(button.dataset.openEvent))));
 		if (profile.user.id === state.me.id) api('/api/ai/health').then((health) => {
 			const node = $('#ai-provider-status', dialog); if (!node) return;
-			const provider = health.source === 'gemini' ? 'Gemini' : health.source === 'groq' ? 'Groq' : 'Локальный анализ';
+			const externalProvider = health.provider === 'gemini' ? 'Gemini' : health.provider === 'groq' ? 'Groq' : 'Внешняя модель';
+			const provider = health.providerAvailable ? externalProvider : 'Локальный анализ активен';
+			const model = health.model ? ` · ${health.model}` : '';
+			const message = health.providerAvailable
+				? health.message
+				: health.configured ? `${externalProvider}${model} недоступен. ${health.message || 'Используются локальные правила.'}` : (health.message || 'Внешняя модель не настроена; используются локальные правила.');
 			node.className = `ai-provider-status ${health.providerAvailable ? 'available' : 'fallback'}`;
-			node.innerHTML = `${icon('sparkles')}<div><strong>${escapeHTML(provider)} · ${escapeHTML(health.model || '')}</strong><p>${escapeHTML(health.message || '')}</p></div>`;
+			node.innerHTML = `${icon('sparkles')}<div><strong>${escapeHTML(`${provider}${health.providerAvailable ? model : ''}`)}</strong><p>${escapeHTML(message)}</p></div>`;
 		}).catch(() => {});
   } catch (error) {
     $('#profile-dialog-content').innerHTML = `<div class="record-load-error">${icon('help')}<h2>Профиль не загрузился</h2><p>${escapeHTML(error.message)}</p><button type="button" class="secondary" data-close-profile>Закрыть</button></div>`;
