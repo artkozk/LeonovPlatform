@@ -105,3 +105,32 @@ func TestAutonomousAuditNavigationAndWorkQueueStayUnified(t *testing.T) {
 		t.Fatal("work search must be debounced instead of redrawing synchronously on every character")
 	}
 }
+
+func TestResearchComparisonAndSafeMarkdownAssetsAreEmbedded(t *testing.T) {
+	app, err := Files.ReadFile("app.js")
+	if err != nil {
+		t.Fatalf("read app.js: %v", err)
+	}
+	for _, marker := range [][]byte{
+		[]byte("function renderMarkdown"),
+		[]byte("function renderResearchComparison"),
+		[]byte("function renderResearchOptionCard"),
+		[]byte("/research-options"),
+		[]byte("DOMPurify.sanitize"),
+	} {
+		if !bytes.Contains(app, marker) {
+			t.Fatalf("app.js does not contain research/markdown marker %q", marker)
+		}
+	}
+	for _, asset := range []string{
+		"vendor/marked-18.0.9.umd.js",
+		"vendor/MARKED-LICENSE.txt",
+		"vendor/dompurify-3.4.13.min.js",
+		"vendor/DOMPURIFY-LICENSE.txt",
+	} {
+		body, err := Files.ReadFile(asset)
+		if err != nil || len(body) < 500 {
+			t.Fatalf("embedded safe markdown asset %s missing or incomplete: bytes=%d err=%v", asset, len(body), err)
+		}
+	}
+}

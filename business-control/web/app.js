@@ -48,6 +48,9 @@ const iconPaths = {
   sparkles: '<path d="m12 3-1.2 3.3L7.5 7.5l3.3 1.2L12 12l1.2-3.3 3.3-1.2-3.3-1.2Z"/><path d="m18.5 13-.8 2.2-2.2.8 2.2.8.8 2.2.8-2.2 2.2-.8-2.2-.8ZM5.5 14l-.6 1.6-1.6.6 1.6.6.6 1.6.6-1.6 1.6-.6-1.6-.6Z"/>',
   trash: '<path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15M10 11v6M14 11v6"/>',
   grip: '<circle cx="8" cy="7" r="1"/><circle cx="16" cy="7" r="1"/><circle cx="8" cy="12" r="1"/><circle cx="16" cy="12" r="1"/><circle cx="8" cy="17" r="1"/><circle cx="16" cy="17" r="1"/>',
+  minus: '<path d="M5 12h14"/>',
+  play: '<path d="m8 5 11 7-11 7Z"/>',
+  pause: '<path d="M9 5v14M15 5v14"/>',
 };
 
 function icon(name, className = '') {
@@ -73,6 +76,27 @@ const priorityLabels = { low: 'Низкий', normal: 'Обычный', high: '�
 const priorityWeight = { critical: 0, high: 1, normal: 2, low: 3 };
 const workstreamLabels = { business: 'Бизнес', platform: 'Разработка платформы', operations: 'Операционная работа' };
 const editPolicyLabels = { shared: 'Общая: команда может изменять', owner_only: 'Личная: изменяет только ответственный' };
+const graphGroups = [
+  { key: 'goal', label: 'Цели', color: '#ef8f6b' },
+  { key: 'task', label: 'Задачи', color: '#70d6b5' },
+  { key: 'question_set', label: 'Группы вопросов', color: '#72b7d2' },
+  { key: 'idea', label: 'Идеи', color: '#e7bd61' },
+  { key: 'criterion', label: 'Критерии', color: '#b7ae8c' },
+  { key: 'research', label: 'Исследования', color: '#9d8fe8' },
+  { key: 'decision', label: 'Решения', color: '#c697dc' },
+  { key: 'disagreement', label: 'Разногласия', color: '#e47682' },
+  { key: 'document', label: 'Документы', color: '#aeb8b3' },
+  { key: 'meeting', label: 'Встречи', color: '#65c8c3' },
+  { key: 'question', label: 'Вопросы', color: '#78b5cf' },
+  { key: 'answer', label: 'Ответы', color: '#e0ad54' },
+  { key: 'joint_decision', label: 'Совместные итоги', color: '#58c09a' },
+  { key: 'research_option', label: 'Варианты исследований', color: '#b4a8ef' },
+];
+const graphSettingDefaults = {
+  showDiscussion: true, showOrphans: true, showArrows: false, physics: true,
+  textFade: 38, nodeSize: 100, linkThickness: 100,
+  centerForce: 46, repelForce: 58, linkForce: 54, linkDistance: 52,
+};
 
 const navItems = [
   ['dashboard', 'Обзор', 'dashboard', 'Работа'], ['work', 'Работа', 'checkSquare', 'Работа'],
@@ -92,16 +116,84 @@ const state = {
   recordSearchTimer: null,
   graphResizeTimer: null,
   historyLoadedAll: false,
-  graphData: null, graphInstance: null, graphFocusRecordId: '', graphDepth: 2, graphShowDiscussion: true,
-  graphTypeFilter: 'all', graphSearch: '', graphSelectedId: '', graphLinkSourceId: '',
+  graphData: null, graphInstance: null, graphFocusRecordId: '', graphDepth: 2, graphShowDiscussion: graphSettingDefaults.showDiscussion,
+  graphTypeFilter: 'all', graphSearch: '', graphSelectedId: '', graphLinkSourceId: '', graphSettingsOpen: false,
+  graphShowOrphans: graphSettingDefaults.showOrphans, graphShowArrows: graphSettingDefaults.showArrows, graphPhysics: graphSettingDefaults.physics,
+  graphTextFade: graphSettingDefaults.textFade, graphNodeSize: graphSettingDefaults.nodeSize, graphLinkThickness: graphSettingDefaults.linkThickness,
+  graphCenterForce: graphSettingDefaults.centerForce, graphRepelForce: graphSettingDefaults.repelForce,
+  graphLinkForce: graphSettingDefaults.linkForce, graphLinkDistance: graphSettingDefaults.linkDistance,
+  graphHiddenGroups: new Set(), graphGroupColors: Object.fromEntries(graphGroups.map((group) => [group.key, group.color])),
+  graphSettingsLoaded: false, graphSearchTimer: null, graphTimelineTimer: null, graphTimelinePlaying: false, graphContextNodeId: '',
   recordWorkspace: [], activeWorkspaceRecordId: '', focusQuestionId: '',
   detailCache: new Map(), detailRequests: new Map(), searchTimer: null, suppressOverlayPop: false,
   presenceInteractions: 0, presenceLastSentAt: Date.now(), lastInteractionAt: Date.now(), aiSuggestionTimer: null,
-  recordEditMode: false, aiAnalyses: new Map(), aiAnalysisLoading: '', graphDragGroup: null, graphMovingGroup: false,
+  recordEditMode: false, aiAnalyses: new Map(), aiAnalysisLoading: '',
+  researchComparisons: new Map(), researchComparisonRequests: new Map(), activeResearchOptionId: '',
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+
+function renderMarkdown(value, empty = 'Не заполнено') {
+  const source = String(value || '').trim();
+  if (!source) return `<p class="markdown-empty">${escapeHTML(empty)}</p>`;
+  if (!window.marked?.parse || !window.DOMPurify?.sanitize) return `<p>${escapeHTML(source).replace(/\n/g, '<br>')}</p>`;
+  const parsed = window.marked.parse(source.replace(/^[\u200B-\u200F\uFEFF]/, ''), { gfm: true, breaks: true });
+  const clean = window.DOMPurify.sanitize(parsed, { USE_PROFILES: { html: true }, FORBID_TAGS: ['style'] });
+  const template = document.createElement('template');
+  template.innerHTML = clean;
+  $$('a', template.content).forEach((link) => {
+    const href = link.getAttribute('href') || '';
+    if (!/^(https?:|mailto:)/i.test(href)) link.removeAttribute('href');
+    else if (/^https?:/i.test(href)) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
+  });
+  return template.innerHTML;
+}
+
+function markdownEditor(name, label, value, rows = 6, placeholder = '', suffix = '') {
+  const id = `markdown-${String(name).replace(/[^a-z0-9_-]/gi, '-')}-${suffix || 'main'}`;
+  return `<div class="markdown-editor"><label for="${escapeHTML(id)}">${escapeHTML(label)}</label><div class="markdown-toolbar" role="toolbar" aria-label="Инструменты Markdown"><button type="button" data-md="bold" title="Полужирный"><b>B</b></button><button type="button" data-md="heading" title="Заголовок">H</button><button type="button" data-md="list" title="Список">${icon('menu')}</button><button type="button" data-md="quote" title="Цитата">❯</button><button type="button" data-md="note" title="Примечание">i</button><button type="button" data-md="link" title="Ссылка">${icon('link')}</button></div><textarea id="${escapeHTML(id)}" name="${escapeHTML(name)}" rows="${rows}" placeholder="${escapeHTML(placeholder)}">${escapeHTML(value || '')}</textarea></div>`;
+}
+
+function applyMarkdownAction(textarea, action) {
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const selected = textarea.value.slice(start, end);
+  const lineStart = textarea.value.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
+  const lineEnd = textarea.value.indexOf('\n', end);
+  const replace = (from, to, text, selectionStart, selectionEnd) => {
+    textarea.setRangeText(text, from, to, 'preserve');
+    textarea.setSelectionRange(selectionStart, selectionEnd);
+  };
+  if (action === 'bold') {
+    const text = `**${selected || 'текст'}**`;
+    replace(start, end, text, start + 2, start + text.length - 2);
+  } else if (action === 'link') {
+    const text = `[${selected || 'название'}](https://)`;
+    replace(start, end, text, start + text.indexOf('https://'), start + text.indexOf('https://') + 8);
+  } else {
+    const prefixes = { heading: '## ', list: '- ', quote: '> ', note: '> **Примечание:** ' };
+    const to = lineEnd === -1 ? textarea.value.length : lineEnd;
+    const lines = textarea.value.slice(lineStart, to).split('\n');
+    const prefix = prefixes[action] || '';
+    const text = lines.map((line) => `${prefix}${line}`).join('\n');
+    replace(lineStart, to, text, lineStart + prefix.length, lineStart + text.length);
+  }
+  textarea.focus();
+  textarea.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function bindMarkdownEditors(root = document) {
+  $$('.markdown-editor', root).forEach((editor) => {
+    const textarea = $('textarea', editor);
+    $$('[data-md]', editor).forEach((button) => button.addEventListener('click', () => applyMarkdownAction(textarea, button.dataset.md)));
+    textarea?.addEventListener('keydown', (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
+        event.preventDefault(); applyMarkdownAction(textarea, 'bold');
+      }
+    });
+  });
+}
 
 function closeCustomSelects(except = null) {
   $$('.custom-select.open').forEach((control) => {
@@ -524,7 +616,8 @@ async function runGlobalSearch(query) {
     $$('[data-search-result]', resultsNode).forEach((button) => button.addEventListener('click', async () => {
       resultsNode.hidden = true;
       $('#global-search-input').value = '';
-      await openRecord(button.dataset.recordId, { tab: button.dataset.questionId ? 'questions' : 'overview', questionId: button.dataset.questionId, workspace: $('#record-dialog').open });
+      const tab = button.dataset.researchOptionId ? 'content' : button.dataset.questionId ? 'questions' : 'overview';
+      await openRecord(button.dataset.recordId, { tab, questionId: button.dataset.questionId, workspace: $('#record-dialog').open });
     }));
   } catch (error) {
     resultsNode.innerHTML = `<div class="search-empty">${escapeHTML(error.message)}</div>`;
@@ -534,7 +627,8 @@ async function runGlobalSearch(query) {
 function renderSearchResult(result) {
   const meta = typeMeta[result.type] || { singular: result.type === 'question' ? 'Вопрос' : result.type === 'answer' ? 'Ответ' : result.type === 'joint_decision' ? 'Совместный итог' : 'Запись', icon: result.type === 'question' || result.type === 'answer' ? 'messages' : result.type === 'joint_decision' ? 'scale' : 'fileText' };
   const context = String(result.context || '').replace(/\s+/g, ' ').trim();
-  return `<button type="button" class="global-search-result" data-search-result="${result.id}" data-record-id="${result.recordId}" data-question-id="${result.questionId || ''}"><span class="type-icon">${icon(meta.icon)}</span><span><small>${escapeHTML(meta.singular)}</small><strong>${escapeHTML(result.title)}</strong>${context ? `<em>${escapeHTML(context.slice(0, 150))}${context.length > 150 ? '…' : ''}</em>` : ''}</span>${icon('chevronRight')}</button>`;
+  const label = result.entityKind === 'research_option' ? 'Вариант исследования' : meta.singular;
+  return `<button type="button" class="global-search-result" data-search-result="${result.id}" data-record-id="${result.recordId}" data-question-id="${result.questionId || ''}" data-research-option-id="${result.researchOptionId || ''}"><span class="type-icon">${icon(meta.icon)}</span><span><small>${escapeHTML(label)}</small><strong>${escapeHTML(result.title)}</strong>${context ? `<em>${escapeHTML(context.slice(0, 150))}${context.length > 150 ? '…' : ''}</em>` : ''}</span>${icon('chevronRight')}</button>`;
 }
 
 function setAuthMode(mode) {
@@ -822,20 +916,92 @@ function renderWorkRow(record) {
   </button>`;
 }
 
+function graphSettingsKey() {
+  return `business-control:graph-settings:${state.me?.id || 'anonymous'}:v1`;
+}
+
+function loadGraphSettings() {
+  if (state.graphSettingsLoaded) return;
+  state.graphSettingsLoaded = true;
+  try {
+    const saved = JSON.parse(localStorage.getItem(graphSettingsKey()) || '{}');
+    state.graphShowDiscussion = saved.showDiscussion ?? graphSettingDefaults.showDiscussion;
+    state.graphShowOrphans = saved.showOrphans ?? graphSettingDefaults.showOrphans;
+    state.graphShowArrows = saved.showArrows ?? graphSettingDefaults.showArrows;
+    state.graphPhysics = saved.physics ?? graphSettingDefaults.physics;
+    state.graphTextFade = Number(saved.textFade ?? graphSettingDefaults.textFade);
+    state.graphNodeSize = Number(saved.nodeSize ?? graphSettingDefaults.nodeSize);
+    state.graphLinkThickness = Number(saved.linkThickness ?? graphSettingDefaults.linkThickness);
+    state.graphCenterForce = Number(saved.centerForce ?? graphSettingDefaults.centerForce);
+    state.graphRepelForce = Number(saved.repelForce ?? graphSettingDefaults.repelForce);
+    state.graphLinkForce = Number(saved.linkForce ?? graphSettingDefaults.linkForce);
+    state.graphLinkDistance = Number(saved.linkDistance ?? graphSettingDefaults.linkDistance);
+    state.graphHiddenGroups = new Set(Array.isArray(saved.hiddenGroups) ? saved.hiddenGroups : []);
+    state.graphGroupColors = { ...state.graphGroupColors, ...(saved.groupColors || {}) };
+  } catch (_) {}
+}
+
+function saveGraphSettings() {
+  try {
+    localStorage.setItem(graphSettingsKey(), JSON.stringify({
+      showDiscussion: state.graphShowDiscussion, showOrphans: state.graphShowOrphans,
+      showArrows: state.graphShowArrows, physics: state.graphPhysics,
+      textFade: state.graphTextFade, nodeSize: state.graphNodeSize, linkThickness: state.graphLinkThickness,
+      centerForce: state.graphCenterForce, repelForce: state.graphRepelForce,
+      linkForce: state.graphLinkForce, linkDistance: state.graphLinkDistance,
+      hiddenGroups: [...state.graphHiddenGroups], groupColors: state.graphGroupColors,
+    }));
+  } catch (_) {}
+}
+
+function resetGraphSettings() {
+  Object.assign(state, {
+    graphShowDiscussion: graphSettingDefaults.showDiscussion, graphShowOrphans: graphSettingDefaults.showOrphans,
+    graphShowArrows: graphSettingDefaults.showArrows, graphPhysics: graphSettingDefaults.physics,
+    graphTextFade: graphSettingDefaults.textFade, graphNodeSize: graphSettingDefaults.nodeSize,
+    graphLinkThickness: graphSettingDefaults.linkThickness, graphCenterForce: graphSettingDefaults.centerForce,
+    graphRepelForce: graphSettingDefaults.repelForce, graphLinkForce: graphSettingDefaults.linkForce,
+    graphLinkDistance: graphSettingDefaults.linkDistance,
+  });
+  state.graphHiddenGroups = new Set();
+  state.graphGroupColors = Object.fromEntries(graphGroups.map((group) => [group.key, group.color]));
+  saveGraphSettings();
+}
+
+function graphGroupKey(node) {
+  return node.entityKind === 'record' ? node.type : node.entityKind;
+}
+
+function graphRange(name, label, value, min = 0, max = 100) {
+  return `<label class="graph-setting-range"><span>${escapeHTML(label)}</span><input type="range" min="${min}" max="${max}" value="${value}" data-graph-range="${name}"><b>${value}</b></label>`;
+}
+
+function renderGraphSettings() {
+  return `<aside id="graph-settings" class="graph-settings ${state.graphSettingsOpen ? 'open' : ''}" aria-label="Настройки карты">
+    <header><div><p class="eyebrow">Graph View</p><h2>Настройки карты</h2></div><div><button type="button" class="text-button" data-reset-graph-settings>Сбросить</button><button type="button" class="icon-button" data-close-graph-settings aria-label="Закрыть">${icon('x')}</button></div></header>
+    <div class="graph-settings-body">
+      <section><h3>Фильтры</h3><label class="graph-setting-toggle"><input type="checkbox" data-graph-setting="showDiscussion" ${state.graphShowDiscussion ? 'checked' : ''}><span>Вопросы и ответы</span></label><label class="graph-setting-toggle"><input type="checkbox" data-graph-setting="showOrphans" ${state.graphShowOrphans ? 'checked' : ''}><span>Объекты без связей</span></label></section>
+      <section><h3>Группы</h3><div class="graph-group-list">${graphGroups.map((group) => `<label class="graph-group-row"><input type="checkbox" data-graph-group="${group.key}" ${state.graphHiddenGroups.has(group.key) ? '' : 'checked'}><input type="color" data-graph-group-color="${group.key}" value="${escapeHTML(state.graphGroupColors[group.key] || group.color)}" aria-label="Цвет группы ${escapeHTML(group.label)}"><span>${escapeHTML(group.label)}</span></label>`).join('')}</div></section>
+      <section><h3>Отображение</h3><label class="graph-setting-toggle"><input type="checkbox" data-graph-setting="showArrows" ${state.graphShowArrows ? 'checked' : ''}><span>Стрелки связей</span></label>${graphRange('textFade', 'Исчезновение подписей', state.graphTextFade)}${graphRange('nodeSize', 'Размер узлов', state.graphNodeSize, 70, 150)}${graphRange('linkThickness', 'Толщина связей', state.graphLinkThickness, 60, 180)}<button type="button" class="secondary graph-timeline-button" data-graph-timeline>${icon(state.graphTimelinePlaying ? 'pause' : 'play')} ${state.graphTimelinePlaying ? 'Остановить анимацию' : 'Показать развитие'}</button></section>
+      <section><h3>Физика</h3><label class="graph-setting-toggle"><input type="checkbox" data-graph-setting="physics" ${state.graphPhysics ? 'checked' : ''}><span>Упругое перестроение</span></label>${graphRange('centerForce', 'Сила центра', state.graphCenterForce)}${graphRange('repelForce', 'Отталкивание', state.graphRepelForce)}${graphRange('linkForce', 'Сила связей', state.graphLinkForce)}${graphRange('linkDistance', 'Длина связей', state.graphLinkDistance)}</section>
+    </div>
+  </aside>`;
+}
+
 async function renderGraph() {
+  loadGraphSettings();
   $('#main-content').classList.add('graph-main-content');
   $('#main-content').innerHTML = `
     <section class="graph-workspace">
       <header class="graph-toolbar">
         <div class="graph-mode segmented compact"><button type="button" class="segment ${!state.graphFocusRecordId ? 'active' : ''}" data-graph-mode="global">Весь проект</button><button type="button" class="segment ${state.graphFocusRecordId ? 'active' : ''}" data-graph-mode="local" ${state.graphFocusRecordId ? '' : 'disabled'}>Локальная карта</button></div>
-        <div class="search-box graph-search">${icon('search')}<input id="graph-search" type="search" value="${escapeHTML(state.graphSearch)}" placeholder="Найти узел на карте"></div>
-        <select id="graph-type-filter" aria-label="Тип узлов"><option value="all">Все типы</option>${Object.entries(typeMeta).map(([type, meta]) => `<option value="${type}" ${state.graphTypeFilter === type ? 'selected' : ''}>${meta.label}</option>`).join('')}</select>
-        <label class="graph-toggle"><input id="graph-discussions" type="checkbox" ${state.graphShowDiscussion ? 'checked' : ''}> Вопросы и ответы</label>
+        <div class="search-box graph-search">${icon('search')}<input id="graph-search" type="search" value="${escapeHTML(state.graphSearch)}" placeholder="Фильтр объектов"></div>
         ${state.graphFocusRecordId ? `<label class="graph-depth">Глубина <input id="graph-depth" type="range" min="1" max="4" value="${state.graphDepth}"><b>${state.graphDepth}</b></label>` : ''}
-        <div class="graph-icon-actions"><button type="button" class="icon-button" id="graph-relayout" title="Перестроить карту" aria-label="Перестроить карту">${icon('rotate')}</button><button type="button" class="icon-button" id="graph-fit" title="Показать карту целиком" aria-label="Показать карту целиком">${icon('maximize')}</button></div>
+        <span class="graph-count" id="graph-count"></span>
+        <div class="graph-icon-actions"><button type="button" class="icon-button" id="graph-zoom-out" title="Уменьшить" aria-label="Уменьшить">${icon('minus')}</button><button type="button" class="icon-button" id="graph-zoom-in" title="Увеличить" aria-label="Увеличить">${icon('plus')}</button><button type="button" class="icon-button" id="graph-relayout" title="Перестроить карту" aria-label="Перестроить карту">${icon('rotate')}</button><button type="button" class="icon-button" id="graph-fit" title="Показать карту целиком" aria-label="Показать карту целиком">${icon('maximize')}</button><button type="button" class="icon-button ${state.graphSettingsOpen ? 'active' : ''}" id="graph-settings-toggle" title="Настройки карты" aria-label="Настройки карты">${icon('settings')}</button></div>
       </header>
-      <div class="graph-stage"><div id="relationship-graph" role="application" aria-label="Интерактивная карта связей"><div class="graph-loading"><span class="spinner"></span><strong>Строим карту проекта</strong></div></div><aside id="graph-inspector" class="graph-inspector ${state.graphSelectedId ? 'open' : ''}">${renderGraphInspector()}</aside></div>
-      <footer class="graph-legend"><span><i class="legend-card"></i> Карточка</span><span><i class="legend-question"></i> Вопрос</span><span><i class="legend-answer"></i> Ответ</span><span><i class="legend-decision"></i> Итог</span><em>Масштаб: колесо или жест · перетаскивание родителя двигает ветку · двойное нажатие открывает карточку</em></footer>
+      <div class="graph-stage"><div id="relationship-graph" tabindex="0" role="application" aria-label="Интерактивная карта связей"><div class="graph-loading"><span class="spinner"></span><strong>Строим карту проекта</strong></div></div><aside id="graph-inspector" class="graph-inspector ${state.graphSelectedId && !state.graphSettingsOpen ? 'open' : ''}">${renderGraphInspector()}</aside>${renderGraphSettings()}<div id="graph-context-menu" class="graph-context-menu"></div></div>
+      <footer class="graph-legend"><span><i class="legend-card"></i> Карточка</span><span><i class="legend-question"></i> Вопрос</span><span><i class="legend-answer"></i> Ответ</span><span><i class="legend-decision"></i> Итог</span><em>Колесо / + −: масштаб · перетаскивание: движение · правый клик: действия</em></footer>
     </section>`;
   bindGraphControls();
   try {
@@ -852,9 +1018,12 @@ function graphVisibleElements() {
   const data = state.graphData || { nodes: [], edges: [] };
   const nodeByID = new Map(data.nodes.map((node) => [node.id, node]));
   let allowed = new Set(data.nodes.map((node) => node.id));
-  if (!state.graphShowDiscussion) allowed = new Set([...allowed].filter((id) => nodeByID.get(id)?.entityKind === 'record'));
-  if (state.graphTypeFilter !== 'all') {
-    allowed = new Set([...allowed].filter((id) => nodeByID.get(id)?.type === state.graphTypeFilter));
+  if (!state.graphShowDiscussion) allowed = new Set([...allowed].filter((id) => !['question', 'answer', 'joint_decision'].includes(nodeByID.get(id)?.entityKind)));
+  allowed = new Set([...allowed].filter((id) => !state.graphHiddenGroups.has(graphGroupKey(nodeByID.get(id)))));
+  if (!state.graphShowOrphans) {
+    const connected = new Set();
+    data.edges.forEach((edge) => { connected.add(edge.source); connected.add(edge.target); });
+    allowed = new Set([...allowed].filter((id) => connected.has(id)));
   }
   if (state.graphFocusRecordId) {
     const root = `record:${state.graphFocusRecordId}`;
@@ -881,19 +1050,25 @@ function graphVisibleElements() {
     }
     allowed = new Set([...allowed].filter((id) => local.has(id)));
   }
+  const query = state.graphSearch.trim().toLowerCase();
+  if (query) {
+    allowed = new Set([...allowed].filter((id) => {
+      const node = nodeByID.get(id);
+      return `${node?.title || ''} ${node?.description || ''} ${node?.ownerUsername || ''} ${node?.type || ''}`.toLowerCase().includes(query);
+    }));
+  }
   const nodes = data.nodes.filter((node) => allowed.has(node.id));
   const edges = data.edges.filter((edge) => allowed.has(edge.source) && allowed.has(edge.target));
   return { nodes, edges };
 }
 
 function graphNodeLabel(node) {
-  const kind = typeMeta[node.type]?.singular || (node.entityKind === 'question' ? 'Вопрос' : node.entityKind === 'answer' ? 'Ответ' : node.entityKind === 'joint_decision' ? 'Совместный итог' : 'Карточка');
   const title = String(node.title || '').replace(/\s+/g, ' ').trim();
-  return `${kind}\n${title.length > 48 ? `${title.slice(0, 45)}…` : title}`;
+  return title.length > 58 ? `${title.slice(0, 55)}…` : title;
 }
 
 function graphPositionKey() {
-  return `business-control:graph-positions:${state.me?.id || 'anonymous'}:v2`;
+  return `business-control:graph-positions:${state.me?.id || 'anonymous'}:v3`;
 }
 
 function loadGraphPositions() {
@@ -926,27 +1101,41 @@ function graphHierarchyDescendants(cy, rootID) {
 
 function graphLayoutOptions(randomize = false, nodeCount = state.graphInstance?.nodes().length || 0) {
   const compact = nodeCount > 0 && nodeCount <= 40;
-  return { name: 'cose', animate: true, animationDuration: 460, randomize, nodeRepulsion: compact ? 7200 : 12500, idealEdgeLength: compact ? 125 : 175, edgeElasticity: 80, gravity: compact ? .18 : .12, componentSpacing: compact ? 86 : 120, nestingFactor: 1.2, fit: true, padding: window.innerWidth <= 560 ? 28 : 48 };
+  return {
+    name: 'cose', animate: state.graphPhysics, animationDuration: state.graphPhysics ? 560 : 0, animationEasing: 'ease-out-cubic', randomize,
+    nodeRepulsion: (compact ? 3400 : 5200) + state.graphRepelForce * (compact ? 72 : 110),
+    idealEdgeLength: 48 + state.graphLinkDistance * (compact ? 1.35 : 1.8),
+    edgeElasticity: 24 + state.graphLinkForce * 1.8,
+    gravity: .02 + state.graphCenterForce * .0036,
+    componentSpacing: compact ? 92 : 132, nestingFactor: 1.15,
+    numIter: compact ? 900 : 1300, initialTemp: 170, coolingFactor: .96, minTemp: 1,
+    fit: true, padding: window.innerWidth <= 560 ? 30 : 64,
+  };
 }
 
 function updateGraphZoomStyles() {
   const cy = state.graphInstance;
   if (!cy) return;
   const zoom = cy.zoom();
-  cy.nodes().toggleClass('zoom-compact', zoom < .58).toggleClass('zoom-hidden', zoom < .46);
-  cy.edges().toggleClass('zoom-hidden', zoom < .68);
+  const fadeThreshold = .24 + state.graphTextFade * .009;
+  cy.nodes().toggleClass('zoom-compact', zoom < fadeThreshold + .16).toggleClass('zoom-hidden', zoom < fadeThreshold);
+  cy.edges().toggleClass('zoom-hidden', zoom < fadeThreshold + .12);
 }
 
 function ensureReadableGraphView(cy) {
-  if (!cy || cy.nodes().length > 40 || cy.zoom() >= .68) return;
-  cy.zoom(.68);
+  if (!cy || cy.nodes().length > 40 || cy.zoom() >= .72) return;
+  cy.zoom(.72);
   cy.center(cy.nodes());
 }
 
 function mountGraph() {
   if (!window.cytoscape) throw new Error('Модуль визуализации не загружен');
+  clearTimeout(state.graphTimelineTimer);
+  state.graphTimelinePlaying = false;
   if (state.graphInstance) state.graphInstance.destroy();
   const { nodes, edges } = graphVisibleElements();
+  const degree = new Map(nodes.map((node) => [node.id, 0]));
+  edges.forEach((edge) => { degree.set(edge.source, (degree.get(edge.source) || 0) + 1); degree.set(edge.target, (degree.get(edge.target) || 0) + 1); });
   const savedPositions = loadGraphPositions();
   const positioned = nodes.filter((node) => savedPositions[node.id]).length;
   const usePreset = nodes.length > 0 && positioned / nodes.length >= .75;
@@ -958,62 +1147,48 @@ function mountGraph() {
     return { x: savedCenter.x + Math.cos(angle) * radius, y: savedCenter.y + Math.sin(angle) * radius };
   };
   const elements = [
-    ...nodes.map((node, index) => ({ data: { ...node, label: graphNodeLabel(node) }, position: savedPositions[node.id] || fallbackPosition(index), classes: `kind-${node.entityKind} type-${node.type} ${node.isRoot ? 'is-root' : ''} ${node.status === 'archived' ? 'is-archived' : ''}` })),
-    ...edges.map((edge) => ({ data: { id: edge.id, source: edge.source, target: edge.target, label: edge.label, relationType: edge.relationType }, classes: `relation-${edge.relationType}` })),
+    ...nodes.map((node, index) => {
+      const nodeDegree = degree.get(node.id) || 0;
+      const size = Math.round((25 + Math.sqrt(nodeDegree + 1) * 8 + (node.isRoot ? 9 : 0)) * state.graphNodeSize / 100);
+      return { data: { ...node, label: graphNodeLabel(node), size, degree: nodeDegree, color: state.graphGroupColors[graphGroupKey(node)] || '#8aa49a' }, position: savedPositions[node.id] || fallbackPosition(index), classes: `kind-${node.entityKind} type-${node.type} ${node.isRoot ? 'is-root' : ''} ${node.status === 'archived' ? 'is-archived' : ''}` };
+    }),
+    ...edges.map((edge) => ({ data: { id: edge.id, source: edge.source, target: edge.target, label: edge.label, relationType: edge.relationType, arrow: state.graphShowArrows ? 'triangle' : 'none' }, classes: `relation-${edge.relationType}` })),
   ];
   const container = $('#relationship-graph');
   container.innerHTML = '';
   const cy = window.cytoscape({
-    container, elements, minZoom: .16, maxZoom: 2.2, wheelSensitivity: .12, boxSelectionEnabled: true,
+    container, elements, minZoom: .1, maxZoom: 3, boxSelectionEnabled: true,
     style: [
-      { selector: 'node', style: { shape: 'round-rectangle', width: 166, height: 60, label: 'data(label)', 'font-family': 'Onest Local, sans-serif', 'font-size': 12, 'font-weight': 560, color: '#18201d', 'text-wrap': 'wrap', 'text-max-width': 142, 'text-valign': 'center', 'text-halign': 'center', 'line-height': 1.25, 'background-color': '#faf9f5', 'border-width': 1.5, 'border-color': '#9aa8a1', 'overlay-opacity': 0, 'transition-property': 'opacity, border-width, border-color, background-color', 'transition-duration': '.18s' } },
-      { selector: 'node.is-root', style: { width: 190, height: 70, 'font-size': 13, 'font-weight': 650, 'background-color': '#f0f6f3', 'border-width': 2.5, 'border-color': '#126a55' } },
-      { selector: 'node.kind-question', style: { width: 150, height: 52, 'background-color': '#edf3f5', 'border-color': '#557987' } },
-      { selector: 'node.kind-answer', style: { width: 132, height: 46, 'background-color': '#f8f1df', 'border-color': '#aa791f', 'font-size': 11 } },
-      { selector: 'node.kind-joint_decision', style: { width: 152, height: 54, 'background-color': '#e7f1ec', 'border-color': '#126a55' } },
-      { selector: 'node.type-idea', style: { 'background-color': '#fbf3df', 'border-color': '#a97725' } },
-      { selector: 'node.type-goal', style: { 'background-color': '#f7ece7', 'border-color': '#a95f45' } },
-      { selector: 'node.type-task', style: { 'background-color': '#eef5f2', 'border-color': '#357665' } },
-      { selector: 'node.type-question_set', style: { 'background-color': '#edf3f5', 'border-color': '#557987' } },
-      { selector: 'node.type-criterion', style: { 'background-color': '#f1efe8', 'border-color': '#716b5a' } },
-      { selector: 'node.type-decision', style: { 'background-color': '#f0eff5', 'border-color': '#706c86' } },
-      { selector: 'node:selected', style: { 'border-width': 3, 'border-color': '#101714', 'background-color': '#ffffff', 'underlay-color': '#126a55', 'underlay-opacity': .12, 'underlay-padding': 8 } },
-      { selector: 'edge', style: { width: 1.4, 'curve-style': 'bezier', 'line-color': '#b4bdb8', 'target-arrow-color': '#b4bdb8', 'target-arrow-shape': 'triangle', 'arrow-scale': .65, label: 'data(label)', 'font-family': 'Onest Local, sans-serif', 'font-size': 9, color: '#5f6964', 'text-opacity': 0, 'text-background-color': '#f3f2ed', 'text-background-opacity': .92, 'text-background-padding': 4, 'text-rotation': 'autorotate', 'overlay-opacity': 0, 'transition-property': 'opacity, line-color, width, text-opacity', 'transition-duration': '.18s' } },
-      { selector: 'edge.relation-produced, edge.relation-leads_to', style: { width: 2.1, 'line-color': '#6b9789', 'target-arrow-color': '#6b9789' } },
-      { selector: '.is-dimmed', style: { opacity: .08, 'text-opacity': 0 } },
-      { selector: 'node.is-path', style: { 'border-width': 2.5, 'border-color': '#126a55' } },
-      { selector: 'edge.is-path', style: { width: 2.4, 'line-color': '#4e8777', 'target-arrow-color': '#4e8777', 'text-opacity': 1 } },
+      { selector: 'node', style: { shape: 'ellipse', width: 'data(size)', height: 'data(size)', label: 'data(label)', 'font-family': 'Onest Local, sans-serif', 'font-size': 11, 'font-weight': 600, color: '#d9e2de', 'text-wrap': 'wrap', 'text-max-width': 126, 'text-valign': 'bottom', 'text-margin-y': 10, 'text-halign': 'center', 'line-height': 1.22, 'background-color': 'data(color)', 'background-opacity': .82, 'border-width': 1.5, 'border-color': '#e5eee9', 'border-opacity': .44, 'overlay-opacity': 0, 'transition-property': 'opacity, border-width, border-color, background-opacity, width, height', 'transition-duration': '.16s' } },
+      { selector: 'node.is-root', style: { 'border-width': 3, 'border-color': '#f6fbf8', 'background-opacity': 1, 'font-size': 12, 'font-weight': 700 } },
+      { selector: 'node.kind-joint_decision', style: { shape: 'diamond' } },
+      { selector: 'node.kind-question', style: { shape: 'round-rectangle' } },
+      { selector: 'node:selected', style: { 'border-width': 4, 'border-color': '#ffffff', 'background-opacity': 1, 'underlay-color': '#7de3bf', 'underlay-opacity': .18, 'underlay-padding': 9 } },
+      { selector: 'edge', style: { width: 1.1 * state.graphLinkThickness / 100, 'curve-style': 'bezier', 'line-color': '#80928a', 'line-opacity': .42, 'target-arrow-color': '#9aaba4', 'target-arrow-shape': 'data(arrow)', 'arrow-scale': .58, label: 'data(label)', 'font-family': 'Onest Local, sans-serif', 'font-size': 9, color: '#c5d0cb', 'text-opacity': 0, 'text-background-color': '#1d2723', 'text-background-opacity': .88, 'text-background-padding': 4, 'text-rotation': 'autorotate', 'overlay-opacity': 0, 'transition-property': 'opacity, line-color, width, text-opacity, line-opacity', 'transition-duration': '.16s' } },
+      { selector: 'edge.relation-produced, edge.relation-leads_to', style: { width: 1.8 * state.graphLinkThickness / 100, 'line-color': '#6eb89f', 'target-arrow-color': '#6eb89f' } },
+      { selector: '.is-dimmed', style: { opacity: .06, 'text-opacity': 0 } },
+      { selector: 'node.is-path', style: { 'border-width': 2.5, 'border-color': '#a8f1d7', 'background-opacity': 1 } },
+      { selector: 'edge.is-path', style: { width: 2.3 * state.graphLinkThickness / 100, 'line-color': '#7ed3b5', 'line-opacity': .9, 'target-arrow-color': '#7ed3b5', 'text-opacity': 1 } },
       { selector: 'edge.show-label', style: { 'text-opacity': 1 } },
-      { selector: 'node.zoom-compact', style: { 'font-size': 12 } },
+      { selector: 'node.zoom-compact', style: { 'font-size': 9 } },
       { selector: 'node.zoom-hidden', style: { 'text-opacity': 0 } },
       { selector: 'edge.zoom-hidden', style: { 'text-opacity': 0 } },
-      { selector: '.link-source', style: { 'border-width': 4, 'border-color': '#bf4250', 'underlay-color': '#bf4250', 'underlay-opacity': .12, 'underlay-padding': 9 } },
+      { selector: '.link-source', style: { 'border-width': 4, 'border-color': '#ef9ca5', 'underlay-color': '#ef7180', 'underlay-opacity': .16, 'underlay-padding': 9 } },
+      { selector: '.timeline-hidden', style: { opacity: 0, 'text-opacity': 0 } },
     ],
     layout: usePreset ? { name: 'preset', fit: true, padding: window.innerWidth <= 560 ? 28 : 48, animate: false } : (nodes.length > 1 ? graphLayoutOptions(true, nodes.length) : { name: 'grid', fit: true, padding: 48 }),
   });
   state.graphInstance = cy;
+  $('#graph-count').textContent = `${nodes.length} · ${edges.length}`;
   cy.one('layoutstop', () => { ensureReadableGraphView(cy); saveGraphPositions(cy); updateGraphZoomStyles(); });
   cy.ready(() => requestAnimationFrame(() => saveGraphPositions(cy)));
   cy.on('zoom', updateGraphZoomStyles);
   cy.on('tap', 'node', (event) => selectGraphNode(event.target.id()));
   cy.on('mouseover', 'node', (event) => highlightGraphNeighborhood(event.target));
   cy.on('mouseout', 'node', applyGraphEmphasis);
-  cy.on('tap', (event) => { if (event.target === cy) selectGraphNode(''); });
-  cy.on('grab', 'node', (event) => {
-    const node = event.target;
-    const descendants = graphHierarchyDescendants(cy, node.id());
-    state.graphDragGroup = { rootID: node.id(), start: node.position(), positions: new Map(descendants.map((id) => [id, { ...cy.$id(id).position() }])) };
-  });
-  cy.on('drag', 'node', (event) => {
-    const group = state.graphDragGroup;
-    if (!group || group.rootID !== event.target.id() || state.graphMovingGroup) return;
-    const position = event.target.position();
-    const dx = position.x - group.start.x; const dy = position.y - group.start.y;
-    state.graphMovingGroup = true;
-    group.positions.forEach((start, id) => cy.$id(id).position({ x: start.x + dx, y: start.y + dy }));
-    state.graphMovingGroup = false;
-  });
-  cy.on('free', 'node', () => { saveGraphPositions(cy); state.graphDragGroup = null; });
+  cy.on('tap', (event) => { closeGraphContextMenu(); if (event.target === cy) selectGraphNode(''); });
+  cy.on('cxttap', 'node', (event) => openGraphContextMenu(event.target.id()));
+  cy.on('free', 'node', () => saveGraphPositions(cy));
   let lastTapped = { id: '', time: 0 };
   cy.on('tap', 'node', (event) => {
     const now = Date.now(); const id = event.target.id();
@@ -1024,6 +1199,7 @@ function mountGraph() {
   else if (state.graphFocusRecordId && cy.$id(`record:${state.graphFocusRecordId}`).length) selectGraphNode(`record:${state.graphFocusRecordId}`, true);
   applyGraphEmphasis();
   updateGraphZoomStyles();
+  container.focus({ preventScroll: true });
 }
 
 function highlightGraphNeighborhood(node) {
@@ -1078,13 +1254,8 @@ function applyGraphEmphasis() {
 }
 
 function applyGraphSearch() {
-  const cy = state.graphInstance;
-  if (!cy) return;
-  applyGraphEmphasis();
-  const query = state.graphSearch.trim().toLowerCase();
-  if (!query) return;
-  const matches = cy.nodes().filter((node) => `${node.data('title')} ${node.data('description') || ''}`.toLowerCase().includes(query));
-  if (matches.length) cy.animate({ fit: { eles: matches, padding: 120 }, duration: 220 });
+  clearTimeout(state.graphSearchTimer);
+  state.graphSearchTimer = setTimeout(() => mountGraph(), 220);
 }
 
 function selectGraphNode(id, skipCenter = false) {
@@ -1105,7 +1276,7 @@ function selectGraphNode(id, skipCenter = false) {
 function renderGraphInspector() {
   const node = state.graphData?.nodes.find((item) => item.id === state.graphSelectedId);
   if (!node) return `<div class="graph-inspector-empty">${icon('network')}<strong>Выберите объект</strong><p>Здесь появятся содержание, ближайшие связи и быстрые действия.</p></div>`;
-  const meta = typeMeta[node.type] || { singular: node.entityKind === 'question' ? 'Вопрос' : node.entityKind === 'answer' ? 'Ответ основателя' : node.entityKind === 'joint_decision' ? 'Совместный итог' : 'Объект', icon: node.entityKind === 'joint_decision' ? 'scale' : 'messages' };
+  const meta = typeMeta[node.type] || { singular: node.entityKind === 'question' ? 'Вопрос' : node.entityKind === 'answer' ? 'Ответ основателя' : node.entityKind === 'joint_decision' ? 'Совместный итог' : node.entityKind === 'research_option' ? 'Вариант исследования' : 'Объект', icon: node.entityKind === 'joint_decision' ? 'scale' : node.entityKind === 'research_option' ? 'flask' : 'messages' };
   const edges = (state.graphData?.edges || []).filter((edge) => edge.source === node.id || edge.target === node.id);
   const neighbors = edges.slice(0, 8).map((edge) => {
     const targetID = edge.source === node.id ? edge.target : edge.source;
@@ -1119,13 +1290,114 @@ function renderGraphInspector() {
   return `<div class="graph-inspector-head"><span class="type-icon">${icon(meta.icon)}</span><button type="button" class="icon-button" data-close-graph-inspector aria-label="Закрыть">${icon('x')}</button></div><small>${escapeHTML(meta.singular)}${node.ownerUsername ? ` · ${escapeHTML(node.ownerUsername)}` : ''}</small><h2>${escapeHTML(node.title)}</h2>${context}${node.description ? `<p>${escapeHTML(node.description).replace(/\n/g, '<br>')}</p>` : ''}<div class="graph-inspector-actions"><button type="button" class="primary" data-open-graph-node>${icon('chevronRight')} Открыть</button><button type="button" class="secondary" data-focus-graph-node>${icon('network')} В фокус</button>${canLink ? `<button type="button" class="secondary ${sourceActive ? 'danger-action' : ''}" data-graph-link-source>${icon('link')} ${sourceActive ? 'Отменить связь' : state.graphLinkSourceId ? 'Связать сюда' : 'Создать связь'}</button>` : ''}</div>${state.graphLinkSourceId && state.graphLinkSourceId !== node.id && recordNode ? `<div class="graph-link-callout"><strong>Создать связь с выбранной карточкой?</strong><select id="graph-relation-type"><option value="related">Связано</option><option value="supports">Поддерживает</option><option value="depends_on">Зависит от</option><option value="leads_to">Приводит к</option></select><button type="button" class="primary" data-confirm-graph-link>Связать</button></div>` : ''}<section class="graph-neighbors"><header><span>Ближайшие связи</span><b>${edges.length}</b></header>${neighbors || '<p>Связей пока нет.</p>'}</section>`;
 }
 
+function closeGraphContextMenu() {
+  state.graphContextNodeId = '';
+  $('#graph-context-menu')?.classList.remove('open');
+}
+
+function openGraphContextMenu(nodeID) {
+  const node = state.graphData?.nodes.find((item) => item.id === nodeID);
+  const menu = $('#graph-context-menu');
+  if (!node || !menu) return;
+  state.graphContextNodeId = nodeID;
+  const canLink = node.entityKind === 'record' && (node.editPolicy !== 'owner_only' || node.ownerUsername === state.me.username);
+  menu.innerHTML = `<strong>${escapeHTML(graphNodeLabel(node))}</strong><button type="button" data-graph-context="open">${icon('chevronRight')} Открыть</button><button type="button" data-graph-context="focus">${icon('network')} Локальная карта</button>${canLink ? `<button type="button" data-graph-context="link">${icon('link')} ${state.graphLinkSourceId ? 'Связать с выбранным' : 'Начать связь'}</button>` : ''}`;
+  menu.classList.add('open');
+  $$('[data-graph-context]', menu).forEach((button) => button.addEventListener('click', () => {
+    const current = state.graphData.nodes.find((item) => item.id === state.graphContextNodeId);
+    const action = button.dataset.graphContext;
+    closeGraphContextMenu();
+    if (!current) return;
+    if (action === 'open') openGraphNode(current);
+    if (action === 'focus') { state.graphFocusRecordId = current.recordId; state.graphSelectedId = current.id; renderGraph(); }
+    if (action === 'link') {
+      selectGraphNode(current.id, true);
+      if (!state.graphLinkSourceId) state.graphLinkSourceId = current.id;
+      $('#graph-inspector').innerHTML = renderGraphInspector();
+      $('#graph-inspector').classList.add('open');
+      bindGraphInspector();
+      state.graphInstance.nodes().removeClass('link-source');
+      if (state.graphLinkSourceId) state.graphInstance.$id(state.graphLinkSourceId).addClass('link-source');
+    }
+  }));
+}
+
+function fitGraph() {
+  const cy = state.graphInstance;
+  if (!cy || !cy.nodes().length) return;
+  cy.animate({ fit: { eles: cy.elements(), padding: window.innerWidth <= 560 ? 28 : 54 }, duration: 240 });
+}
+
+function zoomGraph(multiplier) {
+  const cy = state.graphInstance;
+  if (!cy) return;
+  cy.animate({ zoom: Math.max(cy.minZoom(), Math.min(cy.maxZoom(), cy.zoom() * multiplier)), duration: 130 });
+}
+
+function stopGraphTimeline(reveal = true) {
+  clearTimeout(state.graphTimelineTimer);
+  state.graphTimelineTimer = null;
+  state.graphTimelinePlaying = false;
+  if (reveal) state.graphInstance?.elements().removeClass('timeline-hidden');
+  const button = $('[data-graph-timeline]');
+  if (button) button.innerHTML = `${icon('play')} Показать развитие`;
+}
+
+function toggleGraphTimeline() {
+  const cy = state.graphInstance;
+  if (!cy) return;
+  if (state.graphTimelinePlaying) { stopGraphTimeline(true); return; }
+  const nodes = cy.nodes().toArray().sort((left, right) => new Date(left.data('createdAt')) - new Date(right.data('createdAt')));
+  if (!nodes.length) return;
+  state.graphTimelinePlaying = true;
+  cy.elements().addClass('timeline-hidden');
+  const button = $('[data-graph-timeline]');
+  if (button) button.innerHTML = `${icon('pause')} Остановить анимацию`;
+  let index = 0;
+  const revealNext = () => {
+    if (!state.graphTimelinePlaying || !state.graphInstance) return;
+    const batch = nodes.slice(index, index + Math.max(1, Math.ceil(nodes.length / 28)));
+    batch.forEach((node) => {
+      node.removeClass('timeline-hidden');
+      node.connectedEdges().filter((edge) => !edge.source().hasClass('timeline-hidden') && !edge.target().hasClass('timeline-hidden')).removeClass('timeline-hidden');
+    });
+    index += batch.length;
+    if (index >= nodes.length) { stopGraphTimeline(true); return; }
+    state.graphTimelineTimer = setTimeout(revealNext, 140);
+  };
+  revealNext();
+}
+
+function bindGraphKeyboard() {
+  const container = $('#relationship-graph');
+  container?.addEventListener('keydown', (event) => {
+    const cy = state.graphInstance;
+    if (!cy) return;
+    if (event.key === '+' || event.key === '=') { event.preventDefault(); zoomGraph(1.18); }
+    else if (event.key === '-') { event.preventDefault(); zoomGraph(1 / 1.18); }
+    else if (event.key === '0') { event.preventDefault(); fitGraph(); }
+    else if (event.key === 'Enter' && state.graphSelectedId) {
+      event.preventDefault(); openGraphNode(state.graphData.nodes.find((item) => item.id === state.graphSelectedId));
+    } else if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+      event.preventDefault();
+      const step = event.shiftKey ? 90 : 34;
+      const pan = { x: 0, y: 0 };
+      if (event.key === 'ArrowUp') pan.y = step;
+      if (event.key === 'ArrowDown') pan.y = -step;
+      if (event.key === 'ArrowLeft') pan.x = step;
+      if (event.key === 'ArrowRight') pan.x = -step;
+      cy.panBy(pan);
+    }
+  });
+}
+
 function bindGraphControls() {
   $$('[data-graph-mode]').forEach((button) => button.addEventListener('click', () => { if (button.dataset.graphMode === 'global') state.graphFocusRecordId = ''; renderGraph(); }));
   $('#graph-search').addEventListener('input', (event) => { state.graphSearch = event.target.value; applyGraphSearch(); });
-  $('#graph-type-filter').addEventListener('change', (event) => { state.graphTypeFilter = event.target.value; mountGraph(); });
-  $('#graph-discussions').addEventListener('change', (event) => { state.graphShowDiscussion = event.target.checked; mountGraph(); });
   $('#graph-depth')?.addEventListener('input', (event) => { state.graphDepth = Number(event.target.value); event.target.nextElementSibling.textContent = String(state.graphDepth); mountGraph(); });
-  $('#graph-fit').addEventListener('click', () => state.graphInstance?.animate({ fit: { eles: state.graphInstance.elements(':visible'), padding: window.innerWidth <= 560 ? 28 : 48 }, duration: 260 }));
+  $('#graph-fit').addEventListener('click', fitGraph);
+  $('#graph-zoom-in').addEventListener('click', () => zoomGraph(1.18));
+  $('#graph-zoom-out').addEventListener('click', () => zoomGraph(1 / 1.18));
   $('#graph-relayout').addEventListener('click', () => {
     if (!state.graphInstance) return;
     clearGraphPositions();
@@ -1133,6 +1405,36 @@ function bindGraphControls() {
     state.graphInstance.one('layoutstop', () => { ensureReadableGraphView(state.graphInstance); saveGraphPositions(); updateGraphZoomStyles(); });
     layout.run();
   });
+  $('#graph-settings-toggle').addEventListener('click', () => {
+    state.graphSettingsOpen = !state.graphSettingsOpen;
+    $('#graph-settings').classList.toggle('open', state.graphSettingsOpen);
+    $('#graph-settings-toggle').classList.toggle('active', state.graphSettingsOpen);
+    $('#graph-inspector').classList.toggle('open', Boolean(state.graphSelectedId) && !state.graphSettingsOpen);
+  });
+  $('[data-close-graph-settings]')?.addEventListener('click', () => {
+    state.graphSettingsOpen = false; $('#graph-settings').classList.remove('open'); $('#graph-settings-toggle').classList.remove('active');
+    $('#graph-inspector').classList.toggle('open', Boolean(state.graphSelectedId));
+  });
+  $('[data-reset-graph-settings]')?.addEventListener('click', () => { resetGraphSettings(); renderGraph(); });
+  const settingMap = { showDiscussion: 'graphShowDiscussion', showOrphans: 'graphShowOrphans', showArrows: 'graphShowArrows', physics: 'graphPhysics' };
+  $$('[data-graph-setting]').forEach((input) => input.addEventListener('change', () => {
+    state[settingMap[input.dataset.graphSetting]] = input.checked; saveGraphSettings();
+    if (input.dataset.graphSetting !== 'physics') mountGraph();
+  }));
+  $$('[data-graph-group]').forEach((input) => input.addEventListener('change', () => {
+    if (input.checked) state.graphHiddenGroups.delete(input.dataset.graphGroup); else state.graphHiddenGroups.add(input.dataset.graphGroup);
+    saveGraphSettings(); mountGraph();
+  }));
+  $$('[data-graph-group-color]').forEach((input) => input.addEventListener('change', () => {
+    state.graphGroupColors[input.dataset.graphGroupColor] = input.value; saveGraphSettings(); mountGraph();
+  }));
+  const rangeMap = { textFade: 'graphTextFade', nodeSize: 'graphNodeSize', linkThickness: 'graphLinkThickness', centerForce: 'graphCenterForce', repelForce: 'graphRepelForce', linkForce: 'graphLinkForce', linkDistance: 'graphLinkDistance' };
+  $$('[data-graph-range]').forEach((input) => {
+    input.addEventListener('input', () => { state[rangeMap[input.dataset.graphRange]] = Number(input.value); input.nextElementSibling.textContent = input.value; });
+    input.addEventListener('change', () => { saveGraphSettings(); mountGraph(); });
+  });
+  $('[data-graph-timeline]')?.addEventListener('click', toggleGraphTimeline);
+  bindGraphKeyboard();
 }
 
 function bindGraphInspector() {
@@ -1168,7 +1470,7 @@ async function createGraphLink() {
 
 function openGraphNode(node) {
   if (!node?.recordId) return;
-  openRecord(node.recordId, { tab: node.questionId ? 'questions' : 'overview', questionId: node.questionId, workspace: false });
+  openRecord(node.recordId, { tab: node.researchOptionId ? 'content' : node.questionId ? 'questions' : 'overview', questionId: node.questionId, workspace: false });
 }
 
 function openGraphForRecord(recordId) {
@@ -1295,7 +1597,10 @@ function addRecordWorkspaceItem(id, summary, preserve) {
 
 async function openRecord(id, options = {}) {
   const requestID = ++state.activeRecordRequest;
-  if (state.activeWorkspaceRecordId !== id || options.edit !== true) state.recordEditMode = Boolean(options.edit);
+  if (state.activeWorkspaceRecordId !== id || options.edit !== true) {
+    state.recordEditMode = Boolean(options.edit);
+    state.activeResearchOptionId = '';
+  }
   const cached = cachedRecordDetail(id);
   const summary = state.records.find((record) => record.id === id);
   const preserveWorkspace = Boolean(options.workspace || ($('#record-dialog').open && state.recordWorkspace.length));
@@ -1439,7 +1744,7 @@ function renderRecordReadOverview(record, options) {
     ${canEdit ? '' : `<div class="access-banner">${icon('lock')}<span><strong>Личная карточка ${escapeHTML(record.ownerUsername)}</strong><small>Просмотр доступен команде, изменять содержание может только ответственный.</small></span></div>`}
     ${renderHierarchyPanel(record)}
     <article class="record-dossier">
-      <section class="dossier-section dossier-context"><header><div><p class="eyebrow">Содержание</p><h3>${escapeHTML(language.description)}</h3></div>${canEdit ? `<button type="button" class="icon-button" data-edit-field="description" aria-label="Изменить описание" title="Изменить описание">${icon('edit')}</button>` : ''}</header><p class="${record.description ? '' : 'empty-copy'}">${escapeHTML(record.description || 'Контекст пока не заполнен.')}</p></section>
+      <section class="dossier-section dossier-context"><header><div><p class="eyebrow">Содержание</p><h3>${escapeHTML(language.description)}</h3></div>${canEdit ? `<button type="button" class="icon-button" data-edit-field="description" aria-label="Изменить описание" title="Изменить описание">${icon('edit')}</button>` : ''}</header><div class="markdown-body">${renderMarkdown(record.description, 'Контекст пока не заполнен.')}</div></section>
       ${hasExecution ? `<section class="dossier-section"><header><div><p class="eyebrow">Контроль</p><h3>${record.type === 'question_set' ? 'Обсуждение и срок' : record.type === 'meeting' ? 'Организация встречи' : 'Исполнение'}</h3></div></header><div class="dossier-properties">
         ${dossierProperty(ownerLabel, record.ownerUsername, 'ownerId', canEdit)}
         ${dossierProperty('Статус', statusLabels[record.status] || record.status, record.type === 'question_set' ? '' : 'status', canEdit)}
@@ -1449,7 +1754,7 @@ function renderRecordReadOverview(record, options) {
         ${hasManualProgress ? dossierProperty('Прогресс', `${record.progress}%`, 'progress', canEdit) : ''}
         ${hasDecisionMaker ? dossierProperty('Принимает решение', record.decisionMakerUsername || 'Не указан', 'decisionMakerId', canEdit) : ''}
       </div>${record.progressNote ? `<div class="dossier-note"><span>Последнее обновление</span><p>${escapeHTML(record.progressNote)}</p></div>` : ''}</section>` : `<section class="dossier-section"><header><div><p class="eyebrow">Ответственность</p><h3>Владелец карточки</h3></div></header><div class="dossier-properties">${dossierProperty(ownerLabel, record.ownerUsername, 'ownerId', canEdit)}${dossierProperty('Статус', statusLabels[record.status] || record.status, 'status', canEdit)}</div></section>`}
-      ${hasResult ? `<section class="dossier-section dossier-result"><header><div><p class="eyebrow">Результат</p><h3>${record.type === 'research' ? 'Вывод исследования' : record.type === 'decision' ? 'Принятое решение' : record.type === 'disagreement' ? 'Результат разбора' : 'Достигнутый результат'}</h3></div>${canEdit ? `<button type="button" class="icon-button" data-edit-field="result" aria-label="Изменить результат" title="Изменить результат">${icon('edit')}</button>` : ''}</header><p class="${record.result ? '' : 'empty-copy'}">${escapeHTML(record.result || 'Результат ещё не зафиксирован.')}</p></section>` : ''}
+      ${hasResult ? `<section class="dossier-section dossier-result"><header><div><p class="eyebrow">Результат</p><h3>${record.type === 'research' ? 'Вывод исследования' : record.type === 'decision' ? 'Принятое решение' : record.type === 'disagreement' ? 'Результат разбора' : 'Достигнутый результат'}</h3></div>${canEdit ? `<button type="button" class="icon-button" data-edit-field="result" aria-label="Изменить результат" title="Изменить результат">${icon('edit')}</button>` : ''}</header><div class="markdown-body">${renderMarkdown(record.result, 'Результат ещё не зафиксирован.')}</div></section>` : ''}
       <section class="dossier-meta"><span>${escapeHTML(workstreamLabels[record.workstream || 'business'])}</span><span>${record.editPolicy === 'owner_only' ? 'Личная карточка' : 'Общая карточка'}</span><span>${record.isRoot ? 'Корень ветки' : record.parentId ? 'Есть родитель' : 'Без родителя'}</span><button type="button" data-edit-field="workstream" ${canEdit ? '' : 'disabled'}>${icon('settings')} Настроить</button></section>
     </article>
     <div class="record-read-actions">${canEdit ? `<button type="button" class="primary" data-open-record-edit>${icon('edit')} Редактировать</button>` : ''}<button type="button" class="secondary" id="notify-partners">${icon('bell')} Уведомить</button><button type="button" class="secondary ai-action" data-analyze-record>${icon('sparkles')} AI-разбор</button><details class="record-more-actions"><summary class="icon-button" aria-label="Другие действия">•••</summary><div>${record.type === 'task' ? `<button type="button" id="convert-to-questions">${icon('messages')} Сделать карточкой вопросов</button>` : ''}${canEdit ? `<button type="button" class="danger-text" id="archive-record">${icon('archive')} В архив</button>` : ''}</div></details></div>
@@ -1497,12 +1802,12 @@ function renderRecordOverview(record, statuses) {
     ${renderHierarchyPanel(record)}
     <form id="record-edit-form" class="card-form record-overview-form" data-can-edit="${canEdit}">
       <div class="form-grid two"><label>Название<input name="title" value="${escapeHTML(record.title)}" required></label><label>${record.type === 'question_set' ? 'Статус рассчитывается автоматически' : 'Статус'}<select name="status" ${record.type === 'question_set' ? 'disabled' : ''}>${statuses.map((status) => `<option value="${status}" ${record.status === status ? 'selected' : ''}>${statusLabels[status]}</option>`).join('')}</select></label></div>
-      <label>${language.description}<textarea name="description" rows="5">${escapeHTML(record.description)}</textarea></label>
+      ${markdownEditor('description', language.description, record.description, 5, 'Контекст, факты и ожидаемый результат')}
       ${hasExecution ? `<section class="execution-fields"><header><span>${icon(record.type === 'question_set' ? 'messages' : record.type === 'meeting' ? 'calendar' : 'checkSquare')}</span><div><h3>${planningTitle}</h3><p>${record.type === 'question_set' ? 'Карточка участвует в общей очереди наравне с задачами.' : 'Поля, по которым команда контролирует выполнение.'}</p></div></header>
         <div class="form-grid ${planningGrid}"><label>${language.owner}<select name="ownerId" ${canManageAccess ? '' : 'disabled'}>${userOptions(record.ownerId)}</select></label>${hasDecisionMaker ? `<label>Принимает решение<select name="decisionMakerId"><option value="">Не указан</option>${userOptions(record.decisionMakerId)}</select></label>` : ''}${hasDeadline ? `<label>${dueLabel}<input name="dueAt" type="datetime-local" value="${toLocalInput(record.dueAt)}"></label>` : ''}</div>
         ${(hasPriority || hasEstimate || hasManualProgress) ? `<div class="form-grid ${hasEstimate && hasManualProgress ? 'four' : 'three'}">${hasPriority ? `<label>Приоритет<select name="priority">${Object.entries(priorityLabels).map(([value, label]) => `<option value="${value}" ${record.priority === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>` : ''}${hasEstimate ? `<label>План, минут<input name="estimateMinutes" type="number" min="0" value="${record.estimateMinutes}"></label><label>Факт, минут<input name="actualMinutes" type="number" min="0" value="${record.actualMinutes || 0}"></label>` : ''}${hasManualProgress ? `<label>Прогресс, %<input name="progress" type="number" min="0" max="100" value="${record.progress}"></label>` : ''}</div>` : ''}
         ${hasManualProgress ? `<label>Текущее обновление<input name="progressNote" value="${escapeHTML(record.progressNote)}" placeholder="Что изменилось с прошлого раза"></label>` : ''}
-        ${hasResult ? `<label>${record.type === 'research' ? 'Вывод исследования' : record.type === 'decision' ? 'Принятое решение' : record.type === 'disagreement' ? 'Результат разбора' : 'Достигнутый результат'}<textarea name="result" rows="3">${escapeHTML(record.result)}</textarea></label>` : ''}
+        ${hasResult ? markdownEditor('result', record.type === 'research' ? 'Вывод исследования' : record.type === 'decision' ? 'Принятое решение' : record.type === 'disagreement' ? 'Результат разбора' : 'Достигнутый результат', record.result, 4, 'Зафиксируйте итог и основания') : ''}
         ${record.type === 'question_set' ? `<div class="derived-progress"><span>Прогресс обсуждения рассчитывается по принятым итогам</span><strong>${record.progress}%</strong></div>` : ''}
       </section>` : `<div class="form-grid one"><label>${language.owner}<select name="ownerId" ${canManageAccess ? '' : 'disabled'}>${userOptions(record.ownerId)}</select></label></div>`}
       <details class="form-more organization-fields"><summary>Доступ и место в проекте</summary><div class="form-more-body"><div class="form-grid three"><label>Направление<select name="workstream">${Object.entries(workstreamLabels).map(([value, label]) => `<option value="${value}" ${record.workstream === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Кто может изменять<select name="editPolicy" ${canManageAccess ? '' : 'disabled'}>${Object.entries(editPolicyLabels).map(([value, label]) => `<option value="${value}" ${record.editPolicy === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Родительская карточка<select name="parentId"><option value="">Без родителя</option>${parentOptions}</select></label></div><label class="root-toggle"><input name="isRoot" type="checkbox" ${record.isRoot ? 'checked' : ''}> <span><strong>Сделать новым корнем</strong><small>Карточка станет самостоятельным началом новой крупной ветки и потеряет текущего родителя.</small></span></label></div></details>
@@ -1512,8 +1817,82 @@ function renderRecordOverview(record, statuses) {
   </div>`;
 }
 
+async function loadResearchComparison(recordID, force = false) {
+  if (!force && state.researchComparisons.has(recordID)) return state.researchComparisons.get(recordID);
+  if (state.researchComparisonRequests.has(recordID)) return state.researchComparisonRequests.get(recordID);
+  const request = api(`/api/records/${recordID}/research-comparison`).then((comparison) => {
+    state.researchComparisons.set(recordID, comparison);
+    return comparison;
+  }).finally(() => state.researchComparisonRequests.delete(recordID));
+  state.researchComparisonRequests.set(recordID, request);
+  return request;
+}
+
+function renderResearchFieldValue(field, value) {
+  if (!String(value || '').trim()) return '<span class="comparison-value-empty">Не указано</span>';
+  if (field.fieldType === 'url' && /^https?:\/\//i.test(value)) return `<a href="${escapeHTML(value)}" target="_blank" rel="noopener noreferrer">${escapeHTML(value)}</a>`;
+  if (field.fieldType === 'rating') return `<strong>${escapeHTML(value)} / 10</strong>`;
+  return `<strong>${escapeHTML(value)}</strong>`;
+}
+
+function renderResearchOptionCard(option, fields, canEdit) {
+  const metrics = fields.map((field) => `<div><span>${escapeHTML(field.name)}</span>${renderResearchFieldValue(field, option.values?.[field.id] || '')}</div>`).join('');
+  return `<article class="research-option-card">
+    <header><div><p class="eyebrow">Вариант ${option.sortOrder + 1}</p><h3>${escapeHTML(option.title)}</h3></div><div class="research-rating"><strong>${Number(option.rating).toLocaleString('ru-RU')}<small>/10</small></strong><progress max="10" value="${Number(option.rating)}"></progress></div></header>
+    <div class="research-option-summary markdown-body">${renderMarkdown(option.summaryMd, 'Краткое описание пока не заполнено.')}</div>
+    ${metrics ? `<section class="research-metrics">${metrics}</section>` : ''}
+    <div class="research-arguments"><section class="research-pros"><h4>${icon('plus')} Плюсы</h4><div class="markdown-body">${renderMarkdown(option.prosMd, 'Плюсы пока не зафиксированы.')}</div></section><section class="research-cons"><h4>${icon('minus')} Минусы</h4><div class="markdown-body">${renderMarkdown(option.consMd, 'Минусы пока не зафиксированы.')}</div></section></div>
+    ${option.notesMd ? `<section class="research-notes"><h4>Детали и оговорки</h4><div class="markdown-body">${renderMarkdown(option.notesMd)}</div></section>` : ''}
+    <footer><span>Обновил ${escapeHTML(option.updatedByUsername)} · ${formatDate(option.updatedAt, true)}</span>${canEdit ? `<div><button type="button" class="text-button" data-edit-research-option="${option.id}">${icon('edit')} Изменить</button><button type="button" class="text-button danger-text" data-archive-research-option="${option.id}">${icon('archive')} В архив</button></div>` : ''}</footer>
+  </article>`;
+}
+
+function researchValueInput(field, value) {
+  const type = field.fieldType === 'url' ? 'url' : field.fieldType === 'number' || field.fieldType === 'rating' ? 'number' : 'text';
+  const range = field.fieldType === 'rating' ? 'min="0" max="10" step="0.1"' : field.fieldType === 'number' ? 'step="any"' : '';
+  return `<label>${escapeHTML(field.name)}<input name="field:${field.id}" type="${type}" ${range} value="${escapeHTML(value || '')}" placeholder="${field.fieldType === 'rating' ? '0–10' : ''}"></label>`;
+}
+
+function renderResearchOptionEditor(comparison) {
+  const option = comparison.options.find((item) => item.id === state.activeResearchOptionId);
+  const isNew = state.activeResearchOptionId === 'new';
+  if (!isNew && !option) return '';
+  return `<form id="research-option-form" class="research-option-editor" data-option-id="${escapeHTML(option?.id || '')}">
+    <header><div><p class="eyebrow">${isNew ? 'Новый вариант' : 'Редактирование варианта'}</p><h3>${isNew ? 'Добавить сервер или другой вариант' : escapeHTML(option.title)}</h3></div><button type="button" class="icon-button" data-cancel-research-option aria-label="Закрыть">${icon('x')}</button></header>
+    <div class="form-grid two"><label>Название<input name="title" required maxlength="160" value="${escapeHTML(option?.title || '')}" placeholder="Например: Timeweb Cloud"></label><label>Общая оценка, 0–10<input name="rating" type="number" min="0" max="10" step="0.1" value="${Number(option?.rating || 0)}"></label></div>
+    ${comparison.fields.length ? `<div class="research-field-inputs">${comparison.fields.map((field) => researchValueInput(field, option?.values?.[field.id])).join('')}</div>` : ''}
+    ${markdownEditor('summaryMd', 'Краткий вывод', option?.summaryMd || '', 4, 'Для чего подходит вариант и чем отличается', 'research-summary')}
+    <div class="form-grid two markdown-columns">${markdownEditor('prosMd', 'Плюсы', option?.prosMd || '', 7, '- Сильная сторона\n- Ещё один плюс', 'research-pros')}${markdownEditor('consMd', 'Минусы', option?.consMd || '', 7, '- Ограничение\n- Возможный риск', 'research-cons')}</div>
+    ${markdownEditor('notesMd', 'Детали, расчёты и примечания', option?.notesMd || '', 7, '## Конфигурация\n\n> **Примечание:** важная оговорка', 'research-notes')}
+    ${isNew ? '' : '<label>Причина изменения (необязательно)<input name="reason" placeholder="Что уточнили или почему изменилась оценка"></label>'}
+    <div class="form-actions"><button type="submit" class="primary">${icon('check')} ${isNew ? 'Добавить вариант' : 'Сохранить вариант'}</button><button type="button" class="secondary" data-cancel-research-option>Отмена</button></div>
+  </form>`;
+}
+
+function renderResearchComparison(record, canEdit) {
+  const comparison = state.researchComparisons.get(record.id);
+  if (!comparison) return `<section class="research-comparison"><div class="relations-loading"><span class="spinner"></span><strong>Загружаем варианты</strong><small>Остальная карточка уже доступна.</small></div></section>`;
+  const editing = canEdit && state.recordEditMode;
+  return `<section class="research-comparison">
+    <header class="research-comparison-header"><div><p class="eyebrow">Сравнение</p><h2>Рассмотренные варианты</h2><p>Каждый вариант хранит одинаковые параметры, отдельные плюсы, минусы и обоснованную оценку.</p></div>${editing ? `<button type="button" class="primary" data-new-research-option>${icon('plus')} Добавить вариант</button>` : ''}</header>
+    ${editing ? `<div class="research-field-settings"><div><strong>Поля сравнения</strong><span>Добавьте характеристики, которые должны быть у всех вариантов.</span></div><div class="research-field-chips">${comparison.fields.map((field) => `<span>${escapeHTML(field.name)}<button type="button" data-archive-research-field="${field.id}" aria-label="Архивировать ${escapeHTML(field.name)}">${icon('x')}</button></span>`).join('') || '<em>Пока только общая оценка</em>'}</div><form id="research-field-form"><input name="name" required maxlength="80" placeholder="Например: Цена в месяц"><select name="fieldType"><option value="text">Текст</option><option value="number">Число</option><option value="url">Ссылка</option><option value="rating">Оценка 0–10</option></select><button type="submit" class="secondary">${icon('plus')} Поле</button></form></div>` : ''}
+    ${editing && state.activeResearchOptionId ? renderResearchOptionEditor(comparison) : ''}
+    <div class="research-option-deck">${comparison.options.map((option) => renderResearchOptionCard(option, comparison.fields, editing)).join('') || `<div class="guided-empty research-empty">${icon('flask')}<h3>Варианты ещё не добавлены</h3><p>${editing ? 'Создайте карточки Begget, Timeweb Cloud и других серверов. Затем заполните одни и те же параметры и сравните оценки.' : 'Исследователь ещё не добавил варианты для сравнения.'}</p>${editing ? `<button type="button" class="primary" data-new-research-option>${icon('plus')} Добавить первый вариант</button>` : ''}</div>`}</div>
+  </section>`;
+}
+
+function renderSectionRead(section) {
+  return `<article class="content-read-section"><header><div><h3>${escapeHTML(section.title)}</h3>${section.updatedByName ? `<small>Обновил ${escapeHTML(section.updatedByName)} · ${formatDate(section.updatedAt, true)}</small>` : ''}</div></header><div class="markdown-body">${renderMarkdown(section.content)}</div></article>`;
+}
+
 function renderRecordContent(detail) {
-  return `<div class="record-pane ${state.activeRecordTab === 'content' ? 'active' : ''}" data-record-pane="content"><section class="accordion-stack content-stack">${detail.sections.map(renderSection).join('')}<details class="accordion"><summary><span>Добавить свой раздел</span><small>Только для этой карточки</small></summary><form id="custom-section-form" class="inline-editor"><input name="title" placeholder="Название раздела" required><textarea name="content" rows="4" placeholder="Содержание"></textarea><button class="secondary" type="submit">Добавить раздел</button></form></details></section></div>`;
+  const record = detail.record;
+  const canEdit = record.editPolicy !== 'owner_only' || record.ownerId === state.me.id;
+  const comparison = record.type === 'research' ? renderResearchComparison(record, canEdit) : '';
+  const sections = state.recordEditMode
+    ? `<section class="accordion-stack content-stack">${detail.sections.map(renderSection).join('')}<details class="accordion"><summary><span>Добавить свой раздел</span><small>Только для этой карточки</small></summary><form id="custom-section-form" class="inline-editor"><input name="title" placeholder="Название раздела" required>${markdownEditor('content', 'Содержание', '', 5, 'Факты, позиции и выводы', 'custom-section')}<button class="secondary" type="submit">Добавить раздел</button></form></details></section>`
+    : `<section class="content-read-stack">${detail.sections.map(renderSectionRead).join('')}</section>`;
+  return `<div class="record-pane ${state.activeRecordTab === 'content' ? 'active' : ''}" data-record-pane="content">${comparison}${sections}</div>`;
 }
 
 function renderQuestionWorkflow(detail) {
@@ -1620,6 +1999,11 @@ function renderRecordDialog() {
   applyRecordAccess(record, canEdit);
   bindRecordWorkspace();
   $$('[data-record-graph]').forEach((button) => button.addEventListener('click', () => openGraphForRecord(record.id)));
+  if (record.type === 'research' && state.activeRecordTab === 'content' && !state.researchComparisons.has(record.id) && !state.researchComparisonRequests.has(record.id)) {
+    loadResearchComparison(record.id).then(() => {
+      if (state.activeDetail?.record.id === record.id && state.activeRecordTab === 'content') renderRecordDialog();
+    }).catch((error) => toast(error.message, true));
+  }
   if (state.focusQuestionId) {
     requestAnimationFrame(() => {
       const question = $(`[data-question-id-anchor="${CSS.escape(state.focusQuestionId)}"]`);
@@ -1634,7 +2018,7 @@ function applyRecordAccess(record, canEdit) {
   const root = $('#record-dialog');
   root.classList.remove('record-readonly');
   if (canEdit) return;
-  const mutationSelectors = ['#record-edit-form input', '#record-edit-form select', '#record-edit-form textarea', '#record-edit-form button', '.section-form input', '.section-form textarea', '.section-form button', '#custom-section-form input', '#custom-section-form textarea', '#custom-section-form button', '.criterion-form input', '.criterion-form button', '#link-form select', '#link-form button', '[data-remove-link]', '[data-create-linked]', '[data-create-from-record]', '[data-ai-link]', '[data-ai-apply-plan]', '[data-ai-create-next]', '[data-ai-output-index]', '[data-open-record-edit]', '[data-edit-field]', '#add-questions-form textarea', '#add-questions-form button', '[data-select-answer]', '[data-custom-decision] textarea', '[data-custom-decision] button', '[data-create-output]', '[data-archive-question]', '#notify-partners', '#archive-record', '#convert-to-questions'];
+  const mutationSelectors = ['#record-edit-form input', '#record-edit-form select', '#record-edit-form textarea', '#record-edit-form button', '.section-form input', '.section-form textarea', '.section-form button', '#custom-section-form input', '#custom-section-form textarea', '#custom-section-form button', '.criterion-form input', '.criterion-form button', '#link-form select', '#link-form button', '[data-remove-link]', '[data-create-linked]', '[data-create-from-record]', '[data-ai-link]', '[data-ai-apply-plan]', '[data-ai-create-next]', '[data-ai-output-index]', '[data-open-record-edit]', '[data-edit-field]', '#add-questions-form textarea', '#add-questions-form button', '[data-select-answer]', '[data-custom-decision] textarea', '[data-custom-decision] button', '[data-create-output]', '[data-archive-question]', '[data-new-research-option]', '[data-edit-research-option]', '[data-archive-research-option]', '[data-archive-research-field]', '#research-option-form input', '#research-option-form textarea', '#research-option-form button', '#research-field-form input', '#research-field-form select', '#research-field-form button', '#notify-partners', '#archive-record', '#convert-to-questions'];
   $$(mutationSelectors.join(','), root).forEach((node) => { node.disabled = true; node.setAttribute('aria-disabled', 'true'); });
   root.classList.add('record-readonly');
 }
@@ -1644,7 +2028,7 @@ function userOptions(selected) {
 }
 
 function renderSection(section) {
-  return `<details class="accordion"><summary><span>${escapeHTML(section.title)}</span><small>${section.content ? 'Заполнено' : 'Не заполнено'}</small></summary><form class="section-form inline-editor" data-section-id="${escapeHTML(section.id)}" data-definition-id="${escapeHTML(section.definitionId || '')}"><input name="title" value="${escapeHTML(section.title)}" ${section.definitionId ? 'readonly' : ''}><textarea name="content" rows="6" placeholder="Запишите факты, позиции и выводы">${escapeHTML(section.content)}</textarea><input name="reason" placeholder="Причина изменения (необязательно)"><button class="secondary" type="submit">Сохранить раздел</button></form></details>`;
+  return `<details class="accordion"><summary><span>${escapeHTML(section.title)}</span><small>${section.content ? 'Заполнено' : 'Не заполнено'}</small></summary><form class="section-form inline-editor" data-section-id="${escapeHTML(section.id)}" data-definition-id="${escapeHTML(section.definitionId || '')}"><label>Название<input name="title" value="${escapeHTML(section.title)}" ${section.definitionId ? 'readonly' : ''}></label>${markdownEditor('content', 'Содержание', section.content, 7, 'Запишите факты, позиции и выводы', `section-${section.id || section.definitionId || 'new'}`)}<label>Причина изменения (необязательно)<input name="reason" placeholder="Что уточнили и почему"></label><button class="secondary" type="submit">Сохранить раздел</button></form></details>`;
 }
 
 function renderCriteriaBlock(criteria, scores, open = false) {
@@ -1728,11 +2112,21 @@ function bindRecordDialogEvents() {
     $$('[data-record-pane]').forEach((pane) => pane.classList.toggle('active', pane.dataset.recordPane === state.activeRecordTab));
     if (state.activeRecordTab === 'relations' && !state.activeDetail.relationsLoaded) await loadRecordRelations(record.id);
     if (state.activeRecordTab === 'history' && !state.activeDetail.activityLoaded) await loadRecordActivity(record.id);
+    if (state.activeRecordTab === 'content' && record.type === 'research' && !state.researchComparisons.has(record.id)) {
+      try {
+        await loadResearchComparison(record.id);
+        if (state.activeDetail?.record.id === record.id && state.activeRecordTab === 'content') renderRecordDialog();
+      } catch (error) { toast(error.message, true); }
+    }
   }));
   const startEditing = (field = '') => {
     state.recordEditMode = true;
     renderRecordDialog();
     requestAnimationFrame(() => {
+      if (state.activeRecordTab === 'content') {
+        ($('[data-new-research-option]') || $('.accordion summary', $('#record-dialog')))?.focus();
+        return;
+      }
       const form = $('#record-edit-form');
       const input = field ? form?.elements.namedItem(field) : form?.elements.namedItem('title');
       if (!input) return;
@@ -1847,6 +2241,34 @@ function bindRecordDialogEvents() {
     await mutateDetail(`/api/records/${record.id}/sections`, { method: 'POST', body: JSON.stringify({ sectionId: event.currentTarget.dataset.sectionId, definitionId: event.currentTarget.dataset.definitionId || null, title: form.get('title'), content: form.get('content'), reason: form.get('reason') }) });
   }));
   $('#custom-section-form')?.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateDetail(`/api/records/${record.id}/sections`, { method: 'POST', body: JSON.stringify({ title: form.get('title'), content: form.get('content') }) }); });
+  $$('[data-new-research-option]').forEach((button) => button.addEventListener('click', () => { state.activeResearchOptionId = 'new'; renderRecordDialog(); requestAnimationFrame(() => $('#research-option-form input[name="title"]')?.focus()); }));
+  $$('[data-edit-research-option]').forEach((button) => button.addEventListener('click', () => { state.activeResearchOptionId = button.dataset.editResearchOption; renderRecordDialog(); requestAnimationFrame(() => $('#research-option-form input[name="title"]')?.focus()); }));
+  $$('[data-cancel-research-option]').forEach((button) => button.addEventListener('click', () => { state.activeResearchOptionId = ''; renderRecordDialog(); }));
+  $('#research-option-form')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const comparison = state.researchComparisons.get(record.id);
+    const optionID = event.currentTarget.dataset.optionId;
+    const option = comparison?.options.find((item) => item.id === optionID);
+    const values = {};
+    comparison?.fields.forEach((field) => { values[field.id] = String(form.get(`field:${field.id}`) || ''); });
+    const body = { title: form.get('title'), rating: Number(form.get('rating') || 0), summaryMd: form.get('summaryMd'), prosMd: form.get('prosMd'), consMd: form.get('consMd'), notesMd: form.get('notesMd'), reason: form.get('reason') || '', expectedUpdatedAt: option?.updatedAt || '', values };
+    await mutateResearchComparison(record.id, optionID ? `/api/records/${record.id}/research-options/${optionID}` : `/api/records/${record.id}/research-options`, { method: optionID ? 'PATCH' : 'POST', body: JSON.stringify(body) }, optionID ? 'Вариант обновлён' : 'Вариант добавлен');
+  });
+  $('#research-field-form')?.addEventListener('submit', async (event) => {
+    event.preventDefault(); const form = new FormData(event.currentTarget);
+    await mutateResearchComparison(record.id, `/api/records/${record.id}/research-fields`, { method: 'POST', body: JSON.stringify({ name: form.get('name'), fieldType: form.get('fieldType') }) }, 'Поле сравнения добавлено');
+  });
+  $$('[data-archive-research-option]').forEach((button) => button.addEventListener('click', async () => {
+    const reason = await askText({ title: 'Архивировать вариант', label: 'Почему этот вариант больше не рассматривается?', required: true });
+    if (!reason) return;
+    await mutateResearchComparison(record.id, `/api/records/${record.id}/research-options/${button.dataset.archiveResearchOption}/archive`, { method: 'POST', body: JSON.stringify({ reason }) }, 'Вариант перенесён в архив');
+  }));
+  $$('[data-archive-research-field]').forEach((button) => button.addEventListener('click', async () => {
+    const reason = await askText({ title: 'Архивировать поле', label: 'Почему параметр больше не нужен для сравнения?', required: true });
+    if (!reason) return;
+    await mutateResearchComparison(record.id, `/api/records/${record.id}/research-fields/${button.dataset.archiveResearchField}/archive`, { method: 'POST', body: JSON.stringify({ reason }) }, 'Поле сравнения архивировано');
+  }));
   $$('.criterion-form').forEach((formNode) => formNode.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateDetail(`/api/records/${record.id}/criteria/${event.currentTarget.dataset.criterionId}`, { method: 'PUT', body: JSON.stringify({ score: Number(form.get('score')), note: form.get('note'), reason: '' }) }); }));
   $('#link-form')?.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateDetail(`/api/records/${record.id}/links`, { method: 'POST', body: JSON.stringify({ targetId: form.get('targetId'), relationType: form.get('relationType') }) }); });
   $$('[data-remove-link]').forEach((button) => button.addEventListener('click', async () => { const reason = await askText({ title: 'Убрать связь', label: 'Почему связь больше не актуальна?', required: true }); if (!reason) return; await mutateDetail(`/api/records/${record.id}/links/${button.dataset.removeLink}/remove`, { method: 'POST', body: JSON.stringify({ reason }) }); }));
@@ -1888,6 +2310,22 @@ function bindRecordDialogEvents() {
   }));
   if ($('#proof-form')) $('#proof-form').addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateDetail(`/api/records/${record.id}/proofs`, { method: 'POST', body: JSON.stringify({ kind: form.get('kind'), content: form.get('content') }) }); });
   if ($('#complete-task')) $('#complete-task').addEventListener('click', async () => { await mutateRecord(`/api/records/${record.id}/complete`, { method: 'POST', body: JSON.stringify({ result: $('#completion-result').value, notifyPartners: $('#notify-on-complete').checked }) }); });
+  bindMarkdownEditors($('#record-dialog'));
+}
+
+async function mutateResearchComparison(recordID, url, options, successMessage) {
+  try {
+    const comparison = await api(url, options);
+    state.researchComparisons.set(recordID, comparison);
+    state.activeResearchOptionId = '';
+    const detail = await fetchRecordDetail(recordID, true);
+    if (state.activeDetail?.record.id !== recordID) return;
+    state.activeDetail = detail;
+    const index = state.records.findIndex((item) => item.id === recordID);
+    if (index >= 0) state.records[index] = detail.record;
+    renderRecordDialog();
+    toast(successMessage);
+  } catch (error) { toast(error.message, true); }
 }
 
 async function loadRecordRelations(recordID) {
@@ -1994,10 +2432,13 @@ function toggleCreateMenu() {
     <button type="button" data-create-type="task">${icon('checkSquare')}<span><strong>Задача</strong><small>Себе или партнёру</small></span></button>
     <button type="button" data-create-type="meeting">${icon('calendar')}<span><strong>Встреча</strong><small>Повестка, заметки и результаты</small></span></button>
     <button type="button" data-create-type="question_set">${icon('messages')}<span><strong>Карточка вопросов</strong><small>Несколько вопросов, личные ответы и итоги</small></span></button>
-    <button type="button" data-create-type="other">${icon('plus')}<span><strong>Другая карточка</strong><small>Цель, исследование, решение или документ</small></span></button>`;
+    <button type="button" data-create-type="research">${icon('flask')}<span><strong>Исследование</strong><small>Варианты, плюсы, минусы и вывод</small></span></button>
+    <button type="button" data-create-type="decision">${icon('scale')}<span><strong>Решение</strong><small>Выбор, основания и ответственный</small></span></button>
+    <button type="button" data-create-type="goal">${icon('target')}<span><strong>Цель</strong><small>Результат, срок и прогресс</small></span></button>
+    <button type="button" data-create-type="document">${icon('fileText')}<span><strong>Документ</strong><small>Материал или рабочая заметка</small></span></button>`;
   menu.hidden = !menu.hidden;
   $$('[data-create-type]', menu).forEach((button) => button.addEventListener('click', (event) => {
-    event.stopPropagation(); menu.hidden = true; openCreateDialog(button.dataset.createType === 'other' ? 'goal' : button.dataset.createType);
+    event.stopPropagation(); menu.hidden = true; openCreateDialog(button.dataset.createType);
   }));
 }
 
@@ -2030,7 +2471,7 @@ function openCreateDialog(initialType = 'idea', preset = {}) {
           linkError = `Карточка создана, но связь не добавлена: ${error.message}`;
         }
       }
-      $('#create-dialog').close(); await loadData(true); toast(linkError || 'Карточка создана', Boolean(linkError)); await openRecord(record.id, { workspace: Boolean(preset.sourceRecordId) });
+      $('#create-dialog').close(); await loadData(true); toast(linkError || 'Карточка создана', Boolean(linkError)); await openRecord(record.id, { workspace: Boolean(preset.sourceRecordId), edit: true });
     } catch (error) { toast(error.message, true); }
   });
   openModal($('#create-dialog'));
@@ -2071,13 +2512,13 @@ function bindCreateSuggestion(form, recordType) {
   $('[data-ai-suggest]', form).addEventListener('click', () => suggest(true));
   ['title', 'description'].forEach((name) => form.elements[name].addEventListener('input', () => {
     clearTimeout(state.aiSuggestionTimer);
-    state.aiSuggestionTimer = setTimeout(() => suggest(false), 700);
+    state.aiSuggestionTimer = setTimeout(() => suggest(false), 1200);
   }));
   if (form.elements.title.value.trim().length >= 4) suggest(false);
 }
 
 function actionLabel(action) {
-  return ({ created: 'создал карточку', profile_updated: 'изменил профиль', updated: 'изменил карточку', reordered: 'изменил порядок блоков', converted_to_questions: 'преобразовал в карточку вопросов', archived: 'перенёс в архив', section_updated: 'обновил раздел', link_created: 'создал связь', link_removed: 'убрал связь', criterion_scored: 'оценил по критерию', proof_added: 'добавил доказательство', completed: 'завершил задачу', partners_notified: 'уведомил партнёра', questions_added: 'добавил вопросы', question_answered: 'ответил на вопрос', question_decided: 'зафиксировал совместное решение', question_archived: 'архивировал вопрос', output_created: 'превратил вывод в рабочую карточку', created_from_question: 'создал карточку из совместного вывода' }[action] || action);
+  return ({ created: 'создал карточку', profile_updated: 'изменил профиль', updated: 'изменил карточку', reordered: 'изменил порядок блоков', converted_to_questions: 'преобразовал в карточку вопросов', archived: 'перенёс в архив', section_updated: 'обновил раздел', link_created: 'создал связь', link_removed: 'убрал связь', criterion_scored: 'оценил по критерию', proof_added: 'добавил доказательство', completed: 'завершил задачу', partners_notified: 'уведомил партнёра', questions_added: 'добавил вопросы', question_answered: 'ответил на вопрос', question_decided: 'зафиксировал совместное решение', question_archived: 'архивировал вопрос', output_created: 'превратил вывод в рабочую карточку', created_from_question: 'создал карточку из совместного вывода', research_option_created: 'добавил вариант исследования', research_option_updated: 'обновил вариант исследования', research_option_archived: 'архивировал вариант исследования', research_field_created: 'добавил поле сравнения', research_field_archived: 'архивировал поле сравнения' }[action] || action);
 }
 
 function activityActionLabel(item) {
@@ -2132,6 +2573,9 @@ function activityDetails(item) {
   if (item.action === 'completed' && details.result) rows.push(['Полученный результат', details.result]);
   if (item.action === 'partners_notified' && details.message) rows.push(['Сообщение партнёру', details.message]);
   if (item.action === 'section_updated' && details.section) rows.push(['Раздел', details.section]);
+  if (item.action.startsWith('research_option_') && details.title) rows.push(['Вариант', details.title?.after || details.title]);
+  if (item.action.startsWith('research_field_') && details.name) rows.push(['Поле сравнения', details.name]);
+  if (item.action === 'research_option_created' && details.rating !== undefined) rows.push(['Оценка', `${details.rating} из 10`]);
   if (!rows.length) return '';
   return `<dl class="event-details">${rows.map(([label, value]) => `<div><dt>${escapeHTML(label)}</dt><dd>${escapeHTML(String(value))}</dd></div>`).join('')}</dl>`;
 }
@@ -2146,6 +2590,8 @@ function activityContext(item) {
     return target ? `Связь с «${target.title}»` : 'Новая связь между карточками';
   }
   if (item.action === 'proof_added') return 'Добавлено подтверждение результата';
+  if (item.action.startsWith('research_option_')) return details.title?.after || details.title || 'Изменён вариант сравнения';
+  if (item.action.startsWith('research_field_')) return details.name || 'Изменена структура сравнения';
   if (item.reason) return `Причина: ${item.reason}`;
   return recordTitleByActivity(item);
 }
@@ -2371,6 +2817,7 @@ function renderNotifications() {
 const onboardingSteps = [
   { icon: 'checkSquare', label: 'Единая очередь', title: 'Вся исполнимая работа находится в «Работе»', text: 'Задачи, вопросы, исследования, решения и встречи не разнесены по дублирующим экранам. Переключайте исполнителя и откройте «Фильтры», когда нужен конкретный тип или направление.' },
   { icon: 'lock', label: 'Личное и общее', title: 'Доступ задаётся для каждой карточки', text: 'Общую карточку ведут оба основателя. В личной карточке партнёр видит ход работы, но изменить содержание может только ответственный.' },
+  { icon: 'flask', label: 'Исследования', title: 'Сравнивайте варианты отдельными карточками', text: 'Откройте исследование, нажмите «Редактировать» и во вкладке «Содержание» добавьте общие поля и варианты. У каждого варианта есть оценка, Markdown-описание, плюсы, минусы и заметки; при следующем открытии вы увидите готовый обзор без полей ввода.' },
   { icon: 'messages', label: 'Совместные вопросы', title: 'Одна карточка хранит список вопросов', text: 'Каждый основатель отвечает отдельно. После двух ответов зафиксируйте общий итог и превратите его в критерий, ограничение, правило, идею или задачу.' },
   { icon: 'network', label: 'Причины и следствия', title: 'Продолжайте цепочку из исходной карточки', text: 'Создавайте следующий объект через «Продолжить цепочку». Родитель виден в иерархии, а полная причинная картина открывается на карте связей.' },
   { icon: 'sparkles', label: 'AI без автопилота', title: 'Нейросеть предлагает, основатель подтверждает', text: 'AI помогает оценить время, приоритет, пробелы, риски и возможные связи. Ни одно поле, решение или новая карточка не меняются без вашего явного действия.' },
@@ -2378,7 +2825,7 @@ const onboardingSteps = [
 ];
 
 function onboardingKey() {
-  return `business-control:onboarding:${state.me?.id || 'anonymous'}:v4`;
+  return `business-control:onboarding:${state.me?.id || 'anonymous'}:v5`;
 }
 
 function maybeShowOnboarding() {

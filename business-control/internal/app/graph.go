@@ -9,22 +9,23 @@ import (
 )
 
 type GraphNode struct {
-	ID            string `json:"id"`
-	EntityKind    string `json:"entityKind"`
-	RecordID      string `json:"recordId"`
-	QuestionID    string `json:"questionId,omitempty"`
-	Type          string `json:"type"`
-	Kind          string `json:"kind,omitempty"`
-	Title         string `json:"title"`
-	Description   string `json:"description,omitempty"`
-	Status        string `json:"status"`
-	OwnerUsername string `json:"ownerUsername,omitempty"`
-	Workstream    string `json:"workstream,omitempty"`
-	EditPolicy    string `json:"editPolicy,omitempty"`
-	ParentID      string `json:"parentId,omitempty"`
-	IsRoot        bool   `json:"isRoot,omitempty"`
-	CreatedAt     string `json:"createdAt"`
-	UpdatedAt     string `json:"updatedAt"`
+	ID               string `json:"id"`
+	EntityKind       string `json:"entityKind"`
+	RecordID         string `json:"recordId"`
+	QuestionID       string `json:"questionId,omitempty"`
+	ResearchOptionID string `json:"researchOptionId,omitempty"`
+	Type             string `json:"type"`
+	Kind             string `json:"kind,omitempty"`
+	Title            string `json:"title"`
+	Description      string `json:"description,omitempty"`
+	Status           string `json:"status"`
+	OwnerUsername    string `json:"ownerUsername,omitempty"`
+	Workstream       string `json:"workstream,omitempty"`
+	EditPolicy       string `json:"editPolicy,omitempty"`
+	ParentID         string `json:"parentId,omitempty"`
+	IsRoot           bool   `json:"isRoot,omitempty"`
+	CreatedAt        string `json:"createdAt"`
+	UpdatedAt        string `json:"updatedAt"`
 }
 
 type GraphEdge struct {
@@ -41,10 +42,11 @@ type GraphResponse struct {
 	GeneratedAt string      `json:"generatedAt"`
 }
 
-func graphRecordID(id string) string   { return "record:" + id }
-func graphQuestionID(id string) string { return "question:" + id }
-func graphAnswerID(id string) string   { return "answer:" + id }
-func graphDecisionID(id string) string { return "decision:" + id }
+func graphRecordID(id string) string         { return "record:" + id }
+func graphQuestionID(id string) string       { return "question:" + id }
+func graphAnswerID(id string) string         { return "answer:" + id }
+func graphDecisionID(id string) string       { return "decision:" + id }
+func graphResearchOptionID(id string) string { return "research-option:" + id }
 
 func (s *Server) handleGraph(w http.ResponseWriter, r *http.Request) {
 	startedAt := time.Now()
@@ -207,6 +209,34 @@ func (s *Server) handleGraph(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := decisionRows.Close(); err != nil {
 		writeError(w, http.StatusInternalServerError, "Не удалось завершить чтение итогов")
+		return
+	}
+
+	researchOptionRows, err := s.store.db.QueryContext(r.Context(), `
+		SELECT o.id, o.record_id, o.title, o.summary_md, o.status, o.created_at, o.updated_at, u.username
+		FROM research_options o
+		JOIN records r ON r.id = o.record_id
+		JOIN users u ON u.id = o.updated_by
+		WHERE (? = 1 OR (r.status <> 'archived' AND o.status <> 'archived'))
+		ORDER BY o.record_id, o.sort_order, o.created_at`, includeArchived)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось загрузить варианты исследований карты")
+		return
+	}
+	for researchOptionRows.Next() {
+		var id, recordID, title, summary, status, createdAt, updatedAt, username string
+		if err := researchOptionRows.Scan(&id, &recordID, &title, &summary, &status, &createdAt, &updatedAt, &username); err != nil {
+			researchOptionRows.Close()
+			writeError(w, http.StatusInternalServerError, "Не удалось прочитать вариант исследования карты")
+			return
+		}
+		node := GraphNode{ID: graphResearchOptionID(id), EntityKind: "research_option", RecordID: recordID, ResearchOptionID: id, Type: "research_option", Title: title, Description: summary, Status: status, OwnerUsername: username, CreatedAt: createdAt, UpdatedAt: updatedAt}
+		nodes = append(nodes, node)
+		nodeIDs[node.ID] = struct{}{}
+		addEdge(GraphEdge{ID: "contains-research-option:" + id, Source: graphRecordID(recordID), Target: node.ID, RelationType: "contains_option", Label: "рассматривает вариант"})
+	}
+	if err := researchOptionRows.Close(); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось завершить чтение вариантов исследований")
 		return
 	}
 
