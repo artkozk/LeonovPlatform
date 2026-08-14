@@ -39,6 +39,8 @@ test "$(sqlite3 "$TEST_DATABASE" "SELECT COUNT(*) FROM records WHERE id='c214f20
 test "$(sqlite3 "$TEST_DATABASE" "SELECT COUNT(*) FROM task_proofs WHERE id='c214f200000000000000000000000032';")" = "1"
 test "$(sqlite3 "$TEST_DATABASE" "SELECT COUNT(*) FROM records WHERE id='c314f300000000000000000000000031' AND status='completed';")" = "1"
 test "$(sqlite3 "$TEST_DATABASE" "SELECT COUNT(*) FROM task_proofs WHERE id='c314f300000000000000000000000032';")" = "1"
+test "$(sqlite3 "$TEST_DATABASE" "SELECT COUNT(*) FROM records WHERE id='c414f400000000000000000000000031' AND status='completed';")" = "1"
+test "$(sqlite3 "$TEST_DATABASE" "SELECT COUNT(*) FROM task_proofs WHERE id='c414f400000000000000000000000032';")" = "1"
 test "$(sqlite3 "$TEST_DATABASE" "SELECT COUNT(*) FROM research_options WHERE id LIKE 'c214f2%';")" = "$first_options"
 test "$(sqlite3 "$TEST_DATABASE" "SELECT COUNT(*) FROM research_option_fields WHERE id LIKE 'c214f2%';")" = "$first_fields"
 

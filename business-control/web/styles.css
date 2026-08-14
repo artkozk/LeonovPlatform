@@ -353,6 +353,7 @@ dialog::backdrop { background: rgba(24, 27, 50, .48); backdrop-filter: blur(3px)
 .history-pane { padding: 20px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
 .accordion-stack { display: grid; gap: 8px; margin-top: 12px; }
 .accordion { overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.accordion:has(.custom-select.open) { position: relative; z-index: 12; overflow: visible; }
 .accordion summary { min-height: 48px; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; font-weight: 800; }
 .accordion summary small { color: var(--muted); font-size: 9px; font-weight: 600; }
 .accordion[open] summary { border-bottom: 1px solid var(--line); }
@@ -1383,6 +1384,7 @@ dialog::backdrop { background: rgba(25, 31, 28, .3); backdrop-filter: blur(4px);
 .custom-select.open .custom-select-trigger { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(18,106,85,.13); }
 .custom-select.open .custom-select-trigger .icon { transform: rotate(-90deg); }
 .custom-select-menu { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 90; display: none; max-height: 260px; overflow-y: auto; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: #fffefa; box-shadow: 0 16px 42px rgba(25,32,28,.16); }
+.custom-select.drop-up .custom-select-menu { top: auto; bottom: calc(100% + 6px); }
 .custom-select.open .custom-select-menu { display: grid; animation: select-open .14s ease-out; }
 .custom-select-option { min-height: 38px; display: grid; grid-template-columns: minmax(0, 1fr) 16px; align-items: center; gap: 8px; padding: 8px 10px; border: 0; border-radius: 6px; background: transparent; text-align: left; font-size: 13px; }
 .custom-select-option:hover, .custom-select-option:focus-visible { background: #edf1ed; }
@@ -1660,6 +1662,7 @@ button.dossier-property:hover > .icon, button.dossier-property:focus-visible > .
 
 .research-option-deck { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(360px, 48%); gap: 14px; overflow-x: auto; padding: 2px 2px 12px; scroll-snap-type: x proximity; scrollbar-color: #a8b1ac transparent; }
 .research-option-card { min-width: 0; display: grid; align-content: start; gap: 17px; padding: 20px; border: 1px solid #d1d4cf; border-radius: 7px; background: #fbfaf6; scroll-snap-align: start; }
+.research-option-card.is-linked-focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(18,106,85,.12); }
 .research-option-card > header { display: grid; grid-template-columns: minmax(0, 1fr) 82px; align-items: start; gap: 16px; }
 .research-option-card > header > div:first-child { display: grid; gap: 5px; }
 .research-option-card h3 { font-size: 19px; overflow-wrap: anywhere; }
@@ -1689,6 +1692,28 @@ button.dossier-property:hover > .icon, button.dossier-property:focus-visible > .
 .research-option-card > footer .icon { width: 14px; height: 14px; }
 .research-empty { grid-column: 1; width: min(100%, 620px); min-height: 250px; }
 
+.structural-relations { display: grid; gap: 12px; padding: 18px 4px 20px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.structural-relations > header { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
+.structural-relations > header > div { display: grid; gap: 3px; }
+.structural-relations > header h3 { font-size: 17px; }
+.structural-relations > header > strong { min-width: 30px; color: var(--accent); font-size: 21px; text-align: right; }
+.structural-relations > p { max-width: 760px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.structural-relations > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px 16px; }
+.structural-relations > div > button { min-width: 0; min-height: 62px; display: grid; grid-template-columns: 34px minmax(0, 1fr) 18px; align-items: center; gap: 10px; padding: 9px 4px; border: 0; border-bottom: 1px solid var(--line); background: transparent; text-align: left; }
+.structural-relations > div > button:hover { background: #edeee9; }
+.structural-relations > div > button > span:nth-child(2) { min-width: 0; display: grid; gap: 3px; }
+.structural-relations > div > button strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.structural-relations > div > button small { color: var(--muted); font-size: 11px; }
+.structural-relations > div > button > .icon { width: 16px; height: 16px; color: var(--muted); }
+.structural-empty { grid-column: 1 / -1; padding: 14px 0; color: var(--muted); font-size: 13px; }
+
+[data-drag-scroll="true"] { cursor: grab; overscroll-behavior-inline: contain; }
+[data-drag-scroll="true"].drag-scroll-armed,
+[data-drag-scroll="true"].is-drag-scrolling,
+[data-drag-scroll="true"].drag-scroll-armed * { user-select: none; }
+[data-drag-scroll="true"].is-drag-scrolling,
+[data-drag-scroll="true"].is-drag-scrolling * { cursor: grabbing !important; scroll-snap-type: none; }
+
 @media (max-width: 980px) {
   .main-content { padding-inline: 28px; }
   .dossier-properties { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1702,9 +1727,11 @@ button.dossier-property:hover > .icon, button.dossier-property:focus-visible > .
   .dialog-aside { display: none; }
   .template-editor { grid-template-columns: 1fr; }
   .custom-select-menu { position: fixed; left: 14px; right: 14px; top: auto; bottom: 14px; max-height: min(52dvh, 360px); z-index: 160; padding: 10px; }
+  .custom-select.drop-up .custom-select-menu { top: auto; bottom: 14px; }
   .custom-select.open::after { content: ''; position: fixed; inset: 0; z-index: 159; background: rgba(23,29,26,.24); backdrop-filter: blur(2px); }
   .custom-select.open .custom-select-trigger { position: relative; z-index: 160; }
   .research-option-deck { grid-auto-columns: minmax(320px, 82%); }
+  .structural-relations > div { grid-template-columns: 1fr; }
   .research-field-settings { grid-template-columns: 1fr; }
   #research-field-form { grid-column: 1; }
   .research-field-inputs { grid-template-columns: repeat(2, minmax(0, 1fr)); }

@@ -736,8 +736,17 @@ func (s *Server) handleGetRecordRelations(w http.ResponseWriter, r *http.Request
 			return
 		}
 	}
+	researchOptions := make([]ResearchRelationOption, 0)
+	if record.Type == "research" {
+		var comparisonErr error
+		researchOptions, comparisonErr = s.listResearchRelationOptions(r.Context(), record.ID)
+		if comparisonErr != nil {
+			writeError(w, http.StatusInternalServerError, "Не удалось загрузить внутренние связи исследования")
+			return
+		}
+	}
 	w.Header().Set("Server-Timing", fmt.Sprintf("record-relations;dur=%.2f", float64(time.Since(startedAt).Microseconds())/1000))
-	writeJSON(w, http.StatusOK, map[string]any{"links": links, "scores": scores})
+	writeJSON(w, http.StatusOK, map[string]any{"links": links, "scores": scores, "researchOptions": researchOptions})
 }
 
 type updateRecordRequest struct {

@@ -242,9 +242,27 @@ function closeCustomSelects(except = null) {
   $$('.custom-select.open').forEach((control) => {
     if (control !== except) {
       control.classList.remove('open');
+      control.classList.remove('drop-up');
       control.querySelector('.custom-select-trigger')?.setAttribute('aria-expanded', 'false');
     }
   });
+}
+
+function positionCustomSelectMenu(control) {
+  control.classList.remove('drop-up');
+  if (window.matchMedia('(max-width: 820px)').matches) return;
+  const trigger = $('.custom-select-trigger', control);
+  const menu = $('.custom-select-menu', control);
+  const dialog = control.closest('dialog');
+  if (!trigger || !menu) return;
+  const triggerRect = trigger.getBoundingClientRect();
+  const dialogRect = dialog?.getBoundingClientRect();
+  const topBoundary = Math.max(12, dialogRect?.top || 0);
+  const bottomBoundary = Math.min(window.innerHeight - 12, dialogRect?.bottom || window.innerHeight);
+  const menuHeight = Math.min(menu.scrollHeight || 260, 260) + 8;
+  const availableAbove = triggerRect.top - topBoundary;
+  const availableBelow = bottomBoundary - triggerRect.bottom;
+  control.classList.toggle('drop-up', availableBelow < menuHeight && availableAbove > availableBelow);
 }
 
 function syncCustomSelect(select) {
@@ -304,13 +322,19 @@ function enhanceSelect(select) {
     closeCustomSelects(control);
     control.classList.toggle('open', willOpen);
     trigger.setAttribute('aria-expanded', String(willOpen));
-    if (willOpen) $('.custom-select-option.selected', control)?.focus({ preventScroll: true });
+    if (willOpen) {
+      positionCustomSelectMenu(control);
+      $('.custom-select-option.selected', control)?.focus({ preventScroll: true });
+    } else {
+      control.classList.remove('drop-up');
+    }
   });
   trigger.addEventListener('keydown', (event) => {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
       control.classList.add('open');
       trigger.setAttribute('aria-expanded', 'true');
+      positionCustomSelectMenu(control);
       const options = $$('.custom-select-option:not(:disabled)', control);
       const selectedIndex = Math.max(0, options.findIndex((option) => option.classList.contains('selected')));
       options[event.key === 'ArrowDown' ? selectedIndex : Math.max(0, selectedIndex - 1)]?.focus();
@@ -334,6 +358,78 @@ function enhanceSelect(select) {
 
 function enhanceSelects(root = document) {
   $$('select:not([data-native-select])', root).forEach(enhanceSelect);
+}
+
+const dragScrollSelector = [
+  '.status-tabs', '.view-switch', '.idea-actions', '.record-tabs', '.workstream-tabs',
+  '.activity-chart > div', '.work-status-tabs', '.work-type-tabs', '.record-workspace-bar',
+  '.graph-toolbar', '.graph-legend', '.template-editor > aside', '.record-context-strip',
+  '.research-option-deck', '.markdown-toolbar',
+].join(',');
+
+function bindDragScroll(root = document) {
+  const elements = [];
+  if (root instanceof Element && root.matches(dragScrollSelector)) elements.push(root);
+  elements.push(...$$(dragScrollSelector, root));
+  elements.forEach((element) => {
+    if (element.dataset.dragScrollBound === 'true') return;
+    element.dataset.dragScrollBound = 'true';
+    element.dataset.dragScroll = 'true';
+    let pointerID = null;
+    let startX = 0;
+    let startY = 0;
+    let startScrollLeft = 0;
+    let dragging = false;
+    let suppressClick = false;
+
+    const finish = (event) => {
+      if (pointerID === null || (event?.pointerId !== undefined && event.pointerId !== pointerID)) return;
+      suppressClick = dragging;
+      element.classList.remove('drag-scroll-armed', 'is-drag-scrolling');
+      if (element.hasPointerCapture?.(pointerID)) element.releasePointerCapture(pointerID);
+      pointerID = null;
+      dragging = false;
+    };
+
+    element.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'touch' || event.button !== 0 || event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+      if (element.scrollWidth <= element.clientWidth + 2) return;
+      pointerID = event.pointerId;
+      startX = event.clientX;
+      startY = event.clientY;
+      startScrollLeft = element.scrollLeft;
+      dragging = false;
+      suppressClick = false;
+      element.classList.add('drag-scroll-armed');
+    });
+    element.addEventListener('pointermove', (event) => {
+      if (event.pointerId !== pointerID) return;
+      const deltaX = event.clientX - startX;
+      const deltaY = event.clientY - startY;
+      if (!dragging && Math.abs(deltaX) > 6 && Math.abs(deltaX) >= Math.abs(deltaY)) {
+        dragging = true;
+        element.classList.add('is-drag-scrolling');
+        element.setPointerCapture?.(pointerID);
+      } else if (!dragging && Math.abs(deltaY) > 8 && Math.abs(deltaY) > Math.abs(deltaX)) {
+        finish(event);
+        return;
+      }
+      if (!dragging) return;
+      event.preventDefault();
+      element.scrollLeft = startScrollLeft - deltaX;
+    }, { passive: false });
+    element.addEventListener('pointerup', finish);
+    element.addEventListener('pointercancel', finish);
+    element.addEventListener('click', (event) => {
+      if (!suppressClick) return;
+      suppressClick = false;
+      event.preventDefault();
+      event.stopPropagation();
+    }, true);
+    element.addEventListener('dragstart', (event) => {
+      if (pointerID !== null) event.preventDefault();
+    });
+  });
 }
 
 function escapeHTML(value = '') {
@@ -495,14 +591,16 @@ function showApp() {
 async function bootstrap() {
   bindGlobalEvents();
   enhanceSelects(document);
-  const selectObserver = new MutationObserver((mutations) => {
+  bindDragScroll(document);
+  const interfaceObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => mutation.addedNodes.forEach((node) => {
       if (!(node instanceof Element)) return;
       if (node.matches('select')) enhanceSelect(node);
       enhanceSelects(node);
+      bindDragScroll(node);
     }));
   });
-  selectObserver.observe(document.body, { childList: true, subtree: true });
+  interfaceObserver.observe(document.body, { childList: true, subtree: true });
   try {
     state.me = await api('/api/me');
     showApp();
@@ -907,7 +1005,7 @@ function renderWorkList() {
   records = state.workOrder === 'hierarchy' ? sortWorkHierarchy(records) : records.sort(sortWorkRecords);
   const activeFilters = workFilterCount();
   $('#main-content').innerHTML = `
-    <div class="work-title-row"><div><p class="eyebrow">Единая очередь</p><h1>Работа команды</h1><p><strong>${records.length}</strong> ${recordsCountLabel(records.length).replace(/^\d+\s*/, '')} в текущем представлении</p></div><details class="work-create-menu"><summary class="primary">${icon('plus')} Создать работу</summary><div>${[['task', 'Задача'], ['question_set', 'Вопросы'], ['meeting', 'Встреча'], ['research', 'Исследование'], ['decision', 'Решение']].map(([type, label]) => `<button type="button" data-work-create="${type}">${icon(typeMeta[type].icon)}<span>${label}</span></button>`).join('')}</div></details></div>
+    <div class="work-title-row"><div><p class="eyebrow">Единая очередь</p><h1>Работа команды</h1><p><strong>${records.length}</strong> ${recordsCountLabel(records.length).replace(/^\d+\s*/, '')} в текущем представлении</p></div><details class="work-create-menu"><summary class="primary">${icon('plus')} Создать работу</summary><div>${[['task', 'Задача'], ['question_set', 'Вопросы'], ['meeting', 'Встреча'], ['research', 'Сравнение вариантов'], ['decision', 'Решение']].map(([type, label]) => `<button type="button" data-work-create="${type}" ${type === 'research' ? 'data-work-mode="comparison"' : ''}>${icon(typeMeta[type].icon)}<span>${label}</span></button>`).join('')}</div></details></div>
     <section class="work-controls" aria-label="Фильтры рабочей очереди">
       <div class="work-scope segmented compact">${[['all', 'Вся'], ['mine', 'Моя'], ['partner', 'Партнёра']].map(([value, label]) => `<button type="button" class="segment ${!state.ownerFilter && state.workScope === value ? 'active' : ''}" data-work-scope="${value}">${label}</button>`).join('')}</div>
       <div class="search-box work-search">${icon('search')}<input id="work-search" type="search" placeholder="Найти в этой очереди" value="${escapeHTML(state.search)}"></div>
@@ -941,7 +1039,7 @@ function renderWorkList() {
   $$('[data-work-order]').forEach((button) => button.addEventListener('click', () => { state.workOrder = button.dataset.workOrder; renderWorkList(); }));
   $$('[data-close-work-filters]').forEach((button) => button.addEventListener('click', () => $('.work-filter-menu').removeAttribute('open')));
   $('[data-reset-work-filters]')?.addEventListener('click', () => { state.workType = 'all'; state.workstreamFilter = 'all'; state.workStatus = 'active'; state.workOrder = 'priority'; renderWorkList(); });
-  $$('[data-work-create]').forEach((button) => button.addEventListener('click', () => openCreateDialog(button.dataset.workCreate)));
+  $$('[data-work-create]').forEach((button) => button.addEventListener('click', () => openCreateDialog(button.dataset.workCreate, { comparisonMode: button.dataset.workMode === 'comparison' })));
   bindOpenRecords();
 }
 
@@ -1612,6 +1710,7 @@ async function fetchRecordDetail(id, force = false) {
     if (previous?.relationsLoaded && previous.record.updatedAt === detail.record.updatedAt) {
       detail.links = previous.links;
       detail.scores = previous.scores;
+      detail.researchOptions = previous.researchOptions || [];
       detail.relationsLoaded = true;
     }
     state.detailCache.set(id, detail);
@@ -1703,10 +1802,11 @@ function renderRecordLoadError(id, message) {
 
 function recordTabs(record, detail, activity) {
   const filledSections = detail.sections.filter((section) => section.content).length;
+  const relationCount = detail.relationsLoaded ? detail.links.length + (detail.researchOptions?.length || 0) : 0;
   const tabs = [
     ['overview', 'Обзор', ''],
     ['content', 'Содержание', `${filledSections}/${detail.sections.length}`],
-    ['relations', record.type === 'idea' ? 'Критерии и связи' : 'Связи', detail.relationsLoaded ? `${detail.links.length}` : ''],
+    ['relations', record.type === 'idea' ? 'Критерии и связи' : 'Связи', detail.relationsLoaded ? `${relationCount}` : ''],
     ['history', 'История', `${activity.length}`],
   ];
   if (record.type === 'question_set') {
@@ -1880,7 +1980,7 @@ function renderResearchFieldValue(field, value) {
 
 function renderResearchOptionCard(option, fields, canEdit) {
   const metrics = fields.map((field) => `<div><span>${escapeHTML(field.name)}</span>${renderResearchFieldValue(field, option.values?.[field.id] || '')}</div>`).join('');
-  return `<article class="research-option-card">
+  return `<article class="research-option-card" data-research-option-card="${option.id}">
     <header><div><p class="eyebrow">Вариант ${option.sortOrder + 1}</p><h3>${escapeHTML(option.title)}</h3></div><div class="research-rating"><strong>${Number(option.rating).toLocaleString('ru-RU')}<small>/10</small></strong><progress max="10" value="${Number(option.rating)}"></progress></div></header>
     <div class="research-option-summary markdown-body">${renderMarkdown(option.summaryMd, 'Краткое описание пока не заполнено.')}</div>
     ${metrics ? `<section class="research-metrics">${metrics}</section>` : ''}
@@ -1979,9 +2079,13 @@ function renderDecisionComposer(question, compact = false) {
 
 function renderRecordRelations(record, detail, criteria, targets) {
   const content = detail.relationsLoaded
-    ? `<section class="accordion-stack content-stack">${record.type === 'idea' ? renderCriteriaBlock(criteria, detail.scores, true) : ''}${renderLinksBlock(record, detail.links, targets, true)}</section>`
+    ? `<section class="accordion-stack content-stack">${record.type === 'idea' ? renderCriteriaBlock(criteria, detail.scores, true) : ''}${record.type === 'research' ? renderResearchStructuralRelations(detail.researchOptions || []) : ''}${renderLinksBlock(record, detail.links, targets, true)}</section>`
     : `<div class="relations-loading"><span class="spinner"></span><strong>Подготавливаем связи</strong><small>Основная карточка уже доступна, эта часть загружается отдельно.</small></div>`;
   return `<div class="record-pane ${state.activeRecordTab === 'relations' ? 'active' : ''}" data-record-pane="relations">${content}</div>`;
+}
+
+function renderResearchStructuralRelations(options) {
+  return `<section class="structural-relations"><header><div><p class="eyebrow">Внутри исследования</p><h3>Варианты сравнения</h3></div><strong>${options.length}</strong></header><p>Это самостоятельные сущности исследования. Они участвуют в поиске и карте связей, но не смешиваются с внешними карточками проекта.</p><div>${options.map((option) => `<button type="button" data-open-research-option="${option.id}"><span class="type-icon type-research">${icon('flask')}</span><span><strong>${escapeHTML(option.title)}</strong><small>Оценка ${Number(option.rating).toLocaleString('ru-RU')} из 10</small></span>${icon('chevronRight')}</button>`).join('') || `<div class="structural-empty">Варианты появятся здесь после добавления в разделе «Содержание».</div>`}</div></section>`;
 }
 
 function renderRecordHistory(activity) {
@@ -2091,7 +2195,7 @@ function renderLinksBlock(record, links, targets, open = false) {
     return (labels[link.relationType] || [link.relationType, link.relationType])[outgoing ? 0 : 1];
   };
   const createOptions = nextRecordOptions(record);
-  return `<details class="accordion" ${open ? 'open' : ''}><summary><span>Связанные записи</span><small>${links.length} связей</small></summary>${createOptions.length ? `<div class="linked-create"><span>Создать следующий объект</span>${createOptions.map(([type, kind, label]) => `<button type="button" data-create-linked="${type}" data-linked-kind="${kind}">${icon(typeMeta[type].icon)} ${label}</button>`).join('')}</div>` : ''}<div class="linked-list">${links.map((link) => `<div class="linked-item"><button type="button" data-related-record="${link.record.id}"><i class="type-icon type-${link.record.type}">${icon(typeMeta[link.record.type].icon)}</i><span><strong>${escapeHTML(link.record.title)}</strong><small>${escapeHTML(relationLabel(link))} · ${typeMeta[link.record.type].singular}</small></span></button><button type="button" class="icon-button danger-icon remove-link" data-remove-link="${link.id}" aria-label="Убрать связь" title="Убрать связь">${icon('x')}</button></div>`).join('') || emptyState('Связей пока нет.')}</div><form id="link-form" class="link-form"><select name="targetId" required><option value="">Выберите существующую карточку</option>${targets.map((target) => `<option value="${target.id}">${typeMeta[target.type].singular}: ${escapeHTML(target.title)}</option>`).join('')}</select><select name="relationType"><option value="related">Связано</option><option value="supports">Поддерживает</option><option value="depends_on">Зависит от</option><option value="result_of">Является результатом</option><option value="leads_to">Приводит к</option></select><button class="secondary" type="submit">${icon('link')} Связать</button></form></details>`;
+  return `<details class="accordion" ${open ? 'open' : ''}><summary><span>Внешние связи</span><small>${links.length} связей с карточками</small></summary>${createOptions.length ? `<div class="linked-create"><span>Создать следующий объект</span>${createOptions.map(([type, kind, label]) => `<button type="button" data-create-linked="${type}" data-linked-kind="${kind}">${icon(typeMeta[type].icon)} ${label}</button>`).join('')}</div>` : ''}<div class="linked-list">${links.map((link) => `<div class="linked-item"><button type="button" data-related-record="${link.record.id}"><i class="type-icon type-${link.record.type}">${icon(typeMeta[link.record.type].icon)}</i><span><strong>${escapeHTML(link.record.title)}</strong><small>${escapeHTML(relationLabel(link))} · ${typeMeta[link.record.type].singular}</small></span></button><button type="button" class="icon-button danger-icon remove-link" data-remove-link="${link.id}" aria-label="Убрать связь" title="Убрать связь">${icon('x')}</button></div>`).join('') || emptyState('Явных связей с другими карточками пока нет.')}</div><form id="link-form" class="link-form"><select name="targetId" required><option value="">Выберите существующую карточку</option>${targets.map((target) => `<option value="${target.id}">${typeMeta[target.type].singular}: ${escapeHTML(target.title)}</option>`).join('')}</select><select name="relationType"><option value="related">Связано</option><option value="supports">Поддерживает</option><option value="depends_on">Зависит от</option><option value="result_of">Является результатом</option><option value="leads_to">Приводит к</option></select><button class="secondary" type="submit">${icon('link')} Связать</button></form></details>`;
 }
 
 function renderProofBlock(record, proofs) {
@@ -2316,6 +2420,21 @@ function bindRecordDialogEvents() {
   $('#link-form')?.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateDetail(`/api/records/${record.id}/links`, { method: 'POST', body: JSON.stringify({ targetId: form.get('targetId'), relationType: form.get('relationType') }) }); });
   $$('[data-remove-link]').forEach((button) => button.addEventListener('click', async () => { const reason = await askText({ title: 'Убрать связь', label: 'Почему связь больше не актуальна?', required: true }); if (!reason) return; await mutateDetail(`/api/records/${record.id}/links/${button.dataset.removeLink}/remove`, { method: 'POST', body: JSON.stringify({ reason }) }); }));
   $$('[data-related-record]').forEach((button) => button.addEventListener('click', () => openRecord(button.dataset.relatedRecord, { workspace: true })));
+  $$('[data-open-research-option]').forEach((button) => button.addEventListener('click', async () => {
+    const optionID = button.dataset.openResearchOption;
+    state.activeRecordTab = 'content';
+    try {
+      await loadResearchComparison(record.id);
+      if (state.activeDetail?.record.id !== record.id) return;
+      renderRecordDialog();
+      requestAnimationFrame(() => {
+        const option = $(`[data-research-option-card="${CSS.escape(optionID)}"]`, $('#record-dialog'));
+        option?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+        option?.classList.add('is-linked-focus');
+        setTimeout(() => option?.classList.remove('is-linked-focus'), 1600);
+      });
+    } catch (error) { toast(error.message, true); }
+  }));
   $$('[data-create-from-record]').forEach((button) => button.addEventListener('click', () => {
     const requested = button.dataset.createFromRecord;
     const type = requested === 'limitation' ? 'criterion' : requested;
@@ -2475,13 +2594,13 @@ function toggleCreateMenu() {
     <button type="button" data-create-type="task">${icon('checkSquare')}<span><strong>Задача</strong><small>Себе или партнёру</small></span></button>
     <button type="button" data-create-type="meeting">${icon('calendar')}<span><strong>Встреча</strong><small>Повестка, заметки и результаты</small></span></button>
     <button type="button" data-create-type="question_set">${icon('messages')}<span><strong>Карточка вопросов</strong><small>Несколько вопросов, личные ответы и итоги</small></span></button>
-    <button type="button" data-create-type="research">${icon('flask')}<span><strong>Исследование</strong><small>Варианты, плюсы, минусы и вывод</small></span></button>
+    <button type="button" data-create-type="research" data-create-mode="comparison">${icon('flask')}<span><strong>Сравнение вариантов</strong><small>Общие параметры, плюсы, минусы и оценка</small></span></button>
     <button type="button" data-create-type="decision">${icon('scale')}<span><strong>Решение</strong><small>Выбор, основания и ответственный</small></span></button>
     <button type="button" data-create-type="goal">${icon('target')}<span><strong>Цель</strong><small>Результат, срок и прогресс</small></span></button>
     <button type="button" data-create-type="document">${icon('fileText')}<span><strong>Документ</strong><small>Материал или рабочая заметка</small></span></button>`;
   menu.hidden = !menu.hidden;
   $$('[data-create-type]', menu).forEach((button) => button.addEventListener('click', (event) => {
-    event.stopPropagation(); menu.hidden = true; openCreateDialog(button.dataset.createType);
+    event.stopPropagation(); menu.hidden = true; openCreateDialog(button.dataset.createType, { comparisonMode: button.dataset.createMode === 'comparison' });
   }));
 }
 
@@ -2492,12 +2611,12 @@ function openCreateDialog(initialType = 'idea', preset = {}) {
   const defaultParentID = preset.parentId ?? sourceRecord?.id ?? '';
   const defaultEditPolicy = preset.editPolicy || 'shared';
   const kindLabels = { preference: 'Критерий выбора', limitation: 'Ограничение', rule: 'Правило', insight: 'Вывод' };
-  const displayName = kindLabels[preset.kind] || initialMeta.singular;
-  const titleLabel = initialType === 'question_set' ? 'Название группы вопросов' : initialType === 'meeting' ? 'Тема встречи' : 'Название';
-  const descriptionLabel = preset.kind === 'limitation' ? 'Как применять ограничение' : preset.kind === 'rule' ? 'Формулировка и область действия' : initialType === 'question_set' ? 'Зачем обсуждаем' : initialType === 'meeting' ? 'Повестка и заметки' : initialType === 'task' ? 'Ожидаемый результат' : 'Краткое описание';
+  const displayName = preset.comparisonMode ? 'Сравнение вариантов' : kindLabels[preset.kind] || initialMeta.singular;
+  const titleLabel = preset.comparisonMode ? 'Что сравниваем' : initialType === 'question_set' ? 'Название группы вопросов' : initialType === 'meeting' ? 'Тема встречи' : 'Название';
+  const descriptionLabel = preset.comparisonMode ? 'Зачем сравниваем и какой вывод нужен' : preset.kind === 'limitation' ? 'Как применять ограничение' : preset.kind === 'rule' ? 'Формулировка и область действия' : initialType === 'question_set' ? 'Зачем обсуждаем' : initialType === 'meeting' ? 'Повестка и заметки' : initialType === 'task' ? 'Ожидаемый результат' : 'Краткое описание';
   const parentOptions = state.records.filter((record) => record.status !== 'archived').map((record) => `<option value="${record.id}" ${defaultParentID === record.id ? 'selected' : ''}>${escapeHTML(typeMeta[record.type]?.singular || 'Карточка')}: ${escapeHTML(record.title)}</option>`).join('');
   const planned = ['task', 'goal', 'research', 'question_set', 'meeting', 'decision', 'disagreement'].includes(initialType);
-  $('#create-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">${icon(initialMeta.icon)} Новая запись</span><h2>${escapeHTML(displayName)}</h2></div><button type="button" class="close-button icon-button" data-close-create aria-label="Закрыть">${icon('x')}</button></div><form id="create-record-form" class="card-form dialog-form"><label>${titleLabel}<input name="title" required maxlength="240" autofocus value="${escapeHTML(preset.title || '')}" placeholder="${initialType === 'question_set' ? 'Например: Договорённости основателей' : ''}"></label><label>${descriptionLabel}<textarea name="description" rows="5">${escapeHTML(preset.description || '')}</textarea></label><input type="hidden" name="type" value="${initialType}"><input type="hidden" name="kind" value="${escapeHTML(preset.kind || '')}">${planned ? `<div class="form-grid two"><label>${initialType === 'question_set' ? 'Координатор' : initialType === 'meeting' ? 'Организатор' : 'Ответственный'}<select name="ownerId">${userOptions(state.me.id)}</select></label><label>${initialType === 'meeting' ? 'Дата и время' : 'Срок'}<input name="dueAt" type="datetime-local"></label></div><div class="form-grid two"><label>Приоритет<select name="priority">${Object.entries(priorityLabels).map(([value, label]) => `<option value="${value}" ${value === (preset.priority || 'normal') ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Оценка времени, минут<input name="estimateMinutes" type="number" min="0" value="${Number(preset.estimateMinutes || 0)}"></label></div>` : `<input type="hidden" name="ownerId" value="${state.me.id}"><input type="hidden" name="priority" value="${escapeHTML(preset.priority || 'normal')}"><input type="hidden" name="estimateMinutes" value="${Number(preset.estimateMinutes || 0)}">`}<details class="form-more create-organization" ${sourceRecord ? 'open' : ''}><summary>Место в проекте и доступ</summary><div class="form-more-body"><div class="form-grid three"><label>Направление<select name="workstream">${Object.entries(workstreamLabels).map(([value, label]) => `<option value="${value}" ${defaultWorkstream === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Доступ к изменениям<select name="editPolicy">${Object.entries(editPolicyLabels).map(([value, label]) => `<option value="${value}" ${defaultEditPolicy === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Родитель<select name="parentId"><option value="">Без родителя</option>${parentOptions}</select></label></div><label class="root-toggle"><input name="isRoot" type="checkbox" ${preset.isRoot ? 'checked' : ''}> <span><strong>Новый корень</strong><small>Начать самостоятельную крупную ветку вместо продолжения текущей цепочки.</small></span></label></div></details><div class="ai-suggestion"><span class="ai-suggestion-icon">${icon('sparkles')}</span><span><strong>AI-структура</strong><small id="ai-suggestion-status">После названия система предложит приоритет, оценку времени, направление и место в иерархии.</small></span><button type="button" class="secondary" data-ai-suggest>Предложить</button></div><div class="form-actions"><button type="submit" class="primary">${icon('plus')} Создать</button><button type="button" class="secondary" data-close-create>Отмена</button></div></form>`;
+  $('#create-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">${icon(initialMeta.icon)} Новая запись</span><h2>${escapeHTML(displayName)}</h2></div><button type="button" class="close-button icon-button" data-close-create aria-label="Закрыть">${icon('x')}</button></div><form id="create-record-form" class="card-form dialog-form"><label>${titleLabel}<input name="title" required maxlength="240" autofocus value="${escapeHTML(preset.title || '')}" placeholder="${preset.comparisonMode ? 'Например: Выбор сервера' : initialType === 'question_set' ? 'Например: Договорённости основателей' : ''}"></label><label>${descriptionLabel}<textarea name="description" rows="5">${escapeHTML(preset.description || '')}</textarea></label><input type="hidden" name="type" value="${initialType}"><input type="hidden" name="kind" value="${escapeHTML(preset.kind || '')}">${planned ? `<div class="form-grid two"><label>${initialType === 'question_set' ? 'Координатор' : initialType === 'meeting' ? 'Организатор' : 'Ответственный'}<select name="ownerId">${userOptions(state.me.id)}</select></label><label>${initialType === 'meeting' ? 'Дата и время' : 'Срок'}<input name="dueAt" type="datetime-local"></label></div><div class="form-grid two"><label>Приоритет<select name="priority">${Object.entries(priorityLabels).map(([value, label]) => `<option value="${value}" ${value === (preset.priority || 'normal') ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Оценка времени, минут<input name="estimateMinutes" type="number" min="0" value="${Number(preset.estimateMinutes || 0)}"></label></div>` : `<input type="hidden" name="ownerId" value="${state.me.id}"><input type="hidden" name="priority" value="${escapeHTML(preset.priority || 'normal')}"><input type="hidden" name="estimateMinutes" value="${Number(preset.estimateMinutes || 0)}">`}<details class="form-more create-organization" ${sourceRecord ? 'open' : ''}><summary>Место в проекте и доступ</summary><div class="form-more-body"><div class="form-grid three"><label>Направление<select name="workstream">${Object.entries(workstreamLabels).map(([value, label]) => `<option value="${value}" ${defaultWorkstream === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Доступ к изменениям<select name="editPolicy">${Object.entries(editPolicyLabels).map(([value, label]) => `<option value="${value}" ${defaultEditPolicy === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Родитель<select name="parentId"><option value="">Без родителя</option>${parentOptions}</select></label></div><label class="root-toggle"><input name="isRoot" type="checkbox" ${preset.isRoot ? 'checked' : ''}> <span><strong>Новый корень</strong><small>Начать самостоятельную крупную ветку вместо продолжения текущей цепочки.</small></span></label></div></details><div class="ai-suggestion"><span class="ai-suggestion-icon">${icon('sparkles')}</span><span><strong>AI-структура</strong><small id="ai-suggestion-status">После названия система предложит приоритет, оценку времени, направление и место в иерархии.</small></span><button type="button" class="secondary" data-ai-suggest>Предложить</button></div><div class="form-actions"><button type="submit" class="primary">${icon('plus')} Создать</button><button type="button" class="secondary" data-close-create>Отмена</button></div></form>`;
   $$('[data-close-create]').forEach((button) => button.addEventListener('click', () => $('#create-dialog').close()));
   const createForm = $('#create-record-form');
   bindCreateSuggestion(createForm, initialType);
@@ -2514,7 +2633,7 @@ function openCreateDialog(initialType = 'idea', preset = {}) {
           linkError = `Карточка создана, но связь не добавлена: ${error.message}`;
         }
       }
-      $('#create-dialog').close(); await loadData(true); toast(linkError || 'Карточка создана', Boolean(linkError)); await openRecord(record.id, { workspace: Boolean(preset.sourceRecordId), edit: true });
+      $('#create-dialog').close(); await loadData(true); toast(linkError || 'Карточка создана', Boolean(linkError)); await openRecord(record.id, { workspace: Boolean(preset.sourceRecordId), edit: true, tab: preset.comparisonMode ? 'content' : undefined });
     } catch (error) { toast(error.message, true); }
   });
   openModal($('#create-dialog'));

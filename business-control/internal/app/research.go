@@ -38,6 +38,14 @@ type ResearchOption struct {
 	Values            map[string]string `json:"values"`
 }
 
+type ResearchRelationOption struct {
+	ID        string  `json:"id"`
+	RecordID  string  `json:"recordId"`
+	Title     string  `json:"title"`
+	Rating    float64 `json:"rating"`
+	SortOrder int     `json:"sortOrder"`
+}
+
 type ResearchComparison struct {
 	Fields  []ResearchOptionField `json:"fields"`
 	Options []ResearchOption      `json:"options"`
@@ -53,6 +61,27 @@ type researchOptionRequest struct {
 	Values            map[string]string `json:"values"`
 	Reason            string            `json:"reason"`
 	ExpectedUpdatedAt string            `json:"expectedUpdatedAt"`
+}
+
+func (s *Server) listResearchRelationOptions(ctx context.Context, recordID string) ([]ResearchRelationOption, error) {
+	options := make([]ResearchRelationOption, 0)
+	rows, err := s.store.db.QueryContext(ctx, `
+		SELECT id, record_id, title, rating, sort_order
+		FROM research_options
+		WHERE record_id = ? AND status = 'active'
+		ORDER BY sort_order, created_at`, recordID)
+	if err != nil {
+		return options, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var option ResearchRelationOption
+		if err := rows.Scan(&option.ID, &option.RecordID, &option.Title, &option.Rating, &option.SortOrder); err != nil {
+			return options, err
+		}
+		options = append(options, option)
+	}
+	return options, rows.Err()
 }
 
 func validResearchFieldType(value string) bool {

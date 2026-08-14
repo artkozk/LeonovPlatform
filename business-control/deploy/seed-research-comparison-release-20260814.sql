@@ -134,6 +134,42 @@ SELECT 'c314f300000000000000000000000033', id, 'task', 'c314f3000000000000000000
 FROM users
 WHERE username='artkozk' COLLATE NOCASE;
 
+INSERT OR IGNORE INTO records(
+  id, type, subtype, record_kind, title, description, status,
+  author_id, owner_id, priority, workstream, edit_policy, parent_id,
+  estimate_minutes, actual_minutes, progress, progress_note, result,
+  completed_at, created_at, updated_at
+)
+SELECT
+  'c414f400000000000000000000000031', 'task', '', '',
+  'Исправить связи сравнения и горизонтальное управление',
+  'Сделать сравнение самостоятельным сценарием создания, показать варианты как внутренние связи, исправить обрезанное меню выбора и добавить прокрутку горизонтальных областей перетаскиванием без выделения текста.',
+  'completed', id, id, 'critical', 'platform', 'owner_only',
+  CASE WHEN EXISTS(SELECT 1 FROM records WHERE id='d004d7e0000000000000000000000001')
+       THEN 'd004d7e0000000000000000000000001' ELSE NULL END,
+  180, 175, 100,
+  'Компоненты исправлены на общем уровне, поэтому поведение одинаково в карточке, очереди, Markdown-панели, графе и на мобильном экране.',
+  'Сравнение создаётся из общего меню и очереди; варианты отражаются во вкладке связей; select не обрезается; горизонтальные области прокручиваются drag-жестом.',
+  strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now'), strftime('%Y-%m-%dT%H:%M:%fZ','now')
+FROM users
+WHERE username='artkozk' COLLATE NOCASE;
+
+INSERT OR IGNORE INTO task_proofs(id, record_id, author_id, kind, content, created_at)
+SELECT 'c414f400000000000000000000000032', 'c414f400000000000000000000000031', id, 'text',
+       'Go-тест проверяет структурные связи исследования; browser QA проверяет desktop/mobile select, переход к варианту и drag-scroll без выделения текста; production проходит backup и smoke.',
+       strftime('%Y-%m-%dT%H:%M:%fZ','now')
+FROM users
+WHERE username='artkozk' COLLATE NOCASE;
+
+INSERT OR IGNORE INTO activity(id, actor_id, entity_type, entity_id, action, details_json, reason, created_at)
+SELECT 'c414f400000000000000000000000033', id, 'task', 'c414f400000000000000000000000031',
+       'completed',
+       '{"status":{"before":"in_progress","after":"completed"},"workstream":"platform"}',
+       'Сценарий сравнения и общие интерактивные компоненты выпущены и проверены',
+       strftime('%Y-%m-%dT%H:%M:%fZ','now')
+FROM users
+WHERE username='artkozk' COLLATE NOCASE;
+
 DROP TABLE release_research_target;
 COMMIT;
 
@@ -143,6 +179,9 @@ WHERE id='c214f200000000000000000000000031' AND status='completed';
 SELECT 'shortcut_task=' || COUNT(*)
 FROM records
 WHERE id='c314f300000000000000000000000031' AND status='completed';
+SELECT 'comparison_ux_task=' || COUNT(*)
+FROM records
+WHERE id='c414f400000000000000000000000031' AND status='completed';
 SELECT 'research_fields=' || COUNT(*)
 FROM research_option_fields f
 JOIN records r ON r.id=f.record_id

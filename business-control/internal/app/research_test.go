@@ -45,6 +45,15 @@ func TestResearchComparisonWorkflow(t *testing.T) {
 	}
 	option := comparison.Options[0]
 
+	var relations struct {
+		Links           []RecordLink             `json:"links"`
+		ResearchOptions []ResearchRelationOption `json:"researchOptions"`
+	}
+	requestJSON(t, client, http.MethodGet, server.URL+"/api/records/"+research.ID+"/relations", nil, http.StatusOK, &relations)
+	if len(relations.Links) != 0 || len(relations.ResearchOptions) != 1 || relations.ResearchOptions[0].ID != option.ID {
+		t.Fatalf("research relations = %#v", relations)
+	}
+
 	requestJSON(t, client, http.MethodPatch, server.URL+"/api/records/"+research.ID+"/research-options/"+option.ID, map[string]any{
 		"title": "Timeweb Cloud", "rating": 9,
 		"summaryMd": option.SummaryMD, "prosMd": option.ProsMD, "consMd": option.ConsMD, "notesMd": option.NotesMD,
