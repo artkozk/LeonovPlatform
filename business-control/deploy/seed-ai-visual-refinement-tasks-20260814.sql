@@ -9,12 +9,12 @@ SET title = 'Развитие платформы «BizFlow»',
 WHERE id = 'd004d7e0000000000000000000000001';
 
 UPDATE records
-SET status = 'completed',
+SET status = 'blocked',
     actual_minutes = CASE WHEN actual_minutes < 25 THEN 25 ELSE actual_minutes END,
-    progress = 100,
-    progress_note = 'Секрет хранится только в защищённом server environment и не попадает в Git, браузер или карточки.',
-    result = 'Groq подключён на сервере; при недоступности внешней модели платформа сохраняет локальный fallback.',
-    completed_at = COALESCE(completed_at, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    progress = CASE WHEN progress < 80 THEN 80 ELSE progress END,
+    progress_note = 'Server-only интеграция и fallback готовы, но Groq отвечает 403 Forbidden с production IP. До снятия внешней блокировки используется локальный анализ.',
+    result = 'Ключ проверен без раскрытия, однако внешний провайдер отклоняет запросы production-сервера. Задача остаётся заблокированной, чтобы не выдавать fallback за работающий Groq.',
+    completed_at = NULL,
     updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
 WHERE id = 'd004d7e0000000000000000000000008';
 
@@ -95,7 +95,7 @@ SELECT 'a114f10proof00000000000000000004', 'a114f100000000000000000000000004', i
   strftime('%Y-%m-%dT%H:%M:%fZ','now') FROM users WHERE username='artkozk';
 INSERT OR IGNORE INTO task_proofs(id, record_id, author_id, kind, content, created_at)
 SELECT 'a114f10proof00000000000000000008', 'd004d7e0000000000000000000000008', id, 'text',
-  'GROQ_API_KEY установлен в защищённом server environment с правами только root; значение не выводится в журналы и документацию.',
+  'GROQ_API_KEY проверен в защищённом server environment: Groq вернул 403 Forbidden с production IP. Значение не выводилось в журналы и документацию; активный сервис оставлен на быстром локальном fallback.',
   strftime('%Y-%m-%dT%H:%M:%fZ','now') FROM users WHERE username='artkozk';
 
 INSERT OR IGNORE INTO activity(id, actor_id, entity_type, entity_id, action, details_json, reason, created_at)
@@ -104,9 +104,9 @@ SELECT 'a114f10activity0000000000000001', id, 'goal', 'd004d7e000000000000000000
   'Название продукта и прогресс обновлены после визуального и AI-релиза', strftime('%Y-%m-%dT%H:%M:%fZ','now')
 FROM users WHERE username='artkozk';
 INSERT OR IGNORE INTO activity(id, actor_id, entity_type, entity_id, action, details_json, reason, created_at)
-SELECT 'a114f10activity0000000000000008', id, 'task', 'd004d7e0000000000000000000000008', 'completed',
-  '{"status":{"before":"planned","after":"completed"},"workstream":"platform"}',
-  'Серверный секрет настроен и Groq-путь проверен без раскрытия значения', strftime('%Y-%m-%dT%H:%M:%fZ','now')
+SELECT 'a114f10activity0000000000000008', id, 'task', 'd004d7e0000000000000000000000008', 'updated',
+  '{"status":{"before":"planned","after":"blocked"},"workstream":"platform","providerStatus":403}',
+  'Интеграция готова, но production IP получил 403 Forbidden от Groq; сохранён локальный fallback', strftime('%Y-%m-%dT%H:%M:%fZ','now')
 FROM users WHERE username='artkozk';
 INSERT OR IGNORE INTO activity(id, actor_id, entity_type, entity_id, action, details_json, reason, created_at)
 SELECT 'a114f10activity000000000000000' || n, u.id, 'task', 'a114f10000000000000000000000000' || n, 'completed',

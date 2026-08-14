@@ -689,7 +689,7 @@ func TestAIVisualRefinementTaskSeed(t *testing.T) {
 	_ = store.db.QueryRow(`SELECT COUNT(*) FROM task_proofs WHERE record_id LIKE 'a114f10%'`).Scan(&proofs)
 	_ = store.db.QueryRow(`SELECT status, progress FROM records WHERE id = 'd004d7e0000000000000000000000008'`).Scan(&groqStatus, &groqProgress)
 	_ = store.db.QueryRow(`SELECT title, progress FROM records WHERE id = 'd004d7e0000000000000000000000001'`).Scan(&rootTitle, &rootProgress)
-	if tasks != 4 || proofs != 4 || groqStatus != "completed" || groqProgress != 100 || rootTitle != "Развитие платформы «BizFlow»" || rootProgress != 72 {
+	if tasks != 4 || proofs != 4 || groqStatus != "blocked" || groqProgress != 80 || rootTitle != "Развитие платформы «BizFlow»" || rootProgress != 72 {
 		t.Fatalf("refinement seed: tasks=%d proofs=%d groq=%s/%d root=%q/%d", tasks, proofs, groqStatus, groqProgress, rootTitle, rootProgress)
 	}
 }

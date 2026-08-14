@@ -170,3 +170,5 @@ Production runbook: `docs/operations/BUSINESS_CONTROL_MVP_DEPLOYMENT_2026_08_12.
 Текущие обязанности AI, запреты на автоматические решения, ограничение передаваемых данных, fallback и сценарии встреч описаны в `docs/product/BUSINESS_CONTROL_AI_PRODUCT_CONTRACT_2026_08_14.md`.
 
 Актуальная полировка бренда, Onest, карточки-досье, custom select, карты, подвижных шаблонов и mobile UX описана в `docs/product/BUSINESS_CONTROL_VISUAL_INTERACTION_REFINEMENT_2026_08_14.md`.
+
+Перед AI/visual-релизом SQL seed обязательно проверяется на копии production БД скриптом `deploy/validate-ai-visual-refinement-20260814.sh`. Переключение версии выполняет `deploy/deploy-ai-visual-refinement-20260814.sh`: он проверяет наличие server-only Groq-конфигурации, создаёт консистентный SQLite backup и при ошибке восстанавливает одновременно предыдущий бинарник и базу.
