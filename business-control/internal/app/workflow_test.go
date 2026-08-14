@@ -35,12 +35,15 @@ func TestWorkflowReleaseSeedIsIdempotent(t *testing.T) {
 			t.Fatalf("apply release seed run %d: %v", run, err)
 		}
 	}
-	var tasks, proofs, activities, foreignKeyViolations int
+	var tasks, blocked, proofs, activities, foreignKeyViolations int
 	if err := store.db.QueryRow(`SELECT COUNT(*) FROM records WHERE id LIKE 'f814%' AND status = 'completed'`).Scan(&tasks); err != nil {
 		t.Fatalf("count tasks: %v", err)
 	}
 	if err := store.db.QueryRow(`SELECT COUNT(*) FROM task_proofs WHERE id LIKE 'f814%'`).Scan(&proofs); err != nil {
 		t.Fatalf("count proofs: %v", err)
+	}
+	if err := store.db.QueryRow(`SELECT COUNT(*) FROM records WHERE id = 'f8140000000000000000000000000061' AND status = 'blocked'`).Scan(&blocked); err != nil {
+		t.Fatalf("count blocked AI task: %v", err)
 	}
 	if err := store.db.QueryRow(`SELECT COUNT(*) FROM activity WHERE id LIKE 'f814%'`).Scan(&activities); err != nil {
 		t.Fatalf("count activities: %v", err)
@@ -52,8 +55,8 @@ func TestWorkflowReleaseSeedIsIdempotent(t *testing.T) {
 	if err := store.db.QueryRow(`PRAGMA integrity_check`).Scan(&integrity); err != nil {
 		t.Fatalf("integrity check: %v", err)
 	}
-	if tasks != 8 || proofs != 8 || activities != 8 || foreignKeyViolations != 0 || integrity != "ok" {
-		t.Fatalf("seed result tasks=%d proofs=%d activities=%d fk=%d integrity=%q", tasks, proofs, activities, foreignKeyViolations, integrity)
+	if tasks != 7 || blocked != 1 || proofs != 8 || activities != 8 || foreignKeyViolations != 0 || integrity != "ok" {
+		t.Fatalf("seed result tasks=%d blocked=%d proofs=%d activities=%d fk=%d integrity=%q", tasks, blocked, proofs, activities, foreignKeyViolations, integrity)
 	}
 }
 

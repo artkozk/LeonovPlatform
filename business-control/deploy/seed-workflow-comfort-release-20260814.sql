@@ -63,6 +63,12 @@ SELECT t.record_id, 'task', '', '', t.title, t.description, 'completed',
 FROM workflow_release_tasks t
 JOIN users u ON u.username='artkozk' COLLATE NOCASE;
 
+UPDATE records
+SET status='blocked', progress=90, completed_at=NULL,
+    progress_note='Интеграция и server-side fallback готовы. Gemini Developer API блокирует IP основного сервера по региону.',
+    result='Ключ изолирован в root-only окружении; внешний вызов возвращает FAILED_PRECONDITION по региону, локальный анализ продолжает работать.'
+WHERE id='f8140000000000000000000000000061';
+
 INSERT OR IGNORE INTO task_proofs(id, record_id, author_id, kind, content, created_at)
 SELECT t.proof_id, t.record_id, u.id, 'text',
        'Проверено: go test ./..., go vet ./..., node --check web/app.js, миграционный dry-run, desktop/mobile browser QA, production health, AI health и восстановимость зашифрованного backup.',
@@ -71,9 +77,14 @@ FROM workflow_release_tasks t
 JOIN users u ON u.username='artkozk' COLLATE NOCASE;
 
 INSERT OR IGNORE INTO activity(id, actor_id, entity_type, entity_id, action, details_json, reason, created_at)
-SELECT t.activity_id, u.id, 'task', t.record_id, 'completed',
-       '{"status":{"before":"in_progress","after":"completed"},"workstream":"platform","release":"workflow-comfort-20260814"}',
-       'Функция выпущена и проверена в production',
+SELECT t.activity_id, u.id, 'task', t.record_id,
+       CASE WHEN t.record_id='f8140000000000000000000000000061' THEN 'updated' ELSE 'completed' END,
+       CASE WHEN t.record_id='f8140000000000000000000000000061'
+            THEN '{"status":{"before":"in_progress","after":"blocked"},"workstream":"platform","release":"workflow-comfort-20260814","blocker":"gemini_region"}'
+            ELSE '{"status":{"before":"in_progress","after":"completed"},"workstream":"platform","release":"workflow-comfort-20260814"}' END,
+       CASE WHEN t.record_id='f8140000000000000000000000000061'
+            THEN 'Gemini настроен, но официальный API недоступен из региона основного сервера; активен локальный fallback'
+            ELSE 'Функция выпущена и проверена в production' END,
        strftime('%Y-%m-%dT%H:%M:%fZ','now')
 FROM workflow_release_tasks t
 JOIN users u ON u.username='artkozk' COLLATE NOCASE;
@@ -81,15 +92,15 @@ JOIN users u ON u.username='artkozk' COLLATE NOCASE;
 UPDATE records
 SET title='Подключить внешний AI-провайдер на сервере',
     description='Подключить Gemini через закрытое серверное окружение, валидировать структурированные ответы и сохранить локальный fallback.',
-    status='completed', progress=100, actual_minutes=MAX(actual_minutes, 140),
-    progress_note='Gemini отвечает через server-side интеграцию; локальная эвристика остаётся резервным режимом.',
-    result='Внешний AI активирован без передачи ключа в браузер, Git, БД, экспорт или резервную копию.',
-    completed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'), updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
+    status='blocked', progress=90, actual_minutes=MAX(actual_minutes, 140),
+    progress_note='Server-side интеграция готова; Gemini Developer API отклоняет IP основного сервера по региону.',
+    result='Ключ защищён и fallback работает. Для внешней модели нужен официально доступный регион на этом же хосте либо OAuth для Google Enterprise/Vertex.',
+    completed_at=NULL, updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
 WHERE id='d004d7e0000000000000000000000008';
 
 UPDATE records
-SET progress=92,
-    progress_note='Рабочий процесс задач, приёмка, Markdown, обсуждения, вложения, повторения, представления, Gemini и защищённые backups выпущены.',
+SET progress=91,
+    progress_note='Рабочий процесс задач, приёмка, Markdown, обсуждения, вложения, повторения, представления и backups выпущены; внешний Gemini заблокирован регионом, fallback активен.',
     updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')
 WHERE id='d004d7e0000000000000000000000001' AND type='goal';
 
@@ -100,6 +111,10 @@ SELECT 'workflow_release_tasks=' || COUNT(*)
 FROM records
 WHERE id LIKE 'f814%'
   AND status='completed';
+SELECT 'workflow_release_blocked=' || COUNT(*)
+FROM records
+WHERE id='f8140000000000000000000000000061'
+  AND status='blocked';
 SELECT 'workflow_release_proofs=' || COUNT(*)
 FROM task_proofs
 WHERE id LIKE 'f814%';

@@ -114,7 +114,8 @@ test "$(systemctl is-active business-control)" = "active"
 test "$(sqlite3 "$DATABASE" 'PRAGMA integrity_check;')" = "ok"
 test "$(sqlite3 "$DATABASE" 'SELECT COUNT(*) FROM pragma_foreign_key_check;')" = "0"
 test "$(sqlite3 "$DATABASE" "SELECT COUNT(*) FROM schema_migrations WHERE version='007_workflow_comfort.sql';")" = "1"
-test "$(sqlite3 "$DATABASE" "SELECT COUNT(*) FROM records WHERE id LIKE 'f814%' AND status='completed';")" = "8"
+test "$(sqlite3 "$DATABASE" "SELECT COUNT(*) FROM records WHERE id LIKE 'f814%' AND status='completed';")" = "7"
+test "$(sqlite3 "$DATABASE" "SELECT COUNT(*) FROM records WHERE id='f8140000000000000000000000000061' AND status='blocked';")" = "1"
 test -d "$UPLOADS"
 
 SMOKE_TOKEN="$(openssl rand -hex 32)"
@@ -131,11 +132,21 @@ import json
 with open('/tmp/business-control-ai-health.json', encoding='utf-8') as source:
     payload = json.load(source)
 assert payload.get('provider') == 'gemini', payload
-assert payload.get('providerAvailable') is True, payload
-assert payload.get('source') == 'gemini', payload
+assert payload.get('configured') is True, payload
+assert payload.get('source') in {'gemini', 'heuristic'}, payload
+if payload.get('source') == 'gemini':
+    assert payload.get('providerAvailable') is True, payload
+else:
+    assert payload.get('providerAvailable') is False, payload
+with open('/tmp/business-control-ai-source', 'w', encoding='utf-8') as target:
+    target.write(payload['source'])
 PY
 cleanup_smoke_session
 SMOKE_TOKEN_HASH=""
+
+if [[ "$(cat /tmp/business-control-ai-source)" = "gemini" ]]; then
+  sqlite3 "$DATABASE" "UPDATE records SET status='completed', progress=100, completed_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'), progress_note='Gemini прошёл production health-check; локальная эвристика остаётся резервным режимом.', updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id IN ('f8140000000000000000000000000061','d004d7e0000000000000000000000008');"
+fi
 
 backup_output="$(systemctl start business-control-backup.service 2>&1 && journalctl -u business-control-backup.service -n 20 --no-pager)"
 printf '%s\n' "$backup_output"
