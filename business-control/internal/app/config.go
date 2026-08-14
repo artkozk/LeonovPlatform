@@ -16,6 +16,10 @@ type Config struct {
 	GroqAPIKey       string
 	GroqModel        string
 	GroqBaseURL      string
+	GeminiAPIKey     string
+	GeminiModel      string
+	GeminiBaseURL    string
+	UploadPath       string
 }
 
 func LoadConfig() Config {
@@ -28,6 +32,10 @@ func LoadConfig() Config {
 		GroqAPIKey:       strings.TrimSpace(os.Getenv("GROQ_API_KEY")),
 		GroqModel:        envOr("GROQ_MODEL", "openai/gpt-oss-20b"),
 		GroqBaseURL:      strings.TrimRight(envOr("GROQ_BASE_URL", "https://api.groq.com/openai/v1"), "/"),
+		GeminiAPIKey:     strings.TrimSpace(os.Getenv("GEMINI_API_KEY")),
+		GeminiModel:      envOr("GEMINI_MODEL", "gemini-3.6-flash"),
+		GeminiBaseURL:    strings.TrimRight(envOr("GEMINI_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"), "/"),
+		UploadPath:       envOr("BUSINESS_UPLOAD_PATH", "./data/uploads"),
 	}
 }
 

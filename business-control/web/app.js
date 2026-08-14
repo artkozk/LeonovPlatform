@@ -63,10 +63,15 @@ const statusLabels = {
   completed: 'Выполнено', postponed: 'Перенесено', cancelled: 'Отменено', archived: 'Архив',
 };
 
+function statusLabel(record) {
+  if (record?.type === 'task' && record.status === 'review') return 'На проверке';
+  return statusLabels[record?.status] || record?.status || '';
+}
+
 const statusesByType = {
   idea: ['inbox', 'review', 'main', 'rejected'],
   goal: ['planned', 'in_progress', 'blocked', 'completed', 'postponed', 'cancelled'],
-  task: ['planned', 'in_progress', 'blocked', 'postponed', 'completed', 'cancelled'],
+  task: ['planned', 'in_progress', 'blocked', 'review', 'postponed', 'completed', 'cancelled'],
   question_set: ['planned', 'in_progress', 'blocked', 'completed', 'postponed', 'cancelled'],
   meeting: ['planned', 'in_progress', 'completed', 'postponed', 'cancelled'],
   default: ['draft', 'in_progress', 'completed', 'cancelled'],
@@ -112,7 +117,7 @@ const state = {
   view: 'dashboard', search: '', statusFilter: '', ownerFilter: '', authMode: 'login', activeDetail: null,
   activeRecordTab: 'overview', activeActivity: null, historyMode: 'feed', activeRecordRequest: 0,
   workScope: 'all', workType: 'all', workStatus: 'active', workstreamFilter: 'all',
-  workOrder: 'priority', workSearchTimer: null, historyScope: 'project', historyActor: 'all', historyType: 'all',
+  workOrder: 'priority', workViewMode: 'list', workCalendarMonth: '', workSearchTimer: null, historyScope: 'project', historyActor: 'all', historyType: 'all',
   recordSearchTimer: null,
   graphResizeTimer: null,
   historyLoadedAll: false,
@@ -129,6 +134,7 @@ const state = {
   presenceInteractions: 0, presenceLastSentAt: Date.now(), lastInteractionAt: Date.now(), aiSuggestionTimer: null,
   recordEditMode: false, aiAnalyses: new Map(), aiAnalysisLoading: '',
   researchComparisons: new Map(), researchComparisonRequests: new Map(), activeResearchOptionId: '',
+  savedViews: [], noteContents: new Map(), noteSequence: 0,
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -150,9 +156,49 @@ function renderMarkdown(value, empty = 'Не заполнено') {
   return template.innerHTML;
 }
 
+function markdownView(value, empty = 'Не заполнено', title = 'Текст карточки') {
+  const key = `note-${++state.noteSequence}`;
+  state.noteContents.set(key, { title, value: String(value || '') });
+  return `<div class="markdown-view"><div class="markdown-body">${renderMarkdown(value, empty)}</div><button type="button" class="markdown-expand icon-button" data-open-note-view="${key}" title="Открыть как карточку" aria-label="Открыть как карточку">${icon('maximize')}</button></div>`;
+}
+
+function markdownPlain(value, empty = '') {
+	const source = String(value || '').trim();
+	if (!source) return empty;
+  const template = document.createElement('template');
+	template.innerHTML = renderMarkdown(source, empty);
+	const parsed = (template.content.textContent || '').replace(/\s+/g, ' ').trim();
+	if (parsed !== source.replace(/\s+/g, ' ').trim()) return parsed;
+	return source
+		.replace(/^#{1,6}\s+/gm, '')
+		.replace(/^\s*(?:[-*+] |\d+[.)]\s+)/gm, '')
+		.replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+		.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+		.replace(/[*_~`>]/g, '')
+		.replace(/\s+/g, ' ')
+		.trim();
+}
+
 function markdownEditor(name, label, value, rows = 6, placeholder = '', suffix = '') {
   const id = `markdown-${String(name).replace(/[^a-z0-9_-]/gi, '-')}-${suffix || 'main'}`;
-  return `<div class="markdown-editor"><label for="${escapeHTML(id)}">${escapeHTML(label)}</label><div class="markdown-toolbar" role="toolbar" aria-label="Инструменты Markdown"><button type="button" data-md="bold" title="Полужирный (Ctrl+B)" aria-label="Полужирный"><b>B</b></button><button type="button" data-md="italic" title="Курсив (Ctrl+I)" aria-label="Курсив"><i>I</i></button><button type="button" data-md="heading2" title="Заголовок второго уровня (Ctrl+Alt+2)" aria-label="Заголовок второго уровня">H2</button><button type="button" data-md="list" title="Маркированный список (Ctrl+Shift+8)" aria-label="Маркированный список">${icon('menu')}</button><button type="button" data-md="ordered" title="Нумерованный список (Ctrl+Shift+7)" aria-label="Нумерованный список">1.</button><button type="button" data-md="quote" title="Цитата (Ctrl+Shift+.)" aria-label="Цитата">❯</button><button type="button" data-md="code" title="Встроенный код (Ctrl+&#96;)" aria-label="Встроенный код">&lt;/&gt;</button><button type="button" data-md="note" title="Примечание" aria-label="Примечание">i</button><button type="button" data-md="link" title="Ссылка (Ctrl+K)" aria-label="Ссылка">${icon('link')}</button></div><textarea id="${escapeHTML(id)}" name="${escapeHTML(name)}" rows="${rows}" placeholder="${escapeHTML(placeholder)}">${escapeHTML(value || '')}</textarea></div>`;
+  return `<div class="markdown-editor"><label for="${escapeHTML(id)}">${escapeHTML(label)}</label><div class="markdown-toolbar" role="toolbar" aria-label="Инструменты Markdown"><button type="button" data-md="bold" title="Полужирный (Ctrl+B)" aria-label="Полужирный"><b>B</b></button><button type="button" data-md="italic" title="Курсив (Ctrl+I)" aria-label="Курсив"><i>I</i></button><button type="button" data-md="heading2" title="Заголовок второго уровня (Ctrl+Alt+2)" aria-label="Заголовок второго уровня">H2</button><button type="button" data-md="list" title="Маркированный список (Ctrl+Shift+8)" aria-label="Маркированный список">${icon('menu')}</button><button type="button" data-md="ordered" title="Нумерованный список (Ctrl+Shift+7)" aria-label="Нумерованный список">1.</button><button type="button" data-md="quote" title="Цитата (Ctrl+Shift+.)" aria-label="Цитата">❯</button><button type="button" data-md="code" title="Встроенный код (Ctrl+&#96;)" aria-label="Встроенный код">&lt;/&gt;</button><button type="button" data-md="note" title="Примечание" aria-label="Примечание">i</button><button type="button" data-md="link" title="Ссылка (Ctrl+K)" aria-label="Ссылка">${icon('link')}</button><span class="markdown-toolbar-spacer"></span><button type="button" data-open-notebook title="Открыть блокнот" aria-label="Открыть блокнот">${icon('maximize')}</button></div><textarea id="${escapeHTML(id)}" name="${escapeHTML(name)}" rows="${rows}" placeholder="${escapeHTML(placeholder)}">${escapeHTML(value || '')}</textarea></div>`;
+}
+
+function openNotebook({ title, value = '', editable = false, onSave = null }) {
+  const dialog = $('#notebook-dialog');
+  const content = $('#notebook-dialog-content');
+  content.innerHTML = `<div class="notebook-shell"><header><div><p class="eyebrow">${editable ? 'Редактор Markdown' : 'Просмотр карточки'}</p><h2>${escapeHTML(title)}</h2></div><button type="button" class="icon-button" data-close-notebook aria-label="Закрыть">${icon('x')}</button></header><div class="notebook-body">${editable ? `${markdownEditor('notebookValue', 'Содержание', value, 22, 'Фиксируйте структуру, аргументы и выводы', 'fullscreen')}<aside class="notebook-preview"><span>Предпросмотр</span><div class="markdown-body" id="notebook-preview">${renderMarkdown(value)}</div></aside>` : `<article class="notebook-reading markdown-body">${renderMarkdown(value)}</article>`}</div>${editable ? `<footer><span>Ctrl+Enter — применить в исходное поле</span><div><button type="button" class="secondary" data-close-notebook>Отмена</button><button type="button" class="primary" data-save-notebook>${icon('check')} Применить</button></div></footer>` : ''}</div>`;
+  $$('[data-close-notebook]', dialog).forEach((button) => button.addEventListener('click', () => dialog.close()));
+  if (editable) {
+    bindMarkdownEditors(dialog);
+    const textarea = $('textarea[name="notebookValue"]', dialog);
+    const preview = $('#notebook-preview', dialog);
+    textarea.addEventListener('input', () => { preview.innerHTML = renderMarkdown(textarea.value); });
+    const save = () => { onSave?.(textarea.value); dialog.close(); };
+    $('[data-save-notebook]', dialog).addEventListener('click', save);
+    textarea.addEventListener('keydown', (event) => { if ((event.ctrlKey || event.metaKey) && event.code === 'Enter') { event.preventDefault(); save(); } });
+  }
+  openModal(dialog);
 }
 
 function applyMarkdownAction(textarea, action) {
@@ -223,6 +269,7 @@ function bindMarkdownEditors(root = document) {
   $$('.markdown-editor', root).forEach((editor) => {
     const textarea = $('textarea', editor);
     $$('[data-md]', editor).forEach((button) => button.addEventListener('click', () => applyMarkdownAction(textarea, button.dataset.md)));
+    $('[data-open-notebook]', editor)?.addEventListener('click', () => openNotebook({ title: editor.querySelector('label')?.textContent || 'Блокнот', value: textarea.value, editable: true, onSave: (value) => { textarea.value = value; textarea.dispatchEvent(new Event('input', { bubbles: true })); } }));
     textarea?.addEventListener('keydown', (event) => {
       const action = markdownShortcutAction(event);
       if (action) {
@@ -236,6 +283,7 @@ function bindMarkdownEditors(root = document) {
       }
     });
   });
+  $$('[data-open-note-view]', root).forEach((button) => button.addEventListener('click', () => { const note = state.noteContents.get(button.dataset.openNoteView); if (note) openNotebook({ title: note.title, value: note.value }); }));
 }
 
 function closeCustomSelects(except = null) {
@@ -552,10 +600,11 @@ function sortWorkRecords(a, b) {
 }
 
 async function api(path, options = {}) {
+	const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
   const response = await fetch(path, {
     credentials: 'same-origin',
     ...options,
-    headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) },
+		headers: { ...(options.body && !isFormData ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) },
   });
   if (response.status === 204) return null;
   const data = await response.json().catch(() => ({}));
@@ -613,9 +662,9 @@ async function bootstrap() {
 
 async function loadData(silent = false) {
   if (!silent) $('#sync-state').textContent = 'Обновление…';
-  const [users, records, notifications, activity, definitions, pendingQuestions] = await Promise.all([
+  const [users, records, notifications, activity, definitions, pendingQuestions, savedViews] = await Promise.all([
     api('/api/users'), api('/api/records?includeArchived=true'), api('/api/notifications'),
-    api('/api/activity?limit=200'), api('/api/section-definitions'), api('/api/questions/pending'),
+    api('/api/activity?limit=200'), api('/api/section-definitions'), api('/api/questions/pending'), api('/api/saved-views'),
   ]);
   const projectActivity = activity.filter((item) => typeMeta[item.entityType] || item.entityType === 'section_definition');
   const recordsByID = new Map(records.map((record) => [record.id, record]));
@@ -623,7 +672,7 @@ async function loadData(silent = false) {
     const current = recordsByID.get(id);
     if (!current || current.updatedAt !== detail.record.updatedAt) state.detailCache.delete(id);
   });
-  Object.assign(state, { users, records, notifications, activity: projectActivity, definitions, pendingQuestions });
+  Object.assign(state, { users, records, notifications, activity: projectActivity, definitions, pendingQuestions, savedViews });
   state.historyLoadedAll = activity.length < 200;
   $('#sync-state').textContent = 'На связи';
   render();
@@ -673,6 +722,7 @@ function bindGlobalEvents() {
   $('#reason-dialog').addEventListener('click', (event) => { if (event.target === $('#reason-dialog')) $('#reason-dialog').close('cancel'); });
   $('#onboarding-dialog').addEventListener('click', (event) => { if (event.target === $('#onboarding-dialog')) finishOnboarding(); });
   $('#profile-dialog').addEventListener('click', (event) => { if (event.target === $('#profile-dialog')) $('#profile-dialog').close(); });
+  $('#notebook-dialog').addEventListener('click', (event) => { if (event.target === $('#notebook-dialog')) $('#notebook-dialog').close(); });
   $$('dialog').forEach((dialog) => dialog.addEventListener('close', () => {
     if (dialog.dataset.historyState === 'true' && history.state?.businessControlOverlay === dialog.id) {
       dialog.dataset.historyState = 'false';
@@ -987,7 +1037,7 @@ function sortWorkHierarchy(records) {
   return ordered;
 }
 
-function renderWorkList() {
+function filteredWorkRecords() {
   let records = state.records.filter((record) => isWorkRecord(record));
   if (state.ownerFilter) records = records.filter((record) => String(record.ownerId) === state.ownerFilter);
   else if (state.workScope === 'mine') records = records.filter((record) => record.ownerId === state.me.id);
@@ -1002,13 +1052,67 @@ function renderWorkList() {
     const query = state.search.toLowerCase();
     records = records.filter((record) => `${record.title} ${record.description} ${record.ownerUsername}`.toLowerCase().includes(query));
   }
-  records = state.workOrder === 'hierarchy' ? sortWorkHierarchy(records) : records.sort(sortWorkRecords);
+  return state.workOrder === 'hierarchy' ? sortWorkHierarchy(records) : records.sort(sortWorkRecords);
+}
+
+function renderWorkKanban(records) {
+  const columns = [
+    ['planned', 'Не начато'], ['in_progress', 'В работе'], ['blocked', 'Заблокировано'],
+    ['review', 'На проверке'], ['completed', 'Выполнено'],
+  ];
+  const visible = columns.filter(([status]) => records.some((record) => record.status === status) || ['planned', 'in_progress', 'review'].includes(status));
+  return `<section class="work-kanban" data-drag-scroll="true">${visible.map(([status, label]) => {
+    const items = records.filter((record) => record.status === status);
+    return `<div class="kanban-column"><header><strong>${label}</strong><span>${items.length}</span></header><div>${items.map((record) => `<button type="button" class="kanban-card" data-open-record="${record.id}"><span><i class="type-icon type-${record.type}">${icon(typeMeta[record.type].icon)}</i><small>${escapeHTML(typeMeta[record.type].singular)} · ${escapeHTML(workstreamLabels[record.workstream || 'business'])}</small></span><strong>${escapeHTML(record.title)}</strong><p>${escapeHTML(markdownPlain(record.description, 'Без дополнительного контекста'))}</p><footer><em class="priority priority-${record.priority || 'normal'}">${icon('flag')} ${priorityLabels[record.priority || 'normal']}</em><span class="deadline ${deadlineState(record).className}">${escapeHTML(deadlineState(record).label)}</span></footer></button>`).join('') || '<div class="kanban-empty">Нет карточек</div>'}</div></div>`;
+  }).join('')}</section>`;
+}
+
+function localDateKey(value) {
+  const date = new Date(value);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function renderWorkCalendar(records) {
+  const month = state.workCalendarMonth ? new Date(`${state.workCalendarMonth}T12:00:00`) : new Date();
+  month.setDate(1);
+  state.workCalendarMonth = localDateKey(month);
+  const start = new Date(month);
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+  const dueMap = new Map();
+  records.filter((record) => record.dueAt).forEach((record) => {
+    const key = localDateKey(record.dueAt);
+    if (!dueMap.has(key)) dueMap.set(key, []);
+    dueMap.get(key).push(record);
+  });
+  const days = Array.from({ length: 42 }, (_, index) => { const day = new Date(start); day.setDate(start.getDate() + index); return day; });
+  return `<section class="work-calendar"><header><button type="button" class="icon-button" data-calendar-shift="-1" aria-label="Предыдущий месяц">‹</button><h2>${month.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}</h2><button type="button" class="icon-button" data-calendar-shift="1" aria-label="Следующий месяц">›</button></header><div class="calendar-weekdays">${['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map((day) => `<span>${day}</span>`).join('')}</div><div class="calendar-grid">${days.map((day) => {
+    const key = localDateKey(day); const items = dueMap.get(key) || []; const outside = day.getMonth() !== month.getMonth(); const today = key === localDateKey(new Date());
+    return `<div class="calendar-day ${outside ? 'outside' : ''} ${today ? 'today' : ''}"><span>${day.getDate()}</span><div>${items.slice(0, 4).map((record) => `<button type="button" data-open-record="${record.id}" class="calendar-item priority-${record.priority || 'normal'}"><i>${escapeHTML(typeMeta[record.type].singular)}</i><strong>${escapeHTML(record.title)}</strong></button>`).join('')}${items.length > 4 ? `<small>+ ещё ${items.length - 4}</small>` : ''}</div></div>`;
+  }).join('')}</div></section>`;
+}
+
+function renderWorkBody(records) {
+  if (state.workViewMode === 'kanban') return renderWorkKanban(records);
+  if (state.workViewMode === 'calendar') return renderWorkCalendar(records);
+  return `<section class="table-panel work-table-panel"><div class="record-table work-header"><span>Работа</span><span>Ответственный</span><span>Состояние</span><span>Срок / прогресс</span></div><div class="record-rows">${records.map(renderWorkRow).join('') || `<div class="guided-empty work-empty">${icon('checkSquare')}<h3>В этом фильтре работы нет</h3><p>Измените фильтр или создайте следующий конкретный шаг.</p></div>`}</div></section>`;
+}
+
+function currentWorkViewPayload() {
+  return {
+    name: '', viewMode: state.workViewMode === 'list' && state.workOrder === 'hierarchy' ? 'hierarchy' : state.workViewMode,
+    filters: { scope: state.workScope, ownerId: state.ownerFilter, type: state.workType, workstream: state.workstreamFilter, status: state.workStatus, order: state.workOrder, search: state.search },
+  };
+}
+
+function renderWorkList() {
+  const records = filteredWorkRecords();
   const activeFilters = workFilterCount();
   $('#main-content').innerHTML = `
     <div class="work-title-row"><div><p class="eyebrow">Единая очередь</p><h1>Работа команды</h1><p><strong>${records.length}</strong> ${recordsCountLabel(records.length).replace(/^\d+\s*/, '')} в текущем представлении</p></div><details class="work-create-menu"><summary class="primary">${icon('plus')} Создать работу</summary><div>${[['task', 'Задача'], ['question_set', 'Вопросы'], ['meeting', 'Встреча'], ['research', 'Сравнение вариантов'], ['decision', 'Решение']].map(([type, label]) => `<button type="button" data-work-create="${type}" ${type === 'research' ? 'data-work-mode="comparison"' : ''}>${icon(typeMeta[type].icon)}<span>${label}</span></button>`).join('')}</div></details></div>
     <section class="work-controls" aria-label="Фильтры рабочей очереди">
       <div class="work-scope segmented compact">${[['all', 'Вся'], ['mine', 'Моя'], ['partner', 'Партнёра']].map(([value, label]) => `<button type="button" class="segment ${!state.ownerFilter && state.workScope === value ? 'active' : ''}" data-work-scope="${value}">${label}</button>`).join('')}</div>
       <div class="search-box work-search">${icon('search')}<input id="work-search" type="search" placeholder="Найти в этой очереди" value="${escapeHTML(state.search)}"></div>
+		<div class="work-view-switch segmented compact" aria-label="Вид очереди">${[['list','menu','Список'],['kanban','network','Доска'],['calendar','calendar','Календарь']].map(([value, iconName, label]) => `<button type="button" class="segment ${state.workViewMode === value ? 'active' : ''}" data-work-view="${value}" title="${label}" aria-label="${label}">${icon(iconName)}<span>${label}</span></button>`).join('')}</div>
       <details class="work-filter-menu"><summary class="secondary">${icon('sliders')} Фильтры${activeFilters ? `<b>${activeFilters}</b>` : ''}</summary><button type="button" class="work-filter-backdrop" data-close-work-filters aria-label="Закрыть фильтры"></button><div class="work-filter-popover">
         <header><strong>Представление очереди</strong><button type="button" class="icon-button" data-close-work-filters aria-label="Закрыть фильтры">${icon('x')}</button></header>
         <label>Состояние<select id="work-status-select">${[['active', 'Активная работа'], ['overdue', 'Только просроченная'], ['completed', 'Выполненная'], ['archived', 'Архив'], ['all', 'Все состояния']].map(([value, label]) => `<option value="${value}" ${state.workStatus === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
@@ -1018,11 +1122,8 @@ function renderWorkList() {
         <button type="button" class="text-button work-filter-reset" data-reset-work-filters>Сбросить дополнительные фильтры</button>
       </div></details>
     </section>
-    <div class="work-view-summary"><span>${icon(state.workOrder === 'hierarchy' ? 'network' : 'flag')} ${state.workOrder === 'hierarchy' ? 'Ветки и дочерние работы' : 'Сначала срочное и важное'}</span><span>${escapeHTML(workTypeFilters.find(([value]) => value === state.workType)?.[1] || 'Вся работа')} · ${escapeHTML(state.workstreamFilter === 'all' ? 'все направления' : workstreamLabels[state.workstreamFilter])}</span></div>
-    <section class="table-panel work-table-panel">
-      <div class="record-table work-header"><span>Работа</span><span>Ответственный</span><span>Состояние</span><span>Срок / прогресс</span></div>
-      <div class="record-rows">${records.map(renderWorkRow).join('') || `<div class="guided-empty work-empty">${icon('checkSquare')}<h3>В этом фильтре работы нет</h3><p>Измените фильтр или создайте следующий конкретный шаг.</p></div>`}</div>
-    </section>`;
+    <div class="work-view-summary"><span>${icon(state.workViewMode === 'calendar' ? 'calendar' : state.workViewMode === 'kanban' ? 'network' : state.workOrder === 'hierarchy' ? 'network' : 'flag')} ${state.workViewMode === 'calendar' ? 'Работа по срокам' : state.workViewMode === 'kanban' ? 'Работа по состояниям' : state.workOrder === 'hierarchy' ? 'Ветки и дочерние работы' : 'Сначала срочное и важное'}</span><span>${escapeHTML(workTypeFilters.find(([value]) => value === state.workType)?.[1] || 'Вся работа')} · ${escapeHTML(state.workstreamFilter === 'all' ? 'все направления' : workstreamLabels[state.workstreamFilter])}</span><details class="saved-view-menu"><summary class="text-button">Представления</summary><div>${state.savedViews.map((view) => `<span><button type="button" data-apply-saved-view="${view.id}">${escapeHTML(view.name)}</button><button type="button" data-delete-saved-view="${view.id}" aria-label="Удалить">${icon('x')}</button></span>`).join('') || '<p>Сохранённых представлений нет</p>'}<button type="button" data-save-work-view>${icon('plus')} Сохранить текущий вид</button><a href="/api/export?format=csv">Скачать CSV</a><a href="/api/export">Полный JSON</a></div></details></div>
+    ${renderWorkBody(records)}`;
   $('#work-search').addEventListener('input', (event) => {
     state.search = event.target.value;
     clearTimeout(state.workSearchTimer);
@@ -1037,9 +1138,24 @@ function renderWorkList() {
   $('#work-type-select').addEventListener('change', (event) => { state.workType = event.target.value; renderWorkList(); });
   $('#workstream-select').addEventListener('change', (event) => { state.workstreamFilter = event.target.value; renderWorkList(); });
   $$('[data-work-order]').forEach((button) => button.addEventListener('click', () => { state.workOrder = button.dataset.workOrder; renderWorkList(); }));
+	$$('[data-work-view]').forEach((button) => button.addEventListener('click', () => { state.workViewMode = button.dataset.workView; renderWorkList(); }));
+	$$('[data-calendar-shift]').forEach((button) => button.addEventListener('click', () => { const month = new Date(`${state.workCalendarMonth}T12:00:00`); month.setMonth(month.getMonth() + Number(button.dataset.calendarShift)); state.workCalendarMonth = localDateKey(month); renderWorkList(); }));
   $$('[data-close-work-filters]').forEach((button) => button.addEventListener('click', () => $('.work-filter-menu').removeAttribute('open')));
   $('[data-reset-work-filters]')?.addEventListener('click', () => { state.workType = 'all'; state.workstreamFilter = 'all'; state.workStatus = 'active'; state.workOrder = 'priority'; renderWorkList(); });
   $$('[data-work-create]').forEach((button) => button.addEventListener('click', () => openCreateDialog(button.dataset.workCreate, { comparisonMode: button.dataset.workMode === 'comparison' })));
+	$('[data-save-work-view]')?.addEventListener('click', async () => {
+		const name = await askText({ title: 'Сохранить представление', label: 'Название', required: true });
+		if (!name) return;
+		const payload = currentWorkViewPayload(); payload.name = name;
+		try { await api('/api/saved-views', { method: 'POST', body: JSON.stringify(payload) }); state.savedViews = await api('/api/saved-views'); renderWorkList(); toast('Представление сохранено'); } catch (error) { toast(error.message, true); }
+	});
+	$$('[data-apply-saved-view]').forEach((button) => button.addEventListener('click', () => {
+		const view = state.savedViews.find((item) => item.id === button.dataset.applySavedView); if (!view) return;
+		const filters = typeof view.filters === 'string' ? JSON.parse(view.filters) : view.filters || {};
+		state.workViewMode = view.viewMode === 'hierarchy' ? 'list' : view.viewMode; state.workOrder = view.viewMode === 'hierarchy' ? 'hierarchy' : filters.order || 'priority';
+		state.workScope = filters.scope || 'all'; state.ownerFilter = filters.ownerId || ''; state.workType = filters.type || 'all'; state.workstreamFilter = filters.workstream || 'all'; state.workStatus = filters.status || 'active'; state.search = filters.search || ''; renderWorkList();
+	}));
+	$$('[data-delete-saved-view]').forEach((button) => button.addEventListener('click', async () => { try { await api(`/api/saved-views/${button.dataset.deleteSavedView}`, { method: 'DELETE' }); state.savedViews = state.savedViews.filter((item) => item.id !== button.dataset.deleteSavedView); renderWorkList(); toast('Представление удалено'); } catch (error) { toast(error.message, true); } }));
   bindOpenRecords();
 }
 
@@ -1050,9 +1166,9 @@ function renderWorkRow(record) {
   const depth = state.workOrder === 'hierarchy' ? hierarchyDepth(record) : 0;
   const hierarchy = record.isRoot ? 'Корень проекта' : parent ? `В ветке: ${parent.title}` : 'Без родителя';
   return `<button type="button" class="record-table row work-row type-row-${record.type} ${state.workOrder === 'hierarchy' ? 'hierarchy-row' : ''}" data-depth="${Math.min(depth, 6)}" data-open-record="${record.id}">
-    <span class="record-title"><i class="type-icon type-${record.type}">${icon(typeMeta[record.type].icon)}</i><span><small>${escapeHTML(typeMeta[record.type].singular)}<b class="workstream-mark workstream-${record.workstream || 'business'}">${escapeHTML(workstreamLabels[record.workstream || 'business'])}</b></small><strong>${escapeHTML(record.title)}</strong><em>${escapeHTML(record.description || 'Без дополнительного контекста')}</em>${state.workOrder === 'hierarchy' || record.isRoot ? `<i class="hierarchy-caption">${icon(record.isRoot ? 'target' : 'network')} ${escapeHTML(hierarchy)}</i>` : ''}</span></span>
+    <span class="record-title"><i class="type-icon type-${record.type}">${icon(typeMeta[record.type].icon)}</i><span><small>${escapeHTML(typeMeta[record.type].singular)}<b class="workstream-mark workstream-${record.workstream || 'business'}">${escapeHTML(workstreamLabels[record.workstream || 'business'])}</b></small><strong>${escapeHTML(record.title)}</strong><em>${escapeHTML(markdownPlain(record.description, 'Без дополнительного контекста'))}</em>${state.workOrder === 'hierarchy' || record.isRoot ? `<i class="hierarchy-caption">${icon(record.isRoot ? 'target' : 'network')} ${escapeHTML(hierarchy)}</i>` : ''}</span></span>
     <span><b class="owner-chip">${escapeHTML(record.ownerUsername)}</b><small>${record.editPolicy === 'owner_only' ? 'Только владелец' : 'Общая'} · ${minutesLabel(record.estimateMinutes)}</small></span>
-    <span><em class="priority priority-${priority}">${icon('flag')} ${priorityLabels[priority]}</em><small>${escapeHTML(statusLabels[record.status] || record.status)}</small></span>
+    <span><em class="priority priority-${priority}">${icon('flag')} ${priorityLabels[priority]}</em><small>${escapeHTML(statusLabel(record))}</small></span>
     <span><em class="deadline ${deadline.className}">${escapeHTML(deadline.label)}</em><progress class="progress-track" max="100" value="${record.progress}"></progress><small>${record.progress}%</small></span>
   </button>`;
 }
@@ -1670,9 +1786,9 @@ function renderRecordRow(record) {
   const isPlannable = ['task', 'goal', 'question_set', 'meeting'].includes(record.type);
   const deadline = deadlineState(record);
   return `<button type="button" class="record-table row ${isPlannable ? '' : 'simple'}" data-open-record="${record.id}">
-    <span class="record-title"><i class="type-icon type-${record.type}">${icon(typeMeta[record.type].icon)}</i><span><strong>${escapeHTML(record.title)}</strong><small>${escapeHTML(record.description || 'Без описания')}</small></span></span>
+    <span class="record-title"><i class="type-icon type-${record.type}">${icon(typeMeta[record.type].icon)}</i><span><strong>${escapeHTML(record.title)}</strong><small>${escapeHTML(markdownPlain(record.description, 'Без описания'))}</small></span></span>
     <span><b class="owner-chip">${escapeHTML(record.ownerUsername)}</b><small>создал ${escapeHTML(record.authorUsername)}</small></span>
-    <span><em class="status status-${record.status}">${escapeHTML(statusLabels[record.status] || record.status)}</em></span>
+    <span><em class="status status-${record.status}">${escapeHTML(recordStatusLabel(record))}</em></span>
     <span>${isPlannable ? `<em class="deadline ${deadline.className}">${escapeHTML(deadline.label)}</em><progress class="progress-track" max="100" value="${record.progress}"></progress><small>${record.progress}% · ${minutesLabel(record.estimateMinutes)}</small>` : `<b>${formatDate(record.updatedAt, true)}</b><small>${record.type === 'idea' ? 'Одна карточка во всех списках' : typeMeta[record.type].singular}</small>`}</span>
   </button>`;
 }
@@ -1712,6 +1828,10 @@ async function fetchRecordDetail(id, force = false) {
       detail.scores = previous.scores;
       detail.researchOptions = previous.researchOptions || [];
       detail.relationsLoaded = true;
+    }
+    if (previous?.workflowLoaded && previous.record.updatedAt === detail.record.updatedAt) {
+      detail.workflow = previous.workflow;
+      detail.workflowLoaded = true;
     }
     state.detailCache.set(id, detail);
     return detail;
@@ -1803,12 +1923,18 @@ function renderRecordLoadError(id, message) {
 function recordTabs(record, detail, activity) {
   const filledSections = detail.sections.filter((section) => section.content).length;
   const relationCount = detail.relationsLoaded ? detail.links.length + (detail.researchOptions?.length || 0) : 0;
+  const workflow = detail.workflow || {};
   const tabs = [
     ['overview', 'Обзор', ''],
     ['content', 'Содержание', `${filledSections}/${detail.sections.length}`],
     ['relations', record.type === 'idea' ? 'Критерии и связи' : 'Связи', detail.relationsLoaded ? `${relationCount}` : ''],
     ['history', 'История', `${activity.length}`],
   ];
+  if (record.type === 'task') tabs.splice(2, 0, ['execution', 'Исполнение', detail.workflowLoaded ? `${(workflow.checklist || []).filter((item) => item.status === 'completed').length}/${(workflow.checklist || []).length}` : '']);
+  tabs.splice(tabs.length - 2, 0,
+    ['discussion', 'Обсуждение', detail.workflowLoaded && workflow.comments?.length ? `${workflow.comments.length}` : ''],
+    ['files', 'Файлы', detail.workflowLoaded && workflow.attachments?.length ? `${workflow.attachments.length}` : ''],
+  );
   if (record.type === 'question_set') {
     const workflow = detail.questionWorkflow || { questions: [], resolved: 0 };
     tabs.unshift(['questions', 'Вопросы и ответы', `${workflow.resolved}/${workflow.questions.length}`]);
@@ -1860,7 +1986,7 @@ function renderAIAnalysis(record, canEdit) {
   }
   const analysis = state.aiAnalyses.get(record.id);
   if (!analysis) return '';
-  const source = analysis.source === 'groq' ? 'Groq' : 'локальные правила';
+  const source = analysis.source === 'gemini' ? 'Gemini' : analysis.source === 'groq' ? 'Groq' : 'локальные правила';
   return `<section class="ai-analysis">
     <header><span>${icon('sparkles')}</span><div><p class="eyebrow">AI-разбор · ${escapeHTML(source)}</p><h3>Что требует внимания</h3></div><b>${Math.round((analysis.confidence || 0) * 100)}%</b></header>
     <p class="ai-summary">${escapeHTML(analysis.summary)}</p>
@@ -1887,7 +2013,7 @@ function renderRecordReadOverview(record, options) {
     ${canEdit ? '' : `<div class="access-banner">${icon('lock')}<span><strong>Личная карточка ${escapeHTML(record.ownerUsername)}</strong><small>Просмотр доступен команде, изменять содержание может только ответственный.</small></span></div>`}
     ${renderHierarchyPanel(record)}
     <article class="record-dossier">
-      <section class="dossier-section dossier-context"><header><div><p class="eyebrow">Содержание</p><h3>${escapeHTML(language.description)}</h3></div>${canEdit ? `<button type="button" class="icon-button" data-edit-field="description" aria-label="Изменить описание" title="Изменить описание">${icon('edit')}</button>` : ''}</header><div class="markdown-body">${renderMarkdown(record.description, 'Контекст пока не заполнен.')}</div></section>
+      <section class="dossier-section dossier-context"><header><div><p class="eyebrow">Содержание</p><h3>${escapeHTML(language.description)}</h3></div>${canEdit ? `<button type="button" class="icon-button" data-edit-field="description" aria-label="Изменить описание" title="Изменить описание">${icon('edit')}</button>` : ''}</header>${markdownView(record.description, 'Контекст пока не заполнен.', language.description)}</section>
       ${hasExecution ? `<section class="dossier-section"><header><div><p class="eyebrow">Контроль</p><h3>${record.type === 'question_set' ? 'Обсуждение и срок' : record.type === 'meeting' ? 'Организация встречи' : 'Исполнение'}</h3></div></header><div class="dossier-properties">
         ${dossierProperty(ownerLabel, record.ownerUsername, 'ownerId', canEdit)}
         ${dossierProperty('Статус', statusLabels[record.status] || record.status, record.type === 'question_set' ? '' : 'status', canEdit)}
@@ -1897,13 +2023,12 @@ function renderRecordReadOverview(record, options) {
         ${hasManualProgress ? dossierProperty('Прогресс', `${record.progress}%`, 'progress', canEdit) : ''}
         ${hasDecisionMaker ? dossierProperty('Принимает решение', record.decisionMakerUsername || 'Не указан', 'decisionMakerId', canEdit) : ''}
       </div>${record.progressNote ? `<div class="dossier-note"><span>Последнее обновление</span><p>${escapeHTML(record.progressNote)}</p></div>` : ''}</section>` : `<section class="dossier-section"><header><div><p class="eyebrow">Ответственность</p><h3>Владелец карточки</h3></div></header><div class="dossier-properties">${dossierProperty(ownerLabel, record.ownerUsername, 'ownerId', canEdit)}${dossierProperty('Статус', statusLabels[record.status] || record.status, 'status', canEdit)}</div></section>`}
-      ${hasResult ? `<section class="dossier-section dossier-result"><header><div><p class="eyebrow">Результат</p><h3>${record.type === 'research' ? 'Вывод исследования' : record.type === 'decision' ? 'Принятое решение' : record.type === 'disagreement' ? 'Результат разбора' : 'Достигнутый результат'}</h3></div>${canEdit ? `<button type="button" class="icon-button" data-edit-field="result" aria-label="Изменить результат" title="Изменить результат">${icon('edit')}</button>` : ''}</header><div class="markdown-body">${renderMarkdown(record.result, 'Результат ещё не зафиксирован.')}</div></section>` : ''}
+      ${hasResult ? `<section class="dossier-section dossier-result"><header><div><p class="eyebrow">Результат</p><h3>${record.type === 'research' ? 'Вывод исследования' : record.type === 'decision' ? 'Принятое решение' : record.type === 'disagreement' ? 'Результат разбора' : 'Достигнутый результат'}</h3></div>${canEdit ? `<button type="button" class="icon-button" data-edit-field="result" aria-label="Изменить результат" title="Изменить результат">${icon('edit')}</button>` : ''}</header>${markdownView(record.result, 'Результат ещё не зафиксирован.', 'Результат карточки')}</section>` : ''}
       <section class="dossier-meta"><span>${escapeHTML(workstreamLabels[record.workstream || 'business'])}</span><span>${record.editPolicy === 'owner_only' ? 'Личная карточка' : 'Общая карточка'}</span><span>${record.isRoot ? 'Корень ветки' : record.parentId ? 'Есть родитель' : 'Без родителя'}</span><button type="button" data-edit-field="workstream" ${canEdit ? '' : 'disabled'}>${icon('settings')} Настроить</button></section>
     </article>
     <div class="record-read-actions">${canEdit ? `<button type="button" class="primary" data-open-record-edit>${icon('edit')} Редактировать</button>` : ''}<button type="button" class="secondary" id="notify-partners">${icon('bell')} Уведомить</button><button type="button" class="secondary ai-action" data-analyze-record>${icon('sparkles')} AI-разбор</button><details class="record-more-actions"><summary class="icon-button" aria-label="Другие действия">•••</summary><div>${record.type === 'task' ? `<button type="button" id="convert-to-questions">${icon('messages')} Сделать карточкой вопросов</button>` : ''}${canEdit ? `<button type="button" class="danger-text" id="archive-record">${icon('archive')} В архив</button>` : ''}</div></details></div>
     ${renderAIAnalysis(record, canEdit)}
     ${renderNextActions(record)}
-    ${record.type === 'task' ? renderProofBlock(record, state.activeDetail.proofs) : ''}
   </div>`;
 }
 
@@ -1933,7 +2058,7 @@ function renderRecordOverview(record, statuses) {
   const hasExecution = hasDeadline || hasDecisionMaker || hasPriority || hasEstimate || hasManualProgress || hasResult;
   const origin = state.activeDetail.derivation;
   const canEdit = record.editPolicy !== 'owner_only' || record.ownerId === state.me.id;
-  const canManageAccess = record.ownerId === state.me.id;
+  const canManageAccess = record.ownerId === state.me.id || record.authorId === state.me.id;
   const parentOptions = state.records.filter((item) => item.id !== record.id && item.status !== 'archived').map((item) => `<option value="${item.id}" ${record.parentId === item.id ? 'selected' : ''}>${escapeHTML(typeMeta[item.type]?.singular || 'Карточка')}: ${escapeHTML(item.title)}</option>`).join('');
   if (!state.recordEditMode) {
     return renderRecordReadOverview(record, { language, hasDeadline, hasDecisionMaker, hasPriority, hasEstimate, hasManualProgress, hasResult, hasExecution, dueLabel, canEdit });
@@ -1944,7 +2069,7 @@ function renderRecordOverview(record, statuses) {
     ${canEdit ? '' : `<div class="access-banner">${icon('lock')}<span><strong>Личная карточка ${escapeHTML(record.ownerUsername)}</strong><small>Вы можете просматривать её ход и связи, но изменять содержание может только ответственный.</small></span></div>`}
     ${renderHierarchyPanel(record)}
     <form id="record-edit-form" class="card-form record-overview-form" data-can-edit="${canEdit}">
-      <div class="form-grid two"><label>Название<input name="title" value="${escapeHTML(record.title)}" required></label><label>${record.type === 'question_set' ? 'Статус рассчитывается автоматически' : 'Статус'}<select name="status" ${record.type === 'question_set' ? 'disabled' : ''}>${statuses.map((status) => `<option value="${status}" ${record.status === status ? 'selected' : ''}>${statusLabels[status]}</option>`).join('')}</select></label></div>
+      <div class="form-grid two"><label>Название<input name="title" value="${escapeHTML(record.title)}" required></label><label>${record.type === 'question_set' ? 'Статус рассчитывается автоматически' : 'Статус'}<select name="status" ${record.type === 'question_set' ? 'disabled' : ''}>${statuses.map((status) => `<option value="${status}" ${record.status === status ? 'selected' : ''}>${record.type === 'task' && status === 'review' ? 'На проверке' : statusLabels[status]}</option>`).join('')}</select></label></div>
       ${markdownEditor('description', language.description, record.description, 5, 'Контекст, факты и ожидаемый результат')}
       ${hasExecution ? `<section class="execution-fields"><header><span>${icon(record.type === 'question_set' ? 'messages' : record.type === 'meeting' ? 'calendar' : 'checkSquare')}</span><div><h3>${planningTitle}</h3><p>${record.type === 'question_set' ? 'Карточка участвует в общей очереди наравне с задачами.' : 'Поля, по которым команда контролирует выполнение.'}</p></div></header>
         <div class="form-grid ${planningGrid}"><label>${language.owner}<select name="ownerId" ${canManageAccess ? '' : 'disabled'}>${userOptions(record.ownerId)}</select></label>${hasDecisionMaker ? `<label>Принимает решение<select name="decisionMakerId"><option value="">Не указан</option>${userOptions(record.decisionMakerId)}</select></label>` : ''}${hasDeadline ? `<label>${dueLabel}<input name="dueAt" type="datetime-local" value="${toLocalInput(record.dueAt)}"></label>` : ''}</div>
@@ -2025,7 +2150,7 @@ function renderResearchComparison(record, canEdit) {
 }
 
 function renderSectionRead(section) {
-  return `<article class="content-read-section"><header><div><h3>${escapeHTML(section.title)}</h3>${section.updatedByName ? `<small>Обновил ${escapeHTML(section.updatedByName)} · ${formatDate(section.updatedAt, true)}</small>` : ''}</div></header><div class="markdown-body">${renderMarkdown(section.content)}</div></article>`;
+  return `<article class="content-read-section"><header><div><h3>${escapeHTML(section.title)}</h3>${section.updatedByName ? `<small>Обновил ${escapeHTML(section.updatedByName)} · ${formatDate(section.updatedAt, true)}</small>` : ''}</div></header>${markdownView(section.content, 'Раздел пока не заполнен.', section.title)}</article>`;
 }
 
 function renderRecordContent(detail) {
@@ -2064,17 +2189,17 @@ function renderMissingFounder() {
 
 function renderFounderAnswer(question, user, answer) {
   const isMe = user.id === state.me.id;
-  return `<section class="answer-panel ${answer ? 'answered' : ''}"><header><span class="avatar">${escapeHTML(user.username.slice(0, 2).toUpperCase())}</span><span><strong>${escapeHTML(user.username)}</strong><small>${answer ? `Ответ обновлён ${formatDate(answer.updatedAt, true)}` : 'Ответа пока нет'}</small></span>${answer ? `<span class="answer-ready">${icon('check')} Готово</span>` : ''}</header>${isMe ? `<form class="answer-form" data-question-answer="${question.id}"><textarea name="content" rows="5" placeholder="Ваш развёрнутый ответ" required>${escapeHTML(answer?.content || '')}</textarea><button type="submit" class="secondary">${icon('send')} ${answer ? 'Обновить ответ' : 'Отправить ответ'}</button></form>` : answer ? `<div class="answer-content">${escapeHTML(answer.content).replace(/\n/g, '<br>')}</div>` : `<div class="answer-placeholder">Ожидаем позицию партнёра</div>`}</section>`;
+  return `<section class="answer-panel ${answer ? 'answered' : ''}"><header><span class="avatar">${escapeHTML(user.username.slice(0, 2).toUpperCase())}</span><span><strong>${escapeHTML(user.username)}</strong><small>${answer ? `Ответ обновлён ${formatDate(answer.updatedAt, true)}` : 'Ответа пока нет'}</small></span>${answer ? `<span class="answer-ready">${icon('check')} Готово</span>` : ''}</header>${isMe ? `<form class="answer-form" data-question-answer="${question.id}">${markdownEditor('content', 'Ваш ответ', answer?.content || '', 7, 'Развёрнутая позиция, аргументы и примеры', `answer-${question.id}`)}<button type="submit" class="secondary">${icon('send')} ${answer ? 'Обновить ответ' : 'Отправить ответ'}</button></form>` : answer ? markdownView(answer.content, 'Ответ пуст.', `Ответ ${user.username}`) : `<div class="answer-placeholder">Ожидаем позицию партнёра</div>`}</section>`;
 }
 
 function renderJointDecision(question) {
   const source = question.decision.sourceAuthorUsername ? `Выбрано из ответа ${question.decision.sourceAuthorUsername}` : 'Сформулировано после обсуждения';
   const outputLabels = { preference: 'Критерий', limitation: 'Ограничение', rule: 'Правило', insight: 'Вывод', task: 'Задача', idea: 'Идея', research: 'Исследование', goal: 'Цель' };
-  return `<section class="joint-decision"><span class="decision-icon">${icon('scale')}</span><div><p class="eyebrow">Совместный итог</p><blockquote>${escapeHTML(question.decision.content).replace(/\n/g, '<br>')}</blockquote><small>${escapeHTML(source)} · зафиксировал ${escapeHTML(question.decision.decidedByUsername)}</small>${question.outputs?.length ? `<div class="decision-outputs"><span>Уже используется:</span>${question.outputs.map((output) => `<button type="button" data-related-record="${output.recordId}">${escapeHTML(outputLabels[output.kind || output.type] || typeMeta[output.type]?.singular || 'Карточка')}: ${escapeHTML(output.title)}</button>`).join('')}</div>` : ''}</div><div class="decision-actions"><details class="output-menu"><summary>${icon('plus')} Использовать вывод</summary><div>${Object.entries(outputLabels).map(([kind, label]) => `<button type="button" data-create-output="${kind}" data-question-id="${question.id}">${escapeHTML(label)}</button>`).join('')}</div></details><details><summary>${icon('edit')} Изменить итог</summary>${renderDecisionComposer(question, true)}</details></div></section>`;
+  return `<section class="joint-decision"><span class="decision-icon">${icon('scale')}</span><div><p class="eyebrow">Совместный итог</p>${markdownView(question.decision.content, 'Итог пуст.', 'Совместный итог')}<small>${escapeHTML(source)} · зафиксировал ${escapeHTML(question.decision.decidedByUsername)}</small>${question.outputs?.length ? `<div class="decision-outputs"><span>Уже используется:</span>${question.outputs.map((output) => `<button type="button" data-related-record="${output.recordId}">${escapeHTML(outputLabels[output.kind || output.type] || typeMeta[output.type]?.singular || 'Карточка')}: ${escapeHTML(output.title)}</button>`).join('')}</div>` : ''}</div><div class="decision-actions"><details class="output-menu"><summary>${icon('plus')} Использовать вывод</summary><div>${Object.entries(outputLabels).map(([kind, label]) => `<button type="button" data-create-output="${kind}" data-question-id="${question.id}">${escapeHTML(label)}</button>`).join('')}</div></details><details><summary>${icon('edit')} Изменить итог</summary>${renderDecisionComposer(question, true)}</details></div></section>`;
 }
 
 function renderDecisionComposer(question, compact = false) {
-  return `<section class="decision-composer ${compact ? 'compact' : ''}"><div><p class="eyebrow">Зафиксировать совместное решение</p><h4>Выберите готовый ответ или напишите новый итог</h4></div><div class="decision-options">${question.answers.map((answer) => `<button type="button" class="answer-choice" data-select-answer="${answer.id}" data-question-id="${question.id}"><span class="avatar tiny">${escapeHTML(answer.authorUsername.slice(0, 2).toUpperCase())}</span><span><strong>Принять ответ ${escapeHTML(answer.authorUsername)}</strong><small>${escapeHTML(answer.content.slice(0, 120))}${answer.content.length > 120 ? '…' : ''}</small></span>${icon('chevronRight')}</button>`).join('')}</div><form class="custom-decision-form" data-custom-decision="${question.id}"><textarea name="content" rows="4" placeholder="Новая совместная формулировка после обсуждения" required>${compact && question.decision && !question.decision.sourceAnswerId ? escapeHTML(question.decision.content) : ''}</textarea><button type="submit" class="primary">${icon('check')} Сохранить общий итог</button></form></section>`;
+  return `<section class="decision-composer ${compact ? 'compact' : ''}"><div><p class="eyebrow">Зафиксировать совместное решение</p><h4>Выберите готовый ответ или напишите новый итог</h4></div><div class="decision-options">${question.answers.map((answer) => `<button type="button" class="answer-choice" data-select-answer="${answer.id}" data-question-id="${question.id}"><span class="avatar tiny">${escapeHTML(answer.authorUsername.slice(0, 2).toUpperCase())}</span><span><strong>Принять ответ ${escapeHTML(answer.authorUsername)}</strong><small>${escapeHTML(answer.content.slice(0, 120))}${answer.content.length > 120 ? '…' : ''}</small></span>${icon('chevronRight')}</button>`).join('')}</div><form class="custom-decision-form" data-custom-decision="${question.id}">${markdownEditor('content', 'Новый общий итог', compact && question.decision && !question.decision.sourceAnswerId ? question.decision.content : '', 6, 'Формулировка после обсуждения', `decision-${question.id}`)}<button type="submit" class="primary">${icon('check')} Сохранить общий итог</button></form></section>`;
 }
 
 function renderRecordRelations(record, detail, criteria, targets) {
@@ -2092,18 +2217,69 @@ function renderRecordHistory(activity) {
   return `<div class="record-pane ${state.activeRecordTab === 'history' ? 'active' : ''}" data-record-pane="history"><section class="history-pane"><div class="section-heading"><div><p class="eyebrow">Аудит карточки</p><h3>${activity.length} событий</h3></div></div><div class="activity-list">${activity.map(renderActivityItem).join('') || emptyState('Изменений пока нет.')}</div></section></div>`;
 }
 
+function renderWorkflowLoading(tab) {
+  return `<div class="record-pane ${state.activeRecordTab === tab ? 'active' : ''}" data-record-pane="${tab}"><div class="relations-loading"><span class="spinner"></span><strong>Загружаем рабочие данные</strong><small>Остальные части карточки уже доступны.</small></div></div>`;
+}
+
+function reviewLabel(action) {
+  return ({ submitted: 'Отправил результат на проверку', accepted: 'Принял результат', rework: 'Вернул задачу на доработку' })[action] || action;
+}
+
+function renderChecklistItem(record, item, canEdit) {
+  const canExecute = canEdit || !item.ownerId || item.ownerId === state.me.id;
+  return `<article class="checklist-item ${item.status}">
+    <button type="button" class="checklist-toggle" data-checklist-toggle="${item.id}" data-next-status="${item.status === 'completed' ? 'open' : 'completed'}" ${canExecute ? '' : 'disabled'} aria-label="${item.status === 'completed' ? 'Вернуть шаг в работу' : 'Завершить шаг'}">${item.status === 'completed' ? icon('check') : ''}</button>
+    <div><strong>${escapeHTML(item.title)}</strong><small>${item.ownerUsername ? escapeHTML(item.ownerUsername) : 'Без отдельного исполнителя'}${item.completedAt ? ` · выполнено ${formatDate(item.completedAt, true)}` : ''}</small>${item.proofText ? markdownView(item.proofText, '', `Отчёт по шагу «${item.title}»`) : ''}</div>
+    ${canExecute ? `<details class="checklist-edit"><summary class="icon-button" aria-label="Отчёт по шагу">•••</summary><form data-checklist-report="${item.id}">${canEdit ? `<label>Шаг<input name="title" value="${escapeHTML(item.title)}" maxlength="300"></label><label>Исполнитель<select name="ownerId"><option value="">Без отдельного исполнителя</option>${userOptions(item.ownerId)}</select></label>` : ''}${markdownEditor('proofText', 'Отчёт по шагу', item.proofText || '', 5, 'Что сделано и где результат', `checklist-${item.id}`)}<div class="form-actions"><button type="submit" class="secondary">Сохранить</button></div></form></details>` : ''}
+  </article>`;
+}
+
+function renderExecutionPane(record, detail, canEdit) {
+  if (!detail.workflowLoaded) return renderWorkflowLoading('execution');
+  const workflow = detail.workflow;
+  const checklist = workflow.checklist || [];
+  const completed = checklist.filter((item) => item.status === 'completed').length;
+  const recurrence = workflow.recurrence || { cadence: 'none', interval: 1, active: false };
+  return `<div class="record-pane ${state.activeRecordTab === 'execution' ? 'active' : ''}" data-record-pane="execution">
+    <section class="execution-summary"><div><p class="eyebrow">План выполнения</p><h3>${completed} из ${checklist.length} шагов готово</h3></div><progress class="progress-track" max="100" value="${checklist.length ? Math.round(completed * 100 / checklist.length) : 0}"></progress></section>
+    <section class="checklist-panel"><div class="section-heading"><div><h3>Шаги и подзадачи</h3><p>У каждого шага может быть свой исполнитель и короткий отчёт.</p></div></div><div class="checklist-list">${checklist.map((item) => renderChecklistItem(record, item, canEdit)).join('') || `<div class="guided-empty compact">${icon('checkSquare')}<h3>Разбейте задачу на проверяемые шаги</h3><p>Это показывает фактический ход работы без ручного процента.</p></div>`}</div>${canEdit ? `<form id="checklist-add-form" class="checklist-add"><input name="title" required maxlength="300" placeholder="Новый шаг"><select name="ownerId"><option value="">Без отдельного исполнителя</option>${userOptions(record.ownerId)}</select><button type="submit" class="secondary">${icon('plus')} Добавить</button></form>` : ''}</section>
+    ${renderProofBlock(record, detail.proofs, workflow.reviews || [])}
+    <section class="recurrence-panel"><div><p class="eyebrow">Повторение</p><h3>Следующая задача после завершения</h3><p>Система создаст новую связанную карточку с теми же шагами и новым сроком.</p></div>${canEdit ? `<form id="recurrence-form"><label class="check"><input name="active" type="checkbox" ${recurrence.active ? 'checked' : ''}> Повторять</label><input name="interval" type="number" min="1" max="365" value="${Number(recurrence.interval || 1)}" aria-label="Интервал"><select name="cadence"><option value="daily" ${recurrence.cadence === 'daily' ? 'selected' : ''}>дней</option><option value="weekly" ${recurrence.cadence === 'weekly' ? 'selected' : ''}>недель</option><option value="monthly" ${recurrence.cadence === 'monthly' ? 'selected' : ''}>месяцев</option></select><button type="submit" class="secondary">Сохранить</button></form>` : `<strong>${recurrence.active ? `Каждые ${recurrence.interval} · ${recurrence.cadence}` : 'Не повторяется'}</strong>`}</section>
+  </div>`;
+}
+
+function renderDiscussionPane(detail) {
+  if (!detail.workflowLoaded) return renderWorkflowLoading('discussion');
+  const comments = detail.workflow.comments || [];
+  return `<div class="record-pane ${state.activeRecordTab === 'discussion' ? 'active' : ''}" data-record-pane="discussion"><section class="discussion-panel"><div class="section-heading"><div><p class="eyebrow">Командный контекст</p><h3>Обсуждение</h3><p>Упомяните партнёра через @логин. Комментарии не редактируются и остаются в истории.</p></div></div><div class="comment-list">${comments.map((comment) => `<article class="comment"><header><span class="avatar">${escapeHTML(comment.authorUsername.slice(0, 2).toUpperCase())}</span><div><strong>${escapeHTML(comment.authorUsername)}</strong><time>${formatDate(comment.createdAt, true)}</time></div></header>${markdownView(comment.body, '', `Комментарий ${comment.authorUsername}`)}</article>`).join('') || `<div class="guided-empty compact">${icon('messages')}<h3>Обсуждение ещё не начато</h3><p>Фиксируйте вопросы и договорённости рядом с самой карточкой.</p></div>`}</div><form id="comment-form" class="comment-form">${markdownEditor('body', 'Новый комментарий', '', 6, `Например: @${state.users.find((user) => user.id !== state.me.id)?.username || 'партнёр'} посмотри аргументы`, 'comment')}<button type="submit" class="primary">${icon('send')} Отправить</button></form></section></div>`;
+}
+
+function formatFileSize(bytes) {
+  const value = Number(bytes || 0);
+  if (value < 1024) return `${value} Б`;
+  if (value < 1048576) return `${Math.round(value / 1024)} КБ`;
+  return `${(value / 1048576).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} МБ`;
+}
+
+function renderFilesPane(detail, canEdit) {
+  if (!detail.workflowLoaded) return renderWorkflowLoading('files');
+  const attachments = detail.workflow.attachments || [];
+  return `<div class="record-pane ${state.activeRecordTab === 'files' ? 'active' : ''}" data-record-pane="files"><section class="files-panel"><div class="section-heading"><div><p class="eyebrow">Материалы карточки</p><h3>Файлы</h3><p>Файл нельзя бесследно удалить; имя, автор, размер и контрольная сумма остаются в аудите.</p></div></div><div class="attachment-list">${attachments.map((file) => `<a class="attachment" href="/api/attachments/${file.id}/download"><span class="type-icon type-document">${icon('fileText')}</span><span><strong>${escapeHTML(file.originalName)}</strong><small>${formatFileSize(file.sizeBytes)} · ${escapeHTML(file.uploaderUsername)} · ${formatDate(file.createdAt, true)}</small></span>${icon('chevronRight')}</a>`).join('') || `<div class="guided-empty compact">${icon('fileText')}<h3>Файлов пока нет</h3><p>Приложите отчёт, таблицу, изображение или исходный документ.</p></div>`}</div>${canEdit ? `<form id="attachment-form" class="attachment-form"><label class="file-picker"><input name="file" type="file" required accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.csv,.xlsx,.docx,.pptx,.zip"><span>${icon('plus')} Выбрать файл</span><small>До 15 МБ</small></label><button type="submit" class="primary">Загрузить</button></form>` : ''}</section></div>`;
+}
+
 function recordActivity(detail) {
   return detail.activityLoaded ? detail.activity : state.activity.filter((item) => item.entityId === detail.record.id);
 }
 
 function renderRecordContextStrip(record) {
   const hasDeadline = ['task', 'goal', 'question_set', 'research', 'decision', 'disagreement', 'meeting'].includes(record.type);
-  return `<div class="record-context-strip"><span><small>Ответственный</small><strong>${escapeHTML(record.ownerUsername)}</strong></span><span><small>Статус</small><strong>${escapeHTML(statusLabels[record.status] || record.status)}</strong></span>${isWorkRecord(record) || record.type === 'goal' ? `<span><small>Приоритет</small><strong>${escapeHTML(priorityLabels[record.priority || 'normal'])}</strong></span>` : ''}${hasDeadline ? `<span><small>${record.type === 'meeting' ? 'Дата' : 'Срок'}</small><strong class="deadline ${deadlineState(record).className}">${escapeHTML(deadlineState(record).label)}</strong></span>` : ''}</div>`;
+  return `<div class="record-context-strip"><span><small>Ответственный</small><strong>${escapeHTML(record.ownerUsername)}</strong></span><span><small>Статус</small><strong>${escapeHTML(statusLabel(record))}</strong></span>${isWorkRecord(record) || record.type === 'goal' ? `<span><small>Приоритет</small><strong>${escapeHTML(priorityLabels[record.priority || 'normal'])}</strong></span>` : ''}${hasDeadline ? `<span><small>${record.type === 'meeting' ? 'Дата' : 'Срок'}</small><strong class="deadline ${deadlineState(record).className}">${escapeHTML(deadlineState(record).label)}</strong></span>` : ''}</div>`;
 }
 
 function renderRecordDialog() {
   const detail = state.activeDetail;
   const record = detail.record;
+	state.noteContents.clear();
   const statuses = [...(statusesByType[record.type] || statusesByType.default)];
   if (!statuses.includes(record.status)) statuses.push(record.status);
   const allLinkTargets = state.records.filter((item) => item.id !== record.id && item.status !== 'archived');
@@ -2126,12 +2302,15 @@ function renderRecordDialog() {
         ${record.type === 'question_set' ? renderQuestionWorkflow(detail) : ''}
         ${renderRecordOverview(record, statuses)}
         ${renderRecordContent(detail)}
+		${record.type === 'task' ? renderExecutionPane(record, detail, canEdit) : ''}
+		${renderDiscussionPane(detail)}
+		${renderFilesPane(detail, canEdit)}
         ${renderRecordRelations(record, detail, criteria, allLinkTargets)}
         ${renderRecordHistory(activity)}
       </div>
       <aside class="dialog-aside">
         <div class="fact"><span>${record.type === 'question_set' ? 'Координатор' : record.type === 'meeting' ? 'Организатор' : 'Ответственный'}</span><strong>${escapeHTML(record.ownerUsername)}</strong></div>
-        <div class="fact"><span>Статус</span><strong>${escapeHTML(statusLabels[record.status])}</strong></div>
+        <div class="fact"><span>Статус</span><strong>${escapeHTML(statusLabel(record))}</strong></div>
         <div class="fact"><span>Направление</span><strong class="workstream-mark workstream-${record.workstream || 'business'}">${escapeHTML(workstreamLabels[record.workstream || 'business'])}</strong></div>
         <div class="fact"><span>Доступ</span><strong>${record.editPolicy === 'owner_only' ? `${icon('lock')} Только владелец` : 'Общая карточка'}</strong></div>
         ${record.isRoot ? `<div class="fact"><span>Иерархия</span><strong>Новый корень</strong></div>` : parent ? `<button type="button" class="fact fact-link" data-related-record="${parent.id}"><span>Родитель</span><strong>${escapeHTML(parent.title)}</strong></button>` : ''}
@@ -2198,9 +2377,13 @@ function renderLinksBlock(record, links, targets, open = false) {
   return `<details class="accordion" ${open ? 'open' : ''}><summary><span>Внешние связи</span><small>${links.length} связей с карточками</small></summary>${createOptions.length ? `<div class="linked-create"><span>Создать следующий объект</span>${createOptions.map(([type, kind, label]) => `<button type="button" data-create-linked="${type}" data-linked-kind="${kind}">${icon(typeMeta[type].icon)} ${label}</button>`).join('')}</div>` : ''}<div class="linked-list">${links.map((link) => `<div class="linked-item"><button type="button" data-related-record="${link.record.id}"><i class="type-icon type-${link.record.type}">${icon(typeMeta[link.record.type].icon)}</i><span><strong>${escapeHTML(link.record.title)}</strong><small>${escapeHTML(relationLabel(link))} · ${typeMeta[link.record.type].singular}</small></span></button><button type="button" class="icon-button danger-icon remove-link" data-remove-link="${link.id}" aria-label="Убрать связь" title="Убрать связь">${icon('x')}</button></div>`).join('') || emptyState('Явных связей с другими карточками пока нет.')}</div><form id="link-form" class="link-form"><select name="targetId" required><option value="">Выберите существующую карточку</option>${targets.map((target) => `<option value="${target.id}">${typeMeta[target.type].singular}: ${escapeHTML(target.title)}</option>`).join('')}</select><select name="relationType"><option value="related">Связано</option><option value="supports">Поддерживает</option><option value="depends_on">Зависит от</option><option value="result_of">Является результатом</option><option value="leads_to">Приводит к</option></select><button class="secondary" type="submit">${icon('link')} Связать</button></form></details>`;
 }
 
-function renderProofBlock(record, proofs) {
+function renderProofBlock(record, proofs, reviews = []) {
   const canComplete = record.ownerId === state.me.id || record.editPolicy === 'shared';
-  return `<details class="accordion" open><summary><span>Подтверждение результата</span><small>${proofs.length} приложено</small></summary><div class="proof-list">${proofs.map((proof) => `<article class="proof"><header><strong>${escapeHTML(proof.authorUsername)}</strong><time>${formatDate(proof.createdAt, true)}</time></header>${proof.kind === 'link' && /^https?:\/\//i.test(proof.content) ? `<a href="${escapeHTML(proof.content)}" target="_blank" rel="noreferrer">${escapeHTML(proof.content)}</a>` : `<p>${escapeHTML(proof.content).replace(/\n/g, '<br>')}</p>`}</article>`).join('') || emptyState('Перед завершением приложите результат или ссылку на него.')}</div>${canComplete ? `<form id="proof-form" class="proof-form"><select name="kind"><option value="text">Текст</option><option value="link">Ссылка</option></select><textarea name="content" rows="4" placeholder="Что сделано или где находится результат" required></textarea><button class="secondary" type="submit">Приложить</button></form><div class="completion-box"><label>Краткий итог<textarea id="completion-result" rows="3" placeholder="Что получили в результате"></textarea></label><label class="check"><input id="notify-on-complete" type="checkbox" checked> Уведомить партнёра</label><button type="button" class="success" id="complete-task" ${proofs.length ? '' : 'disabled'}>Завершить задачу</button></div>` : ''}</details>`;
+  const reviewerID = record.decisionMakerId || record.authorId;
+  const canReview = record.status === 'review' && reviewerID === state.me.id;
+  const needsReview = record.authorId !== record.ownerId || Boolean(record.decisionMakerId);
+  const active = !['completed', 'cancelled', 'archived'].includes(record.status);
+  return `<section class="proof-panel"><div class="section-heading"><div><p class="eyebrow">Результат задачи</p><h3>Доказательства и приёмка</h3><p>${needsReview ? 'После отчёта постановщик или принимающий подтверждает результат.' : 'Личная задача завершается сразу после добавления результата.'}</p></div><strong>${proofs.length}</strong></div><div class="proof-list">${proofs.map((proof) => `<article class="proof"><header><strong>${escapeHTML(proof.authorUsername)}</strong><time>${formatDate(proof.createdAt, true)}</time></header>${proof.kind === 'link' && /^https?:\/\//i.test(proof.content) ? `<a href="${escapeHTML(proof.content)}" target="_blank" rel="noreferrer">${escapeHTML(proof.content)}</a>` : markdownView(proof.content, '', 'Доказательство выполнения')}</article>`).join('') || `<div class="guided-empty compact">${icon('checkSquare')}<h3>Подтверждений пока нет</h3><p>Приложите текстовый результат или ссылку до отправки на проверку.</p></div>`}</div>${canComplete && active && record.status !== 'review' ? `<form id="proof-form" class="proof-form"><select name="kind"><option value="text">Текст</option><option value="link">Ссылка</option></select>${markdownEditor('content', 'Доказательство', '', 5, 'Что сделано или где находится результат', 'task-proof')}<button class="secondary" type="submit">Приложить</button></form><div class="completion-box">${markdownEditor('result', 'Краткий итог', record.result || '', 5, 'Что получили в результате', 'task-result')}<label class="check"><input id="notify-on-complete" type="checkbox" checked> Уведомить партнёра</label><button type="button" class="success" id="complete-task" ${proofs.length ? '' : 'disabled'}>${needsReview ? 'Отправить на проверку' : 'Завершить задачу'}</button></div>` : ''}${record.status === 'review' ? `<div class="review-banner"><span>${icon('clock')}</span><div><strong>${canReview ? 'Результат ждёт вашего решения' : 'Результат отправлен на проверку'}</strong><p>${escapeHTML(record.result || 'Исполнитель не добавил итог.')}</p></div>${canReview ? `<div><button type="button" class="success" data-review-task="accept">${icon('check')} Принять</button><button type="button" class="secondary" data-review-task="rework">Вернуть</button></div>` : ''}</div>` : ''}${reviews.length ? `<div class="review-history"><h4>История приёмки</h4>${reviews.map((review) => `<article><span class="history-node"></span><div><strong>${escapeHTML(review.actorUsername)} · ${escapeHTML(reviewLabel(review.action))}</strong>${review.reason ? `<p>${escapeHTML(review.reason)}</p>` : ''}<small>${formatDate(review.createdAt, true)}</small></div></article>`).join('')}</div>` : ''}</section>`;
 }
 
 function buildRecordUpdate(form, record) {
@@ -2259,6 +2442,7 @@ function bindRecordDialogEvents() {
     $$('[data-record-pane]').forEach((pane) => pane.classList.toggle('active', pane.dataset.recordPane === state.activeRecordTab));
     if (state.activeRecordTab === 'relations' && !state.activeDetail.relationsLoaded) await loadRecordRelations(record.id);
     if (state.activeRecordTab === 'history' && !state.activeDetail.activityLoaded) await loadRecordActivity(record.id);
+		if (['execution', 'discussion', 'files'].includes(state.activeRecordTab) && !state.activeDetail.workflowLoaded) await loadRecordWorkflow(record.id);
     if (state.activeRecordTab === 'content' && record.type === 'research' && !state.researchComparisons.has(record.id)) {
       try {
         await loadResearchComparison(record.id);
@@ -2331,7 +2515,7 @@ function bindRecordDialogEvents() {
     try {
       const analysis = await api(`/api/records/${record.id}/ai-analysis`, { method: 'POST' });
       state.aiAnalyses.set(record.id, analysis);
-      toast(analysis.source === 'groq' ? 'AI-разбор готов' : 'Локальный разбор готов');
+      toast(analysis.source === 'gemini' ? 'Разбор Gemini готов' : analysis.source === 'groq' ? 'Разбор Groq готов' : 'Локальный разбор готов');
     } catch (error) {
       toast(error.message, true);
     } finally {
@@ -2470,8 +2654,44 @@ function bindRecordDialogEvents() {
     if (!reason) return;
     await mutateDetail(`/api/records/${record.id}/questions/${button.dataset.archiveQuestion}/archive`, { method: 'POST', body: JSON.stringify({ reason }) });
   }));
-  if ($('#proof-form')) $('#proof-form').addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateDetail(`/api/records/${record.id}/proofs`, { method: 'POST', body: JSON.stringify({ kind: form.get('kind'), content: form.get('content') }) }); });
-  if ($('#complete-task')) $('#complete-task').addEventListener('click', async () => { await mutateRecord(`/api/records/${record.id}/complete`, { method: 'POST', body: JSON.stringify({ result: $('#completion-result').value, notifyPartners: $('#notify-on-complete').checked }) }); });
+  $('#checklist-add-form')?.addEventListener('submit', async (event) => {
+    event.preventDefault(); const form = new FormData(event.currentTarget);
+    await mutateWorkflow(`/api/records/${record.id}/checklist`, { method: 'POST', body: JSON.stringify({ title: form.get('title'), ownerId: form.get('ownerId') ? Number(form.get('ownerId')) : null }) });
+  });
+  $$('[data-checklist-toggle]').forEach((button) => button.addEventListener('click', async () => {
+    await mutateWorkflow(`/api/records/${record.id}/checklist/${button.dataset.checklistToggle}`, { method: 'PATCH', body: JSON.stringify({ status: button.dataset.nextStatus }) });
+  }));
+  $$('[data-checklist-report]').forEach((formNode) => formNode.addEventListener('submit', async (event) => {
+    event.preventDefault(); const form = new FormData(event.currentTarget);
+    const body = { proofText: form.get('proofText') || '' };
+    if (event.currentTarget.elements.title) body.title = form.get('title');
+    if (event.currentTarget.elements.ownerId) { if (form.get('ownerId')) body.ownerId = Number(form.get('ownerId')); else body.clearOwner = true; }
+    await mutateWorkflow(`/api/records/${record.id}/checklist/${event.currentTarget.dataset.checklistReport}`, { method: 'PATCH', body: JSON.stringify(body) });
+  }));
+  $('#comment-form')?.addEventListener('submit', async (event) => {
+    event.preventDefault(); const form = new FormData(event.currentTarget);
+    await mutateWorkflow(`/api/records/${record.id}/comments`, { method: 'POST', body: JSON.stringify({ body: form.get('body') }) });
+  });
+  $('#attachment-form')?.addEventListener('submit', async (event) => {
+    event.preventDefault(); const form = new FormData(event.currentTarget);
+    await mutateWorkflow(`/api/records/${record.id}/attachments`, { method: 'POST', body: form }, 'Файл загружен');
+  });
+  $('#recurrence-form')?.addEventListener('submit', async (event) => {
+    event.preventDefault(); const form = new FormData(event.currentTarget);
+    await mutateWorkflow(`/api/records/${record.id}/recurrence`, { method: 'PUT', body: JSON.stringify({ active: form.get('active') === 'on', interval: Number(form.get('interval') || 1), cadence: form.get('cadence') }) });
+  });
+  $('#proof-form')?.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateWorkflow(`/api/records/${record.id}/proofs`, { method: 'POST', body: JSON.stringify({ kind: form.get('kind'), content: form.get('content') }) }); });
+  $('#complete-task')?.addEventListener('click', async () => {
+    const result = $('.completion-box textarea[name="result"]')?.value.trim() || '';
+    if (!result) return toast('Кратко опишите полученный результат', true);
+    await mutateWorkflow(`/api/records/${record.id}/complete`, { method: 'POST', body: JSON.stringify({ result, notifyPartners: $('#notify-on-complete').checked }) }, record.authorId !== record.ownerId || record.decisionMakerId ? 'Результат отправлен на проверку' : 'Задача завершена');
+  });
+  $$('[data-review-task]').forEach((button) => button.addEventListener('click', async () => {
+    const decision = button.dataset.reviewTask;
+    const reason = decision === 'rework' ? await askText({ title: 'Вернуть на доработку', label: 'Что именно нужно исправить?', required: true }) : await askText({ title: 'Принять результат', label: 'Комментарий к приёмке (необязательно)' });
+    if (reason === null) return;
+    await mutateWorkflow(`/api/records/${record.id}/review`, { method: 'POST', body: JSON.stringify({ decision, reason }) }, decision === 'accept' ? 'Результат принят' : 'Задача возвращена на доработку');
+  }));
   bindMarkdownEditors($('#record-dialog'));
 }
 
@@ -2529,10 +2749,46 @@ async function loadRecordActivity(recordID) {
   }
 }
 
+async function loadRecordWorkflow(recordID) {
+  try {
+    const workflow = await api(`/api/records/${recordID}/workflow`);
+    if (!state.activeDetail || state.activeDetail.record.id !== recordID) return;
+    state.activeDetail = { ...state.activeDetail, workflow, workflowLoaded: true };
+    state.detailCache.set(recordID, state.activeDetail);
+    renderRecordDialog();
+  } catch (error) {
+    const loading = $(`[data-record-pane="${state.activeRecordTab}"] .relations-loading`);
+    if (loading) loading.innerHTML = `${icon('help')}<strong>Рабочие данные не загрузились</strong><small>${escapeHTML(error.message)}</small><button type="button" class="secondary" data-retry-workflow>Повторить</button>`;
+    $('[data-retry-workflow]')?.addEventListener('click', () => loadRecordWorkflow(recordID));
+  }
+}
+
+async function refreshActiveRecordWorkflow(recordID) {
+  state.detailCache.delete(recordID);
+  const [detail, workflow] = await Promise.all([fetchRecordDetail(recordID, true), api(`/api/records/${recordID}/workflow`), loadData(true)]);
+  if (!state.activeDetail || state.activeDetail.record.id !== recordID) return;
+  state.activeDetail = { ...detail, workflow, workflowLoaded: true };
+  state.detailCache.set(recordID, state.activeDetail);
+  renderRecordDialog();
+}
+
+async function mutateWorkflow(path, options, successMessage = 'Сохранено') {
+  try {
+    const recordID = state.activeDetail.record.id;
+    await api(path, options);
+    await refreshActiveRecordWorkflow(recordID);
+    toast(successMessage);
+    return true;
+  } catch (error) {
+    toast(error.message, true);
+    return false;
+  }
+}
+
 function openQuestionOutputDialog(sourceRecord, question, kind, defaultTitle) {
   const labels = { preference: 'Критерий выбора', limitation: 'Ограничение', rule: 'Правило', insight: 'Вывод', task: 'Задача', idea: 'Идея', research: 'Исследование', goal: 'Цель' };
   const planned = ['task', 'goal', 'research'].includes(kind);
-  $('#create-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">${icon('link')} Результат совместного вывода</span><h2>${labels[kind]}</h2><p>Источник сохранится автоматически: группа вопросов → вопрос → совместный итог → новая карточка.</p></div><button type="button" class="close-button icon-button" data-close-create aria-label="Закрыть">${icon('x')}</button></div><form id="question-output-form" class="card-form dialog-form"><div class="source-context"><span>Вопрос</span><strong>${escapeHTML(question.body)}</strong><blockquote>${escapeHTML(question.decision.content)}</blockquote></div><label>Название<input name="title" required maxlength="240" value="${escapeHTML(defaultTitle)}"></label><label>Как применять<textarea name="description" rows="4">${escapeHTML(question.decision.content)}</textarea></label>${planned ? `<div class="form-grid two"><label>Ответственный<select name="ownerId">${userOptions(state.me.id)}</select></label><label>Срок<input name="dueAt" type="datetime-local"></label></div>` : `<input type="hidden" name="ownerId" value="${state.me.id}">`}<div class="form-actions"><button type="submit" class="primary">${icon('plus')} Создать и связать</button><button type="button" class="secondary" data-close-create>Отмена</button></div></form>`;
+  $('#create-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">${icon('link')} Результат совместного вывода</span><h2>${labels[kind]}</h2><p>Источник сохранится автоматически: группа вопросов → вопрос → совместный итог → новая карточка.</p></div><button type="button" class="close-button icon-button" data-close-create aria-label="Закрыть">${icon('x')}</button></div><form id="question-output-form" class="card-form dialog-form"><div class="source-context"><span>Вопрос</span><strong>${escapeHTML(question.body)}</strong>${markdownView(question.decision.content, '', 'Исходный совместный итог')}</div><label>Название<input name="title" required maxlength="240" value="${escapeHTML(defaultTitle)}"></label>${markdownEditor('description', 'Как применять', question.decision.content, 6, 'Область действия и следующий шаг', 'question-output')}${planned ? `<div class="form-grid two"><label>Ответственный<select name="ownerId">${userOptions(state.me.id)}</select></label><label>Срок<input name="dueAt" type="datetime-local"></label></div>` : `<input type="hidden" name="ownerId" value="${state.me.id}">`}<div class="form-actions"><button type="submit" class="primary">${icon('plus')} Создать и связать</button><button type="button" class="secondary" data-close-create>Отмена</button></div></form>`;
   $$('[data-close-create]').forEach((button) => button.addEventListener('click', () => $('#create-dialog').close()));
   $('#question-output-form').addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -2547,6 +2803,7 @@ function openQuestionOutputDialog(sourceRecord, question, kind, defaultTitle) {
       await openRecord(output.id, { workspace: true });
     } catch (error) { toast(error.message, true); }
   });
+	bindMarkdownEditors($('#create-dialog'));
   openModal($('#create-dialog'));
 }
 
@@ -2616,9 +2873,10 @@ function openCreateDialog(initialType = 'idea', preset = {}) {
   const descriptionLabel = preset.comparisonMode ? 'Зачем сравниваем и какой вывод нужен' : preset.kind === 'limitation' ? 'Как применять ограничение' : preset.kind === 'rule' ? 'Формулировка и область действия' : initialType === 'question_set' ? 'Зачем обсуждаем' : initialType === 'meeting' ? 'Повестка и заметки' : initialType === 'task' ? 'Ожидаемый результат' : 'Краткое описание';
   const parentOptions = state.records.filter((record) => record.status !== 'archived').map((record) => `<option value="${record.id}" ${defaultParentID === record.id ? 'selected' : ''}>${escapeHTML(typeMeta[record.type]?.singular || 'Карточка')}: ${escapeHTML(record.title)}</option>`).join('');
   const planned = ['task', 'goal', 'research', 'question_set', 'meeting', 'decision', 'disagreement'].includes(initialType);
-  $('#create-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">${icon(initialMeta.icon)} Новая запись</span><h2>${escapeHTML(displayName)}</h2></div><button type="button" class="close-button icon-button" data-close-create aria-label="Закрыть">${icon('x')}</button></div><form id="create-record-form" class="card-form dialog-form"><label>${titleLabel}<input name="title" required maxlength="240" autofocus value="${escapeHTML(preset.title || '')}" placeholder="${preset.comparisonMode ? 'Например: Выбор сервера' : initialType === 'question_set' ? 'Например: Договорённости основателей' : ''}"></label><label>${descriptionLabel}<textarea name="description" rows="5">${escapeHTML(preset.description || '')}</textarea></label><input type="hidden" name="type" value="${initialType}"><input type="hidden" name="kind" value="${escapeHTML(preset.kind || '')}">${planned ? `<div class="form-grid two"><label>${initialType === 'question_set' ? 'Координатор' : initialType === 'meeting' ? 'Организатор' : 'Ответственный'}<select name="ownerId">${userOptions(state.me.id)}</select></label><label>${initialType === 'meeting' ? 'Дата и время' : 'Срок'}<input name="dueAt" type="datetime-local"></label></div><div class="form-grid two"><label>Приоритет<select name="priority">${Object.entries(priorityLabels).map(([value, label]) => `<option value="${value}" ${value === (preset.priority || 'normal') ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Оценка времени, минут<input name="estimateMinutes" type="number" min="0" value="${Number(preset.estimateMinutes || 0)}"></label></div>` : `<input type="hidden" name="ownerId" value="${state.me.id}"><input type="hidden" name="priority" value="${escapeHTML(preset.priority || 'normal')}"><input type="hidden" name="estimateMinutes" value="${Number(preset.estimateMinutes || 0)}">`}<details class="form-more create-organization" ${sourceRecord ? 'open' : ''}><summary>Место в проекте и доступ</summary><div class="form-more-body"><div class="form-grid three"><label>Направление<select name="workstream">${Object.entries(workstreamLabels).map(([value, label]) => `<option value="${value}" ${defaultWorkstream === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Доступ к изменениям<select name="editPolicy">${Object.entries(editPolicyLabels).map(([value, label]) => `<option value="${value}" ${defaultEditPolicy === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Родитель<select name="parentId"><option value="">Без родителя</option>${parentOptions}</select></label></div><label class="root-toggle"><input name="isRoot" type="checkbox" ${preset.isRoot ? 'checked' : ''}> <span><strong>Новый корень</strong><small>Начать самостоятельную крупную ветку вместо продолжения текущей цепочки.</small></span></label></div></details><div class="ai-suggestion"><span class="ai-suggestion-icon">${icon('sparkles')}</span><span><strong>AI-структура</strong><small id="ai-suggestion-status">После названия система предложит приоритет, оценку времени, направление и место в иерархии.</small></span><button type="button" class="secondary" data-ai-suggest>Предложить</button></div><div class="form-actions"><button type="submit" class="primary">${icon('plus')} Создать</button><button type="button" class="secondary" data-close-create>Отмена</button></div></form>`;
+  $('#create-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">${icon(initialMeta.icon)} Новая запись</span><h2>${escapeHTML(displayName)}</h2></div><button type="button" class="close-button icon-button" data-close-create aria-label="Закрыть">${icon('x')}</button></div><form id="create-record-form" class="card-form dialog-form"><label>${titleLabel}<input name="title" required maxlength="240" autofocus value="${escapeHTML(preset.title || '')}" placeholder="${preset.comparisonMode ? 'Например: Выбор сервера' : initialType === 'question_set' ? 'Например: Договорённости основателей' : ''}"></label>${markdownEditor('description', descriptionLabel, preset.description || '', 7, 'Факты, контекст и ожидаемый результат', 'create-record')}<input type="hidden" name="type" value="${initialType}"><input type="hidden" name="kind" value="${escapeHTML(preset.kind || '')}">${planned ? `<div class="form-grid two"><label>${initialType === 'question_set' ? 'Координатор' : initialType === 'meeting' ? 'Организатор' : 'Ответственный'}<select name="ownerId">${userOptions(state.me.id)}</select></label><label>${initialType === 'meeting' ? 'Дата и время' : 'Срок'}<input name="dueAt" type="datetime-local"></label></div><div class="form-grid two"><label>Приоритет<select name="priority">${Object.entries(priorityLabels).map(([value, label]) => `<option value="${value}" ${value === (preset.priority || 'normal') ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Оценка времени, минут<input name="estimateMinutes" type="number" min="0" value="${Number(preset.estimateMinutes || 0)}"></label></div>` : `<input type="hidden" name="ownerId" value="${state.me.id}"><input type="hidden" name="priority" value="${escapeHTML(preset.priority || 'normal')}"><input type="hidden" name="estimateMinutes" value="${Number(preset.estimateMinutes || 0)}">`}<details class="form-more create-organization" ${sourceRecord ? 'open' : ''}><summary>Место в проекте и доступ</summary><div class="form-more-body"><div class="form-grid three"><label>Направление<select name="workstream">${Object.entries(workstreamLabels).map(([value, label]) => `<option value="${value}" ${defaultWorkstream === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Доступ к изменениям<select name="editPolicy">${Object.entries(editPolicyLabels).map(([value, label]) => `<option value="${value}" ${defaultEditPolicy === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Родитель<select name="parentId"><option value="">Без родителя</option>${parentOptions}</select></label></div><label class="root-toggle"><input name="isRoot" type="checkbox" ${preset.isRoot ? 'checked' : ''}> <span><strong>Новый корень</strong><small>Начать самостоятельную крупную ветку вместо продолжения текущей цепочки.</small></span></label></div></details><div class="ai-suggestion"><span class="ai-suggestion-icon">${icon('sparkles')}</span><span><strong>AI-структура</strong><small id="ai-suggestion-status">После названия система предложит приоритет, оценку времени, направление и место в иерархии.</small></span><button type="button" class="secondary" data-ai-suggest>Предложить</button></div><div class="form-actions"><button type="submit" class="primary">${icon('plus')} Создать</button><button type="button" class="secondary" data-close-create>Отмена</button></div></form>`;
   $$('[data-close-create]').forEach((button) => button.addEventListener('click', () => $('#create-dialog').close()));
   const createForm = $('#create-record-form');
+	bindMarkdownEditors($('#create-dialog'));
   bindCreateSuggestion(createForm, initialType);
   $('#create-record-form').addEventListener('submit', async (event) => {
     event.preventDefault(); const form = new FormData(event.currentTarget); const due = form.get('dueAt');
@@ -2665,7 +2923,7 @@ function bindCreateSuggestion(form, recordType) {
       });
       if (suggestion.parentId && root) root.checked = false;
       const parentTitle = suggestion.parentId ? state.records.find((record) => record.id === suggestion.parentId)?.title : '';
-      const source = suggestion.source === 'groq' ? 'Groq' : 'локальная модель';
+      const source = suggestion.source === 'gemini' ? 'Gemini' : suggestion.source === 'groq' ? 'Groq' : 'локальная модель';
       status.textContent = `${source}: ${priorityLabels[suggestion.priority]}, ${minutesLabel(suggestion.estimateMinutes)}, ${workstreamLabels[suggestion.workstream]}${parentTitle ? `, ветка «${parentTitle}»` : ', без родителя'}. ${suggestion.reason}`;
     } catch (error) {
       if (currentRequest === requestNumber) status.textContent = `Не удалось получить предложение: ${error.message}`;
@@ -2680,7 +2938,7 @@ function bindCreateSuggestion(form, recordType) {
 }
 
 function actionLabel(action) {
-  return ({ created: 'создал карточку', profile_updated: 'изменил профиль', updated: 'изменил карточку', reordered: 'изменил порядок блоков', converted_to_questions: 'преобразовал в карточку вопросов', archived: 'перенёс в архив', section_updated: 'обновил раздел', link_created: 'создал связь', link_removed: 'убрал связь', criterion_scored: 'оценил по критерию', proof_added: 'добавил доказательство', completed: 'завершил задачу', partners_notified: 'уведомил партнёра', questions_added: 'добавил вопросы', question_answered: 'ответил на вопрос', question_decided: 'зафиксировал совместное решение', question_archived: 'архивировал вопрос', output_created: 'превратил вывод в рабочую карточку', created_from_question: 'создал карточку из совместного вывода', research_option_created: 'добавил вариант исследования', research_option_updated: 'обновил вариант исследования', research_option_archived: 'архивировал вариант исследования', research_field_created: 'добавил поле сравнения', research_field_archived: 'архивировал поле сравнения' }[action] || action);
+  return ({ created: 'создал карточку', profile_updated: 'изменил профиль', updated: 'изменил карточку', reordered: 'изменил порядок блоков', converted_to_questions: 'преобразовал в карточку вопросов', archived: 'перенёс в архив', section_updated: 'обновил раздел', link_created: 'создал связь', link_removed: 'убрал связь', criterion_scored: 'оценил по критерию', proof_added: 'добавил доказательство', completed: 'завершил задачу', partners_notified: 'уведомил партнёра', questions_added: 'добавил вопросы', question_answered: 'ответил на вопрос', question_decided: 'зафиксировал совместное решение', question_archived: 'архивировал вопрос', output_created: 'превратил вывод в рабочую карточку', created_from_question: 'создал карточку из совместного вывода', research_option_created: 'добавил вариант исследования', research_option_updated: 'обновил вариант исследования', research_option_archived: 'архивировал вариант исследования', research_field_created: 'добавил поле сравнения', research_field_archived: 'архивировал поле сравнения', comment_added: 'добавил комментарий', checklist_added: 'добавил шаг', checklist_updated: 'обновил шаг', review_submitted: 'отправил результат на проверку', review_accepted: 'принял результат', review_rework: 'вернул задачу на доработку', attachment_added: 'приложил файл', recurrence_created: 'создал следующее повторение', recurrence_updated: 'изменил повторение' }[action] || action);
 }
 
 function activityActionLabel(item) {
@@ -2738,6 +2996,12 @@ function activityDetails(item) {
   if (item.action.startsWith('research_option_') && details.title) rows.push(['Вариант', details.title?.after || details.title]);
   if (item.action.startsWith('research_field_') && details.name) rows.push(['Поле сравнения', details.name]);
   if (item.action === 'research_option_created' && details.rating !== undefined) rows.push(['Оценка', `${details.rating} из 10`]);
+	if (item.action === 'checklist_added' && details.title) rows.push(['Новый шаг', details.title]);
+	if (item.action === 'attachment_added' && details.name) rows.push(['Файл', `${details.name} · ${formatFileSize(details.sizeBytes)}`]);
+	if (item.action === 'review_submitted') rows.push(['Приёмка', 'Результат передан проверяющему']);
+	if (item.action === 'review_accepted') rows.push(['Приёмка', 'Результат подтверждён']);
+	if (item.action === 'review_rework') rows.push(['Приёмка', 'Нужна доработка']);
+	if (item.action === 'recurrence_created' && details.dueAt) rows.push(['Следующий срок', formatDate(details.dueAt, true)]);
   if (!rows.length) return '';
   return `<dl class="event-details">${rows.map(([label, value]) => `<div><dt>${escapeHTML(label)}</dt><dd>${escapeHTML(String(value))}</dd></div>`).join('')}</dl>`;
 }
@@ -2752,6 +3016,14 @@ function activityContext(item) {
     return target ? `Связь с «${target.title}»` : 'Новая связь между карточками';
   }
   if (item.action === 'proof_added') return 'Добавлено подтверждение результата';
+	if (item.action === 'comment_added') return 'Новый контекст в обсуждении';
+	if (item.action === 'checklist_added') return details.title || 'Добавлен проверяемый шаг';
+	if (item.action === 'checklist_updated') return 'Обновлён ход выполнения шага';
+	if (item.action === 'review_submitted') return 'Результат ждёт решения постановщика';
+	if (item.action === 'review_accepted') return 'Задача принята и завершена';
+	if (item.action === 'review_rework') return item.reason ? `Доработать: ${item.reason}` : 'Задача возвращена исполнителю';
+	if (item.action === 'attachment_added') return details.name || 'Приложен файл';
+	if (item.action === 'recurrence_created') return 'Создана новая связанная задача';
   if (item.action.startsWith('research_option_')) return details.title?.after || details.title || 'Изменён вариант сравнения';
   if (item.action.startsWith('research_field_')) return details.name || 'Изменена структура сравнения';
   if (item.reason) return `Причина: ${item.reason}`;
@@ -2792,7 +3064,7 @@ async function openProfile(userId) {
     const maxSeconds = Math.max(1, ...profile.activity.map((day) => day.activeSeconds));
     const accuracy = profile.estimateMinutes > 0 && profile.actualMinutes > 0 ? Math.round(profile.actualMinutes * 100 / profile.estimateMinutes) : 0;
     const insight = estimateInsight(accuracy, profile.completedRecords);
-    $('#profile-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">Участник проекта</span><h2>${escapeHTML(profile.user.username)}</h2><p>На платформе с ${formatDate(profile.user.createdAt)}</p></div><button type="button" class="close-button icon-button" data-close-profile aria-label="Закрыть">${icon('x')}</button></div><div class="profile-body"><section class="profile-summary"><span class="avatar profile-avatar">${escapeHTML(profile.user.username.slice(0, 2).toUpperCase())}</span><div><h3>${escapeHTML(profile.user.username)}</h3><p>${profile.user.id === state.me.id ? 'Ваш профиль активности' : 'Активность сооснователя'}</p></div>${profile.user.id === state.me.id ? `<button type="button" class="secondary" data-edit-profile>${icon('edit')} Изменить логин</button>` : ''}</section><div class="profile-metrics"><article><span>Активное время · 30 дней</span><strong>${durationLabel(profile.activeSeconds30Days)}</strong><small>Только взаимодействие с интерфейсом</small></article><article><span>Действия · 30 дней</span><strong>${profile.actions30Days}</strong><small>${interactionsCountLabel(profile.interactions30Days)} с UI</small></article><article><span>Завершено</span><strong>${profile.completedRecords}</strong><small>карточек с результатом</small></article><article><span>Факт к оценке</span><strong>${accuracy ? `${accuracy}%` : 'Нет данных'}</strong><small>${minutesLabel(profile.actualMinutes)} факт · ${minutesLabel(profile.estimateMinutes)} план</small></article></div><section class="estimate-insight ${insight.tone}">${icon('clock')}<div><strong>${escapeHTML(insight.title)}</strong><p>${escapeHTML(insight.text)}</p></div></section><section class="activity-chart"><header><h3>Активность по дням</h3><span>Последние 30 дней</span></header><div>${profile.activity.length ? profile.activity.slice().reverse().map((day) => `<span title="${escapeHTML(day.date)} · ${durationLabel(day.activeSeconds)} · ${interactionsCountLabel(day.interactions)}"><i data-level="${Math.max(1, Math.ceil(day.activeSeconds * 5 / maxSeconds))}"></i><small>${day.date.slice(8)}</small></span>`).join('') : `<p>Активность начнёт накапливаться после взаимодействия с новой версией.</p>`}</div></section><section class="profile-actions"><header><h3>Последние действия</h3><span>${profile.recentActions.length}</span></header><div class="activity-list">${profile.recentActions.map(renderActivityItem).join('') || emptyState('Действий пока нет.')}</div></section></div>`;
+    $('#profile-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">Участник проекта</span><h2>${escapeHTML(profile.user.username)}</h2><p>На платформе с ${formatDate(profile.user.createdAt)}</p></div><button type="button" class="close-button icon-button" data-close-profile aria-label="Закрыть">${icon('x')}</button></div><div class="profile-body"><section class="profile-summary"><span class="avatar profile-avatar">${escapeHTML(profile.user.username.slice(0, 2).toUpperCase())}</span><div><h3>${escapeHTML(profile.user.username)}</h3><p>${profile.user.id === state.me.id ? 'Ваш профиль активности' : 'Активность сооснователя'}</p></div>${profile.user.id === state.me.id ? `<button type="button" class="secondary" data-edit-profile>${icon('edit')} Изменить логин</button>` : ''}</section>${profile.user.id === state.me.id ? `<section class="ai-provider-status checking" id="ai-provider-status">${icon('sparkles')}<div><strong>Проверяем AI</strong><p>Локальный анализ доступен всегда.</p></div></section>` : ''}<div class="profile-metrics"><article><span>Активное время · 30 дней</span><strong>${durationLabel(profile.activeSeconds30Days)}</strong><small>Только взаимодействие с интерфейсом</small></article><article><span>Действия · 30 дней</span><strong>${profile.actions30Days}</strong><small>${interactionsCountLabel(profile.interactions30Days)} с UI</small></article><article><span>Завершено</span><strong>${profile.completedRecords}</strong><small>карточек с результатом</small></article><article><span>Факт к оценке</span><strong>${accuracy ? `${accuracy}%` : 'Нет данных'}</strong><small>${minutesLabel(profile.actualMinutes)} факт · ${minutesLabel(profile.estimateMinutes)} план</small></article></div><section class="estimate-insight ${insight.tone}">${icon('clock')}<div><strong>${escapeHTML(insight.title)}</strong><p>${escapeHTML(insight.text)}</p></div></section><section class="activity-chart"><header><h3>Активность по дням</h3><span>Последние 30 дней</span></header><div>${profile.activity.length ? profile.activity.slice().reverse().map((day) => `<span title="${escapeHTML(day.date)} · ${durationLabel(day.activeSeconds)} · ${interactionsCountLabel(day.interactions)}"><i data-level="${Math.max(1, Math.ceil(day.activeSeconds * 5 / maxSeconds))}"></i><small>${day.date.slice(8)}</small></span>`).join('') : `<p>Активность начнёт накапливаться после взаимодействия с новой версией.</p>`}</div></section><section class="profile-actions"><header><h3>Последние действия</h3><span>${profile.recentActions.length}</span></header><div class="activity-list">${profile.recentActions.map(renderActivityItem).join('') || emptyState('Действий пока нет.')}</div></section></div>`;
     $$('[data-close-profile]').forEach((button) => button.addEventListener('click', () => dialog.close()));
     $('[data-edit-profile]')?.addEventListener('click', async () => {
       const username = await askText({ title: 'Изменить логин', label: 'Новый логин', defaultValue: state.me.username, required: true });
@@ -2805,6 +3077,12 @@ async function openProfile(userId) {
     });
     const recentActions = new Map(profile.recentActions.map((item) => [item.id, item]));
     $$('[data-open-event]', dialog).forEach((button) => button.addEventListener('click', () => openActivity(button.dataset.openEvent, recentActions.get(button.dataset.openEvent))));
+		if (profile.user.id === state.me.id) api('/api/ai/health').then((health) => {
+			const node = $('#ai-provider-status', dialog); if (!node) return;
+			const provider = health.source === 'gemini' ? 'Gemini' : health.source === 'groq' ? 'Groq' : 'Локальный анализ';
+			node.className = `ai-provider-status ${health.providerAvailable ? 'available' : 'fallback'}`;
+			node.innerHTML = `${icon('sparkles')}<div><strong>${escapeHTML(provider)} · ${escapeHTML(health.model || '')}</strong><p>${escapeHTML(health.message || '')}</p></div>`;
+		}).catch(() => {});
   } catch (error) {
     $('#profile-dialog-content').innerHTML = `<div class="record-load-error">${icon('help')}<h2>Профиль не загрузился</h2><p>${escapeHTML(error.message)}</p><button type="button" class="secondary" data-close-profile>Закрыть</button></div>`;
     $('[data-close-profile]').addEventListener('click', () => dialog.close());

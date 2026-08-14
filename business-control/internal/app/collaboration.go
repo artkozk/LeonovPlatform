@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -184,12 +185,117 @@ func (s *Server) handleSuggestRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	suggestion := s.heuristicSuggestion(r.Context(), input.Type, input.Title, input.Description)
-	if s.config.GroqAPIKey != "" {
+	if s.config.GeminiAPIKey != "" {
+		if aiSuggestion, err := s.geminiSuggestion(r.Context(), input.Type, input.Title, input.Description); err == nil {
+			suggestion = aiSuggestion
+		} else {
+			log.Printf("gemini suggest fallback: %v", err)
+		}
+	} else if s.config.GroqAPIKey != "" {
 		if aiSuggestion, err := s.groqSuggestion(r.Context(), input.Type, input.Title, input.Description); err == nil {
 			suggestion = aiSuggestion
+		} else {
+			log.Printf("groq suggest fallback: %v", err)
 		}
 	}
 	writeJSON(w, http.StatusOK, suggestion)
+}
+
+func (s *Server) suggestionPrompt(ctx context.Context, recordType, title, description string) (string, error) {
+	parentRows, err := s.store.db.QueryContext(ctx, `SELECT id, title, type, workstream FROM records WHERE status NOT IN ('archived', 'cancelled') AND (is_root = 1 OR parent_id IS NULL) ORDER BY updated_at DESC LIMIT 40`)
+	if err != nil {
+		return "", err
+	}
+	defer parentRows.Close()
+	parents := make([]map[string]string, 0)
+	for parentRows.Next() {
+		var id, parentTitle, parentType, workstream string
+		if parentRows.Scan(&id, &parentTitle, &parentType, &workstream) == nil {
+			parents = append(parents, map[string]string{"id": id, "title": parentTitle, "type": parentType, "workstream": workstream})
+		}
+	}
+	parentJSON, _ := json.Marshal(parents)
+	return fmt.Sprintf("Определи priority (low|normal|high|critical), workstream (business|platform|operations), parentId из списка или пустую строку и реалистичную estimateMinutes. Верни только JSON {priority,workstream,parentId,estimateMinutes,confidence,reason}. confidence от 0 до 1. Тип: %s. Название: %s. Описание: %s. Возможные родители: %s", recordType, title, description, parentJSON), nil
+}
+
+func (s *Server) validateSuggestion(ctx context.Context, suggestion RecordSuggestion, source string) (RecordSuggestion, error) {
+	if !validPriority(suggestion.Priority) || !validWorkstream(suggestion.Workstream) || suggestion.EstimateMinutes < 0 || suggestion.EstimateMinutes > 525600 {
+		return RecordSuggestion{}, errors.New("invalid AI suggestion")
+	}
+	if suggestion.ParentID != "" {
+		if _, err := s.getRecord(ctx, suggestion.ParentID); err != nil {
+			suggestion.ParentID = ""
+		}
+	}
+	suggestion.Source = source
+	if suggestion.Confidence < 0 || suggestion.Confidence > 1 {
+		suggestion.Confidence = 0.7
+	}
+	return suggestion, nil
+}
+
+func (s *Server) geminiSuggestion(ctx context.Context, recordType, title, description string) (RecordSuggestion, error) {
+	prompt, err := s.suggestionPrompt(ctx, recordType, title, description)
+	if err != nil {
+		return RecordSuggestion{}, err
+	}
+	content, err := s.geminiJSON(ctx, "Ты помощник закрытой системы двух сооснователей. Не выдумывай идентификаторы. Ответ только валидным JSON.", prompt, 450)
+	if err != nil {
+		return RecordSuggestion{}, err
+	}
+	var suggestion RecordSuggestion
+	if err := json.Unmarshal([]byte(content), &suggestion); err != nil {
+		return RecordSuggestion{}, err
+	}
+	return s.validateSuggestion(ctx, suggestion, "gemini")
+}
+
+func (s *Server) geminiJSON(ctx context.Context, systemInstruction, prompt string, maxTokens int) (string, error) {
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+	payload := map[string]any{
+		"systemInstruction": map[string]any{"parts": []map[string]string{{"text": systemInstruction}}},
+		"contents":          []map[string]any{{"role": "user", "parts": []map[string]string{{"text": prompt}}}},
+		"generationConfig": map[string]any{
+			"temperature":      0.15,
+			"maxOutputTokens":  maxTokens,
+			"responseMimeType": "application/json",
+		},
+	}
+	body, _ := json.Marshal(payload)
+	url := strings.TrimRight(s.config.GeminiBaseURL, "/") + "/models/" + s.config.GeminiModel + ":generateContent"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-goog-api-key", s.config.GeminiAPIKey)
+	response, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer response.Body.Close()
+	responseBody, _ := io.ReadAll(io.LimitReader(response.Body, 2<<20))
+	if response.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("gemini status %d", response.StatusCode)
+	}
+	var completion struct {
+		Candidates []struct {
+			Content struct {
+				Parts []struct {
+					Text string `json:"text"`
+				} `json:"parts"`
+			} `json:"content"`
+		} `json:"candidates"`
+	}
+	if err := json.Unmarshal(responseBody, &completion); err != nil || len(completion.Candidates) == 0 || len(completion.Candidates[0].Content.Parts) == 0 {
+		return "", errors.New("invalid gemini response")
+	}
+	content := strings.TrimSpace(completion.Candidates[0].Content.Parts[0].Text)
+	content = strings.TrimPrefix(content, "```json")
+	content = strings.TrimPrefix(content, "```")
+	content = strings.TrimSuffix(content, "```")
+	return strings.TrimSpace(content), nil
 }
 
 func (s *Server) heuristicSuggestion(ctx context.Context, recordType, title, description string) RecordSuggestion {
@@ -314,9 +420,17 @@ func (s *Server) handleAnalyzeRecord(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	analysis := s.heuristicRecordAnalysis(r.Context(), record)
-	if s.config.GroqAPIKey != "" {
+	if s.config.GeminiAPIKey != "" {
+		if aiAnalysis, aiErr := s.geminiRecordAnalysis(r.Context(), record); aiErr == nil {
+			analysis = aiAnalysis
+		} else {
+			log.Printf("gemini analysis fallback record=%s: %v", record.ID, aiErr)
+		}
+	} else if s.config.GroqAPIKey != "" {
 		if aiAnalysis, aiErr := s.groqRecordAnalysis(r.Context(), record); aiErr == nil {
 			analysis = aiAnalysis
+		} else {
+			log.Printf("groq analysis fallback record=%s: %v", record.ID, aiErr)
 		}
 	}
 	writeJSON(w, http.StatusOK, analysis)
@@ -373,6 +487,91 @@ func (s *Server) heuristicRecordAnalysis(ctx context.Context, record Record) AIR
 		summary = "Карточка «" + record.Title + "» пока содержит только название."
 	}
 	return AIRecordAnalysis{Summary: summary, Gaps: gaps, Risks: risks, NextAction: nextAction, Priority: record.Priority, EstimateMinutes: max(record.EstimateMinutes, heuristicEstimate(record.Type, strings.ToLower(record.Title+" "+record.Description))), SuggestedLinks: links, SuggestedOutputs: outputs, Confidence: 0.45, Source: "heuristic"}
+}
+
+func (s *Server) recordAnalysisPrompt(ctx context.Context, record Record) (string, map[string]string, error) {
+	rows, err := s.store.db.QueryContext(ctx, `SELECT id, CASE WHEN subtype = 'question_set' THEN 'question_set' WHEN record_kind = 'meeting' THEN 'meeting' ELSE type END, title, description, status, workstream FROM records WHERE id <> ? AND status NOT IN ('archived', 'cancelled') ORDER BY updated_at DESC LIMIT 60`, record.ID)
+	if err != nil {
+		return "", nil, err
+	}
+	defer rows.Close()
+	candidates := make([]map[string]string, 0)
+	validCandidateIDs := make(map[string]string)
+	for rows.Next() {
+		var id, recordType, title, description, status, workstream string
+		if rows.Scan(&id, &recordType, &title, &description, &status, &workstream) == nil {
+			candidates = append(candidates, map[string]string{"id": id, "type": recordType, "title": title, "description": description, "status": status, "workstream": workstream})
+			validCandidateIDs[id] = title
+		}
+	}
+	candidateJSON, _ := json.Marshal(candidates)
+	recordJSON, _ := json.Marshal(map[string]any{
+		"id": record.ID, "type": record.Type, "kind": record.Kind, "title": record.Title,
+		"description": record.Description, "status": record.Status, "dueAt": record.DueAt,
+		"priority": record.Priority, "workstream": record.Workstream, "parentId": record.ParentID,
+		"isRoot": record.IsRoot, "estimateMinutes": record.EstimateMinutes, "actualMinutes": record.ActualMinutes,
+		"progress": record.Progress, "progressNote": record.ProgressNote, "result": record.Result,
+	})
+	prompt := fmt.Sprintf(`Разбери рабочую карточку и верни только JSON:
+{"summary":"...","gaps":["..."],"risks":["..."],"nextAction":"...","priority":"low|normal|high|critical","estimateMinutes":60,"confidence":0.8,"suggestedLinks":[{"recordId":"id из списка","relationType":"related|supports|depends_on|result_of|leads_to","reason":"..."}],"suggestedOutputs":[{"type":"task|idea|criterion|research|decision|goal","kind":"|preference|limitation|rule|insight","title":"...","description":"...","priority":"low|normal|high|critical","estimateMinutes":60,"reason":"..."}]}.
+Не меняй факты, не выдумывай ID, не предлагай больше 4 связей и 5 новых сущностей. Для встречи извлекай из заметок только предметные решения, задачи, критерии, ограничения и идеи. Для обычной карточки suggestedOutputs оставь пустым, если из текста не следует самостоятельная работа. Карточка: %s. Доступные связи: %s`, recordJSON, candidateJSON)
+	return prompt, validCandidateIDs, nil
+}
+
+func validateRecordAnalysis(analysis AIRecordAnalysis, validCandidateIDs map[string]string, source string) (AIRecordAnalysis, error) {
+	if strings.TrimSpace(analysis.Summary) == "" || strings.TrimSpace(analysis.NextAction) == "" || !validPriority(analysis.Priority) || analysis.EstimateMinutes < 0 || analysis.EstimateMinutes > 525600 {
+		return AIRecordAnalysis{}, errors.New("invalid AI analysis")
+	}
+	if len(analysis.Gaps) > 6 {
+		analysis.Gaps = analysis.Gaps[:6]
+	}
+	if len(analysis.Risks) > 6 {
+		analysis.Risks = analysis.Risks[:6]
+	}
+	validRelations := map[string]bool{"related": true, "supports": true, "depends_on": true, "result_of": true, "leads_to": true}
+	validatedLinks := make([]AISuggestedLink, 0, min(4, len(analysis.SuggestedLinks)))
+	for _, link := range analysis.SuggestedLinks {
+		if title, ok := validCandidateIDs[link.RecordID]; ok && validRelations[link.RelationType] && len(validatedLinks) < 4 {
+			link.Title = title
+			validatedLinks = append(validatedLinks, link)
+		}
+	}
+	analysis.SuggestedLinks = validatedLinks
+	validatedOutputs := make([]AISuggestedOutput, 0, min(5, len(analysis.SuggestedOutputs)))
+	for _, output := range analysis.SuggestedOutputs {
+		if _, ok := recordTypes[output.Type]; !ok || output.Type == "question_set" || output.Type == "meeting" || strings.TrimSpace(output.Title) == "" || len(output.Title) > 240 || !validPriority(output.Priority) || output.EstimateMinutes < 0 || output.EstimateMinutes > 525600 {
+			continue
+		}
+		if !validRecordKind(output.Type, output.Kind) {
+			continue
+		}
+		validatedOutputs = append(validatedOutputs, output)
+		if len(validatedOutputs) == 5 {
+			break
+		}
+	}
+	analysis.SuggestedOutputs = validatedOutputs
+	if analysis.Confidence < 0 || analysis.Confidence > 1 {
+		analysis.Confidence = 0.7
+	}
+	analysis.Source = source
+	return analysis, nil
+}
+
+func (s *Server) geminiRecordAnalysis(ctx context.Context, record Record) (AIRecordAnalysis, error) {
+	prompt, candidates, err := s.recordAnalysisPrompt(ctx, record)
+	if err != nil {
+		return AIRecordAnalysis{}, err
+	}
+	content, err := s.geminiJSON(ctx, "Ты аналитик закрытого рабочего пространства двух сооснователей. Отделяй факт от предположения, давай короткие проверяемые рекомендации и никогда не применяй изменения сам.", prompt, 1500)
+	if err != nil {
+		return AIRecordAnalysis{}, err
+	}
+	var analysis AIRecordAnalysis
+	if err := json.Unmarshal([]byte(content), &analysis); err != nil {
+		return AIRecordAnalysis{}, err
+	}
+	return validateRecordAnalysis(analysis, candidates, "gemini")
 }
 
 func (s *Server) groqRecordAnalysis(ctx context.Context, record Record) (AIRecordAnalysis, error) {
