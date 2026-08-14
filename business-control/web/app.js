@@ -128,13 +128,13 @@ const state = {
   graphCenterForce: graphSettingDefaults.centerForce, graphRepelForce: graphSettingDefaults.repelForce,
   graphLinkForce: graphSettingDefaults.linkForce, graphLinkDistance: graphSettingDefaults.linkDistance,
   graphHiddenGroups: new Set(), graphGroupColors: Object.fromEntries(graphGroups.map((group) => [group.key, group.color])),
-  graphSettingsLoaded: false, graphSearchTimer: null, graphTimelineTimer: null, graphTimelinePlaying: false, graphContextNodeId: '',
+  graphSettingsLoaded: false, graphSearchTimer: null, graphTimelineTimer: null, graphTimelinePlaying: false, graphContextNodeId: '', graphDragBranch: null,
   recordWorkspace: [], activeWorkspaceRecordId: '', focusQuestionId: '',
   detailCache: new Map(), detailRequests: new Map(), searchTimer: null, suppressOverlayPop: false,
   presenceInteractions: 0, presenceLastSentAt: Date.now(), lastInteractionAt: Date.now(), aiSuggestionTimer: null,
   recordEditMode: false, editingQuestionAnswerId: '', aiAnalyses: new Map(), aiAnalysisLoading: '',
   researchComparisons: new Map(), researchComparisonRequests: new Map(), activeResearchOptionId: '',
-  savedViews: [],
+  savedViews: [], workingDraftTimers: new Map(), sidebarReturnFocus: null, liveRefreshRunning: false,
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -596,6 +596,73 @@ function clearRecordDraft(recordId) {
   try { localStorage.removeItem(recordDraftKey(recordId)); } catch (_) {}
 }
 
+function workingDraftKey(scope) {
+  return `business-control:working-draft:${state.me?.id || 'anonymous'}:${scope}`;
+}
+
+function workingDraftValues(root) {
+  const values = {};
+  $$('[name]', root).forEach((field) => {
+    if (field.disabled || field.type === 'file' || field.type === 'submit' || field.type === 'button') return;
+    if (field.type === 'checkbox' || field.type === 'radio') values[field.name] = field.checked ? String(field.value || 'on') : '';
+    else values[field.name] = String(field.value || '');
+  });
+  return values;
+}
+
+function loadWorkingDraft(scope) {
+  try { return JSON.parse(localStorage.getItem(workingDraftKey(scope)) || 'null'); } catch (_) { return null; }
+}
+
+function clearWorkingDraft(scope) {
+  clearTimeout(state.workingDraftTimers.get(scope));
+  state.workingDraftTimers.delete(scope);
+  try { localStorage.removeItem(workingDraftKey(scope)); } catch (_) {}
+}
+
+function clearWorkingDraftFor(root) {
+  if (root?.dataset?.workingDraftScope) clearWorkingDraft(root.dataset.workingDraftScope);
+}
+
+function applyWorkingDraft(root, values = {}) {
+  Object.entries(values).forEach(([name, value]) => {
+    const field = root.querySelector(`[name="${CSS.escape(name)}"]`);
+    if (!field || field.type === 'file') return;
+    if (field.type === 'checkbox' || field.type === 'radio') field.checked = String(field.value || 'on') === String(value);
+    else field.value = String(value ?? '');
+    field.dataset.userChanged = 'true';
+    if (field.classList.contains('markdown-source')) setMarkdownEditorValue(field.closest('.markdown-editor'), field.value, false);
+    if (field.tagName === 'SELECT') syncCustomSelect(field);
+  });
+}
+
+function bindWorkingDraft(root, scope) {
+  if (!root || !scope || root.dataset.workingDraftBound === 'true') return;
+  root.dataset.workingDraftBound = 'true';
+  root.dataset.workingDraftScope = scope;
+  const baseline = workingDraftValues(root);
+  const draft = loadWorkingDraft(scope);
+  if (draft?.values && JSON.stringify(draft.values) !== JSON.stringify(baseline)) {
+    applyWorkingDraft(root, draft.values);
+    const note = document.createElement('p');
+    note.className = 'working-draft-note';
+    note.textContent = 'Восстановлен несохранённый текст';
+    root.prepend(note);
+  }
+  const persist = () => {
+    clearTimeout(state.workingDraftTimers.get(scope));
+    state.workingDraftTimers.set(scope, setTimeout(() => {
+      const values = workingDraftValues(root);
+      try {
+        if (JSON.stringify(values) === JSON.stringify(baseline)) localStorage.removeItem(workingDraftKey(scope));
+        else localStorage.setItem(workingDraftKey(scope), JSON.stringify({ values, savedAt: new Date().toISOString() }));
+      } catch (_) {}
+    }, 220));
+  };
+  root.addEventListener('input', persist);
+  root.addEventListener('change', persist);
+}
+
 function recordFormValues(form) {
   const data = new FormData(form);
   return Object.fromEntries([...data.entries()].map(([key, value]) => [key, String(value)]));
@@ -628,9 +695,17 @@ function recordsCountLabel(count) {
 function discussionsCountLabel(count) {
   const mod100 = count % 100;
   const mod10 = count % 10;
-  if (mod10 === 1 && mod100 !== 11) return `${count} обсуждения`;
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${count} обсуждений`;
+  if (mod10 === 1 && mod100 !== 11) return `${count} обсуждение`;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${count} обсуждения`;
   return `${count} обсуждений`;
+}
+
+function linksCountLabel(count) {
+  const mod100 = count % 100;
+  const mod10 = count % 10;
+  if (mod10 === 1 && mod100 !== 11) return `${count} связь с карточкой`;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${count} связи с карточками`;
+  return `${count} связей с карточками`;
 }
 
 function questionsCountLabel(count) {
@@ -790,7 +865,11 @@ function bindGlobalEvents() {
   });
   $('#menu-button').addEventListener('click', () => setSidebarOpen(!$('.sidebar').classList.contains('open')));
   $('#sidebar-close').addEventListener('click', () => setSidebarOpen(false));
-  $('#sidebar-backdrop').addEventListener('click', () => setSidebarOpen(false));
+  $('#sidebar-backdrop').addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setTimeout(() => setSidebarOpen(false), 0);
+  });
   bindSidebarSwipe();
   $('#record-dialog').addEventListener('click', (event) => { if (event.target === $('#record-dialog')) $('#record-dialog').close(); });
   $('#event-dialog').addEventListener('click', (event) => { if (event.target === $('#event-dialog')) $('#event-dialog').close(); });
@@ -824,21 +903,25 @@ function bindGlobalEvents() {
     state.lastInteractionAt = Date.now(); state.presenceInteractions += 1;
   }, { passive: true }));
   setInterval(sendPresence, 30000);
-  setInterval(async () => {
-    if (!state.me) return;
-    try {
-      state.notifications = await api('/api/notifications');
-      renderNav();
-      renderNotificationBadge();
-      if (state.view === 'notifications') renderContent();
-    } catch (_) {}
-  }, 30000);
+  setInterval(refreshLiveData, 30000);
 }
 
 function setSidebarOpen(open) {
-  $('.sidebar').classList.toggle('open', open);
+  const sidebar = $('.sidebar');
+  const workspace = $('.workspace');
+  if (open && !sidebar.classList.contains('open')) state.sidebarReturnFocus = document.activeElement;
+  sidebar.style.removeProperty('transform');
+  sidebar.classList.remove('dragging');
+  sidebar.classList.toggle('open', open);
   $('#sidebar-backdrop').classList.toggle('visible', open);
   document.body.classList.toggle('mobile-nav-open', open);
+  workspace.inert = open && window.matchMedia('(max-width: 820px)').matches;
+  workspace.setAttribute('aria-hidden', workspace.inert ? 'true' : 'false');
+  if (open) requestAnimationFrame(() => ($('.nav-item.active', sidebar) || $('.nav-item', sidebar) || $('#sidebar-close')).focus({ preventScroll: true }));
+  else if (state.sidebarReturnFocus?.isConnected) {
+    state.sidebarReturnFocus.focus({ preventScroll: true });
+    state.sidebarReturnFocus = null;
+  }
 }
 
 function openModal(dialog) {
@@ -850,14 +933,79 @@ function openModal(dialog) {
 
 function bindSidebarSwipe() {
   const sidebar = $('.sidebar');
+  const backdrop = $('#sidebar-backdrop');
+  let pointerId = null;
   let startX = 0;
-  let currentX = 0;
-  sidebar.addEventListener('touchstart', (event) => { startX = event.touches[0].clientX; currentX = startX; }, { passive: true });
-  sidebar.addEventListener('touchmove', (event) => { currentX = event.touches[0].clientX; }, { passive: true });
-  sidebar.addEventListener('touchend', () => {
-    if (startX - currentX > 56) setSidebarOpen(false);
-    startX = 0; currentX = 0;
-  }, { passive: true });
+  let startY = 0;
+  let deltaX = 0;
+  let horizontal = false;
+  const finish = () => {
+    if (pointerId === null) return;
+    const shouldClose = horizontal && deltaX < -64;
+    pointerId = null;
+    sidebar.classList.remove('dragging');
+    sidebar.style.removeProperty('transform');
+    backdrop.style.removeProperty('opacity');
+    if (shouldClose) setSidebarOpen(false);
+  };
+  sidebar.addEventListener('pointerdown', (event) => {
+    if (!event.isPrimary || !sidebar.classList.contains('open') || !window.matchMedia('(max-width: 820px)').matches) return;
+    pointerId = event.pointerId;
+    startX = event.clientX;
+    startY = event.clientY;
+    deltaX = 0;
+    horizontal = false;
+    sidebar.setPointerCapture?.(pointerId);
+  });
+  sidebar.addEventListener('pointermove', (event) => {
+    if (event.pointerId !== pointerId) return;
+    const moveX = event.clientX - startX;
+    const moveY = event.clientY - startY;
+    if (!horizontal && Math.abs(moveX) > 10) horizontal = Math.abs(moveX) > Math.abs(moveY);
+    if (!horizontal) return;
+    event.preventDefault();
+    deltaX = Math.min(0, moveX);
+    sidebar.classList.add('dragging');
+    sidebar.style.transform = `translateX(${Math.max(-252, deltaX)}px)`;
+    backdrop.style.opacity = String(Math.max(0, 1 + deltaX / 252));
+  });
+  sidebar.addEventListener('pointerup', finish);
+  sidebar.addEventListener('pointercancel', finish);
+}
+
+function workspaceHasActiveInput() {
+  const active = document.activeElement;
+  return Boolean(active?.matches('input, textarea, [contenteditable="true"]'));
+}
+
+async function refreshLiveData() {
+  if (!state.me || document.hidden || state.liveRefreshRunning) return;
+  state.liveRefreshRunning = true;
+  try {
+    const [records, notifications, pendingQuestions, activity] = await Promise.all([
+      api('/api/records?includeArchived=true'), api('/api/notifications'), api('/api/questions/pending'), api('/api/activity?limit=200'),
+    ]);
+    const previousByID = new Map(state.records.map((record) => [record.id, record]));
+    const changed = records.length !== state.records.length || records.some((record) => previousByID.get(record.id)?.updatedAt !== record.updatedAt);
+    const projectActivity = activity.filter((item) => typeMeta[item.entityType] || item.entityType === 'section_definition');
+    const activityChanged = projectActivity[0]?.id !== state.activity[0]?.id || projectActivity.length !== state.activity.length;
+    const recordsByID = new Map(records.map((record) => [record.id, record]));
+    state.detailCache.forEach((detail, id) => {
+      const current = recordsByID.get(id);
+      if (!current || current.updatedAt !== detail.record.updatedAt) state.detailCache.delete(id);
+    });
+    Object.assign(state, { records, notifications, pendingQuestions, activity: projectActivity });
+    state.historyLoadedAll = activity.length < 200;
+    renderNav();
+    renderNotificationBadge();
+    const overlayOpen = Boolean(document.querySelector('dialog[open]')) || $('.sidebar').classList.contains('open');
+    if (!workspaceHasActiveInput() && !overlayOpen && state.view !== 'graph' && (changed || activityChanged || state.view === 'notifications')) renderContent();
+    $('#sync-state').textContent = 'На связи';
+  } catch (_) {
+    $('#sync-state').textContent = 'Нет связи';
+  } finally {
+    state.liveRefreshRunning = false;
+  }
 }
 
 async function sendPresence() {
@@ -883,7 +1031,7 @@ async function runGlobalSearch(query) {
     $$('[data-search-result]', resultsNode).forEach((button) => button.addEventListener('click', async () => {
       resultsNode.hidden = true;
       $('#global-search-input').value = '';
-      const tab = button.dataset.researchOptionId ? 'content' : button.dataset.questionId ? 'questions' : 'overview';
+      const tab = button.dataset.targetTab || (button.dataset.researchOptionId ? 'content' : button.dataset.questionId ? 'questions' : 'overview');
       await openRecord(button.dataset.recordId, { tab, questionId: button.dataset.questionId, workspace: $('#record-dialog').open });
     }));
   } catch (error) {
@@ -893,9 +1041,10 @@ async function runGlobalSearch(query) {
 
 function renderSearchResult(result) {
   const meta = typeMeta[result.type] || { singular: result.type === 'question' ? 'Вопрос' : result.type === 'answer' ? 'Ответ' : result.type === 'joint_decision' ? 'Совместный итог' : 'Запись', icon: result.type === 'question' || result.type === 'answer' ? 'messages' : result.type === 'joint_decision' ? 'scale' : 'fileText' };
-  const context = String(result.context || '').replace(/\s+/g, ' ').trim();
-  const label = result.entityKind === 'research_option' ? 'Вариант исследования' : meta.singular;
-  return `<button type="button" class="global-search-result" data-search-result="${result.id}" data-record-id="${result.recordId}" data-question-id="${result.questionId || ''}" data-research-option-id="${result.researchOptionId || ''}"><span class="type-icon">${icon(meta.icon)}</span><span><small>${escapeHTML(label)}</small><strong>${escapeHTML(result.title)}</strong>${context ? `<em>${escapeHTML(context.slice(0, 150))}${context.length > 150 ? '…' : ''}</em>` : ''}</span>${icon('chevronRight')}</button>`;
+  const context = markdownPlain(result.context || '', '').replace(/\s+/g, ' ').trim();
+  const entityLabels = { research_option: 'Вариант исследования', section: 'Раздел карточки', comment: 'Комментарий', checklist: 'Шаг задачи', proof: 'Доказательство', attachment: 'Файл' };
+  const label = entityLabels[result.entityKind] || meta.singular;
+  return `<button type="button" class="global-search-result" data-search-result="${result.id}" data-record-id="${result.recordId}" data-question-id="${result.questionId || ''}" data-research-option-id="${result.researchOptionId || ''}" data-target-tab="${result.targetTab || ''}"><span class="type-icon">${icon(meta.icon)}</span><span><small>${escapeHTML(label)}</small><strong>${escapeHTML(result.title)}</strong>${context ? `<em>${escapeHTML(context.slice(0, 150))}${context.length > 150 ? '…' : ''}</em>` : ''}</span>${icon('chevronRight')}</button>`;
 }
 
 function setAuthMode(mode) {
@@ -1401,7 +1550,7 @@ function graphNodeLabel(node) {
 }
 
 function graphPositionKey() {
-  return `business-control:graph-positions:${state.me?.id || 'anonymous'}:v3`;
+  return `business-control:graph-positions:${state.me?.id || 'anonymous'}:v4`;
 }
 
 function loadGraphPositions() {
@@ -1436,11 +1585,11 @@ function graphLayoutOptions(randomize = false, nodeCount = state.graphInstance?.
   const compact = nodeCount > 0 && nodeCount <= 40;
   return {
     name: 'cose', animate: state.graphPhysics, animationDuration: state.graphPhysics ? 560 : 0, animationEasing: 'ease-out-cubic', randomize,
-    nodeRepulsion: (compact ? 3400 : 5200) + state.graphRepelForce * (compact ? 72 : 110),
-    idealEdgeLength: 48 + state.graphLinkDistance * (compact ? 1.35 : 1.8),
+    nodeRepulsion: (compact ? 4400 : 5200) + state.graphRepelForce * (compact ? 88 : 110),
+    idealEdgeLength: 64 + state.graphLinkDistance * (compact ? 1.55 : 1.8),
     edgeElasticity: 24 + state.graphLinkForce * 1.8,
     gravity: .02 + state.graphCenterForce * .0036,
-    componentSpacing: compact ? 92 : 132, nestingFactor: 1.15,
+    componentSpacing: compact ? 124 : 132, nestingFactor: 1.15,
     numIter: compact ? 900 : 1300, initialTemp: 170, coolingFactor: .96, minTemp: 1,
     fit: true, padding: window.innerWidth <= 560 ? 30 : 64,
   };
@@ -1450,14 +1599,16 @@ function updateGraphZoomStyles() {
   const cy = state.graphInstance;
   if (!cy) return;
   const zoom = cy.zoom();
-  const fadeThreshold = .24 + state.graphTextFade * .009;
+  const fadeThreshold = window.innerWidth <= 560 ? .16 + state.graphTextFade * .0055 : .24 + state.graphTextFade * .009;
   cy.nodes().toggleClass('zoom-compact', zoom < fadeThreshold + .16).toggleClass('zoom-hidden', zoom < fadeThreshold);
   cy.edges().toggleClass('zoom-hidden', zoom < fadeThreshold + .12);
 }
 
 function ensureReadableGraphView(cy) {
-  if (!cy || cy.nodes().length > 40 || cy.zoom() >= .72) return;
-  cy.zoom(.72);
+  if (!cy || cy.nodes().length > 40) return;
+  const minimumZoom = cy.nodes().length <= 18 ? (window.innerWidth <= 560 ? .62 : .9) : (window.innerWidth <= 560 ? .52 : .76);
+  if (cy.zoom() >= minimumZoom) return;
+  cy.zoom(minimumZoom);
   cy.center(cy.nodes());
 }
 
@@ -1482,7 +1633,7 @@ function mountGraph() {
   const elements = [
     ...nodes.map((node, index) => {
       const nodeDegree = degree.get(node.id) || 0;
-      const size = Math.round((25 + Math.sqrt(nodeDegree + 1) * 8 + (node.isRoot ? 9 : 0)) * state.graphNodeSize / 100);
+      const size = Math.round((29 + Math.sqrt(nodeDegree + 1) * 9 + (node.isRoot ? 10 : 0)) * state.graphNodeSize / 100);
       return { data: { ...node, label: graphNodeLabel(node), size, degree: nodeDegree, color: state.graphGroupColors[graphGroupKey(node)] || '#8aa49a' }, position: savedPositions[node.id] || fallbackPosition(index), classes: `kind-${node.entityKind} type-${node.type} ${node.isRoot ? 'is-root' : ''} ${node.status === 'archived' ? 'is-archived' : ''}` };
     }),
     ...edges.map((edge) => ({ data: { id: edge.id, source: edge.source, target: edge.target, label: edge.label, relationType: edge.relationType, arrow: state.graphShowArrows ? 'triangle' : 'none' }, classes: `relation-${edge.relationType}` })),
@@ -1492,7 +1643,7 @@ function mountGraph() {
   const cy = window.cytoscape({
     container, elements, minZoom: .1, maxZoom: 3, boxSelectionEnabled: true,
     style: [
-      { selector: 'node', style: { shape: 'ellipse', width: 'data(size)', height: 'data(size)', label: 'data(label)', 'font-family': 'Onest Local, sans-serif', 'font-size': 11, 'font-weight': 600, color: '#d9e2de', 'text-wrap': 'wrap', 'text-max-width': 126, 'text-valign': 'bottom', 'text-margin-y': 10, 'text-halign': 'center', 'line-height': 1.22, 'background-color': 'data(color)', 'background-opacity': .82, 'border-width': 1.5, 'border-color': '#e5eee9', 'border-opacity': .44, 'overlay-opacity': 0, 'transition-property': 'opacity, border-width, border-color, background-opacity, width, height', 'transition-duration': '.16s' } },
+      { selector: 'node', style: { shape: 'ellipse', width: 'data(size)', height: 'data(size)', label: 'data(label)', 'font-family': 'Onest Local, sans-serif', 'font-size': 12, 'font-weight': 600, color: '#eef4f1', 'text-wrap': 'wrap', 'text-max-width': 148, 'text-valign': 'bottom', 'text-margin-y': 11, 'text-halign': 'center', 'line-height': 1.25, 'text-background-color': '#171d1a', 'text-background-opacity': .78, 'text-background-padding': 3, 'background-color': 'data(color)', 'background-opacity': .9, 'border-width': 1.5, 'border-color': '#e5eee9', 'border-opacity': .52, 'overlay-opacity': 0, 'transition-property': 'opacity, border-width, border-color, background-opacity, width, height', 'transition-duration': '.16s' } },
       { selector: 'node.is-root', style: { 'border-width': 3, 'border-color': '#f6fbf8', 'background-opacity': 1, 'font-size': 12, 'font-weight': 700 } },
       { selector: 'node.kind-joint_decision', style: { shape: 'diamond' } },
       { selector: 'node.kind-question', style: { shape: 'round-rectangle' } },
@@ -1503,7 +1654,7 @@ function mountGraph() {
       { selector: 'node.is-path', style: { 'border-width': 2.5, 'border-color': '#a8f1d7', 'background-opacity': 1 } },
       { selector: 'edge.is-path', style: { width: 2.3 * state.graphLinkThickness / 100, 'line-color': '#7ed3b5', 'line-opacity': .9, 'target-arrow-color': '#7ed3b5', 'text-opacity': 1 } },
       { selector: 'edge.show-label', style: { 'text-opacity': 1 } },
-      { selector: 'node.zoom-compact', style: { 'font-size': 9 } },
+      { selector: 'node.zoom-compact', style: { 'font-size': 10 } },
       { selector: 'node.zoom-hidden', style: { 'text-opacity': 0 } },
       { selector: 'edge.zoom-hidden', style: { 'text-opacity': 0 } },
       { selector: '.link-source', style: { 'border-width': 4, 'border-color': '#ef9ca5', 'underlay-color': '#ef7180', 'underlay-opacity': .16, 'underlay-padding': 9 } },
@@ -1514,14 +1665,38 @@ function mountGraph() {
   state.graphInstance = cy;
   $('#graph-count').textContent = `${nodes.length} · ${edges.length}`;
   cy.one('layoutstop', () => { ensureReadableGraphView(cy); saveGraphPositions(cy); updateGraphZoomStyles(); });
-  cy.ready(() => requestAnimationFrame(() => saveGraphPositions(cy)));
+  cy.ready(() => requestAnimationFrame(() => {
+    // Preset layouts can finish before the layoutstop listener is registered.
+    // Reapplying the readable floor keeps labels and tap targets usable on mobile.
+    ensureReadableGraphView(cy);
+    saveGraphPositions(cy);
+    updateGraphZoomStyles();
+  }));
   cy.on('zoom', updateGraphZoomStyles);
   cy.on('tap', 'node', (event) => selectGraphNode(event.target.id()));
   cy.on('mouseover', 'node', (event) => highlightGraphNeighborhood(event.target));
   cy.on('mouseout', 'node', applyGraphEmphasis);
   cy.on('tap', (event) => { closeGraphContextMenu(); if (event.target === cy) selectGraphNode(''); });
   cy.on('cxttap', 'node', (event) => openGraphContextMenu(event.target.id()));
-  cy.on('free', 'node', () => saveGraphPositions(cy));
+  cy.on('grab', 'node', (event) => {
+    const root = event.target;
+    const descendants = graphHierarchyDescendants(cy, root.id())
+      .map((id) => cy.$id(id))
+      .filter((node) => node.length);
+    state.graphDragBranch = {
+      rootID: root.id(),
+      rootStart: { ...root.position() },
+      descendants: descendants.map((node) => ({ node, start: { ...node.position() } })),
+    };
+  });
+  cy.on('drag', 'node', (event) => {
+    const branch = state.graphDragBranch;
+    if (!branch || branch.rootID !== event.target.id() || !branch.descendants.length) return;
+    const current = event.target.position();
+    const delta = { x: current.x - branch.rootStart.x, y: current.y - branch.rootStart.y };
+    cy.batch(() => branch.descendants.forEach(({ node, start }) => node.position({ x: start.x + delta.x, y: start.y + delta.y })));
+  });
+  cy.on('free', 'node', () => { state.graphDragBranch = null; saveGraphPositions(cy); });
   let lastTapped = { id: '', time: 0 };
   cy.on('tap', 'node', (event) => {
     const now = Date.now(); const id = event.target.id();
@@ -1658,7 +1833,11 @@ function openGraphContextMenu(nodeID) {
 function fitGraph() {
   const cy = state.graphInstance;
   if (!cy || !cy.nodes().length) return;
-  cy.animate({ fit: { eles: cy.elements(), padding: window.innerWidth <= 560 ? 28 : 54 }, duration: 240 });
+  cy.animate({
+    fit: { eles: cy.elements(), padding: window.innerWidth <= 560 ? 28 : 54 },
+    duration: 240,
+    complete: () => { ensureReadableGraphView(cy); updateGraphZoomStyles(); },
+  });
 }
 
 function zoomGraph(multiplier) {
@@ -2000,10 +2179,12 @@ function renderRecordLoadError(id, message) {
 function recordTabs(record, detail, activity) {
   const filledSections = detail.sections.filter((section) => section.content).length;
   const relationCount = detail.relationsLoaded ? detail.links.length + (detail.researchOptions?.length || 0) : 0;
+  const comparison = record.type === 'research' ? state.researchComparisons.get(record.id) : null;
+  const contentCount = comparison ? (comparison.options?.length ? String(comparison.options.length) : '') : `${filledSections}/${detail.sections.length}`;
   const workflow = detail.workflow || {};
   const tabs = [
     ['overview', 'Обзор', ''],
-    ['content', 'Содержание', `${filledSections}/${detail.sections.length}`],
+    ['content', 'Содержание', contentCount],
     ['relations', record.type === 'idea' ? 'Критерии и связи' : 'Связи', detail.relationsLoaded ? `${relationCount}` : ''],
     ['history', 'История', `${activity.length}`],
   ];
@@ -2455,7 +2636,7 @@ function renderLinksBlock(record, links, targets, open = false) {
     return (labels[link.relationType] || [link.relationType, link.relationType])[outgoing ? 0 : 1];
   };
   const createOptions = nextRecordOptions(record);
-  return `<details class="accordion" ${open ? 'open' : ''}><summary><span>Внешние связи</span><small>${links.length} связей с карточками</small></summary>${createOptions.length ? `<div class="linked-create"><span>Создать следующий объект</span>${createOptions.map(([type, kind, label]) => `<button type="button" data-create-linked="${type}" data-linked-kind="${kind}">${icon(typeMeta[type].icon)} ${label}</button>`).join('')}</div>` : ''}<div class="linked-list">${links.map((link) => `<div class="linked-item"><button type="button" data-related-record="${link.record.id}"><i class="type-icon type-${link.record.type}">${icon(typeMeta[link.record.type].icon)}</i><span><strong>${escapeHTML(link.record.title)}</strong><small>${escapeHTML(relationLabel(link))} · ${typeMeta[link.record.type].singular}</small></span></button><button type="button" class="icon-button danger-icon remove-link" data-remove-link="${link.id}" aria-label="Убрать связь" title="Убрать связь">${icon('x')}</button></div>`).join('') || emptyState('Явных связей с другими карточками пока нет.')}</div><form id="link-form" class="link-form"><select name="targetId" required><option value="">Выберите существующую карточку</option>${targets.map((target) => `<option value="${target.id}">${typeMeta[target.type].singular}: ${escapeHTML(target.title)}</option>`).join('')}</select><select name="relationType"><option value="related">Связано</option><option value="supports">Поддерживает</option><option value="depends_on">Зависит от</option><option value="result_of">Является результатом</option><option value="leads_to">Приводит к</option></select><button class="secondary" type="submit">${icon('link')} Связать</button></form></details>`;
+  return `<details class="accordion" ${open ? 'open' : ''}><summary><span>Внешние связи</span><small>${linksCountLabel(links.length)}</small></summary>${createOptions.length ? `<div class="linked-create"><span>Создать следующий объект</span>${createOptions.map(([type, kind, label]) => `<button type="button" data-create-linked="${type}" data-linked-kind="${kind}">${icon(typeMeta[type].icon)} ${label}</button>`).join('')}</div>` : ''}<div class="linked-list">${links.map((link) => `<div class="linked-item"><button type="button" data-related-record="${link.record.id}"><i class="type-icon type-${link.record.type}">${icon(typeMeta[link.record.type].icon)}</i><span><strong>${escapeHTML(link.record.title)}</strong><small>${escapeHTML(relationLabel(link))} · ${typeMeta[link.record.type].singular}</small></span></button><button type="button" class="icon-button danger-icon remove-link" data-remove-link="${link.id}" aria-label="Убрать связь" title="Убрать связь">${icon('x')}</button></div>`).join('') || emptyState('Явных связей с другими карточками пока нет.')}</div><form id="link-form" class="link-form"><select name="targetId" required><option value="">Выберите существующую карточку</option>${targets.map((target) => `<option value="${target.id}">${typeMeta[target.type].singular}: ${escapeHTML(target.title)}</option>`).join('')}</select><select name="relationType"><option value="related">Связано</option><option value="supports">Поддерживает</option><option value="depends_on">Зависит от</option><option value="result_of">Является результатом</option><option value="leads_to">Приводит к</option></select><button class="secondary" type="submit">${icon('link')} Связать</button></form></details>`;
 }
 
 function renderProofBlock(record, proofs, reviews = []) {
@@ -2532,13 +2713,10 @@ function bindRecordDialogEvents() {
     }
   }));
   const startEditing = (field = '') => {
+    state.activeRecordTab = 'overview';
     state.recordEditMode = true;
     renderRecordDialog();
     requestAnimationFrame(() => {
-      if (state.activeRecordTab === 'content') {
-        ($('[data-new-research-option]') || $('.accordion summary', $('#record-dialog')))?.focus();
-        return;
-      }
       const form = $('#record-edit-form');
       const input = field ? form?.elements.namedItem(field) : form?.elements.namedItem('title');
       if (!input) return;
@@ -2650,9 +2828,10 @@ function bindRecordDialogEvents() {
   });
   $$('.section-form').forEach((formNode) => formNode.addEventListener('submit', async (event) => {
     event.preventDefault(); const form = new FormData(event.currentTarget);
-    await mutateDetail(`/api/records/${record.id}/sections`, { method: 'POST', body: JSON.stringify({ sectionId: event.currentTarget.dataset.sectionId, definitionId: event.currentTarget.dataset.definitionId || null, title: form.get('title'), content: form.get('content'), reason: form.get('reason') }) });
+    const saved = await mutateDetail(`/api/records/${record.id}/sections`, { method: 'POST', body: JSON.stringify({ sectionId: event.currentTarget.dataset.sectionId, definitionId: event.currentTarget.dataset.definitionId || null, title: form.get('title'), content: form.get('content'), reason: form.get('reason') }) });
+    if (saved) clearWorkingDraftFor(event.currentTarget);
   }));
-  $('#custom-section-form')?.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateDetail(`/api/records/${record.id}/sections`, { method: 'POST', body: JSON.stringify({ title: form.get('title'), content: form.get('content') }) }); });
+  $('#custom-section-form')?.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); const saved = await mutateDetail(`/api/records/${record.id}/sections`, { method: 'POST', body: JSON.stringify({ title: form.get('title'), content: form.get('content') }) }); if (saved) clearWorkingDraftFor(event.currentTarget); });
   $$('[data-new-research-option]').forEach((button) => button.addEventListener('click', () => { state.activeResearchOptionId = 'new'; renderRecordDialog(); requestAnimationFrame(() => $('#research-option-form input[name="title"]')?.focus()); }));
   $$('[data-edit-research-option]').forEach((button) => button.addEventListener('click', () => { state.activeResearchOptionId = button.dataset.editResearchOption; renderRecordDialog(); requestAnimationFrame(() => $('#research-option-form input[name="title"]')?.focus()); }));
   $$('[data-cancel-research-option]').forEach((button) => button.addEventListener('click', () => { state.activeResearchOptionId = ''; renderRecordDialog(); }));
@@ -2665,11 +2844,13 @@ function bindRecordDialogEvents() {
     const values = {};
     comparison?.fields.forEach((field) => { values[field.id] = String(form.get(`field:${field.id}`) || ''); });
     const body = { title: form.get('title'), rating: Number(form.get('rating') || 0), summaryMd: form.get('summaryMd'), prosMd: form.get('prosMd'), consMd: form.get('consMd'), notesMd: form.get('notesMd'), reason: form.get('reason') || '', expectedUpdatedAt: option?.updatedAt || '', values };
-    await mutateResearchComparison(record.id, optionID ? `/api/records/${record.id}/research-options/${optionID}` : `/api/records/${record.id}/research-options`, { method: optionID ? 'PATCH' : 'POST', body: JSON.stringify(body) }, optionID ? 'Вариант обновлён' : 'Вариант добавлен');
+    const saved = await mutateResearchComparison(record.id, optionID ? `/api/records/${record.id}/research-options/${optionID}` : `/api/records/${record.id}/research-options`, { method: optionID ? 'PATCH' : 'POST', body: JSON.stringify(body) }, optionID ? 'Вариант обновлён' : 'Вариант добавлен');
+    if (saved) clearWorkingDraftFor(event.currentTarget);
   });
   $('#research-field-form')?.addEventListener('submit', async (event) => {
     event.preventDefault(); const form = new FormData(event.currentTarget);
-    await mutateResearchComparison(record.id, `/api/records/${record.id}/research-fields`, { method: 'POST', body: JSON.stringify({ name: form.get('name'), fieldType: form.get('fieldType') }) }, 'Поле сравнения добавлено');
+    const saved = await mutateResearchComparison(record.id, `/api/records/${record.id}/research-fields`, { method: 'POST', body: JSON.stringify({ name: form.get('name'), fieldType: form.get('fieldType') }) }, 'Поле сравнения добавлено');
+    if (saved) clearWorkingDraftFor(event.currentTarget);
   });
   $$('[data-archive-research-option]').forEach((button) => button.addEventListener('click', async () => {
     const reason = await askText({ title: 'Архивировать вариант', label: 'Почему этот вариант больше не рассматривается?', required: true });
@@ -2711,7 +2892,8 @@ function bindRecordDialogEvents() {
   $$('[data-open-event]', $('#record-dialog')).forEach((button) => button.addEventListener('click', () => openActivity(button.dataset.openEvent)));
   $('#add-questions-form')?.addEventListener('submit', async (event) => {
     event.preventDefault(); const form = new FormData(event.currentTarget);
-    await mutateDetail(`/api/records/${record.id}/questions`, { method: 'POST', body: JSON.stringify({ questions: form.get('questions') }) });
+    const saved = await mutateDetail(`/api/records/${record.id}/questions`, { method: 'POST', body: JSON.stringify({ questions: form.get('questions') }) });
+    if (saved) clearWorkingDraftFor(event.currentTarget);
   });
   $$('[data-edit-question-answer]').forEach((button) => button.addEventListener('click', () => {
     state.editingQuestionAnswerId = button.dataset.editQuestionAnswer;
@@ -2728,6 +2910,7 @@ function bindRecordDialogEvents() {
     const previousEditing = state.editingQuestionAnswerId;
     state.editingQuestionAnswerId = '';
     const saved = await mutateDetail(`/api/records/${record.id}/questions/${questionID}/answer`, { method: 'PUT', body: JSON.stringify({ content: form.get('content') }) });
+    if (saved) clearWorkingDraftFor(event.currentTarget);
     if (!saved) {
       state.editingQuestionAnswerId = previousEditing || questionID;
       renderRecordDialog();
@@ -2738,7 +2921,8 @@ function bindRecordDialogEvents() {
   }));
   $$('[data-custom-decision]').forEach((formNode) => formNode.addEventListener('submit', async (event) => {
     event.preventDefault(); const form = new FormData(event.currentTarget);
-    await mutateDetail(`/api/records/${record.id}/questions/${event.currentTarget.dataset.customDecision}/decision`, { method: 'POST', body: JSON.stringify({ mode: 'custom', content: form.get('content') }) });
+    const saved = await mutateDetail(`/api/records/${record.id}/questions/${event.currentTarget.dataset.customDecision}/decision`, { method: 'POST', body: JSON.stringify({ mode: 'custom', content: form.get('content') }) });
+    if (saved) clearWorkingDraftFor(event.currentTarget);
   }));
   $$('[data-create-output]').forEach((button) => button.addEventListener('click', () => {
     const question = detail.questionWorkflow.questions.find((item) => item.id === button.dataset.questionId);
@@ -2753,7 +2937,8 @@ function bindRecordDialogEvents() {
   }));
   $('#checklist-add-form')?.addEventListener('submit', async (event) => {
     event.preventDefault(); const form = new FormData(event.currentTarget);
-    await mutateWorkflow(`/api/records/${record.id}/checklist`, { method: 'POST', body: JSON.stringify({ title: form.get('title'), ownerId: form.get('ownerId') ? Number(form.get('ownerId')) : null }) });
+    const saved = await mutateWorkflow(`/api/records/${record.id}/checklist`, { method: 'POST', body: JSON.stringify({ title: form.get('title'), ownerId: form.get('ownerId') ? Number(form.get('ownerId')) : null }) });
+    if (saved) clearWorkingDraftFor(event.currentTarget);
   });
   $$('[data-checklist-toggle]').forEach((button) => button.addEventListener('click', async () => {
     await mutateWorkflow(`/api/records/${record.id}/checklist/${button.dataset.checklistToggle}`, { method: 'PATCH', body: JSON.stringify({ status: button.dataset.nextStatus }) });
@@ -2763,11 +2948,13 @@ function bindRecordDialogEvents() {
     const body = { proofText: form.get('proofText') || '' };
     if (event.currentTarget.elements.title) body.title = form.get('title');
     if (event.currentTarget.elements.ownerId) { if (form.get('ownerId')) body.ownerId = Number(form.get('ownerId')); else body.clearOwner = true; }
-    await mutateWorkflow(`/api/records/${record.id}/checklist/${event.currentTarget.dataset.checklistReport}`, { method: 'PATCH', body: JSON.stringify(body) });
+    const saved = await mutateWorkflow(`/api/records/${record.id}/checklist/${event.currentTarget.dataset.checklistReport}`, { method: 'PATCH', body: JSON.stringify(body) });
+    if (saved) clearWorkingDraftFor(event.currentTarget);
   }));
   $('#comment-form')?.addEventListener('submit', async (event) => {
     event.preventDefault(); const form = new FormData(event.currentTarget);
-    await mutateWorkflow(`/api/records/${record.id}/comments`, { method: 'POST', body: JSON.stringify({ body: form.get('body') }) });
+    const saved = await mutateWorkflow(`/api/records/${record.id}/comments`, { method: 'POST', body: JSON.stringify({ body: form.get('body') }) });
+    if (saved) clearWorkingDraftFor(event.currentTarget);
   });
   $('#attachment-form')?.addEventListener('submit', async (event) => {
     event.preventDefault(); const form = new FormData(event.currentTarget);
@@ -2777,11 +2964,13 @@ function bindRecordDialogEvents() {
     event.preventDefault(); const form = new FormData(event.currentTarget);
     await mutateWorkflow(`/api/records/${record.id}/recurrence`, { method: 'PUT', body: JSON.stringify({ active: form.get('active') === 'on', interval: Number(form.get('interval') || 1), cadence: form.get('cadence') }) });
   });
-  $('#proof-form')?.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateWorkflow(`/api/records/${record.id}/proofs`, { method: 'POST', body: JSON.stringify({ kind: form.get('kind'), content: form.get('content') }) }); });
+  $('#proof-form')?.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); const saved = await mutateWorkflow(`/api/records/${record.id}/proofs`, { method: 'POST', body: JSON.stringify({ kind: form.get('kind'), content: form.get('content') }) }); if (saved) clearWorkingDraftFor(event.currentTarget); });
   $('#complete-task')?.addEventListener('click', async () => {
     const result = $('.completion-box textarea[name="result"]')?.value.trim() || '';
     if (!result) return toast('Кратко опишите полученный результат', true);
-    await mutateWorkflow(`/api/records/${record.id}/complete`, { method: 'POST', body: JSON.stringify({ result, notifyPartners: $('#notify-on-complete').checked }) }, record.authorId !== record.ownerId || record.decisionMakerId ? 'Результат отправлен на проверку' : 'Задача завершена');
+    const completionBox = $('.completion-box');
+    const saved = await mutateWorkflow(`/api/records/${record.id}/complete`, { method: 'POST', body: JSON.stringify({ result, notifyPartners: $('#notify-on-complete').checked }) }, record.authorId !== record.ownerId || record.decisionMakerId ? 'Результат отправлен на проверку' : 'Задача завершена');
+    if (saved) clearWorkingDraftFor(completionBox);
   });
   $$('[data-review-task]').forEach((button) => button.addEventListener('click', async () => {
     const decision = button.dataset.reviewTask;
@@ -2790,6 +2979,22 @@ function bindRecordDialogEvents() {
     await mutateWorkflow(`/api/records/${record.id}/review`, { method: 'POST', body: JSON.stringify({ decision, reason }) }, decision === 'accept' ? 'Результат принят' : 'Задача возвращена на доработку');
   }));
   bindMarkdownEditors($('#record-dialog'));
+  bindRecordWorkingDrafts(record.id);
+}
+
+function bindRecordWorkingDrafts(recordID) {
+  $$('.section-form').forEach((form) => bindWorkingDraft(form, `record:${recordID}:section:${form.dataset.sectionId || form.dataset.definitionId || 'new'}`));
+  bindWorkingDraft($('#custom-section-form'), `record:${recordID}:section:custom`);
+  bindWorkingDraft($('#research-option-form'), `record:${recordID}:research-option:${$('#research-option-form')?.dataset.optionId || 'new'}`);
+  bindWorkingDraft($('#research-field-form'), `record:${recordID}:research-field:new`);
+  bindWorkingDraft($('#add-questions-form'), `record:${recordID}:questions:add`);
+  $$('[data-question-answer]').forEach((form) => bindWorkingDraft(form, `record:${recordID}:answer:${form.dataset.questionAnswer}`));
+  $$('[data-custom-decision]').forEach((form) => bindWorkingDraft(form, `record:${recordID}:decision:${form.dataset.customDecision}`));
+  bindWorkingDraft($('#checklist-add-form'), `record:${recordID}:checklist:new`);
+  $$('[data-checklist-report]').forEach((form) => bindWorkingDraft(form, `record:${recordID}:checklist:${form.dataset.checklistReport}`));
+  bindWorkingDraft($('#comment-form'), `record:${recordID}:comment:new`);
+  bindWorkingDraft($('#proof-form'), `record:${recordID}:proof:new`);
+  bindWorkingDraft($('.completion-box'), `record:${recordID}:completion`);
 }
 
 async function mutateResearchComparison(recordID, url, options, successMessage) {
@@ -2798,13 +3003,14 @@ async function mutateResearchComparison(recordID, url, options, successMessage) 
     state.researchComparisons.set(recordID, comparison);
     state.activeResearchOptionId = '';
     const detail = await fetchRecordDetail(recordID, true);
-    if (state.activeDetail?.record.id !== recordID) return;
+    if (state.activeDetail?.record.id !== recordID) return true;
     state.activeDetail = detail;
     const index = state.records.findIndex((item) => item.id === recordID);
     if (index >= 0) state.records[index] = detail.record;
     renderRecordDialog();
     toast(successMessage);
-  } catch (error) { toast(error.message, true); }
+    return true;
+  } catch (error) { toast(error.message, true); return false; }
 }
 
 async function loadRecordRelations(recordID) {
@@ -2885,6 +3091,7 @@ async function mutateWorkflow(path, options, successMessage = 'Сохранен�
 function openQuestionOutputDialog(sourceRecord, question, kind, defaultTitle) {
   const labels = { preference: 'Критерий выбора', limitation: 'Ограничение', rule: 'Правило', insight: 'Вывод', task: 'Задача', idea: 'Идея', research: 'Исследование', goal: 'Цель' };
   const planned = ['task', 'goal', 'research'].includes(kind);
+  const draftScope = `question-output:${sourceRecord.id}:${question.id}:${kind}`;
   $('#create-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">${icon('link')} Результат совместного вывода</span><h2>${labels[kind]}</h2><p>Источник сохранится автоматически: группа вопросов → вопрос → совместный итог → новая карточка.</p></div><button type="button" class="close-button icon-button" data-close-create aria-label="Закрыть">${icon('x')}</button></div><form id="question-output-form" class="card-form dialog-form"><div class="source-context"><span>Вопрос</span><strong>${escapeHTML(question.body)}</strong>${markdownView(question.decision.content, '', 'Исходный совместный итог')}</div><label>Название<input name="title" required maxlength="240" value="${escapeHTML(defaultTitle)}"></label>${markdownEditor('description', 'Как применять', question.decision.content, 6, 'Область действия и следующий шаг', 'question-output')}${planned ? `<div class="form-grid two"><label>Ответственный<select name="ownerId">${userOptions(state.me.id)}</select></label><label>Срок<input name="dueAt" type="datetime-local"></label></div>` : `<input type="hidden" name="ownerId" value="${state.me.id}">`}<div class="form-actions"><button type="submit" class="primary">${icon('plus')} Создать и связать</button><button type="button" class="secondary" data-close-create>Отмена</button></div></form>`;
   $$('[data-close-create]').forEach((button) => button.addEventListener('click', () => $('#create-dialog').close()));
   $('#question-output-form').addEventListener('submit', async (event) => {
@@ -2893,6 +3100,7 @@ function openQuestionOutputDialog(sourceRecord, question, kind, defaultTitle) {
     const due = form.get('dueAt');
     try {
       const output = await api(`/api/records/${sourceRecord.id}/questions/${question.id}/outputs`, { method: 'POST', body: JSON.stringify({ kind, title: form.get('title'), description: form.get('description'), ownerId: Number(form.get('ownerId')), dueAt: due ? new Date(due).toISOString() : '' }) });
+      clearWorkingDraft(draftScope);
       $('#create-dialog').close();
       state.detailCache.delete(sourceRecord.id);
       await loadData(true);
@@ -2901,6 +3109,7 @@ function openQuestionOutputDialog(sourceRecord, question, kind, defaultTitle) {
     } catch (error) { toast(error.message, true); }
   });
 	bindMarkdownEditors($('#create-dialog'));
+  bindWorkingDraft($('#question-output-form'), draftScope);
   openModal($('#create-dialog'));
 }
 
@@ -2968,12 +3177,14 @@ function openCreateDialog(initialType = 'idea', preset = {}) {
   const displayName = preset.comparisonMode ? 'Сравнение вариантов' : kindLabels[preset.kind] || initialMeta.singular;
   const titleLabel = preset.comparisonMode ? 'Что сравниваем' : initialType === 'question_set' ? 'Название группы вопросов' : initialType === 'meeting' ? 'Тема встречи' : 'Название';
   const descriptionLabel = preset.comparisonMode ? 'Зачем сравниваем и какой вывод нужен' : preset.kind === 'limitation' ? 'Как применять ограничение' : preset.kind === 'rule' ? 'Формулировка и область действия' : initialType === 'question_set' ? 'Зачем обсуждаем' : initialType === 'meeting' ? 'Повестка и заметки' : initialType === 'task' ? 'Ожидаемый результат' : 'Краткое описание';
+  const draftScope = `create:${initialType}:${preset.kind || 'default'}:${preset.comparisonMode ? 'comparison' : 'record'}:${preset.sourceRecordId || 'root'}`;
   const parentOptions = state.records.filter((record) => record.status !== 'archived').map((record) => `<option value="${record.id}" ${defaultParentID === record.id ? 'selected' : ''}>${escapeHTML(typeMeta[record.type]?.singular || 'Карточка')}: ${escapeHTML(record.title)}</option>`).join('');
   const planned = ['task', 'goal', 'research', 'question_set', 'meeting', 'decision', 'disagreement'].includes(initialType);
   $('#create-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">${icon(initialMeta.icon)} Новая запись</span><h2>${escapeHTML(displayName)}</h2></div><button type="button" class="close-button icon-button" data-close-create aria-label="Закрыть">${icon('x')}</button></div><form id="create-record-form" class="card-form dialog-form"><label>${titleLabel}<input name="title" required maxlength="240" autofocus value="${escapeHTML(preset.title || '')}" placeholder="${preset.comparisonMode ? 'Например: Выбор сервера' : initialType === 'question_set' ? 'Например: Договорённости основателей' : ''}"></label>${markdownEditor('description', descriptionLabel, preset.description || '', 7, 'Факты, контекст и ожидаемый результат', 'create-record')}<input type="hidden" name="type" value="${initialType}"><input type="hidden" name="kind" value="${escapeHTML(preset.kind || '')}">${planned ? `<div class="form-grid two"><label>${initialType === 'question_set' ? 'Координатор' : initialType === 'meeting' ? 'Организатор' : 'Ответственный'}<select name="ownerId">${userOptions(state.me.id)}</select></label><label>${initialType === 'meeting' ? 'Дата и время' : 'Срок'}<input name="dueAt" type="datetime-local"></label></div><div class="form-grid two"><label>Приоритет<select name="priority">${Object.entries(priorityLabels).map(([value, label]) => `<option value="${value}" ${value === (preset.priority || 'normal') ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Оценка времени, минут<input name="estimateMinutes" type="number" min="0" value="${Number(preset.estimateMinutes || 0)}"></label></div>` : `<input type="hidden" name="ownerId" value="${state.me.id}"><input type="hidden" name="priority" value="${escapeHTML(preset.priority || 'normal')}"><input type="hidden" name="estimateMinutes" value="${Number(preset.estimateMinutes || 0)}">`}<details class="form-more create-organization" ${sourceRecord ? 'open' : ''}><summary>Место в проекте и доступ</summary><div class="form-more-body"><div class="form-grid three"><label>Направление<select name="workstream">${Object.entries(workstreamLabels).map(([value, label]) => `<option value="${value}" ${defaultWorkstream === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Доступ к изменениям<select name="editPolicy">${Object.entries(editPolicyLabels).map(([value, label]) => `<option value="${value}" ${defaultEditPolicy === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Родитель<select name="parentId"><option value="">Без родителя</option>${parentOptions}</select></label></div><label class="root-toggle"><input name="isRoot" type="checkbox" ${preset.isRoot ? 'checked' : ''}> <span><strong>Новый корень</strong><small>Начать самостоятельную крупную ветку вместо продолжения текущей цепочки.</small></span></label></div></details><div class="ai-suggestion"><span class="ai-suggestion-icon">${icon('sparkles')}</span><span><strong>AI-структура</strong><small id="ai-suggestion-status">После названия система предложит приоритет, оценку времени, направление и место в иерархии.</small></span><button type="button" class="secondary" data-ai-suggest>Предложить</button></div><div class="form-actions"><button type="submit" class="primary">${icon('plus')} Создать</button><button type="button" class="secondary" data-close-create>Отмена</button></div></form>`;
   $$('[data-close-create]').forEach((button) => button.addEventListener('click', () => $('#create-dialog').close()));
   const createForm = $('#create-record-form');
 	bindMarkdownEditors($('#create-dialog'));
+  bindWorkingDraft(createForm, draftScope);
   bindCreateSuggestion(createForm, initialType);
   $('#create-record-form').addEventListener('submit', async (event) => {
     event.preventDefault(); const form = new FormData(event.currentTarget); const due = form.get('dueAt');
@@ -2988,6 +3199,7 @@ function openCreateDialog(initialType = 'idea', preset = {}) {
           linkError = `Карточка создана, но связь не добавлена: ${error.message}`;
         }
       }
+      clearWorkingDraft(draftScope);
       $('#create-dialog').close(); await loadData(true); toast(linkError || 'Карточка создана', Boolean(linkError)); await openRecord(record.id, { workspace: Boolean(preset.sourceRecordId), edit: true, tab: preset.comparisonMode ? 'content' : undefined });
     } catch (error) { toast(error.message, true); }
   });
@@ -3063,12 +3275,13 @@ function activityDisplayValue(field, value, truncate = true) {
   if (field === 'parentId' && value) return state.records.find((record) => record.id === value)?.title || value;
   if (field === 'actualMinutes' && value !== null && value !== undefined) return minutesLabel(Number(value));
   if (field === 'isRoot') return value ? 'Новый корень' : 'Обычная ветка';
+  if (['description', 'summaryMd', 'prosMd', 'consMd', 'notesMd', 'progressNote', 'result'].includes(field)) return markdownPlain(value || '', 'не указано');
   return formatActivityValue(value, truncate);
 }
 
 function activityChanges(item, full = false) {
-  const fieldLabels = { username: 'Логин', type: 'Тип карточки', title: 'Название', description: 'Описание', status: 'Статус', ownerId: 'Ответственный', decisionMakerId: 'Принимает решение', dueAt: 'Срок', priority: 'Приоритет', workstream: 'Направление', editPolicy: 'Доступ', parentId: 'Родитель', isRoot: 'Иерархия', estimateMinutes: 'Оценка времени', actualMinutes: 'Фактическое время', progress: 'Прогресс', progressNote: 'Ход работы', result: 'Результат' };
-  const changes = Object.entries(item.details || {}).filter(([, value]) => value && typeof value === 'object' && Object.prototype.hasOwnProperty.call(value, 'before') && Object.prototype.hasOwnProperty.call(value, 'after'));
+  const fieldLabels = { username: 'Логин', type: 'Тип карточки', title: 'Название', description: 'Описание', status: 'Статус', ownerId: 'Ответственный', decisionMakerId: 'Принимает решение', dueAt: 'Срок', priority: 'Приоритет', workstream: 'Направление', editPolicy: 'Доступ', parentId: 'Родитель', isRoot: 'Иерархия', estimateMinutes: 'Оценка времени', actualMinutes: 'Фактическое время', progress: 'Прогресс', progressNote: 'Ход работы', result: 'Результат', summaryMd: 'Краткий вывод', prosMd: 'Плюсы', consMd: 'Минусы', notesMd: 'Заметки', rating: 'Оценка' };
+  const changes = Object.entries(item.details || {}).filter(([field, value]) => value && typeof value === 'object' && Object.prototype.hasOwnProperty.call(value, 'before') && Object.prototype.hasOwnProperty.call(value, 'after') && activityDisplayValue(field, value.before, false) !== activityDisplayValue(field, value.after, false));
   if (!changes.length && Object.prototype.hasOwnProperty.call(item.details || {}, 'before') && Object.prototype.hasOwnProperty.call(item.details || {}, 'after')) {
     changes.push([item.details?.section || 'Содержание', { before: item.details.before, after: item.details.after }]);
   }
@@ -3079,6 +3292,7 @@ function activityChanges(item, full = false) {
 function activityDetails(item) {
   const details = item.details || {};
   const rows = [];
+  const record = state.records.find((candidate) => candidate.id === item.entityId);
   const target = details.targetId ? state.records.find((record) => record.id === details.targetId) : null;
   const relationLabels = { related: 'связано', supports: 'поддерживает', depends_on: 'зависит от', result_of: 'является результатом', leads_to: 'приводит к', produced: 'порождает' };
   if (item.action === 'questions_added' && details.count) rows.push(['Добавлено вопросов', String(details.count)]);
@@ -3090,7 +3304,7 @@ function activityDetails(item) {
   if (item.action === 'completed' && details.result) rows.push(['Полученный результат', details.result]);
   if (item.action === 'partners_notified' && details.message) rows.push(['Сообщение партнёру', details.message]);
   if (item.action === 'section_updated' && details.section) rows.push(['Раздел', details.section]);
-  if (item.action.startsWith('research_option_') && details.title) rows.push(['Вариант', details.title?.after || details.title]);
+  if (item.action.startsWith('research_option_') && (details.title || details.optionTitle)) rows.push(['Вариант', details.title?.after || details.title || details.optionTitle]);
   if (item.action.startsWith('research_field_') && details.name) rows.push(['Поле сравнения', details.name]);
   if (item.action === 'research_option_created' && details.rating !== undefined) rows.push(['Оценка', `${details.rating} из 10`]);
 	if (item.action === 'checklist_added' && details.title) rows.push(['Новый шаг', details.title]);
@@ -3099,7 +3313,14 @@ function activityDetails(item) {
 	if (item.action === 'review_accepted') rows.push(['Приёмка', 'Результат подтверждён']);
 	if (item.action === 'review_rework') rows.push(['Приёмка', 'Нужна доработка']);
 	if (item.action === 'recurrence_created' && details.dueAt) rows.push(['Следующий срок', formatDate(details.dueAt, true)]);
-  if (!rows.length) return '';
+  if (item.action === 'created' && record) {
+    rows.push(['Тип', typeMeta[record.type]?.singular || 'Карточка']);
+    rows.push(['Ответственный', record.ownerUsername]);
+    rows.push(['Текущее состояние', statusLabel(record)]);
+  }
+  if (item.action === 'question_answered') rows.push(['Результат', 'Личная позиция сохранена в исходной карточке вопроса']);
+  if (item.action === 'question_decided') rows.push(['Результат', 'Совместный итог сохранён и доступен для создания следующей сущности']);
+  if (!rows.length) rows.push(['Событие', activityContext(item)]);
   return `<dl class="event-details">${rows.map(([label, value]) => `<div><dt>${escapeHTML(label)}</dt><dd>${escapeHTML(String(value))}</dd></div>`).join('')}</dl>`;
 }
 
@@ -3121,7 +3342,7 @@ function activityContext(item) {
 	if (item.action === 'review_rework') return item.reason ? `Доработать: ${item.reason}` : 'Задача возвращена исполнителю';
 	if (item.action === 'attachment_added') return details.name || 'Приложен файл';
 	if (item.action === 'recurrence_created') return 'Создана новая связанная задача';
-  if (item.action.startsWith('research_option_')) return details.title?.after || details.title || 'Изменён вариант сравнения';
+  if (item.action.startsWith('research_option_')) return details.title?.after || details.title || details.optionTitle || 'Изменён вариант сравнения';
   if (item.action.startsWith('research_field_')) return details.name || 'Изменена структура сравнения';
   if (item.reason) return `Причина: ${item.reason}`;
   return recordTitleByActivity(item);

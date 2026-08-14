@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -319,9 +320,9 @@ func (s *Server) handleUpdateResearchOption(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	optionID := r.PathValue("optionId")
-	var beforeTitle, beforeUpdatedAt string
+	var beforeTitle, beforeSummary, beforePros, beforeCons, beforeNotes, beforeUpdatedAt string
 	var beforeRating float64
-	if err := s.store.db.QueryRowContext(r.Context(), `SELECT title, rating, updated_at FROM research_options WHERE id = ? AND record_id = ? AND status = 'active'`, optionID, record.ID).Scan(&beforeTitle, &beforeRating, &beforeUpdatedAt); errors.Is(err, sql.ErrNoRows) {
+	if err := s.store.db.QueryRowContext(r.Context(), `SELECT title, summary_md, pros_md, cons_md, notes_md, rating, updated_at FROM research_options WHERE id = ? AND record_id = ? AND status = 'active'`, optionID, record.ID).Scan(&beforeTitle, &beforeSummary, &beforePros, &beforeCons, &beforeNotes, &beforeRating, &beforeUpdatedAt); errors.Is(err, sql.ErrNoRows) {
 		writeError(w, http.StatusNotFound, "Вариант не найден")
 		return
 	} else if err != nil {
@@ -330,6 +331,55 @@ func (s *Server) handleUpdateResearchOption(w http.ResponseWriter, r *http.Reque
 	}
 	if input.ExpectedUpdatedAt != "" && input.ExpectedUpdatedAt != beforeUpdatedAt {
 		writeError(w, http.StatusConflict, "Вариант уже изменён. Откройте его заново")
+		return
+	}
+	beforeValues := make(map[string]string)
+	fieldNames := make(map[string]string)
+	rows, err := s.store.db.QueryContext(r.Context(), `
+		SELECT f.id, f.name, COALESCE(v.value, '')
+		FROM research_option_fields f
+		LEFT JOIN research_option_values v ON v.field_id = f.id AND v.option_id = ?
+		WHERE f.record_id = ? AND f.active = 1`, optionID, record.ID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось загрузить параметры варианта")
+		return
+	}
+	for rows.Next() {
+		var fieldID, fieldName, value string
+		if scanErr := rows.Scan(&fieldID, &fieldName, &value); scanErr != nil {
+			rows.Close()
+			writeError(w, http.StatusInternalServerError, "Не удалось прочитать параметры варианта")
+			return
+		}
+		beforeValues[fieldID], fieldNames[fieldID] = value, fieldName
+	}
+	if err = rows.Err(); err != nil {
+		rows.Close()
+		writeError(w, http.StatusInternalServerError, "Не удалось прочитать параметры варианта")
+		return
+	}
+	if err = rows.Close(); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось завершить чтение параметров варианта")
+		return
+	}
+	changes := map[string]any{"optionId": optionID, "optionTitle": beforeTitle}
+	addChange := func(field string, before, after any) {
+		if fmt.Sprint(before) != fmt.Sprint(after) {
+			changes[field] = map[string]any{"before": before, "after": after}
+		}
+	}
+	addChange("title", beforeTitle, input.Title)
+	addChange("summaryMd", beforeSummary, input.SummaryMD)
+	addChange("prosMd", beforePros, input.ProsMD)
+	addChange("consMd", beforeCons, input.ConsMD)
+	addChange("notesMd", beforeNotes, input.NotesMD)
+	addChange("rating", beforeRating, input.Rating)
+	for fieldID, after := range input.Values {
+		addChange("Параметр: "+fieldNames[fieldID], beforeValues[fieldID], after)
+	}
+	if len(changes) == 2 {
+		comparison, _ := s.listResearchComparison(r.Context(), record.ID)
+		writeJSON(w, http.StatusOK, comparison)
 		return
 	}
 	now := nowText()
@@ -352,7 +402,7 @@ func (s *Server) handleUpdateResearchOption(w http.ResponseWriter, r *http.Reque
 		writeError(w, http.StatusInternalServerError, "Не удалось обновить исследование")
 		return
 	}
-	if err := writeActivity(r.Context(), tx, user.ID, record.Type, record.ID, "research_option_updated", input.Reason, map[string]any{"optionId": optionID, "title": map[string]any{"before": beforeTitle, "after": input.Title}, "rating": map[string]any{"before": beforeRating, "after": input.Rating}}); err != nil {
+	if err := writeActivity(r.Context(), tx, user.ID, record.Type, record.ID, "research_option_updated", input.Reason, changes); err != nil {
 		writeError(w, http.StatusInternalServerError, "Не удалось записать историю")
 		return
 	}

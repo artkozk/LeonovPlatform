@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -79,6 +80,9 @@ func TestCofounderWorkflowComfort(t *testing.T) {
 		"type": "task", "title": "Проверить сценарий приёмки", "description": "## Готовность\n\n- Есть отчёт\n- Есть файл",
 		"ownerId": partner.ID, "dueAt": due, "priority": "high", "estimateMinutes": 45,
 	})
+	requestJSON(t, artkozk, http.MethodPost, server.URL+"/api/records/"+task.ID+"/sections", map[string]any{
+		"title": "Архитектурный контекст", "content": "Уникальный маркер сетевой топологии",
+	}, http.StatusOK, nil)
 
 	var comment RecordComment
 	requestJSON(t, artkozk, http.MethodPost, server.URL+"/api/records/"+task.ID+"/comments", map[string]any{
@@ -136,6 +140,22 @@ func TestCofounderWorkflowComfort(t *testing.T) {
 	requestJSON(t, partnerClient, http.MethodPost, server.URL+"/api/records/"+task.ID+"/proofs", map[string]any{
 		"kind": "text", "content": "## Итог\n\nРабота выполнена.",
 	}, http.StatusCreated, &proofs)
+	assertSearchKind := func(query, kind, targetTab string) {
+		t.Helper()
+		var results []SearchResult
+		requestJSON(t, artkozk, http.MethodGet, server.URL+"/api/search?q="+url.QueryEscape(query), nil, http.StatusOK, &results)
+		for _, result := range results {
+			if result.RecordID == task.ID && result.EntityKind == kind && result.TargetTab == targetTab {
+				return
+			}
+		}
+		t.Fatalf("search %q missing kind=%s tab=%s: %#v", query, kind, targetTab, results)
+	}
+	assertSearchKind("сетевой топологии", "section", "content")
+	assertSearchKind("условия готовности", "comment", "discussion")
+	assertSearchKind("Приложить проверяемый", "checklist", "execution")
+	assertSearchKind("Работа выполнена", "proof", "execution")
+	assertSearchKind("report.md", "attachment", "files")
 	var submitted Record
 	requestJSON(t, partnerClient, http.MethodPost, server.URL+"/api/records/"+task.ID+"/complete", map[string]any{
 		"result": "Работа готова к проверке", "notifyPartners": true,

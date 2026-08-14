@@ -1186,10 +1186,26 @@ func (s *Server) handleAIHealth(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		log.Printf("%s health: %v", provider, err)
-		response["message"] = "Внешний AI недоступен; локальные правила активны"
+		response["message"] = aiUnavailableMessage(provider, err)
 		writeJSON(w, http.StatusOK, response)
 		return
 	}
 	response["providerAvailable"], response["source"], response["message"] = true, provider, "Внешний AI отвечает и прошёл серверную валидацию"
 	writeJSON(w, http.StatusOK, response)
+}
+
+func aiUnavailableMessage(provider string, err error) string {
+	message := strings.ToUpper(err.Error())
+	switch {
+	case strings.Contains(message, "BILLING_DISABLED"):
+		return "В Google Cloud не включён биллинг; локальный анализ активен"
+	case strings.Contains(message, "API_KEY_INVALID"), strings.Contains(message, "UNAUTHENTICATED"):
+		return "Ключ внешнего AI отклонён; локальный анализ активен"
+	case strings.Contains(message, "RESOURCE_EXHAUSTED"), strings.Contains(message, "STATUS 429"):
+		return "Квота внешнего AI исчерпана; локальный анализ активен"
+	case provider == "gemini":
+		return "Google Vertex AI временно недоступен; локальный анализ активен"
+	default:
+		return "Внешний AI временно недоступен; локальный анализ активен"
+	}
 }

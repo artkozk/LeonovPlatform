@@ -277,7 +277,26 @@ func (s *Server) geminiJSON(ctx context.Context, systemInstruction, prompt strin
 	defer response.Body.Close()
 	responseBody, _ := io.ReadAll(io.LimitReader(response.Body, 2<<20))
 	if response.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("gemini status %d", response.StatusCode)
+		var providerError struct {
+			Error struct {
+				Status  string `json:"status"`
+				Details []struct {
+					Reason string `json:"reason"`
+				} `json:"details"`
+			} `json:"error"`
+		}
+		_ = json.Unmarshal(responseBody, &providerError)
+		reason := strings.TrimSpace(providerError.Error.Status)
+		for _, detail := range providerError.Error.Details {
+			if strings.TrimSpace(detail.Reason) != "" {
+				reason = strings.TrimSpace(detail.Reason)
+				break
+			}
+		}
+		if reason == "" {
+			reason = "UNKNOWN"
+		}
+		return "", fmt.Errorf("gemini status %d: %s", response.StatusCode, reason)
 	}
 	var completion struct {
 		Candidates []struct {

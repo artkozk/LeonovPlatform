@@ -137,3 +137,33 @@ func TestResearchComparisonAndSafeMarkdownAssetsAreEmbedded(t *testing.T) {
 		}
 	}
 }
+
+func TestContinuityAndLiveCollaborationAssetsAreEmbedded(t *testing.T) {
+	app, err := Files.ReadFile("app.js")
+	if err != nil {
+		t.Fatalf("read app.js: %v", err)
+	}
+	for _, marker := range [][]byte{
+		[]byte("function bindWorkingDraft"),
+		[]byte("function refreshLiveData"),
+		[]byte("data-target-tab"),
+		[]byte("state.activeRecordTab = 'overview'"),
+		[]byte("sidebar.setPointerCapture"),
+		[]byte("workspace.inert"),
+		[]byte("graphDragBranch"),
+		[]byte("markdownPlain(result.context"),
+	} {
+		if !bytes.Contains(app, marker) {
+			t.Fatalf("app.js does not contain continuity marker %q", marker)
+		}
+	}
+	styles, err := Files.ReadFile("styles.css")
+	if err != nil {
+		t.Fatalf("read styles.css: %v", err)
+	}
+	for _, marker := range [][]byte{[]byte(".working-draft-note"), []byte(".sidebar.dragging")} {
+		if !bytes.Contains(styles, marker) {
+			t.Fatalf("styles.css does not contain continuity marker %q", marker)
+		}
+	}
+}

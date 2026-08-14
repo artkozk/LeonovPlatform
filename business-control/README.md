@@ -217,3 +217,11 @@ Production BizFlow разрешено хранить и запускать то�
 Таблицы, API, права, AI-контракт и инварианты хранения: `docs/architecture/BUSINESS_CONTROL_WORKFLOW_COMFORT_DATA_MODEL_2026_08_14.md`.
 
 Развёртывание, проверка, rollback и восстановление зашифрованной копии: `docs/operations/BUSINESS_CONTROL_WORKFLOW_COMFORT_DEPLOY_2026_08_14.md`.
+
+## Production-quality уточнение от 14 августа 2026 года
+
+Восстановление незавершённого ввода во всех рабочих формах, предметный глобальный поиск, целевые вкладки результатов, честная история вариантов исследования, мобильная доступность и финальная полировка карты описаны в `docs/product/BUSINESS_CONTROL_PRODUCTION_QUALITY_RELEASE_2026_08_14.md`.
+
+Gemini теперь настроен как Google Vertex AI Express Mode с моделью `gemini-2.5-flash`. Фактический server-side preflight подтвердил корректный проект и вернул `BILLING_DISABLED`; до включения биллинга профиль показывает точную причину, а локальная эвристика остаётся активной. Ключ по-прежнему хранится только в root-only server env.
+
+Атомарное развёртывание этого релиза без повторного seed, backup, rollback и production smoke описаны в `docs/operations/BUSINESS_CONTROL_PRODUCTION_QUALITY_DEPLOY_2026_08_14.md` и выполняются скриптом `deploy/deploy-production-quality-release-20260814.sh`.
