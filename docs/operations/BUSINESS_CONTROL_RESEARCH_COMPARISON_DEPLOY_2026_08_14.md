@@ -191,3 +191,74 @@ journal errors за 10 минут      0
 ```
 
 Для отката именно hotfix используются предыдущий release `/opt/business-control/releases/20260814-research-comparison-df1c2be` и backup `/var/lib/business-control/backups/business-control-20260814-140126-pre-research-comparison.db`. Предупреждение о сохранении новых post-release записей перед восстановлением snapshot остаётся обязательным.
+
+## Релиз связей сравнения и drag-scroll
+
+После замечаний о невидимом списке связей, нулевом счётчике при существующих вариантах и выделении текста при листании выпущен следующий production-релиз.
+
+- Продуктовый коммит: `5e0bcd8 fix(business-control): make comparisons navigable`.
+- Ветка: `artkozk/business-control-platform`.
+- Release: `/opt/business-control/releases/20260814-comparison-ux-5e0bcd8`.
+- Предыдущий release: `/opt/business-control/releases/20260814-markdown-shortcuts-c229888`.
+- Backup: `/var/lib/business-control/backups/business-control-20260814-150355-pre-research-comparison.db`.
+- SHA-256 backup: `caf7ab2e02b9b8801cac7fb2938ec2b5509fd55221ba4da67644de5e6cd93c76`.
+- SHA-256 Linux-бинарника: `0ea69d7857a7be449890b8413780e97785b0f0a0ec9894841450c08303fb9d76`.
+- Production-домен: `https://control.e-rd.ru`.
+
+Локально подтверждены:
+
+```text
+node --check web/app.js                         ok
+go test ./...                                  ok
+go vet ./...                                   ok
+git diff --check                               ok
+Linux amd64 build                              ok
+```
+
+В Windows-среде отсутствует локальный `/bin/bash`, поэтому `bash -n` выполнен после загрузки скриптов на production Linux до итоговой фиксации deployment. Оба скрипта прошли синтаксическую проверку без вывода и exit code `0`.
+
+Browser QA выполнен на desktop и mobile `390×844`. Проверены прямой пункт `Сравнение вариантов`, автоматическое открытие вкладки содержания, три карточки вариантов, счётчик `Связи 3`, переход от внутренней связи к конкретному варианту, desktop `drop-up`, mobile bottom sheet, закрытие мобильного слоя по фону и отсутствие console warning/error. Drag мышью изменил `scrollLeft` ленты с `2.4` до `196.8`, при этом `window.getSelection()` остался пустым и после отпускания карточка не открылась случайно.
+
+Для desktop-списка связей измерены фактические границы: trigger находился на `607.5…651.5 px`, меню автоматически открылось вверх в `511.9…601.5 px`, оба пункта были видимы, а вычисленное `overflow` родительского accordion стало `visible` только на время открытого меню. На mobile меню осталось внутри `14…376.4 px` по горизонтали и `732.4…830 px` по вертикали при viewport `390×844`.
+
+Dry-run на копии production БД выполнил seed дважды и вернул:
+
+```text
+release_task=1
+shortcut_task=1
+comparison_ux_task=1
+research_fields=5
+research_options=4
+integrity_check=ok
+foreign_key_violations=0
+dry_run=ok
+seeded_fields=5
+seeded_options=2
+```
+
+`research_options=4` до и после dry-run подтверждает сохранность двух вариантов, которые пользователь добавил после первоначального seed. `seeded_options=2` означает только количество записей с release-ID, а не общее число вариантов исследования.
+
+При production-переключении первая попытка локального health-check снова попала в короткое окно запуска процесса и получила `connection refused`. Следующая попытка retry-цикла прошла; deploy завершился с exit code `0`, автоматический rollback не запускался.
+
+Финальный smoke:
+
+```text
+current release                         20260814-comparison-ux-5e0bcd8
+systemd service                         active
+local /api/health                       {"status":"ok"}
+public /api/health                      {"status":"ok"}
+positionCustomSelectMenu asset marker   present
+renderResearchStructuralRelations       present
+bindDragScroll asset marker             present
+desktop/mobile drop-up CSS              present
+SQLite integrity_check                  ok
+foreign key violations                  0
+comparison UX platform task             completed, 100%
+comparison UX proof                     1
+active research options                 4
+journal startup errors                  0
+```
+
+Созданная от `artkozk` platform-задача `c414f400000000000000000000000031` фиксирует оценку, фактическое время, результат и доказательство. Она отделена направлением `platform` и не смешивается с бизнес-задачами при фильтрации очереди.
+
+Для отката этого релиза используется предыдущий release `/opt/business-control/releases/20260814-markdown-shortcuts-c229888` и backup `/var/lib/business-control/backups/business-control-20260814-150355-pre-research-comparison.db`. Перед восстановлением snapshot обязательно сохранить записи, созданные после `15:03:55 UTC` 14 августа 2026 года. Затем нужно остановить сервис, атомарно вернуть symlink, удалить WAL/SHM, восстановить backup через временный файл, вернуть владельца БД, запустить сервис и повторить local/public health, integrity, foreign-key и journal проверки.
