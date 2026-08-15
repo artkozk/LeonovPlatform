@@ -51,6 +51,8 @@ const iconPaths = {
   minus: '<path d="M5 12h14"/>',
   play: '<path d="m8 5 11 7-11 7Z"/>',
   pause: '<path d="M9 5v14M15 5v14"/>',
+	phone: '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z"/>',
+	mic: '<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/>',
 };
 
 function icon(name, className = '') {
@@ -65,6 +67,8 @@ const statusLabels = {
 
 function statusLabel(record) {
   if (record?.type === 'task' && record.status === 'review') return 'На проверке';
+	if (record?.type === 'decision' && record.status === 'completed') return 'Принято';
+	if (record?.type === 'research' && record.status === 'completed') return 'Завершено';
   return statusLabels[record?.status] || record?.status || '';
 }
 
@@ -73,6 +77,8 @@ const statusesByType = {
   goal: ['planned', 'in_progress', 'blocked', 'completed', 'postponed', 'cancelled'],
   task: ['planned', 'in_progress', 'blocked', 'review', 'postponed', 'completed', 'cancelled'],
   question_set: ['planned', 'in_progress', 'blocked', 'completed', 'postponed', 'cancelled'],
+	research: ['draft', 'in_progress', 'cancelled'],
+	decision: ['completed', 'cancelled'],
   meeting: ['planned', 'in_progress', 'completed', 'postponed', 'cancelled'],
   default: ['draft', 'in_progress', 'completed', 'cancelled'],
 };
@@ -105,6 +111,7 @@ const graphSettingDefaults = {
 
 const navItems = [
   ['dashboard', 'Обзор', 'dashboard', 'Работа'], ['work', 'Работа', 'checkSquare', 'Работа'],
+	['chat', 'Чат', 'messages', 'Работа'],
   ['principles', 'Правила и критерии', 'bookOpen', 'Основа'], ['goal', 'Цели', 'target', 'Основа'],
   ['idea', 'Идеи', 'lightbulb', 'Бизнес'], ['document', 'Документы', 'fileText', 'Бизнес'],
   ['graph', 'Карта связей', 'network', 'Контроль'],
@@ -117,7 +124,7 @@ const state = {
   view: 'dashboard', search: '', statusFilter: '', ownerFilter: '', authMode: 'login', activeDetail: null,
   activeRecordTab: 'overview', activeActivity: null, historyMode: 'feed', activeRecordRequest: 0,
   workScope: 'all', workType: 'all', workStatus: 'active', workstreamFilter: 'all',
-  workOrder: 'priority', workViewMode: 'list', workCalendarMonth: '', workSearchTimer: null, historyScope: 'project', historyActor: 'all', historyType: 'all',
+  workOrder: 'priority', workViewMode: 'list', ideaViewMode: 'board', workCalendarMonth: '', workSearchTimer: null, historyScope: 'project', historyActor: 'all', historyType: 'all',
   recordSearchTimer: null,
   graphResizeTimer: null,
   historyLoadedAll: false,
@@ -133,7 +140,11 @@ const state = {
   detailCache: new Map(), detailRequests: new Map(), searchTimer: null, suppressOverlayPop: false,
   presenceInteractions: 0, presenceLastSentAt: Date.now(), lastInteractionAt: Date.now(), aiSuggestionTimer: null,
   recordEditMode: false, editingQuestionAnswerId: '', aiAnalyses: new Map(), aiAnalysisLoading: '',
+  aiQuestionDrafts: new Map(), aiQuestionDraftLoading: '', aiFieldDraftLoading: '', linkTargetIncludeInactive: false,
   researchComparisons: new Map(), researchComparisonRequests: new Map(), activeResearchOptionId: '',
+  chatThreads: [], chatMessages: [], activeChatThreadId: '', chatLoadedThreadId: '', chatReplyToId: '', chatLinkedRecordId: '', chatFavoritesOnly: false,
+  chatSearch: '', chatDigests: new Map(), chatDigestLoading: '', chatUploadItems: [], chatEditingMessageId: '',
+  chatPollTimer: null, chatRecording: null, chatCall: null, chatIncomingCall: null, chatICEServers: null,
   savedViews: [], workingDraftTimers: new Map(), sidebarReturnFocus: null, liveRefreshRunning: false,
 };
 
@@ -181,7 +192,49 @@ function markdownPlain(value, empty = '') {
 function markdownEditor(name, label, value, rows = 6, placeholder = '', suffix = '') {
   const id = `markdown-${String(name).replace(/[^a-z0-9_-]/gi, '-')}-${suffix || 'main'}`;
   const content = String(value || '').trim() ? renderMarkdown(value, '') : '';
-  return `<div class="markdown-editor"><label for="${escapeHTML(id)}">${escapeHTML(label)}</label><div class="markdown-toolbar" role="toolbar" aria-label="Форматирование текста"><button type="button" data-md="bold" title="Полужирный (Ctrl+B)" aria-label="Полужирный"><b>B</b></button><button type="button" data-md="italic" title="Курсив (Ctrl+I)" aria-label="Курсив"><i>I</i></button><button type="button" data-md="heading2" title="Заголовок второго уровня (Ctrl+Alt+2)" aria-label="Заголовок второго уровня">H2</button><button type="button" data-md="list" title="Маркированный список (Ctrl+Shift+8)" aria-label="Маркированный список">${icon('menu')}</button><button type="button" data-md="ordered" title="Нумерованный список (Ctrl+Shift+7)" aria-label="Нумерованный список">1.</button><button type="button" data-md="quote" title="Цитата (Ctrl+Shift+.)" aria-label="Цитата">❯</button><button type="button" data-md="code" title="Блок кода (Ctrl+&#96;)" aria-label="Блок кода">&lt;/&gt;</button><button type="button" data-md="note" title="Примечание" aria-label="Примечание">i</button><button type="button" data-md="link" title="Ссылка (Ctrl+K)" aria-label="Ссылка">${icon('link')}</button><span class="markdown-toolbar-spacer"></span><button type="button" data-open-notebook title="Развернуть редактор" aria-label="Развернуть редактор">${icon('maximize')}</button></div><div id="${escapeHTML(id)}" class="markdown-rich-editor markdown-body" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="${escapeHTML(placeholder)}" style="--editor-rows:${Math.max(3, Number(rows) || 6)}">${content}</div><textarea class="markdown-source" name="${escapeHTML(name)}" hidden tabindex="-1" aria-hidden="true">${escapeHTML(value || '')}</textarea></div>`;
+  return `<div class="markdown-editor"><label for="${escapeHTML(id)}">${escapeHTML(label)}</label><div class="markdown-toolbar" role="toolbar" aria-label="Форматирование текста"><button type="button" data-md="bold" title="Полужирный (Ctrl+B)" aria-label="Полужирный"><b>B</b></button><button type="button" data-md="italic" title="Курсив (Ctrl+I)" aria-label="Курсив"><i>I</i></button><button type="button" data-md="heading2" title="Заголовок второго уровня (Ctrl+Alt+2)" aria-label="Заголовок второго уровня">H2</button><button type="button" data-md="list" title="Маркированный список (Ctrl+Shift+8)" aria-label="Маркированный список">${icon('menu')}</button><button type="button" data-md="ordered" title="Нумерованный список (Ctrl+Shift+7)" aria-label="Нумерованный список">1.</button><button type="button" data-md="quote" title="Цитата (Ctrl+Shift+.)" aria-label="Цитата">❯</button><button type="button" data-md="code" title="Блок кода (Ctrl+&#96;)" aria-label="Блок кода">&lt;/&gt;</button><button type="button" data-md="note" title="Примечание" aria-label="Примечание">i</button><button type="button" data-md="link" title="Ссылка (Ctrl+K)" aria-label="Ссылка">${icon('link')}</button><span class="markdown-toolbar-spacer"></span><button type="button" data-ai-draft-editor title="Предложить черновик AI" aria-label="Предложить черновик AI">${icon('sparkles')}</button><button type="button" data-open-notebook title="Развернуть редактор" aria-label="Развернуть редактор">${icon('maximize')}</button></div><div id="${escapeHTML(id)}" class="markdown-rich-editor markdown-body" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="${escapeHTML(placeholder)}" style="--editor-rows:${Math.max(3, Number(rows) || 6)}">${content}</div><textarea class="markdown-source" name="${escapeHTML(name)}" hidden tabindex="-1" aria-hidden="true">${escapeHTML(value || '')}</textarea></div>`;
+}
+
+function aiDraftTargetForEditor(editor) {
+  const form = editor.closest('form');
+  const name = $('.markdown-source', editor)?.name || '';
+  if (!state.activeDetail?.record?.id || editor.closest('#create-dialog, #notebook-dialog')) return '';
+  if (form?.id === 'record-edit-form' && ['description', 'progressNote', 'result'].includes(name)) return name;
+  if (form?.classList.contains('section-form') || form?.id === 'custom-section-form') return 'section';
+  if (form?.matches('[data-question-answer]')) return 'question_answer';
+  if (form?.id === 'comment-form') return 'comment';
+  if (form?.id === 'proof-form' || form?.classList.contains('completion-box')) return 'proof';
+  return '';
+}
+
+function showAIFieldProposal(editor, draft) {
+  editor.querySelector('.ai-field-proposal')?.remove();
+  const proposal = document.createElement('div');
+  proposal.className = 'ai-field-proposal';
+  proposal.innerHTML = `<header><span>${icon('sparkles')}</span><div><strong>Черновик AI</strong><small>${escapeHTML(draft.rationale || 'Сформировано по контексту карточки')}</small></div></header><div class="markdown-body">${renderMarkdown(draft.value, '')}</div><footer><button type="button" class="primary" data-apply-ai-field>${icon('check')} Использовать</button><button type="button" class="secondary" data-dismiss-ai-field>Оставить свой текст</button></footer>`;
+  editor.append(proposal);
+  $('[data-apply-ai-field]', proposal).addEventListener('click', () => {
+    setMarkdownEditorValue(editor, draft.value);
+    proposal.remove();
+    toast('AI-черновик вставлен. Его можно изменить перед сохранением');
+  });
+  $('[data-dismiss-ai-field]', proposal).addEventListener('click', () => proposal.remove());
+}
+
+async function requestAIFieldDraft(editor, target) {
+  const button = $('[data-ai-draft-editor]', editor);
+  const source = $('.markdown-source', editor);
+  const form = editor.closest('form');
+  const recordID = state.activeDetail?.record?.id;
+  if (!button || !source || !recordID) return;
+  button.disabled = true;
+  button.classList.add('loading');
+  try {
+    const formContext = form ? Object.fromEntries([...new FormData(form).entries()].filter(([, value]) => typeof value === 'string')) : {};
+    const draft = await api(`/api/records/${recordID}/ai-draft-field`, { method: 'POST', body: JSON.stringify({ target, label: editor.querySelector('label')?.textContent || target, currentValue: source.value, formContext }) });
+    showAIFieldProposal(editor, draft);
+  } catch (error) { toast(error.message, true); }
+  finally { button.disabled = false; button.classList.remove('loading'); }
 }
 
 function openNotebook({ title, value = '', onSave = null }) {
@@ -303,6 +356,10 @@ function bindMarkdownEditors(root = document) {
       button.addEventListener('click', () => applyRichTextAction(richEditor, button.dataset.md));
     });
     $('[data-open-notebook]', editor)?.addEventListener('click', () => openNotebook({ title: editor.querySelector('label')?.textContent || 'Редактор', value: textarea.value, onSave: (value) => setMarkdownEditorValue(editor, value) }));
+    const aiDraftButton = $('[data-ai-draft-editor]', editor);
+    const aiTarget = aiDraftTargetForEditor(editor);
+    if (aiDraftButton && aiTarget) aiDraftButton.addEventListener('click', () => requestAIFieldDraft(editor, aiTarget));
+    else if (aiDraftButton) aiDraftButton.hidden = true;
     richEditor.addEventListener('input', sync);
     richEditor.addEventListener('paste', (event) => {
       event.preventDefault();
@@ -735,10 +792,11 @@ function deadlineState(record) {
 }
 
 function isWorkRecord(record) {
-  return ['task', 'question_set', 'research', 'decision', 'disagreement', 'meeting'].includes(record.type);
+  return ['task', 'question_set', 'research', 'disagreement', 'meeting'].includes(record.type);
 }
 
 function isActiveRecord(record) {
+  if (isWorkRecord(record) && Number(record.progress) >= 100 && record.status !== 'review') return false;
   return !['completed', 'cancelled', 'archived', 'rejected'].includes(record.status);
 }
 
@@ -812,10 +870,9 @@ async function bootstrap() {
 }
 
 async function loadData(silent = false) {
-  if (!silent) $('#sync-state').textContent = 'Обновление…';
-  const [users, records, notifications, activity, definitions, pendingQuestions, savedViews] = await Promise.all([
+  const [users, records, notifications, activity, definitions, pendingQuestions, savedViews, chatThreads] = await Promise.all([
     api('/api/users'), api('/api/records?includeArchived=true'), api('/api/notifications'),
-    api('/api/activity?limit=200'), api('/api/section-definitions'), api('/api/questions/pending'), api('/api/saved-views'),
+    api('/api/activity?limit=200'), api('/api/section-definitions'), api('/api/questions/pending'), api('/api/saved-views'), api('/api/chat/threads'),
   ]);
   const projectActivity = activity.filter((item) => typeMeta[item.entityType] || item.entityType === 'section_definition');
   const recordsByID = new Map(records.map((record) => [record.id, record]));
@@ -823,9 +880,8 @@ async function loadData(silent = false) {
     const current = recordsByID.get(id);
     if (!current || current.updatedAt !== detail.record.updatedAt) state.detailCache.delete(id);
   });
-  Object.assign(state, { users, records, notifications, activity: projectActivity, definitions, pendingQuestions, savedViews });
+  Object.assign(state, { users, records, notifications, activity: projectActivity, definitions, pendingQuestions, savedViews, chatThreads });
   state.historyLoadedAll = activity.length < 200;
-  $('#sync-state').textContent = 'На связи';
   render();
 }
 
@@ -982,8 +1038,8 @@ async function refreshLiveData() {
   if (!state.me || document.hidden || state.liveRefreshRunning) return;
   state.liveRefreshRunning = true;
   try {
-    const [records, notifications, pendingQuestions, activity] = await Promise.all([
-      api('/api/records?includeArchived=true'), api('/api/notifications'), api('/api/questions/pending'), api('/api/activity?limit=200'),
+    const [records, notifications, pendingQuestions, activity, chatThreads] = await Promise.all([
+      api('/api/records?includeArchived=true'), api('/api/notifications'), api('/api/questions/pending'), api('/api/activity?limit=200'), api('/api/chat/threads'),
     ]);
     const previousByID = new Map(state.records.map((record) => [record.id, record]));
     const changed = records.length !== state.records.length || records.some((record) => previousByID.get(record.id)?.updatedAt !== record.updatedAt);
@@ -994,15 +1050,14 @@ async function refreshLiveData() {
       const current = recordsByID.get(id);
       if (!current || current.updatedAt !== detail.record.updatedAt) state.detailCache.delete(id);
     });
-    Object.assign(state, { records, notifications, pendingQuestions, activity: projectActivity });
+    Object.assign(state, { records, notifications, pendingQuestions, activity: projectActivity, chatThreads });
     state.historyLoadedAll = activity.length < 200;
     renderNav();
     renderNotificationBadge();
     const overlayOpen = Boolean(document.querySelector('dialog[open]')) || $('.sidebar').classList.contains('open');
     if (!workspaceHasActiveInput() && !overlayOpen && state.view !== 'graph' && (changed || activityChanged || state.view === 'notifications')) renderContent();
-    $('#sync-state').textContent = 'На связи';
   } catch (_) {
-    $('#sync-state').textContent = 'Нет связи';
+    // A background refresh must not interrupt active work. Foreground API actions report their errors explicitly.
   } finally {
     state.liveRefreshRunning = false;
   }
@@ -1094,14 +1149,14 @@ function renderNav() {
   $('#main-nav').innerHTML = navItems.map(([key, label, iconName, itemGroup]) => {
     const count = key === 'work'
       ? state.records.filter((record) => isWorkRecord(record) && isActiveRecord(record)).length
+			: key === 'chat' ? state.chatThreads.reduce((sum, thread) => sum + thread.unreadCount, 0)
       : typeMeta[key] ? state.records.filter((record) => record.type === key && record.status !== 'archived').length : '';
     const groupLabel = group !== itemGroup ? `<p class="nav-group">${escapeHTML(itemGroup)}</p>` : '';
     group = itemGroup;
     return `${groupLabel}<button type="button" class="nav-item ${state.view === key ? 'active' : ''}" data-view="${key}" title="${escapeHTML(label)}">${icon(iconName)}<span>${escapeHTML(label)}</span>${count !== '' ? `<b>${count}</b>` : ''}</button>`;
   }).join('');
   $$('[data-view]', $('#main-nav')).forEach((button) => button.addEventListener('click', () => {
-    state.view = button.dataset.view; state.statusFilter = ''; state.search = ''; state.ownerFilter = '';
-    setSidebarOpen(false); render();
+		navigateToView(button.dataset.view);
   }));
 }
 
@@ -1114,6 +1169,7 @@ function renderContent() {
   $('#page-title').textContent = titles[state.view] || (state.view === 'notifications' ? 'Уведомления' : 'Обзор');
   if (state.view === 'dashboard') return renderDashboard();
   if (state.view === 'work') return renderWorkList();
+	if (state.view === 'chat') return renderChat();
   if (state.view === 'graph') return renderGraph();
   if (typeMeta[state.view]) return renderRecordList(state.view);
   if (state.view === 'history') return renderHistory();
@@ -1160,10 +1216,12 @@ function renderDashboard() {
 }
 
 function navigateToView(view, options = {}) {
-  state.view = view;
+	const normalized = ({ goals: 'goal', tasks: 'work', ideas: 'idea' })[view] || view;
+	state.view = normalized;
   state.statusFilter = options.status || '';
   state.search = options.search || '';
   state.ownerFilter = options.ownerId ? String(options.ownerId) : '';
+	setSidebarOpen(false);
   render();
 }
 
@@ -1281,15 +1339,130 @@ function filteredWorkRecords() {
 }
 
 function renderWorkKanban(records) {
-  const columns = [
-    ['planned', 'Не начато'], ['in_progress', 'В работе'], ['blocked', 'Заблокировано'],
-    ['review', 'На проверке'], ['completed', 'Выполнено'],
-  ];
-  const visible = columns.filter(([status]) => records.some((record) => record.status === status) || ['planned', 'in_progress', 'review'].includes(status));
-  return `<section class="work-kanban" data-drag-scroll="true">${visible.map(([status, label]) => {
-    const items = records.filter((record) => record.status === status);
-    return `<div class="kanban-column"><header><strong>${label}</strong><span>${items.length}</span></header><div>${items.map((record) => `<button type="button" class="kanban-card" data-open-record="${record.id}"><span><i class="type-icon type-${record.type}">${icon(typeMeta[record.type].icon)}</i><small>${escapeHTML(typeMeta[record.type].singular)} · ${escapeHTML(workstreamLabels[record.workstream || 'business'])}</small></span><strong>${escapeHTML(record.title)}</strong><p>${escapeHTML(markdownPlain(record.description, 'Без дополнительного контекста'))}</p><footer><em class="priority priority-${record.priority || 'normal'}">${icon('flag')} ${priorityLabels[record.priority || 'normal']}</em><span class="deadline ${deadlineState(record).className}">${escapeHTML(deadlineState(record).label)}</span></footer></button>`).join('') || '<div class="kanban-empty">Нет карточек</div>'}</div></div>`;
-  }).join('')}</section>`;
+	const columns = [
+		{ key: 'queued', label: 'Не начато', statuses: ['draft', 'planned'] },
+		{ key: 'in_progress', label: 'В работе', statuses: ['in_progress'] },
+		{ key: 'blocked', label: 'Заблокировано', statuses: ['blocked'] },
+		{ key: 'review', label: 'На проверке', statuses: ['review'] },
+	];
+	return `<section class="work-kanban" data-drag-scroll="true">${columns.map((column) => {
+		const items = records.filter((record) => column.statuses.includes(record.status));
+		const empty = column.key === 'review' ? 'Отправьте задачу после результата и доказательства' : 'Перетащите карточку сюда';
+		return `<div class="kanban-column" data-kanban-status="${column.key}"><header><strong>${column.label}</strong><span>${items.length}</span></header><div>${items.map((record) => `<article class="kanban-card" draggable="${record.type !== 'question_set'}" data-kanban-record="${record.id}"><button type="button" data-open-record="${record.id}"><span><i class="type-icon type-${record.type}">${icon(typeMeta[record.type].icon)}</i><small>${escapeHTML(typeMeta[record.type].singular)} · ${escapeHTML(workstreamLabels[record.workstream || 'business'])}</small></span><strong>${escapeHTML(record.title)}</strong><p>${escapeHTML(markdownPlain(record.description, 'Без дополнительного контекста'))}</p><footer><em class="priority priority-${record.priority || 'normal'}">${icon('flag')} ${priorityLabels[record.priority || 'normal']}</em><span class="deadline ${deadlineState(record).className}">${escapeHTML(deadlineState(record).label)}</span></footer></button>${record.type !== 'question_set' ? `<button type="button" class="kanban-move" data-kanban-move="${record.id}" aria-label="Переместить карточку" title="Переместить">${icon('grip')}</button>` : ''}</article>`).join('') || `<div class="kanban-empty">${empty}</div>`}</div></div>`;
+	}).join('')}</section>`;
+}
+
+function resolvedBoardStatus(record, targetStatus) {
+	if (targetStatus !== 'queued') return targetStatus;
+	return (statusesByType[record.type] || statusesByType.default).includes('planned') ? 'planned' : 'draft';
+}
+
+function allowedBoardStatuses(record) {
+	if (record.type === 'idea') return ['inbox', 'review', 'main', 'rejected'];
+	if (record.type === 'task') return ['planned', 'in_progress', 'blocked', 'review', 'postponed', 'cancelled'];
+	if (record.type === 'research') return ['draft', 'in_progress', 'cancelled'];
+	if (record.type === 'question_set') return [];
+	return (statusesByType[record.type] || statusesByType.default).filter((status) => status !== 'completed');
+}
+
+async function moveBoardRecord(recordID, targetStatus, rerender) {
+	const record = state.records.find((item) => item.id === recordID);
+	if (!record) return;
+	targetStatus = resolvedBoardStatus(record, targetStatus);
+	if (record.status === targetStatus) return;
+	if (record.type === 'task' && targetStatus === 'review' && record.status !== 'review') {
+		await openRecord(record.id);
+		state.activeRecordTab = 'overview';
+		renderRecordDialog();
+		toast('Добавьте результат и доказательство, затем отправьте задачу на проверку');
+		return;
+	}
+	if (!allowedBoardStatuses(record).includes(targetStatus)) {
+		return toast(record.type === 'task' && ['review', 'completed'].includes(targetStatus) ? 'Задача отправляется на проверку только вместе с доказательством' : record.type === 'research' && targetStatus === 'completed' ? 'Исследование завершается после фиксации вывода' : 'Этот переход недоступен для карточки', true);
+	}
+	const reason = await askText({ title: 'Изменить этап', label: `Почему «${record.title}» переходит в «${statusLabels[targetStatus]}»?`, required: true });
+	if (!reason) return rerender();
+	try {
+		await api(`/api/records/${record.id}`, { method: 'PATCH', body: JSON.stringify({ status: targetStatus, reason, expectedUpdatedAt: record.updatedAt }) });
+		await loadData(true); rerender(); toast('Этап карточки изменён');
+	} catch (error) { toast(error.message, true); rerender(); }
+}
+
+function bindBoardDnD(rerender) {
+	let draggedID = '';
+	$$('[data-kanban-record]').forEach((card) => {
+		card.addEventListener('dragstart', (event) => { draggedID = card.dataset.kanbanRecord; card.classList.add('dragging'); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', draggedID); });
+		card.addEventListener('dragend', () => { card.classList.remove('dragging'); $$('.kanban-column.drop-target').forEach((column) => column.classList.remove('drop-target')); draggedID = ''; });
+	});
+	$$('[data-kanban-status]').forEach((column) => {
+		column.addEventListener('dragover', (event) => { if (!draggedID) return; event.preventDefault(); event.dataTransfer.dropEffect = 'move'; column.classList.add('drop-target'); });
+		column.addEventListener('dragleave', (event) => { if (!column.contains(event.relatedTarget)) column.classList.remove('drop-target'); });
+		column.addEventListener('drop', (event) => { event.preventDefault(); column.classList.remove('drop-target'); const id = draggedID || event.dataTransfer.getData('text/plain'); moveBoardRecord(id, column.dataset.kanbanStatus, rerender); });
+	});
+	$$('[data-kanban-move]').forEach((button) => button.addEventListener('click', async (event) => {
+		if (button.dataset.dragged === 'true') { button.dataset.dragged = 'false'; return; }
+		event.stopPropagation();
+		const record = state.records.find((item) => item.id === button.dataset.kanbanMove);
+		const choices = allowedBoardStatuses(record).filter((status) => status !== record.status);
+		const status = await askChoice({ title: 'Переместить карточку', label: 'Новый этап', choices: choices.map((value) => ({ value, label: statusLabels[value] })) });
+		if (status) moveBoardRecord(record.id, status, rerender);
+	}));
+	$$('[data-kanban-move]').forEach((button) => {
+		let pointer = null;
+		const clearPointerDrag = (active = pointer) => {
+			active?.preview?.remove();
+			active?.card?.classList.remove('dragging');
+			$$('.kanban-column.drop-target').forEach((column) => column.classList.remove('drop-target'));
+			document.body.classList.remove('kanban-pointer-drag');
+		};
+		button.addEventListener('pointerdown', (event) => {
+			if (event.button !== undefined && event.button !== 0) return;
+			const card = button.closest('[data-kanban-record]');
+			pointer = { id: event.pointerId, x: event.clientX, y: event.clientY, card, target: null, preview: null, moved: false };
+			button.setPointerCapture?.(event.pointerId);
+		});
+		button.addEventListener('pointermove', (event) => {
+			if (!pointer || event.pointerId !== pointer.id) return;
+			const distance = Math.hypot(event.clientX - pointer.x, event.clientY - pointer.y);
+			if (!pointer.moved && distance < 7) return;
+			if (!pointer.moved) {
+				pointer.moved = true;
+				button.dataset.dragged = 'true';
+				pointer.card.classList.add('dragging');
+				document.body.classList.add('kanban-pointer-drag');
+				pointer.preview = pointer.card.cloneNode(true);
+				pointer.preview.className = 'kanban-drag-preview';
+				pointer.preview.removeAttribute('draggable');
+				document.body.append(pointer.preview);
+			}
+			event.preventDefault();
+			pointer.preview.style.transform = `translate3d(${event.clientX + 14}px, ${event.clientY + 14}px, 0)`;
+			const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('[data-kanban-status]');
+			if (target !== pointer.target) {
+				pointer.target?.classList.remove('drop-target');
+				pointer.target = target;
+				pointer.target?.classList.add('drop-target');
+			}
+		}, { passive: false });
+		const finishPointer = (event) => {
+			if (!pointer || event.pointerId !== pointer.id) return;
+			const snapshot = pointer;
+			pointer = null;
+			clearPointerDrag(snapshot);
+			button.releasePointerCapture?.(event.pointerId);
+			if (!snapshot.moved || !snapshot.target) return;
+			event.preventDefault();
+			event.stopPropagation();
+			moveBoardRecord(button.dataset.kanbanMove, snapshot.target.dataset.kanbanStatus, rerender);
+		};
+		button.addEventListener('pointerup', finishPointer);
+		button.addEventListener('pointercancel', (event) => { if (pointer?.id === event.pointerId) { const snapshot = pointer; pointer = null; clearPointerDrag(snapshot); } });
+	});
+}
+
+function renderIdeaStageBoard(records) {
+	const columns = [['inbox', 'Новые'], ['review', 'На рассмотрении'], ['main', 'Главные'], ['rejected', 'Отклонённые']];
+	return `<section class="work-kanban idea-stage-board">${columns.map(([status, label]) => { const items = records.filter((record) => record.status === status); return `<div class="kanban-column idea-stage-${status}" data-kanban-status="${status}"><header><strong>${label}</strong><span>${items.length}</span></header><div>${items.map((record) => `<article class="kanban-card idea-kanban-card" draggable="true" data-kanban-record="${record.id}"><button type="button" data-open-record="${record.id}"><span><i class="type-icon type-idea">${icon('lightbulb')}</i><small>${escapeHTML(record.ownerUsername)} · ${formatDate(record.updatedAt)}</small></span><strong>${escapeHTML(record.title)}</strong><p>${escapeHTML(markdownPlain(record.description, 'Детали можно заполнить позже'))}</p></button><button type="button" class="kanban-move" data-kanban-move="${record.id}" aria-label="Переместить идею">${icon('grip')}</button></article>`).join('') || '<div class="kanban-empty">Перетащите идею сюда</div>'}</div></div>`; }).join('')}</section>`;
 }
 
 function localDateKey(value) {
@@ -1333,7 +1506,7 @@ function renderWorkList() {
   const records = filteredWorkRecords();
   const activeFilters = workFilterCount();
   $('#main-content').innerHTML = `
-    <div class="work-title-row"><div><p class="eyebrow">Единая очередь</p><h1>Работа команды</h1><p><strong>${records.length}</strong> ${recordsCountLabel(records.length).replace(/^\d+\s*/, '')} в текущем представлении</p></div><details class="work-create-menu"><summary class="primary">${icon('plus')} Создать работу</summary><div>${[['task', 'Задача'], ['question_set', 'Вопросы'], ['meeting', 'Встреча'], ['research', 'Сравнение вариантов'], ['decision', 'Решение']].map(([type, label]) => `<button type="button" data-work-create="${type}" ${type === 'research' ? 'data-work-mode="comparison"' : ''}>${icon(typeMeta[type].icon)}<span>${label}</span></button>`).join('')}</div></details></div>
+    <div class="work-title-row"><div><p class="eyebrow">Единая очередь</p><h1>Работа команды</h1><p><strong>${records.length}</strong> ${recordsCountLabel(records.length).replace(/^\d+\s*/, '')} в текущем представлении</p></div><details class="work-create-menu"><summary class="primary">${icon('plus')} Создать работу</summary><div>${[['task', 'Задача'], ['question_set', 'Вопросы'], ['meeting', 'Встреча'], ['research', 'Сравнение вариантов']].map(([type, label]) => `<button type="button" data-work-create="${type}" ${type === 'research' ? 'data-work-mode="comparison"' : ''}>${icon(typeMeta[type].icon)}<span>${label}</span></button>`).join('')}</div></details></div>
     <section class="work-controls" aria-label="Фильтры рабочей очереди">
       <div class="work-scope segmented compact">${[['all', 'Вся'], ['mine', 'Моя'], ['partner', 'Партнёра']].map(([value, label]) => `<button type="button" class="segment ${!state.ownerFilter && state.workScope === value ? 'active' : ''}" data-work-scope="${value}">${label}</button>`).join('')}</div>
       <div class="search-box work-search">${icon('search')}<input id="work-search" type="search" placeholder="Найти в этой очереди" value="${escapeHTML(state.search)}"></div>
@@ -1381,6 +1554,7 @@ function renderWorkList() {
 		state.workScope = filters.scope || 'all'; state.ownerFilter = filters.ownerId || ''; state.workType = filters.type || 'all'; state.workstreamFilter = filters.workstream || 'all'; state.workStatus = filters.status || 'active'; state.search = filters.search || ''; renderWorkList();
 	}));
 	$$('[data-delete-saved-view]').forEach((button) => button.addEventListener('click', async () => { try { await api(`/api/saved-views/${button.dataset.deleteSavedView}`, { method: 'DELETE' }); state.savedViews = state.savedViews.filter((item) => item.id !== button.dataset.deleteSavedView); renderWorkList(); toast('Представление удалено'); } catch (error) { toast(error.message, true); } }));
+	if (state.workViewMode === 'kanban') bindBoardDnD(renderWorkList);
   bindOpenRecords();
 }
 
@@ -1396,6 +1570,281 @@ function renderWorkRow(record) {
     <span><em class="priority priority-${priority}">${icon('flag')} ${priorityLabels[priority]}</em><small>${escapeHTML(statusLabel(record))}</small></span>
     <span><em class="deadline ${deadline.className}">${escapeHTML(deadline.label)}</em><progress class="progress-track" max="100" value="${record.progress}"></progress><small>${record.progress}%</small></span>
   </button>`;
+}
+
+function chatPresenceLabel(thread) {
+	if (thread.partnerOnline) return 'в сети';
+	if (!thread.partnerLastSeen) return 'ещё не заходил';
+	const delta = Date.now() - new Date(thread.partnerLastSeen).getTime();
+	if (delta < 5 * 60_000) return 'был недавно';
+	return `был ${formatDate(thread.partnerLastSeen, true)}`;
+}
+
+function chatMessagePreview(message) {
+	if (message.messageType === 'voice') return 'Голосовое сообщение';
+	if (message.messageType === 'file') return message.attachment?.originalName || 'Файл';
+	return markdownPlain(message.body, message.linkedRecordTitle || 'Сообщение');
+}
+
+function renderChatMessage(message) {
+	const mine = message.authorId === state.me.id;
+	const reply = message.replyToId ? `<button type="button" class="chat-reply-preview" data-scroll-message="${message.replyToId}"><strong>${escapeHTML(message.replyAuthor)}</strong><span>${escapeHTML(markdownPlain(message.replyBody).slice(0, 120))}</span></button>` : '';
+	const linked = message.linkedRecordId ? `<button type="button" class="chat-record-link" data-open-record="${message.linkedRecordId}"><span class="type-icon type-${message.linkedRecordType}">${icon(typeMeta[message.linkedRecordType]?.icon || 'fileText')}</span><span><small>${escapeHTML(typeMeta[message.linkedRecordType]?.singular || 'Карточка')}</small><strong>${escapeHTML(message.linkedRecordTitle)}</strong></span>${icon('chevronRight')}</button>` : '';
+	let media = '';
+	if (message.attachment) {
+		const source = `/api/chat/attachments/${message.attachment.id}`;
+		media = message.messageType === 'voice' ? `<div class="chat-voice">${icon('play')}<audio controls preload="metadata" src="${source}"></audio></div>` : `<a class="chat-file" href="${source}" target="_blank"><span class="type-icon type-document">${icon('fileText')}</span><span><strong>${escapeHTML(message.attachment.originalName)}</strong><small>${formatFileSize(message.attachment.sizeBytes)}</small></span>${icon('chevronRight')}</a>`;
+	}
+	const reactions = message.reactions.map((reaction) => `<button type="button" class="chat-reaction ${reaction.mine ? 'mine' : ''}" data-chat-reaction="${message.id}" data-emoji="${escapeHTML(reaction.emoji)}" title="${escapeHTML(reaction.usernames.join(', '))}"><span>${escapeHTML(reaction.emoji)}</span><b>${reaction.count}</b></button>`).join('');
+	const receipt = message.readBy.at(-1);
+	const read = mine ? (receipt ? `${icon('check')} прочитано ${formatDate(receipt.readAt, true)}` : `${icon('check')} отправлено`) : '';
+	const ownActions = mine ? `${message.messageType === 'text' ? `<button type="button" data-chat-edit="${message.id}">${icon('edit')} Редактировать</button>` : ''}<button type="button" data-chat-archive="${message.id}">${icon('archive')} Убрать из чата</button>` : '';
+	return `<article class="chat-message ${mine ? 'mine' : ''} type-${message.messageType}" id="chat-message-${message.id}" data-chat-message="${message.id}"><div class="chat-bubble"><header><strong>${mine ? 'Вы' : escapeHTML(message.authorUsername)}</strong><details><summary aria-label="Действия">•••</summary><div><button type="button" data-chat-reply="${message.id}">${icon('send')} Ответить</button><button type="button" data-chat-favorite="${message.id}">${icon('flag')} ${message.favorite ? 'Убрать из избранного' : 'В избранное'}</button>${ownActions}<span>${['👍','✅','❤️','🤔'].map((emoji) => `<button type="button" data-chat-reaction="${message.id}" data-emoji="${emoji}">${emoji}</button>`).join('')}</span></div></details></header>${reply}${message.body ? `<div class="markdown-body chat-message-body">${renderMarkdown(message.body)}</div>` : ''}${linked}${media}<footer><time>${formatDate(message.createdAt, true)}</time>${message.editedAt ? `<span title="Изменено ${escapeHTML(formatDate(message.editedAt, true))}">изменено</span>` : ''}<span class="chat-read-state">${read}</span></footer></div>${reactions ? `<div class="chat-reactions">${reactions}</div>` : ''}</article>`;
+}
+
+function renderChatCallBanner(thread) {
+	const call = state.chatCall?.call || state.chatIncomingCall;
+	if (!call) return '';
+	const incoming = call.startedBy !== state.me.id && call.status === 'ringing' && !state.chatCall;
+	const active = state.chatCall?.call?.status === 'active' || state.chatCall?.connected;
+	return `<section class="chat-call-banner ${incoming ? 'incoming' : active ? 'active' : ''}"><span class="chat-call-icon">${icon('phone')}</span><div><strong>${incoming ? `${escapeHTML(call.startedUsername)} звонит` : active ? 'Аудиозвонок идёт' : 'Ожидаем ответа'}</strong><small>${active ? '<span id="chat-call-duration">00:00</span> · микрофон включён' : escapeHTML(thread.partnerUsername || 'Партнёр')}</small></div>${incoming ? `<button type="button" class="success" data-accept-call>${icon('phone')} Ответить</button><button type="button" class="danger" data-end-call>Отклонить</button>` : `<button type="button" class="danger" data-end-call>Завершить</button>`}</section>`;
+}
+
+function renderChatDigest(thread) {
+	if (state.chatDigestLoading === thread.id) {
+		return `<section class="chat-digest loading"><span class="spinner"></span><div><strong>AI собирает контекст разговора</strong><small>Читаем сообщения и досье связанных карточек. Ничего не сохраняется автоматически.</small></div></section>`;
+	}
+	const digest = state.chatDigests.get(thread.id);
+	if (!digest) return '';
+	const source = digest.source === 'gemini' ? 'Gemini' : digest.source === 'groq' ? 'Groq' : 'AI';
+	return `<section class="chat-digest"><header><div><span>${icon('sparkles')}</span><div><p class="eyebrow">Выжимка · ${escapeHTML(source)}</p><h3>Что зафиксировано в обсуждении</h3></div></div><button type="button" class="icon-button" data-close-chat-digest aria-label="Скрыть выжимку">${icon('x')}</button></header><div class="markdown-body">${renderMarkdown(digest.summary, 'Выжимка не сформирована.')}</div>${digest.decisions?.length ? `<div class="chat-digest-list decisions"><span>Решения</span>${digest.decisions.map((item) => `<p>${icon('check')}<span>${escapeHTML(item)}</span></p>`).join('')}</div>` : ''}${digest.openQuestions?.length ? `<div class="chat-digest-list questions"><span>Открытые вопросы</span>${digest.openQuestions.map((item) => `<p>${icon('help')}<span>${escapeHTML(item)}</span></p>`).join('')}</div>` : ''}${digest.suggestedOutputs?.length ? `<div class="chat-digest-outputs"><span>Можно вынести в проект</span>${digest.suggestedOutputs.map((output, index) => `<button type="button" data-chat-ai-output="${index}"><span class="type-icon type-${output.type}">${icon(typeMeta[output.type]?.icon || 'fileText')}</span><span><strong>${escapeHTML(typeMeta[output.type]?.singular || 'Карточка')}: ${escapeHTML(output.title)}</strong><small>${escapeHTML(output.reason || 'Предложено по обсуждению')}</small></span>${icon('plus')}</button>`).join('')}</div>` : ''}<p class="ai-disclaimer">Голосовые сообщения без расшифровки отмечаются как непрочитанные AI. Вы подтверждаете каждую новую карточку отдельно.</p></section>`;
+}
+
+function chatFilteredMessages() {
+	const query = state.chatSearch.trim().toLowerCase();
+	if (!query) return state.chatMessages;
+	return state.chatMessages.filter((message) => `${message.body || ''} ${message.authorUsername || ''} ${message.linkedRecordTitle || ''} ${message.attachment?.originalName || ''}`.toLowerCase().includes(query));
+}
+
+function renderChat() {
+	clearTimeout(state.chatPollTimer);
+	if (!state.activeChatThreadId && state.chatThreads.length) state.activeChatThreadId = state.chatThreads[0].id;
+	const thread = state.chatThreads.find((item) => item.id === state.activeChatThreadId);
+	if (thread && state.chatLoadedThreadId !== thread.id) {
+		$('#main-content').innerHTML = `<div class="chat-loading"><span class="spinner"></span><strong>Открываем диалог</strong></div>`;
+		loadChatThread(thread.id);
+		return;
+	}
+	const messages = chatFilteredMessages();
+	const editingMessage = state.chatMessages.find((message) => message.id === state.chatEditingMessageId);
+	$('#main-content').innerHTML = `<section class="chat-shell">
+		<aside class="chat-thread-list"><header><div><p class="eyebrow">Команда</p><h1>Чат</h1></div><button type="button" class="icon-button" data-new-chat-thread title="Новая ветка">${icon('plus')}</button></header><div>${state.chatThreads.map((item) => `<button type="button" class="chat-thread ${item.id === state.activeChatThreadId ? 'active' : ''}" data-chat-thread="${item.id}"><span class="avatar">${escapeHTML((item.kind === 'team' ? item.partnerUsername || 'К' : item.title).slice(0, 2).toUpperCase())}</span><span><strong>${escapeHTML(item.title)}</strong><small>${escapeHTML(item.lastMessage || (item.kind === 'record' ? 'Обсуждение карточки' : chatPresenceLabel(item)))}</small></span><time>${item.lastMessageAt ? formatDate(item.lastMessageAt) : ''}</time>${item.unreadCount ? `<b>${item.unreadCount}</b>` : ''}</button>`).join('') || '<div class="guided-empty compact">Диалоги ещё не созданы</div>'}</div></aside>
+		<main class="chat-main">${thread ? `<header class="chat-header"><button type="button" class="chat-mobile-threads icon-button" data-toggle-chat-threads title="Диалоги" aria-label="Диалоги">${icon('menu')}</button><span class="avatar">${escapeHTML((thread.partnerUsername || thread.title).slice(0, 2).toUpperCase())}</span><div><h2>${escapeHTML(thread.title)}</h2><p class="${thread.partnerOnline ? 'online' : ''}">${thread.kind === 'record' ? `Ветка карточки · ${escapeHTML(thread.recordTitle)}` : escapeHTML(chatPresenceLabel(thread))}</p></div><label class="chat-search">${icon('search')}<input type="search" value="${escapeHTML(state.chatSearch)}" placeholder="Поиск в диалоге" aria-label="Поиск в диалоге"></label><div class="chat-header-actions">${thread.recordId ? `<button type="button" class="icon-button" data-open-record="${thread.recordId}" title="Открыть карточку">${icon('link')}</button>` : ''}<button type="button" class="icon-button" data-chat-ai-digest title="Собрать AI-выжимку">${icon('sparkles')}</button><button type="button" class="icon-button ${state.chatFavoritesOnly ? 'active' : ''}" data-chat-favorites title="Избранные сообщения">${icon('flag')}</button><button type="button" class="icon-button" data-start-call title="Аудиозвонок">${icon('phone')}</button></div></header><div class="chat-context-stack">${renderChatCallBanner(thread)}${renderChatDigest(thread)}</div><div class="chat-messages" data-drag-scroll="true">${messages.map(renderChatMessage).join('') || `<div class="chat-empty"><span>${icon(state.chatSearch ? 'search' : 'messages')}</span><strong>${state.chatSearch ? 'Совпадений нет' : 'Начните разговор'}</strong><p>${state.chatSearch ? 'Измените запрос или очистите поиск.' : 'Сообщение можно связать с карточкой, превратить в отдельную ветку или сохранить в избранном.'}</p></div>`}</div><div class="chat-composer-context">${editingMessage ? `<div><span>${icon('edit')}</span><span><strong>Редактирование сообщения</strong><small>Предыдущая версия останется в журнале.</small></span><button type="button" data-clear-chat-edit>${icon('x')}</button></div>` : ''}${state.chatReplyToId ? (() => { const reply = state.chatMessages.find((item) => item.id === state.chatReplyToId); return `<div><span>${icon('send')}</span><span><strong>Ответ ${escapeHTML(reply?.authorUsername || '')}</strong><small>${escapeHTML(chatMessagePreview(reply || {}).slice(0, 120))}</small></span><button type="button" data-clear-chat-reply>${icon('x')}</button></div>`; })() : ''}${state.chatLinkedRecordId ? (() => { const linked = state.records.find((item) => item.id === state.chatLinkedRecordId); return `<div><span>${icon('link')}</span><span><strong>Прикреплена карточка</strong><small>${escapeHTML(linked?.title || '')}</small></span><button type="button" data-clear-chat-record>${icon('x')}</button></div>`; })() : ''}</div><form class="chat-composer" id="chat-composer"><label class="chat-drop" data-chat-drop><textarea name="body" rows="1" placeholder="${editingMessage ? 'Исправьте сообщение' : 'Сообщение'}" aria-label="Сообщение">${escapeHTML(editingMessage?.body || '')}</textarea><input type="file" name="file" multiple hidden></label><div><button type="button" class="icon-button" data-chat-attach title="Прикрепить файл" ${editingMessage ? 'disabled' : ''}>${icon('plus')}</button><button type="button" class="icon-button" data-chat-link-record title="Связать карточку" ${editingMessage ? 'disabled' : ''}>${icon('link')}</button><button type="button" class="icon-button" data-chat-voice title="Записать голосовое" ${editingMessage ? 'disabled' : ''}>${icon('mic')}</button><button type="submit" class="primary icon-button" title="${editingMessage ? 'Сохранить' : 'Отправить'}">${icon(editingMessage ? 'check' : 'send')}</button></div><div class="chat-upload-progress" hidden><span></span><progress max="100" value="0"></progress></div></form>` : `<div class="chat-empty"><strong>Выберите диалог</strong></div>`}</main>
+	</section>`;
+	bindChatEvents();
+	bindOpenRecords();
+	requestAnimationFrame(() => { const list = $('.chat-messages'); if (list) list.scrollTop = list.scrollHeight; });
+	scheduleChatPoll();
+}
+
+async function loadChatThread(threadID, silent = false) {
+	try {
+		const [messages, threads] = await Promise.all([api(`/api/chat/threads/${threadID}/messages${state.chatFavoritesOnly ? '?favorites=true' : ''}`), api('/api/chat/threads')]);
+		state.chatMessages = messages; state.chatThreads = threads; state.chatLoadedThreadId = threadID; state.activeChatThreadId = threadID;
+		await api(`/api/chat/threads/${threadID}/read`, { method: 'POST' });
+		if (!silent && state.view === 'chat') renderChat();
+		else if (silent && state.view === 'chat' && !workspaceHasActiveInput()) renderChat();
+	} catch (error) { if (!silent) toast(error.message, true); }
+}
+
+function scheduleChatPoll() {
+	clearTimeout(state.chatPollTimer);
+	if (state.view !== 'chat' || !state.activeChatThreadId) return;
+	state.chatPollTimer = setTimeout(async () => {
+		await loadChatThread(state.activeChatThreadId, true);
+		await pollChatCall();
+		scheduleChatPoll();
+	}, 3000);
+}
+
+function renderChatUploadProgress() {
+	const progressBox = $('.chat-upload-progress');
+	if (!progressBox) return;
+	progressBox.hidden = state.chatUploadItems.length === 0;
+	progressBox.innerHTML = state.chatUploadItems.map((item) => `<div class="chat-upload-item ${item.status}"><span><strong>${escapeHTML(item.name)}</strong><small>${item.status === 'done' ? 'Загружено' : item.status === 'error' ? escapeHTML(item.error || 'Ошибка') : `${item.progress}%`}</small></span><progress max="100" value="${item.progress}"></progress></div>`).join('');
+}
+
+async function sendChatAttachment(file, itemID = '') {
+	const item = state.chatUploadItems.find((entry) => entry.id === itemID);
+	if (item) { item.status = 'uploading'; renderChatUploadProgress(); }
+	return new Promise((resolve, reject) => {
+		const xhr = new XMLHttpRequest(); xhr.open('POST', `/api/chat/threads/${state.activeChatThreadId}/attachments`); xhr.withCredentials = true;
+		xhr.upload.onprogress = (event) => { if (event.lengthComputable && item) { item.progress = Math.round(event.loaded * 100 / event.total); renderChatUploadProgress(); } };
+		xhr.onload = () => xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error((() => { try { return JSON.parse(xhr.responseText).error; } catch (_) { return 'Файл не отправлен'; } })()));
+		xhr.onerror = () => reject(new Error('Соединение прервано'));
+		const body = new FormData(); body.append('file', file, file.name); body.append('replyToId', state.chatReplyToId); body.append('linkedRecordId', state.chatLinkedRecordId); xhr.send(body);
+	}).then(() => { if (item) { item.progress = 100; item.status = 'done'; renderChatUploadProgress(); } }).catch((error) => { if (item) { item.status = 'error'; item.error = error.message; renderChatUploadProgress(); } throw error; });
+}
+
+async function uploadChatFiles(files) {
+	const queue = [...files].filter((file) => file?.size > 0);
+	if (!queue.length) return;
+	state.chatUploadItems = queue.map((file, index) => ({ id: `${Date.now()}-${index}`, name: file.name, progress: 0, status: 'waiting', error: '' }));
+	renderChatUploadProgress();
+	for (let index = 0; index < queue.length; index += 1) {
+		try { await sendChatAttachment(queue[index], state.chatUploadItems[index].id); }
+		catch (error) { toast(`${queue[index].name}: ${error.message}`, true); }
+	}
+	await loadChatThread(state.activeChatThreadId);
+	renderChatUploadProgress();
+	setTimeout(() => { state.chatUploadItems = []; renderChatUploadProgress(); }, 1800);
+}
+
+async function toggleVoiceRecording(button) {
+	if (state.chatRecording) {
+		state.chatRecording.recorder.stop(); button.classList.remove('recording'); return;
+	}
+	try {
+		const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+		const chunks = []; const recorder = new MediaRecorder(stream);
+		recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
+		recorder.onstop = async () => { stream.getTracks().forEach((track) => track.stop()); state.chatRecording = null; const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' }); const file = new File([blob], `voice-${new Date().toISOString().replace(/[:.]/g, '-')}.webm`, { type: blob.type }); await uploadChatFiles([file]); };
+		state.chatRecording = { recorder, stream, startedAt: Date.now() }; recorder.start(); button.classList.add('recording'); toast('Запись началась. Нажмите ещё раз, чтобы отправить');
+	} catch (_) { toast('Не удалось получить доступ к микрофону', true); }
+}
+
+function bindChatEvents() {
+	$$('[data-chat-thread]').forEach((button) => button.addEventListener('click', () => { state.activeChatThreadId = button.dataset.chatThread; state.chatLoadedThreadId = ''; state.chatMessages = []; state.chatSearch = ''; state.chatEditingMessageId = ''; state.chatReplyToId = ''; state.chatLinkedRecordId = ''; $('.chat-shell')?.classList.remove('show-threads'); renderChat(); }));
+	$('[data-toggle-chat-threads]')?.addEventListener('click', () => $('.chat-shell').classList.toggle('show-threads'));
+	const shell = $('.chat-shell');
+	shell?.addEventListener('click', (event) => { if (event.target === shell && shell.classList.contains('show-threads')) shell.classList.remove('show-threads'); });
+	bindChatDrawerSwipe();
+	$('[data-new-chat-thread]')?.addEventListener('click', async () => { const active = state.records.filter(isActiveRecord); const recordID = await askChoice({ title: 'Новая ветка обсуждения', label: 'Выберите карточку', choices: active.slice(0, 80).map((record) => ({ value: record.id, label: `${typeMeta[record.type].singular}: ${record.title}` })) }); if (!recordID) return; try { const thread = await api('/api/chat/threads', { method: 'POST', body: JSON.stringify({ recordId: recordID }) }); state.chatThreads = await api('/api/chat/threads'); state.activeChatThreadId = thread.id; state.chatLoadedThreadId = ''; renderChat(); } catch (error) { toast(error.message, true); } });
+	$('[data-chat-favorites]')?.addEventListener('click', () => { state.chatFavoritesOnly = !state.chatFavoritesOnly; state.chatLoadedThreadId = ''; renderChat(); });
+	$('.chat-search input')?.addEventListener('input', (event) => {
+		state.chatSearch = event.target.value;
+		clearTimeout(state.chatSearchTimer);
+		state.chatSearchTimer = setTimeout(() => { renderChat(); const input = $('.chat-search input'); input?.focus(); input?.setSelectionRange(input.value.length, input.value.length); }, 130);
+	});
+	$('[data-chat-ai-digest]')?.addEventListener('click', async () => {
+		state.chatDigestLoading = state.activeChatThreadId; renderChat();
+		try { const digest = await api(`/api/chat/threads/${state.activeChatThreadId}/ai-digest`, { method: 'POST' }); state.chatDigests.set(state.activeChatThreadId, digest); }
+		catch (error) { toast(error.message, true); }
+		finally { state.chatDigestLoading = ''; if (state.view === 'chat') renderChat(); }
+	});
+	$('[data-close-chat-digest]')?.addEventListener('click', () => { state.chatDigests.delete(state.activeChatThreadId); renderChat(); });
+	$$('[data-chat-ai-output]').forEach((button) => button.addEventListener('click', () => {
+		const output = state.chatDigests.get(state.activeChatThreadId)?.suggestedOutputs?.[Number(button.dataset.chatAiOutput)];
+		const thread = state.chatThreads.find((item) => item.id === state.activeChatThreadId);
+		if (!output) return;
+		openCreateDialog(output.type, { kind: output.kind, title: output.title, description: output.description, priority: output.priority, estimateMinutes: output.estimateMinutes, sourceRecordId: thread?.recordId || '', relationType: 'produced', reason: 'Сущность извлечена AI из командного обсуждения и подтверждена пользователем' });
+	}));
+	$$('[data-chat-reply]').forEach((button) => button.addEventListener('click', () => { state.chatReplyToId = button.dataset.chatReply; renderChat(); $('#chat-composer textarea')?.focus(); }));
+	$('[data-clear-chat-reply]')?.addEventListener('click', () => { state.chatReplyToId = ''; renderChat(); });
+	$('[data-clear-chat-record]')?.addEventListener('click', () => { state.chatLinkedRecordId = ''; renderChat(); });
+	$('[data-clear-chat-edit]')?.addEventListener('click', () => { state.chatEditingMessageId = ''; renderChat(); $('#chat-composer textarea')?.focus(); });
+	$$('[data-chat-edit]').forEach((button) => button.addEventListener('click', () => {
+		state.chatEditingMessageId = button.dataset.chatEdit; state.chatReplyToId = ''; state.chatLinkedRecordId = '';
+		renderChat(); const editor = $('#chat-composer textarea'); editor?.focus(); editor?.setSelectionRange(editor.value.length, editor.value.length);
+	}));
+	$$('[data-chat-archive]').forEach((button) => button.addEventListener('click', async () => {
+		const reason = await askText({ title: 'Убрать сообщение из чата', label: 'Почему сообщение больше не должно отображаться?', required: true });
+		if (!reason) return;
+		try { await api(`/api/chat/messages/${button.dataset.chatArchive}`, { method: 'DELETE', body: JSON.stringify({ reason }) }); await loadChatThread(state.activeChatThreadId); }
+		catch (error) { toast(error.message, true); }
+	}));
+	$$('[data-chat-favorite]').forEach((button) => button.addEventListener('click', async () => { await api(`/api/chat/messages/${button.dataset.chatFavorite}/favorite`, { method: 'POST' }); await loadChatThread(state.activeChatThreadId); }));
+	$$('[data-chat-reaction]').forEach((button) => button.addEventListener('click', async () => { await api(`/api/chat/messages/${button.dataset.chatReaction}/reaction`, { method: 'POST', body: JSON.stringify({ emoji: button.dataset.emoji }) }); await loadChatThread(state.activeChatThreadId); }));
+	$$('[data-scroll-message]').forEach((button) => button.addEventListener('click', () => { const message = $(`#chat-message-${CSS.escape(button.dataset.scrollMessage)}`); message?.scrollIntoView({ behavior: 'smooth', block: 'center' }); message?.classList.add('highlight'); setTimeout(() => message?.classList.remove('highlight'), 1400); }));
+	$('[data-chat-link-record]')?.addEventListener('click', async () => { const records = state.records.filter(isActiveRecord); const id = await askChoice({ title: 'Прикрепить карточку', label: 'Карточка откроется прямо из сообщения', choices: records.slice(0, 80).map((record) => ({ value: record.id, label: `${typeMeta[record.type].singular}: ${record.title}` })) }); if (id) { state.chatLinkedRecordId = id; renderChat(); $('#chat-composer textarea')?.focus(); } });
+	const form = $('#chat-composer'); if (!form) return; const textarea = form.elements.body; const input = form.elements.file; const drop = $('[data-chat-drop]', form);
+	textarea.addEventListener('keydown', (event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); form.requestSubmit(); } });
+	form.addEventListener('submit', async (event) => {
+		event.preventDefault(); const body = textarea.value.trim();
+		if (state.chatEditingMessageId) {
+			if (!body) return toast('Сообщение не может быть пустым', true);
+			try { await api(`/api/chat/messages/${state.chatEditingMessageId}`, { method: 'PATCH', body: JSON.stringify({ body }) }); state.chatEditingMessageId = ''; await loadChatThread(state.activeChatThreadId); }
+			catch (error) { toast(error.message, true); }
+			return;
+		}
+		if (!body && !state.chatLinkedRecordId) return;
+		try { await api(`/api/chat/threads/${state.activeChatThreadId}/messages`, { method: 'POST', body: JSON.stringify({ body, replyToId: state.chatReplyToId, linkedRecordId: state.chatLinkedRecordId }) }); state.chatReplyToId = ''; state.chatLinkedRecordId = ''; await loadChatThread(state.activeChatThreadId); } catch (error) { toast(error.message, true); }
+	});
+	$('[data-chat-attach]', form).addEventListener('click', () => input.click());
+	input.addEventListener('change', async () => { await uploadChatFiles(input.files); input.value = ''; });
+	['dragenter','dragover'].forEach((name) => drop.addEventListener(name, (event) => { event.preventDefault(); drop.classList.add('drag-active'); }));
+	drop.addEventListener('dragleave', () => drop.classList.remove('drag-active'));
+	drop.addEventListener('drop', async (event) => { event.preventDefault(); drop.classList.remove('drag-active'); await uploadChatFiles(event.dataTransfer.files); });
+	$('[data-chat-voice]', form).addEventListener('click', (event) => toggleVoiceRecording(event.currentTarget));
+	$('[data-start-call]')?.addEventListener('click', startChatCall);
+	$('[data-accept-call]')?.addEventListener('click', acceptChatCall);
+	$$('[data-end-call]').forEach((button) => button.addEventListener('click', endChatCall));
+}
+
+function bindChatDrawerSwipe() {
+	const drawer = $('.chat-thread-list'); const shell = $('.chat-shell');
+	if (!drawer || !shell || !window.matchMedia('(max-width: 820px)').matches) return;
+	let pointerID = null; let startX = 0; let startY = 0; let deltaX = 0;
+	const finish = () => { if (pointerID === null) return; const close = deltaX < -56; pointerID = null; drawer.style.removeProperty('transform'); drawer.classList.remove('dragging'); if (close) shell.classList.remove('show-threads'); };
+	drawer.addEventListener('pointerdown', (event) => { if (!event.isPrimary) return; pointerID = event.pointerId; startX = event.clientX; startY = event.clientY; deltaX = 0; drawer.setPointerCapture?.(pointerID); });
+	drawer.addEventListener('pointermove', (event) => { if (event.pointerId !== pointerID) return; const moveX = event.clientX - startX; const moveY = event.clientY - startY; if (Math.abs(moveX) < 10 || Math.abs(moveX) <= Math.abs(moveY)) return; event.preventDefault(); deltaX = Math.min(0, moveX); drawer.classList.add('dragging'); drawer.style.transform = `translateX(${deltaX}px)`; });
+	drawer.addEventListener('pointerup', finish); drawer.addEventListener('pointercancel', finish);
+}
+
+function waitForIce(peer) {
+	if (peer.iceGatheringState === 'complete') return Promise.resolve();
+	return new Promise((resolve) => { const done = () => { if (peer.iceGatheringState === 'complete') { peer.removeEventListener('icegatheringstatechange', done); resolve(); } }; peer.addEventListener('icegatheringstatechange', done); setTimeout(resolve, 2500); });
+}
+
+async function createChatPeer() {
+	if (!state.chatICEServers) {
+		const config = await api('/api/chat/ice-config');
+		state.chatICEServers = Array.isArray(config.iceServers) && config.iceServers.length ? config.iceServers : [{ urls: ['stun:control.e-rd.ru:3478'] }];
+	}
+	const peer = new RTCPeerConnection({ iceServers: state.chatICEServers });
+	const localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); localStream.getTracks().forEach((track) => peer.addTrack(track, localStream));
+	const remoteAudio = document.createElement('audio'); remoteAudio.autoplay = true; remoteAudio.playsInline = true; remoteAudio.hidden = true; document.body.appendChild(remoteAudio);
+	peer.ontrack = (event) => { remoteAudio.srcObject = event.streams[0]; };
+	return { peer, localStream, remoteAudio, connected: false, startedAt: Date.now() };
+}
+
+async function startChatCall() {
+	if (state.chatCall) return;
+	try { const session = await createChatPeer(); const offer = await session.peer.createOffer({ offerToReceiveAudio: true }); await session.peer.setLocalDescription(offer); await waitForIce(session.peer); const call = await api(`/api/chat/threads/${state.activeChatThreadId}/calls`, { method: 'POST', body: JSON.stringify({ offerSdp: JSON.stringify(session.peer.localDescription) }) }); session.call = call; state.chatCall = session; renderChat(); } catch (error) { toast(error.message || 'Не удалось начать звонок', true); cleanupChatCall(); }
+}
+
+async function acceptChatCall() {
+	const incoming = state.chatIncomingCall; if (!incoming) return;
+	try { const session = await createChatPeer(); session.call = incoming; await session.peer.setRemoteDescription(JSON.parse(incoming.offerSdp)); const answer = await session.peer.createAnswer(); await session.peer.setLocalDescription(answer); await waitForIce(session.peer); const call = await api(`/api/chat/calls/${incoming.id}/answer`, { method: 'POST', body: JSON.stringify({ answerSdp: JSON.stringify(session.peer.localDescription) }) }); session.call = call; session.connected = true; state.chatCall = session; state.chatIncomingCall = null; startCallClock(); renderChat(); } catch (error) { toast(error.message || 'Не удалось принять звонок', true); cleanupChatCall(); }
+}
+
+async function pollChatCall() {
+	if (!state.activeChatThreadId) return;
+	try {
+		const response = await fetch(`/api/chat/threads/${state.activeChatThreadId}/calls/active`, { credentials: 'same-origin' });
+		if (response.status === 204) { if (!state.chatCall) state.chatIncomingCall = null; return; }
+		const call = await response.json();
+		if (state.chatCall?.call?.id === call.id) {
+			state.chatCall.call = call;
+			if (call.answerSdp && !state.chatCall.connected && call.startedBy === state.me.id) { await state.chatCall.peer.setRemoteDescription(JSON.parse(call.answerSdp)); state.chatCall.connected = true; state.chatCall.startedAt = Date.now(); startCallClock(); if (state.view === 'chat') renderChat(); }
+		} else if (call.startedBy !== state.me.id) { state.chatIncomingCall = call; if (state.view === 'chat' && !workspaceHasActiveInput()) renderChat(); }
+	} catch (_) {}
+}
+
+function startCallClock() {
+	clearInterval(state.chatCall?.clock);
+	if (!state.chatCall) return;
+	state.chatCall.clock = setInterval(() => { const node = $('#chat-call-duration'); if (!node || !state.chatCall) return; const seconds = Math.floor((Date.now() - state.chatCall.startedAt) / 1000); node.textContent = `${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`; }, 1000);
+}
+
+function cleanupChatCall() {
+	if (!state.chatCall) return; clearInterval(state.chatCall.clock); state.chatCall.peer?.close(); state.chatCall.localStream?.getTracks().forEach((track) => track.stop()); state.chatCall.remoteAudio?.remove(); state.chatCall = null;
+}
+
+async function endChatCall() {
+	const call = state.chatCall?.call || state.chatIncomingCall; if (!call) return;
+	try { await api(`/api/chat/calls/${call.id}/end`, { method: 'POST' }); } catch (_) {}
+	cleanupChatCall(); state.chatIncomingCall = null; await loadChatThread(state.activeChatThreadId);
 }
 
 function graphSettingsKey() {
@@ -1999,7 +2448,9 @@ function renderRecordList(type) {
     const query = state.search.toLowerCase();
     records = records.filter((record) => `${record.title} ${record.description}`.toLowerCase().includes(query));
   }
-  const statusTabs = type === 'idea' ? ['all', 'inbox', 'review', 'main', 'rejected', 'archived'] : ['all', ...(statusesByType[type] || statusesByType.default), 'archived'];
+  const entityStatuses = [...(statusesByType[type] || statusesByType.default)];
+  if (type === 'research' && !entityStatuses.includes('completed')) entityStatuses.push('completed');
+  const statusTabs = type === 'idea' ? ['all', 'inbox', 'review', 'main', 'rejected', 'archived'] : ['all', ...entityStatuses, 'archived'];
   const listCopy = {
     goal: 'Результаты, к которым движется команда, со сроком и измеримым прогрессом.',
     idea: 'Все мысли сохраняются сразу, а оценка и переход между этапами происходят позже.',
@@ -2016,13 +2467,14 @@ function renderRecordList(type) {
     <section class="entity-list-controls" aria-label="Фильтры раздела">
       <div class="search-box">${icon('search')}<input id="record-search" type="search" placeholder="Найти в разделе" value="${escapeHTML(state.search)}"></div>
       <label><span>${type === 'question_set' ? 'Координатор' : type === 'meeting' ? 'Организатор' : 'Ответственный'}</span><select id="owner-filter"><option value="">${type === 'question_set' ? 'Все координаторы' : type === 'meeting' ? 'Все организаторы' : 'Все ответственные'}</option>${state.users.map((user) => `<option value="${user.id}" ${state.ownerFilter === String(user.id) ? 'selected' : ''}>${escapeHTML(user.username)}</option>`).join('')}</select></label>
-      <label><span>Состояние</span><select id="record-status-filter">${statusTabs.map((status) => `<option value="${status === 'all' ? '' : status}" ${state.statusFilter === (status === 'all' ? '' : status) ? 'selected' : ''}>${status === 'all' ? 'Все состояния' : statusLabels[status]}</option>`).join('')}</select></label>
+      <label><span>Состояние</span><select id="record-status-filter">${statusTabs.map((status) => `<option value="${status === 'all' ? '' : status}" ${state.statusFilter === (status === 'all' ? '' : status) ? 'selected' : ''}>${status === 'all' ? 'Все состояния' : type === 'decision' && status === 'completed' ? 'Принято' : type === 'research' && status === 'completed' ? 'Завершено' : statusLabels[status]}</option>`).join('')}</select></label>
+      ${type === 'idea' ? `<div class="segmented compact entity-view-switch"><button type="button" class="segment ${state.ideaViewMode === 'board' ? 'active' : ''}" data-idea-view="board">${icon('network')} Доска</button><button type="button" class="segment ${state.ideaViewMode === 'list' ? 'active' : ''}" data-idea-view="list">${icon('menu')} Список</button></div>` : ''}
       <span class="record-total">${recordsCountLabel(records.length)}</span>
     </section>
-    <section class="table-panel">
+    ${type === 'idea' && state.ideaViewMode === 'board' ? renderIdeaStageBoard(records) : `<section class="table-panel">
       <div class="record-table header ${['task', 'goal', 'question_set', 'meeting'].includes(type) ? '' : 'simple'}"><span>Карточка</span><span>${type === 'question_set' ? 'Координатор' : type === 'meeting' ? 'Организатор' : 'Ответственный'}</span><span>Статус</span><span>${['task', 'goal', 'question_set', 'meeting'].includes(type) ? 'Дата / прогресс' : 'Изменено'}</span></div>
       <div class="record-rows">${records.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)).map(renderRecordRow).join('') || `<div class="guided-empty entity-empty">${icon(typeMeta[type].icon)}<h3>${state.search || state.statusFilter || state.ownerFilter ? 'В этом фильтре ничего нет' : escapeHTML(emptyTitle)}</h3><p>${state.search || state.statusFilter || state.ownerFilter ? 'Измените условия фильтра или создайте новую карточку.' : 'Создайте первую карточку. Её можно заполнить и связать с другими объектами позже.'}</p><button type="button" class="primary" data-record-create="${type}">${icon('plus')} ${escapeHTML(createLabel)}</button></div>`}</div>
-    </section>`;
+    </section>`}`;
   $('#record-search').addEventListener('input', (event) => {
     state.search = event.target.value;
     clearTimeout(state.recordSearchTimer);
@@ -2033,7 +2485,9 @@ function renderRecordList(type) {
   });
   $('#owner-filter').addEventListener('change', (event) => { state.ownerFilter = event.target.value; renderRecordList(type); });
   $('#record-status-filter').addEventListener('change', (event) => { state.statusFilter = event.target.value; renderRecordList(type); });
+	$$('[data-idea-view]').forEach((button) => button.addEventListener('click', () => { state.ideaViewMode = button.dataset.ideaView; renderRecordList(type); }));
   $$('[data-record-create]').forEach((button) => button.addEventListener('click', () => openCreateDialog(button.dataset.recordCreate)));
+	if (type === 'idea' && state.ideaViewMode === 'board') bindBoardDnD(() => renderRecordList(type));
   bindOpenRecords();
 }
 
@@ -2238,6 +2692,19 @@ function dossierProperty(label, value, field, canEdit, tone = '') {
   return `<${tag} ${canEdit && field ? `type="button" data-edit-field="${field}"` : ''} class="dossier-property ${tone}"><span>${escapeHTML(label)}</span><strong>${escapeHTML(value || 'Не указано')}</strong>${canEdit && field ? icon('edit') : ''}</${tag}>`;
 }
 
+function renderAIContextCoverage(coverage = {}) {
+  const parts = [];
+  if (coverage.researchOptions) parts.push(`${coverage.researchOptions} ${coverage.researchOptions === 1 ? 'вариант' : 'варианта'}`);
+  if (coverage.researchFields) parts.push(`${coverage.researchFields} параметров`);
+  if (coverage.sections) parts.push(`${coverage.sections} разделов`);
+  if (coverage.questions) parts.push(`${coverage.questions} вопросов`);
+  if (coverage.answers) parts.push(`${coverage.answers} ответов`);
+  if (coverage.relations) parts.push(`${coverage.relations} связей`);
+  if (coverage.comments) parts.push(`${coverage.comments} комментариев`);
+  if (coverage.historyEvents) parts.push(`${coverage.historyEvents} событий`);
+  return `<div class="ai-context-coverage">${icon('check')}<span><strong>AI прочитал: ${escapeHTML(parts.join(' · ') || 'основные поля карточки')}</strong>${coverage.contextTruncated ? '<small>Очень большой контекст был безопасно сокращён.</small>' : '<small>Разбор построен по доступному досье карточки.</small>'}</span></div>`;
+}
+
 function renderAIAnalysis(record, canEdit) {
   if (state.aiAnalysisLoading === record.id) {
     return `<section class="ai-analysis loading"><span class="spinner"></span><div><strong>AI разбирает карточку</strong><p>Проверяем контекст, риски, связи и следующий предметный результат.</p></div></section>`;
@@ -2247,14 +2714,16 @@ function renderAIAnalysis(record, canEdit) {
   const source = analysis.source === 'gemini' ? 'Gemini' : analysis.source === 'groq' ? 'Groq' : 'локальные правила';
   return `<section class="ai-analysis">
     <header><span>${icon('sparkles')}</span><div><p class="eyebrow">AI-разбор · ${escapeHTML(source)}</p><h3>Что требует внимания</h3></div><b>${Math.round((analysis.confidence || 0) * 100)}%</b></header>
-    <p class="ai-summary">${escapeHTML(analysis.summary)}</p>
+    ${renderAIContextCoverage(analysis.contextCoverage)}
+    <div class="ai-summary markdown-body">${renderMarkdown(analysis.summary, 'Выжимка не сформирована.')}</div>
+    ${analysis.proposedDecision ? `<div class="ai-proposed-decision"><span>Предлагаемый итог</span><div class="markdown-body">${renderMarkdown(analysis.proposedDecision)}</div>${canEdit ? `<button type="button" class="secondary" data-ai-create-decision>${icon('scale')} Создать решение из черновика</button>` : ''}</div>` : ''}
     <div class="ai-analysis-grid">
       <div><span>Пробелы</span>${analysis.gaps.length ? `<ul>${analysis.gaps.map((item) => `<li>${escapeHTML(item)}</li>`).join('')}</ul>` : '<p>Критичных пробелов не найдено.</p>'}</div>
       <div class="ai-risks"><span>Риски</span>${analysis.risks.length ? `<ul>${analysis.risks.map((item) => `<li>${escapeHTML(item)}</li>`).join('')}</ul>` : '<p>Явных рисков не найдено.</p>'}</div>
     </div>
     <div class="ai-next"><span>Следующий проверяемый шаг</span><strong>${escapeHTML(analysis.nextAction)}</strong><div>${canEdit ? `<button type="button" class="secondary" data-ai-create-next>${icon('plus')} Создать задачу</button>` : ''}${canEdit && (analysis.priority !== record.priority || analysis.estimateMinutes !== record.estimateMinutes) ? `<button type="button" class="secondary" data-ai-apply-plan>${icon('check')} Применить ${escapeHTML(priorityLabels[analysis.priority])}, ${minutesLabel(analysis.estimateMinutes)}</button>` : ''}</div></div>
     ${analysis.suggestedLinks.length ? `<div class="ai-proposals"><span>Предлагаемые связи</span>${analysis.suggestedLinks.map((link) => `<button type="button" data-ai-link="${link.recordId}" data-ai-relation="${link.relationType}" ${canEdit ? '' : 'disabled'}><strong>${escapeHTML(link.title)}</strong><small>${escapeHTML(link.reason)}</small>${icon('link')}</button>`).join('')}</div>` : ''}
-    ${analysis.suggestedOutputs.length ? `<div class="ai-proposals"><span>Из заметок можно создать</span>${analysis.suggestedOutputs.map((output, index) => `<button type="button" data-ai-output-index="${index}" ${canEdit ? '' : 'disabled'}><strong>${escapeHTML(typeMeta[output.type]?.singular || 'Карточка')}: ${escapeHTML(output.title)}</strong><small>${escapeHTML(output.reason)}</small>${icon('plus')}</button>`).join('')}</div>` : ''}
+    ${analysis.suggestedOutputs.length ? `<div class="ai-proposals"><span>Можно зафиксировать отдельными карточками</span>${analysis.suggestedOutputs.map((output, index) => `<button type="button" data-ai-output-index="${index}" ${canEdit ? '' : 'disabled'}><strong>${escapeHTML(typeMeta[output.type]?.singular || 'Карточка')}: ${escapeHTML(output.title)}</strong><small>${escapeHTML(output.reason)}</small>${icon('plus')}</button>`).join('')}</div>` : ''}
     <p class="ai-disclaimer">AI предлагает структуру, но не меняет факты, решения и сроки без вашего действия.</p>
   </section>`;
 }
@@ -2274,17 +2743,18 @@ function renderRecordReadOverview(record, options) {
       <section class="dossier-section dossier-context"><header><div><p class="eyebrow">Содержание</p><h3>${escapeHTML(language.description)}</h3></div>${canEdit ? `<button type="button" class="icon-button" data-edit-field="description" aria-label="Изменить описание" title="Изменить описание">${icon('edit')}</button>` : ''}</header>${markdownView(record.description, 'Контекст пока не заполнен.', language.description)}</section>
       ${hasExecution ? `<section class="dossier-section"><header><div><p class="eyebrow">Контроль</p><h3>${record.type === 'question_set' ? 'Обсуждение и срок' : record.type === 'meeting' ? 'Организация встречи' : 'Исполнение'}</h3></div></header><div class="dossier-properties">
         ${dossierProperty(ownerLabel, record.ownerUsername, 'ownerId', canEdit)}
-        ${dossierProperty('Статус', statusLabels[record.status] || record.status, record.type === 'question_set' ? '' : 'status', canEdit)}
+        ${dossierProperty('Статус', statusLabel(record), record.type === 'question_set' ? '' : 'status', canEdit)}
         ${hasDeadline ? dossierProperty(dueLabel, deadline.label, 'dueAt', canEdit, deadline.className) : ''}
         ${hasPriority ? dossierProperty('Приоритет', priorityLabels[record.priority || 'normal'], 'priority', canEdit, `priority-${record.priority || 'normal'}`) : ''}
         ${hasEstimate ? dossierProperty('План', minutesLabel(record.estimateMinutes), 'estimateMinutes', canEdit) + dossierProperty('Факт', minutesLabel(record.actualMinutes), 'actualMinutes', canEdit) : ''}
-        ${hasManualProgress ? dossierProperty('Прогресс', `${record.progress}%`, 'progress', canEdit) : ''}
+        ${record.type === 'research' ? dossierProperty('Готовность исследования', `${record.progress}%`, '', false) : hasManualProgress ? dossierProperty('Прогресс', `${record.progress}%`, 'progress', canEdit) : ''}
         ${hasDecisionMaker ? dossierProperty('Принимает решение', record.decisionMakerUsername || 'Не указан', 'decisionMakerId', canEdit) : ''}
-      </div>${record.progressNote ? `<div class="dossier-note"><span>Последнее обновление</span><p>${escapeHTML(record.progressNote)}</p></div>` : ''}</section>` : `<section class="dossier-section"><header><div><p class="eyebrow">Ответственность</p><h3>Владелец карточки</h3></div></header><div class="dossier-properties">${dossierProperty(ownerLabel, record.ownerUsername, 'ownerId', canEdit)}${dossierProperty('Статус', statusLabels[record.status] || record.status, 'status', canEdit)}</div></section>`}
+      </div>${record.progressNote ? `<div class="dossier-note"><span>Последнее обновление</span><p>${escapeHTML(record.progressNote)}</p></div>` : ''}</section>` : `<section class="dossier-section"><header><div><p class="eyebrow">Ответственность</p><h3>Владелец карточки</h3></div></header><div class="dossier-properties">${dossierProperty(ownerLabel, record.ownerUsername, 'ownerId', canEdit)}${dossierProperty('Статус', statusLabel(record), 'status', canEdit)}</div></section>`}
       ${hasResult ? `<section class="dossier-section dossier-result"><header><div><p class="eyebrow">Результат</p><h3>${record.type === 'research' ? 'Вывод исследования' : record.type === 'decision' ? 'Принятое решение' : record.type === 'disagreement' ? 'Результат разбора' : 'Достигнутый результат'}</h3></div>${canEdit ? `<button type="button" class="icon-button" data-edit-field="result" aria-label="Изменить результат" title="Изменить результат">${icon('edit')}</button>` : ''}</header>${markdownView(record.result, 'Результат ещё не зафиксирован.', 'Результат карточки')}</section>` : ''}
       <section class="dossier-meta"><span>${escapeHTML(workstreamLabels[record.workstream || 'business'])}</span><span>${record.editPolicy === 'owner_only' ? 'Личная карточка' : 'Общая карточка'}</span><span>${record.isRoot ? 'Корень ветки' : record.parentId ? 'Есть родитель' : 'Без родителя'}</span><button type="button" data-edit-field="workstream" ${canEdit ? '' : 'disabled'}>${icon('settings')} Настроить</button></section>
     </article>
-    <div class="record-read-actions">${canEdit ? `<button type="button" class="primary" data-open-record-edit>${icon('edit')} Редактировать</button>` : ''}<button type="button" class="secondary" id="notify-partners">${icon('bell')} Уведомить</button><button type="button" class="secondary ai-action" data-analyze-record>${icon('sparkles')} AI-разбор</button><details class="record-more-actions"><summary class="icon-button" aria-label="Другие действия">•••</summary><div>${record.type === 'task' ? `<button type="button" id="convert-to-questions">${icon('messages')} Сделать карточкой вопросов</button>` : ''}${canEdit ? `<button type="button" class="danger-text" id="archive-record">${icon('archive')} В архив</button>` : ''}</div></details></div>
+    ${record.type === 'research' && record.status !== 'completed' ? `<section class="research-progress-explainer"><div><span>Готовность ${record.progress}%</span><strong>${record.result ? 'Вывод готов к подтверждению' : 'Зафиксируйте вывод после сравнения'}</strong><p>Процент складывается из вопроса исследования, структуры сравнения, вариантов, их заполненности и итогового вывода. 100% устанавливается только явным завершением.</p></div><progress max="100" value="${record.progress}"></progress></section>` : ''}
+    <div class="record-read-actions">${canEdit ? `<button type="button" class="primary" data-open-record-edit>${icon('edit')} Редактировать</button>${record.type === 'research' && record.status !== 'completed' ? `<button type="button" class="success" data-complete-research>${icon('check')} Завершить исследование</button>` : ''}` : ''}<button type="button" class="secondary" id="notify-partners">${icon('bell')} Уведомить</button><button type="button" class="secondary ai-action" data-analyze-record>${icon('sparkles')} AI-разбор</button><details class="record-more-actions"><summary class="icon-button" aria-label="Другие действия">•••</summary><div>${record.type === 'task' ? `<button type="button" id="convert-to-questions">${icon('messages')} Сделать карточкой вопросов</button>` : ''}${canEdit ? `<button type="button" class="danger-text" id="archive-record">${icon('archive')} В архив</button>` : ''}</div></details></div>
     ${renderAIAnalysis(record, canEdit)}
     ${renderNextActions(record)}
   </div>`;
@@ -2299,25 +2769,25 @@ function renderRecordOverview(record, statuses) {
     idea: { description: 'Краткая гипотеза или суть мысли', owner: 'Куратор' },
     criterion: { description: 'Что означает критерий и как его оценивать', owner: 'Владелец критерия' },
     research: { description: 'Исследовательский вопрос и ожидаемый вывод', owner: 'Исследователь' },
-    decision: { description: 'Какой вопрос решаем и какие варианты рассмотрены', owner: 'Ответственный' },
+    decision: { description: 'Принятое решение и его основания', owner: 'Зафиксировал' },
     disagreement: { description: 'Предмет разногласия и контекст', owner: 'Координатор' },
     document: { description: 'Краткое содержание документа', owner: 'Владелец' },
     meeting: { description: 'Повестка, заметки и договорённости', owner: 'Организатор' },
   }[record.type];
-  const hasDeadline = ['task', 'goal', 'question_set', 'research', 'decision', 'disagreement', 'meeting'].includes(record.type);
-  const hasDecisionMaker = ['decision', 'disagreement'].includes(record.type);
+  const hasDeadline = ['task', 'goal', 'question_set', 'research', 'disagreement', 'meeting'].includes(record.type);
+  const hasDecisionMaker = ['disagreement'].includes(record.type);
   const hasPriority = isWorkRecord(record) || record.type === 'goal';
   const hasEstimate = isWorkRecord(record) || record.type === 'goal';
-  const hasManualProgress = record.type !== 'question_set' && (isWorkRecord(record) || record.type === 'goal');
-  const hasResult = ['task', 'goal', 'research', 'decision', 'disagreement'].includes(record.type);
+  const hasManualProgress = !['question_set', 'research'].includes(record.type) && (isWorkRecord(record) || record.type === 'goal');
+  const hasResult = ['task', 'goal', 'research', 'disagreement'].includes(record.type);
   const planningTitle = record.type === 'task' ? 'Исполнение задачи' : record.type === 'question_set' ? 'Срок и приоритет обсуждения' : record.type === 'meeting' ? 'Организатор и время' : hasDecisionMaker ? 'Ответственность за решение' : hasDeadline ? 'Планирование' : 'Владелец карточки';
-  const dueLabel = ({ meeting: 'Дата и время', research: 'Срок исследования', decision: 'Срок решения', disagreement: 'Срок разбора' })[record.type] || 'Срок';
+  const dueLabel = ({ meeting: 'Дата и время', research: 'Срок исследования', disagreement: 'Срок разбора' })[record.type] || 'Срок';
   const planningGrid = hasDecisionMaker && hasDeadline ? 'three' : hasDeadline ? 'two' : 'one';
   const hasExecution = hasDeadline || hasDecisionMaker || hasPriority || hasEstimate || hasManualProgress || hasResult;
   const origin = state.activeDetail.derivation;
-  const canEdit = record.editPolicy !== 'owner_only' || record.ownerId === state.me.id;
+  const canEdit = record.editPolicy !== 'owner_only' || record.ownerId === state.me.id || record.authorId === state.me.id;
   const canManageAccess = record.ownerId === state.me.id || record.authorId === state.me.id;
-  const parentOptions = state.records.filter((item) => item.id !== record.id && item.status !== 'archived').map((item) => `<option value="${item.id}" ${record.parentId === item.id ? 'selected' : ''}>${escapeHTML(typeMeta[item.type]?.singular || 'Карточка')}: ${escapeHTML(item.title)}</option>`).join('');
+  const parentOptions = state.records.filter((item) => item.id !== record.id && (isActiveRecord(item) || item.id === record.parentId)).map((item) => `<option value="${item.id}" ${record.parentId === item.id ? 'selected' : ''}>${escapeHTML(typeMeta[item.type]?.singular || 'Карточка')}: ${escapeHTML(item.title)}</option>`).join('');
   if (!state.recordEditMode) {
     return renderRecordReadOverview(record, { language, hasDeadline, hasDecisionMaker, hasPriority, hasEstimate, hasManualProgress, hasResult, hasExecution, dueLabel, canEdit });
   }
@@ -2334,7 +2804,7 @@ function renderRecordOverview(record, statuses) {
         ${(hasPriority || hasEstimate || hasManualProgress) ? `<div class="form-grid ${hasEstimate && hasManualProgress ? 'four' : 'three'}">${hasPriority ? `<label>Приоритет<select name="priority">${Object.entries(priorityLabels).map(([value, label]) => `<option value="${value}" ${record.priority === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>` : ''}${hasEstimate ? `<label>План, минут<input name="estimateMinutes" type="number" min="0" value="${record.estimateMinutes}"></label><label>Факт, минут<input name="actualMinutes" type="number" min="0" value="${record.actualMinutes || 0}"></label>` : ''}${hasManualProgress ? `<label>Прогресс, %<input name="progress" type="number" min="0" max="100" value="${record.progress}"></label>` : ''}</div>` : ''}
         ${hasManualProgress ? `<label>Текущее обновление<input name="progressNote" value="${escapeHTML(record.progressNote)}" placeholder="Что изменилось с прошлого раза"></label>` : ''}
         ${hasResult ? markdownEditor('result', record.type === 'research' ? 'Вывод исследования' : record.type === 'decision' ? 'Принятое решение' : record.type === 'disagreement' ? 'Результат разбора' : 'Достигнутый результат', record.result, 4, 'Зафиксируйте итог и основания') : ''}
-        ${record.type === 'question_set' ? `<div class="derived-progress"><span>Прогресс обсуждения рассчитывается по принятым итогам</span><strong>${record.progress}%</strong></div>` : ''}
+        ${record.type === 'question_set' ? `<div class="derived-progress"><span>Прогресс обсуждения рассчитывается по принятым итогам</span><strong>${record.progress}%</strong></div>` : record.type === 'research' ? `<div class="derived-progress"><span>Готовность вычисляется из вопроса, полей, вариантов, их заполненности и вывода. Вручную процент не задаётся.</span><strong>${record.progress}%</strong></div>` : ''}
       </section>` : `<div class="form-grid one"><label>${language.owner}<select name="ownerId" ${canManageAccess ? '' : 'disabled'}>${userOptions(record.ownerId)}</select></label></div>`}
       <details class="form-more organization-fields"><summary>Доступ и место в проекте</summary><div class="form-more-body"><div class="form-grid three"><label>Направление<select name="workstream">${Object.entries(workstreamLabels).map(([value, label]) => `<option value="${value}" ${record.workstream === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Кто может изменять<select name="editPolicy" ${canManageAccess ? '' : 'disabled'}>${Object.entries(editPolicyLabels).map(([value, label]) => `<option value="${value}" ${record.editPolicy === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label><label>Родительская карточка<select name="parentId"><option value="">Без родителя</option>${parentOptions}</select></label></div><label class="root-toggle"><input name="isRoot" type="checkbox" ${record.isRoot ? 'checked' : ''}> <span><strong>Сделать новым корнем</strong><small>Карточка станет самостоятельным началом новой крупной ветки и потеряет текущего родителя.</small></span></label></div></details>
       <label id="record-reason-field" class="reason-field" hidden>Причина изменения <input name="reason" placeholder="Почему изменился статус или срок"></label>
@@ -2384,7 +2854,7 @@ function renderResearchOptionEditor(comparison) {
   const isNew = state.activeResearchOptionId === 'new';
   if (!isNew && !option) return '';
   return `<form id="research-option-form" class="research-option-editor" data-option-id="${escapeHTML(option?.id || '')}">
-    <header><div><p class="eyebrow">${isNew ? 'Новый вариант' : 'Редактирование варианта'}</p><h3>${isNew ? 'Добавить сервер или другой вариант' : escapeHTML(option.title)}</h3></div><button type="button" class="icon-button" data-cancel-research-option aria-label="Закрыть">${icon('x')}</button></header>
+    <header><div><p class="eyebrow">${isNew ? 'Новый вариант' : 'Редактирование варианта'}</p><h3>${isNew ? 'Добавить сервер или другой вариант' : escapeHTML(option.title)}</h3></div><div><button type="button" class="secondary ai-action" data-ai-fill-research-option>${icon('sparkles')} Заполнить пропуски AI</button><button type="button" class="icon-button" data-cancel-research-option aria-label="Закрыть">${icon('x')}</button></div></header>
     <div class="form-grid two"><label>Название<input name="title" required maxlength="160" value="${escapeHTML(option?.title || '')}" placeholder="Например: Timeweb Cloud"></label><label>Общая оценка, 0–10<input name="rating" type="number" min="0" max="10" step="0.1" value="${Number(option?.rating || 0)}"></label></div>
     ${comparison.fields.length ? `<div class="research-field-inputs">${comparison.fields.map((field) => researchValueInput(field, option?.values?.[field.id])).join('')}</div>` : ''}
     ${markdownEditor('summaryMd', 'Краткий вывод', option?.summaryMd || '', 4, 'Для чего подходит вариант и чем отличается', 'research-summary')}
@@ -2413,7 +2883,7 @@ function renderSectionRead(section) {
 
 function renderRecordContent(detail) {
   const record = detail.record;
-  const canEdit = record.editPolicy !== 'owner_only' || record.ownerId === state.me.id;
+  const canEdit = record.editPolicy !== 'owner_only' || record.ownerId === state.me.id || record.authorId === state.me.id;
   const comparison = record.type === 'research' ? renderResearchComparison(record, canEdit) : '';
   const sections = state.recordEditMode
     ? `<section class="accordion-stack content-stack">${detail.sections.map(renderSection).join('')}<details class="accordion"><summary><span>Добавить свой раздел</span><small>Только для этой карточки</small></summary><form id="custom-section-form" class="inline-editor"><input name="title" placeholder="Название раздела" required>${markdownEditor('content', 'Содержание', '', 5, 'Факты, позиции и выводы', 'custom-section')}<button class="secondary" type="submit">Добавить раздел</button></form></details></section>`
@@ -2458,11 +2928,15 @@ function renderFounderAnswer(question, user, answer) {
 function renderJointDecision(question) {
   const source = question.decision.sourceAuthorUsername ? `Выбрано из ответа ${question.decision.sourceAuthorUsername}` : 'Сформулировано после обсуждения';
   const outputLabels = { preference: 'Критерий', limitation: 'Ограничение', rule: 'Правило', insight: 'Вывод', task: 'Задача', idea: 'Идея', research: 'Исследование', goal: 'Цель' };
-  return `<section class="joint-decision"><span class="decision-icon">${icon('scale')}</span><div><p class="eyebrow">Совместный итог</p>${markdownView(question.decision.content, 'Итог пуст.', 'Совместный итог')}<small>${escapeHTML(source)} · зафиксировал ${escapeHTML(question.decision.decidedByUsername)}</small>${question.outputs?.length ? `<div class="decision-outputs"><span>Уже используется:</span>${question.outputs.map((output) => `<button type="button" data-related-record="${output.recordId}">${escapeHTML(outputLabels[output.kind || output.type] || typeMeta[output.type]?.singular || 'Карточка')}: ${escapeHTML(output.title)}</button>`).join('')}</div>` : ''}</div><div class="decision-actions"><details class="output-menu"><summary>${icon('plus')} Использовать вывод</summary><div>${Object.entries(outputLabels).map(([kind, label]) => `<button type="button" data-create-output="${kind}" data-question-id="${question.id}">${escapeHTML(label)}</button>`).join('')}</div></details><details><summary>${icon('edit')} Изменить итог</summary>${renderDecisionComposer(question, true)}</details></div></section>`;
+  const draft = state.aiQuestionDrafts.get(question.id);
+	return `<section class="joint-decision"><span class="decision-icon">${icon('scale')}</span><div><p class="eyebrow">Совместный итог</p>${markdownView(question.decision.content, 'Итог пуст.', 'Совместный итог')}<small>${escapeHTML(source)} · зафиксировал ${escapeHTML(question.decision.decidedByUsername)}</small>${question.outputs?.length ? `<div class="decision-outputs"><span>Уже используется:</span>${question.outputs.map((output) => `<button type="button" data-related-record="${output.recordId}">${escapeHTML(outputLabels[output.kind || output.type] || typeMeta[output.type]?.singular || 'Карточка')}: ${escapeHTML(output.title)}</button>`).join('')}</div>` : ''}${draft?.suggestedOutputs?.length ? `<div class="ai-question-outputs"><span>AI предлагает применить вывод:</span>${draft.suggestedOutputs.map((output, index) => `<button type="button" data-ai-question-output-index="${index}" data-question-id="${question.id}">${icon('sparkles')} ${escapeHTML(outputLabels[output.kind || output.type] || typeMeta[output.type]?.singular || 'Карточка')}: ${escapeHTML(output.title)}</button>`).join('')}</div>` : ''}</div><div class="decision-actions"><details class="output-menu"><summary>${icon('plus')} Использовать вывод</summary><div>${Object.entries(outputLabels).map(([kind, label]) => `<button type="button" data-create-output="${kind}" data-question-id="${question.id}">${escapeHTML(label)}</button>`).join('')}</div></details><details><summary>${icon('edit')} Изменить итог</summary>${renderDecisionComposer(question, true)}</details></div></section>`;
 }
 
 function renderDecisionComposer(question, compact = false) {
-  return `<section class="decision-composer ${compact ? 'compact' : ''}"><div><p class="eyebrow">Зафиксировать совместное решение</p><h4>Выберите готовый ответ или напишите новый итог</h4></div><div class="decision-options">${question.answers.map((answer) => `<button type="button" class="answer-choice" data-select-answer="${answer.id}" data-question-id="${question.id}"><span class="avatar tiny">${escapeHTML(answer.authorUsername.slice(0, 2).toUpperCase())}</span><span><strong>Принять ответ ${escapeHTML(answer.authorUsername)}</strong><small>${escapeHTML(answer.content.slice(0, 120))}${answer.content.length > 120 ? '…' : ''}</small></span>${icon('chevronRight')}</button>`).join('')}</div><form class="custom-decision-form" data-custom-decision="${question.id}">${markdownEditor('content', 'Новый общий итог', compact && question.decision && !question.decision.sourceAnswerId ? question.decision.content : '', 6, 'Формулировка после обсуждения', `decision-${question.id}`)}<button type="submit" class="primary">${icon('check')} Сохранить общий итог</button></form></section>`;
+  const draft = state.aiQuestionDrafts.get(question.id);
+	const loading = state.aiQuestionDraftLoading === question.id;
+	const initial = draft?.decision || (compact && question.decision && !question.decision.sourceAnswerId ? question.decision.content : '');
+	return `<section class="decision-composer ${compact ? 'compact' : ''}"><div class="decision-composer-heading"><div><p class="eyebrow">Зафиксировать совместное решение</p><h4>Выберите готовый ответ или напишите новый итог</h4></div><button type="button" class="secondary ai-action" data-ai-question-draft="${question.id}" ${loading ? 'disabled' : ''}>${loading ? '<span class="spinner"></span> Формируем' : `${icon('sparkles')} Предложить общий итог`}</button></div><div class="decision-options">${question.answers.map((answer) => `<button type="button" class="answer-choice" data-select-answer="${answer.id}" data-question-id="${question.id}"><span class="avatar tiny">${escapeHTML(answer.authorUsername.slice(0, 2).toUpperCase())}</span><span><strong>Принять ответ ${escapeHTML(answer.authorUsername)}</strong><small>${escapeHTML(markdownPlain(answer.content).slice(0, 120))}${markdownPlain(answer.content).length > 120 ? '…' : ''}</small></span>${icon('chevronRight')}</button>`).join('')}</div>${draft ? `<aside class="ai-question-draft-note"><strong>${icon('sparkles')} Редактируемый черновик ${draft.source === 'gemini' ? 'Gemini' : draft.source === 'groq' ? 'Groq' : ''}</strong><p>${escapeHTML(draft.rationale)}</p>${draft.suggestedOutputs?.length ? `<small>После сохранения итога можно создать: ${draft.suggestedOutputs.map((output) => escapeHTML(output.title)).join(' · ')}</small>` : ''}</aside>` : ''}<form class="custom-decision-form" data-custom-decision="${question.id}">${markdownEditor('content', 'Новый общий итог', initial, 6, 'Формулировка после обсуждения', `decision-${question.id}`)}<button type="submit" class="primary">${icon('check')} Сохранить общий итог</button></form></section>`;
 }
 
 function renderRecordRelations(record, detail, criteria, targets) {
@@ -2527,7 +3001,59 @@ function formatFileSize(bytes) {
 function renderFilesPane(detail, canEdit) {
   if (!detail.workflowLoaded) return renderWorkflowLoading('files');
   const attachments = detail.workflow.attachments || [];
-  return `<div class="record-pane ${state.activeRecordTab === 'files' ? 'active' : ''}" data-record-pane="files"><section class="files-panel"><div class="section-heading"><div><p class="eyebrow">Материалы карточки</p><h3>Файлы</h3><p>Файл нельзя бесследно удалить; имя, автор, размер и контрольная сумма остаются в аудите.</p></div></div><div class="attachment-list">${attachments.map((file) => `<a class="attachment" href="/api/attachments/${file.id}/download"><span class="type-icon type-document">${icon('fileText')}</span><span><strong>${escapeHTML(file.originalName)}</strong><small>${formatFileSize(file.sizeBytes)} · ${escapeHTML(file.uploaderUsername)} · ${formatDate(file.createdAt, true)}</small></span>${icon('chevronRight')}</a>`).join('') || `<div class="guided-empty compact">${icon('fileText')}<h3>Файлов пока нет</h3><p>Приложите отчёт, таблицу, изображение или исходный документ.</p></div>`}</div>${canEdit ? `<form id="attachment-form" class="attachment-form"><label class="file-picker"><input name="file" type="file" required accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.csv,.xlsx,.docx,.pptx,.zip"><span>${icon('plus')} Выбрать файл</span><small>До 15 МБ</small></label><button type="submit" class="primary">Загрузить</button></form>` : ''}</section></div>`;
+  return `<div class="record-pane ${state.activeRecordTab === 'files' ? 'active' : ''}" data-record-pane="files"><section class="files-panel"><div class="section-heading"><div><p class="eyebrow">Материалы карточки</p><h3>Файлы</h3><p>Файл нельзя бесследно удалить; имя, автор, размер и контрольная сумма остаются в аудите.</p></div></div><div class="attachment-list">${attachments.map((file) => `<a class="attachment" href="/api/attachments/${file.id}/download"><span class="type-icon type-document">${icon('fileText')}</span><span><strong>${escapeHTML(file.originalName)}</strong><small>${formatFileSize(file.sizeBytes)} · ${escapeHTML(file.uploaderUsername)} · ${formatDate(file.createdAt, true)}</small></span>${icon('chevronRight')}</a>`).join('') || `<div class="guided-empty compact">${icon('fileText')}<h3>Файлов пока нет</h3><p>Приложите отчёт, таблицу, изображение или исходный документ.</p></div>`}</div>${canEdit ? `<form id="attachment-form" class="attachment-form"><label class="file-drop" data-file-drop><input name="files" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.csv,.xlsx,.docx,.pptx,.zip"><span class="file-drop-icon">${icon('fileText')}</span><span><strong>Перетащите файлы сюда</strong><small>или выберите несколько файлов · до 15 МБ каждый</small></span><button type="button" class="secondary" data-choose-files>${icon('plus')} Выбрать</button></label><div class="upload-queue" id="upload-queue" aria-live="polite"></div><button type="submit" class="primary upload-submit" disabled>${icon('send')} Загрузить выбранные</button></form>` : ''}</section></div>`;
+}
+
+function renderUploadQueue(files) {
+	const queue = $('#upload-queue');
+	const submit = $('#attachment-form .upload-submit');
+	if (!queue || !submit) return;
+	queue.innerHTML = files.map((file, index) => `<div class="upload-item" data-upload-index="${index}"><span class="type-icon type-document">${icon('fileText')}</span><span><strong>${escapeHTML(file.name)}</strong><small>${formatFileSize(file.size)} · готов к загрузке</small><progress max="100" value="0"></progress></span><b>0%</b></div>`).join('');
+	submit.disabled = files.length === 0;
+}
+
+function uploadAttachmentFile(recordID, file, row) {
+	return new Promise((resolve, reject) => {
+		if (file.size > 15 * 1024 * 1024) return reject(new Error('Файл больше 15 МБ'));
+		const xhr = new XMLHttpRequest();
+		xhr.open('POST', `/api/records/${recordID}/attachments`);
+		xhr.withCredentials = true;
+		const progress = $('progress', row);
+		const percent = $('b', row);
+		const meta = $('small', row);
+		xhr.upload.addEventListener('progress', (event) => {
+			if (!event.lengthComputable) return;
+			const value = Math.round(event.loaded * 100 / event.total);
+			progress.value = value; percent.textContent = `${value}%`; meta.textContent = `${formatFileSize(file.size)} · загружается`;
+		});
+		xhr.addEventListener('load', () => {
+			if (xhr.status >= 200 && xhr.status < 300) {
+				progress.value = 100; percent.textContent = '100%'; meta.textContent = `${formatFileSize(file.size)} · загружен`; row.classList.add('complete'); resolve(); return;
+			}
+			let message = 'Не удалось загрузить файл';
+			try { message = JSON.parse(xhr.responseText).error || message; } catch (_) {}
+			reject(new Error(message));
+		});
+		xhr.addEventListener('error', () => reject(new Error('Соединение прервано')));
+		xhr.addEventListener('abort', () => reject(new Error('Загрузка отменена')));
+		const body = new FormData(); body.append('file', file, file.name); xhr.send(body);
+	});
+}
+
+async function uploadAttachmentBatch(recordID, files) {
+	const selected = [...files];
+	if (!selected.length) return;
+	renderUploadQueue(selected);
+	const submit = $('#attachment-form .upload-submit');
+	if (submit) submit.disabled = true;
+	let succeeded = 0;
+	for (let index = 0; index < selected.length; index += 1) {
+		const row = $(`[data-upload-index="${index}"]`);
+		try { await uploadAttachmentFile(recordID, selected[index], row); succeeded += 1; }
+		catch (error) { row?.classList.add('failed'); const meta = $('small', row); const percent = $('b', row); if (meta) meta.textContent = error.message; if (percent) percent.textContent = 'Ошибка'; }
+	}
+	if (succeeded) await refreshActiveRecordWorkflow(recordID);
+	toast(succeeded === selected.length ? `Загружено файлов: ${succeeded}` : `Загружено ${succeeded} из ${selected.length}`, succeeded !== selected.length);
 }
 
 function recordActivity(detail) {
@@ -2535,7 +3061,7 @@ function recordActivity(detail) {
 }
 
 function renderRecordContextStrip(record) {
-  const hasDeadline = ['task', 'goal', 'question_set', 'research', 'decision', 'disagreement', 'meeting'].includes(record.type);
+  const hasDeadline = ['task', 'goal', 'question_set', 'research', 'disagreement', 'meeting'].includes(record.type);
   return `<div class="record-context-strip"><span><small>Ответственный</small><strong>${escapeHTML(record.ownerUsername)}</strong></span><span><small>Статус</small><strong>${escapeHTML(statusLabel(record))}</strong></span>${isWorkRecord(record) || record.type === 'goal' ? `<span><small>Приоритет</small><strong>${escapeHTML(priorityLabels[record.priority || 'normal'])}</strong></span>` : ''}${hasDeadline ? `<span><small>${record.type === 'meeting' ? 'Дата' : 'Срок'}</small><strong class="deadline ${deadlineState(record).className}">${escapeHTML(deadlineState(record).label)}</strong></span>` : ''}</div>`;
 }
 
@@ -2544,11 +3070,14 @@ function renderRecordDialog() {
   const record = detail.record;
   const statuses = [...(statusesByType[record.type] || statusesByType.default)];
   if (!statuses.includes(record.status)) statuses.push(record.status);
-  const allLinkTargets = state.records.filter((item) => item.id !== record.id && item.status !== 'archived');
+  const linkedIDs = new Set((detail.links || []).map((link) => link.record.id));
+	const allLinkTargets = state.records
+		.filter((item) => item.id !== record.id && !linkedIDs.has(item.id) && (state.linkTargetIncludeInactive || isActiveRecord(item)))
+		.sort((left, right) => Number(right.workstream === record.workstream) - Number(left.workstream === record.workstream) || new Date(right.updatedAt) - new Date(left.updatedAt));
   const criteria = state.records.filter((item) => item.type === 'criterion' && item.status !== 'archived');
   const activity = recordActivity(detail);
-  const hasDeadline = ['task', 'goal', 'question_set', 'research', 'decision', 'disagreement', 'meeting'].includes(record.type);
-  const canEdit = record.editPolicy !== 'owner_only' || record.ownerId === state.me.id;
+  const hasDeadline = ['task', 'goal', 'question_set', 'research', 'disagreement', 'meeting'].includes(record.type);
+  const canEdit = record.editPolicy !== 'owner_only' || record.ownerId === state.me.id || record.authorId === state.me.id;
   const parent = record.parentId ? state.records.find((item) => item.id === record.parentId) : null;
   const children = state.records.filter((item) => item.parentId === record.id && item.status !== 'archived');
   const ideaActions = record.type === 'idea' ? `<div class="idea-actions">${['review', 'main', 'rejected'].map((status) => `<button type="button" class="stage-action ${status}" data-stage="${status}" ${record.status === status || !canEdit ? 'disabled' : ''}>${statusLabels[status]}</button>`).join('')}</div>` : '';
@@ -2606,7 +3135,7 @@ function applyRecordAccess(record, canEdit) {
   const root = $('#record-dialog');
   root.classList.remove('record-readonly');
   if (canEdit) return;
-  const mutationSelectors = ['#record-edit-form input', '#record-edit-form select', '#record-edit-form textarea', '#record-edit-form button', '.section-form input', '.section-form textarea', '.section-form button', '#custom-section-form input', '#custom-section-form textarea', '#custom-section-form button', '.criterion-form input', '.criterion-form button', '#link-form select', '#link-form button', '[data-remove-link]', '[data-create-linked]', '[data-create-from-record]', '[data-ai-link]', '[data-ai-apply-plan]', '[data-ai-create-next]', '[data-ai-output-index]', '[data-open-record-edit]', '[data-edit-field]', '#add-questions-form textarea', '#add-questions-form button', '[data-select-answer]', '[data-custom-decision] textarea', '[data-custom-decision] button', '[data-create-output]', '[data-archive-question]', '[data-new-research-option]', '[data-edit-research-option]', '[data-archive-research-option]', '[data-archive-research-field]', '#research-option-form input', '#research-option-form textarea', '#research-option-form button', '#research-field-form input', '#research-field-form select', '#research-field-form button', '#notify-partners', '#archive-record', '#convert-to-questions'];
+  const mutationSelectors = ['#record-edit-form input', '#record-edit-form select', '#record-edit-form textarea', '#record-edit-form button', '.section-form input', '.section-form textarea', '.section-form button', '#custom-section-form input', '#custom-section-form textarea', '#custom-section-form button', '.criterion-form input', '.criterion-form button', '#link-form select', '#link-form button', '[data-remove-link]', '[data-create-linked]', '[data-create-from-record]', '[data-ai-link]', '[data-ai-apply-plan]', '[data-ai-create-next]', '[data-ai-create-decision]', '[data-ai-output-index]', '[data-ai-question-output-index]', '[data-ai-fill-research-option]', '[data-complete-research]', '[data-open-record-edit]', '[data-edit-field]', '#add-questions-form textarea', '#add-questions-form button', '[data-select-answer]', '[data-custom-decision] textarea', '[data-custom-decision] button', '[data-create-output]', '[data-archive-question]', '[data-new-research-option]', '[data-edit-research-option]', '[data-archive-research-option]', '[data-archive-research-field]', '#research-option-form input', '#research-option-form textarea', '#research-option-form button', '#research-field-form input', '#research-field-form select', '#research-field-form button', '#notify-partners', '#archive-record', '#convert-to-questions'];
   $$(mutationSelectors.join(','), root).forEach((node) => { node.disabled = true; node.setAttribute('aria-disabled', 'true'); });
   root.classList.add('record-readonly');
 }
@@ -2636,7 +3165,7 @@ function renderLinksBlock(record, links, targets, open = false) {
     return (labels[link.relationType] || [link.relationType, link.relationType])[outgoing ? 0 : 1];
   };
   const createOptions = nextRecordOptions(record);
-  return `<details class="accordion" ${open ? 'open' : ''}><summary><span>Внешние связи</span><small>${linksCountLabel(links.length)}</small></summary>${createOptions.length ? `<div class="linked-create"><span>Создать следующий объект</span>${createOptions.map(([type, kind, label]) => `<button type="button" data-create-linked="${type}" data-linked-kind="${kind}">${icon(typeMeta[type].icon)} ${label}</button>`).join('')}</div>` : ''}<div class="linked-list">${links.map((link) => `<div class="linked-item"><button type="button" data-related-record="${link.record.id}"><i class="type-icon type-${link.record.type}">${icon(typeMeta[link.record.type].icon)}</i><span><strong>${escapeHTML(link.record.title)}</strong><small>${escapeHTML(relationLabel(link))} · ${typeMeta[link.record.type].singular}</small></span></button><button type="button" class="icon-button danger-icon remove-link" data-remove-link="${link.id}" aria-label="Убрать связь" title="Убрать связь">${icon('x')}</button></div>`).join('') || emptyState('Явных связей с другими карточками пока нет.')}</div><form id="link-form" class="link-form"><select name="targetId" required><option value="">Выберите существующую карточку</option>${targets.map((target) => `<option value="${target.id}">${typeMeta[target.type].singular}: ${escapeHTML(target.title)}</option>`).join('')}</select><select name="relationType"><option value="related">Связано</option><option value="supports">Поддерживает</option><option value="depends_on">Зависит от</option><option value="result_of">Является результатом</option><option value="leads_to">Приводит к</option></select><button class="secondary" type="submit">${icon('link')} Связать</button></form></details>`;
+  return `<details class="accordion" ${open ? 'open' : ''}><summary><span>Внешние связи</span><small>${linksCountLabel(links.length)}</small></summary>${createOptions.length ? `<div class="linked-create"><span>Создать следующий объект</span>${createOptions.map(([type, kind, label]) => `<button type="button" data-create-linked="${type}" data-linked-kind="${kind}">${icon(typeMeta[type].icon)} ${label}</button>`).join('')}</div>` : ''}<div class="linked-list">${links.map((link) => `<div class="linked-item"><button type="button" data-related-record="${link.record.id}"><i class="type-icon type-${link.record.type}">${icon(typeMeta[link.record.type].icon)}</i><span><strong>${escapeHTML(link.record.title)}</strong><small>${escapeHTML(relationLabel(link))} · ${typeMeta[link.record.type].singular}</small></span></button><button type="button" class="icon-button danger-icon remove-link" data-remove-link="${link.id}" aria-label="Убрать связь" title="Убрать связь">${icon('x')}</button></div>`).join('') || emptyState('Явных связей с другими карточками пока нет.')}</div><div class="link-picker-tools"><label>${icon('search')}<input id="link-target-search" type="search" placeholder="Найти активную карточку"></label><button type="button" class="text-button" data-link-target-scope>${state.linkTargetIncludeInactive ? 'Скрыть завершённые' : 'Показать завершённые и архивные'}</button></div><form id="link-form" class="link-form"><select name="targetId" required><option value="">${targets.length ? 'Выберите существующую карточку' : 'Подходящих активных карточек нет'}</option>${targets.map((target) => `<option value="${target.id}">${typeMeta[target.type].singular}: ${escapeHTML(target.title)}</option>`).join('')}</select><select name="relationType"><option value="related">Связано</option><option value="supports">Поддерживает</option><option value="depends_on">Зависит от</option><option value="result_of">Является результатом</option><option value="leads_to">Приводит к</option></select><button class="secondary" type="submit" ${targets.length ? '' : 'disabled'}>${icon('link')} Связать</button></form></details>`;
 }
 
 function renderProofBlock(record, proofs, reviews = []) {
@@ -2782,6 +3311,15 @@ function bindRecordDialogEvents() {
       if (state.activeDetail?.record.id === record.id) renderRecordDialog();
     }
   });
+	$('[data-complete-research]')?.addEventListener('click', async () => {
+		if (!record.result?.trim()) {
+			startEditing('result');
+			return toast('Сначала зафиксируйте вывод исследования');
+		}
+		const reason = await askText({ title: 'Завершить исследование', label: 'Что подтверждает готовность вывода?', defaultValue: 'Варианты сравнены, итог сформулирован и готов к совместному решению', required: true });
+		if (!reason) return;
+		await mutateRecord(`/api/records/${record.id}/complete-research`, { method: 'POST', body: JSON.stringify({ result: record.result, reason }) });
+	});
   $('[data-ai-apply-plan]')?.addEventListener('click', async () => {
     const analysis = state.aiAnalyses.get(record.id);
     if (!analysis) return;
@@ -2794,6 +3332,11 @@ function bindRecordDialogEvents() {
     const analysis = state.aiAnalyses.get(record.id);
     if (!analysis) return;
     openCreateDialog('task', { title: analysis.nextAction, description: `Следующий шаг по карточке «${record.title}».\n\n${analysis.nextAction}`, sourceRecordId: record.id, relationType: 'leads_to', reason: 'Следующий шаг предложен AI и подтверждён пользователем', priority: analysis.priority, estimateMinutes: analysis.estimateMinutes });
+  });
+  $('[data-ai-create-decision]')?.addEventListener('click', () => {
+    const analysis = state.aiAnalyses.get(record.id);
+    if (!analysis?.proposedDecision) return;
+    openCreateDialog('decision', { title: `Итог: ${record.title}`.slice(0, 240), description: analysis.proposedDecision, sourceRecordId: record.id, relationType: 'produced', reason: 'AI подготовил черновик по полному досье; пользователь подтвердил создание решения' });
   });
   $$('[data-ai-link]').forEach((button) => button.addEventListener('click', async () => {
     await mutateDetail(`/api/records/${record.id}/links`, { method: 'POST', body: JSON.stringify({ targetId: button.dataset.aiLink, relationType: button.dataset.aiRelation }) });
@@ -2835,6 +3378,26 @@ function bindRecordDialogEvents() {
   $$('[data-new-research-option]').forEach((button) => button.addEventListener('click', () => { state.activeResearchOptionId = 'new'; renderRecordDialog(); requestAnimationFrame(() => $('#research-option-form input[name="title"]')?.focus()); }));
   $$('[data-edit-research-option]').forEach((button) => button.addEventListener('click', () => { state.activeResearchOptionId = button.dataset.editResearchOption; renderRecordDialog(); requestAnimationFrame(() => $('#research-option-form input[name="title"]')?.focus()); }));
   $$('[data-cancel-research-option]').forEach((button) => button.addEventListener('click', () => { state.activeResearchOptionId = ''; renderRecordDialog(); }));
+	$('[data-ai-fill-research-option]')?.addEventListener('click', async (event) => {
+		const form = $('#research-option-form');
+		const button = event.currentTarget;
+		const context = Object.fromEntries([...new FormData(form).entries()].filter(([, value]) => typeof value === 'string'));
+		button.disabled = true; button.innerHTML = '<span class="spinner"></span> Формируем';
+		try {
+			const draft = await api(`/api/records/${record.id}/ai-draft-field`, { method: 'POST', body: JSON.stringify({ target: 'research_option', label: `Вариант исследования ${context.title || ''}`, formContext: context }) });
+			let filled = 0;
+			for (const name of ['summaryMd', 'prosMd', 'consMd', 'notesMd']) {
+				const source = form.elements[name];
+				if (!source?.value.trim() && draft.fields?.[name]) {
+					const editor = source.closest('.markdown-editor');
+					if (editor) setMarkdownEditorValue(editor, draft.fields[name]); else source.value = draft.fields[name];
+					filled += 1;
+				}
+			}
+			toast(filled ? `AI заполнил пустых смысловых полей: ${filled}` : 'Заполненный вручную текст не изменён');
+		} catch (error) { toast(error.message, true); }
+		finally { if (button.isConnected) { button.disabled = false; button.innerHTML = `${icon('sparkles')} Заполнить пропуски AI`; } }
+	});
   $('#research-option-form')?.addEventListener('submit', async (event) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -2864,6 +3427,15 @@ function bindRecordDialogEvents() {
   }));
   $$('.criterion-form').forEach((formNode) => formNode.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateDetail(`/api/records/${record.id}/criteria/${event.currentTarget.dataset.criterionId}`, { method: 'PUT', body: JSON.stringify({ score: Number(form.get('score')), note: form.get('note'), reason: '' }) }); }));
   $('#link-form')?.addEventListener('submit', async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); await mutateDetail(`/api/records/${record.id}/links`, { method: 'POST', body: JSON.stringify({ targetId: form.get('targetId'), relationType: form.get('relationType') }) }); });
+	$('[data-link-target-scope]')?.addEventListener('click', () => { state.linkTargetIncludeInactive = !state.linkTargetIncludeInactive; renderRecordDialog(); });
+	$('#link-target-search')?.addEventListener('input', (event) => {
+		const query = event.currentTarget.value.trim().toLocaleLowerCase('ru-RU');
+		const select = $('#link-form select[name="targetId"]');
+		$$('.custom-select-option', select?.closest('.custom-select')).forEach((option) => {
+			if (!option.dataset.value) return;
+			option.hidden = Boolean(query) && !option.textContent.toLocaleLowerCase('ru-RU').includes(query);
+		});
+	});
   $$('[data-remove-link]').forEach((button) => button.addEventListener('click', async () => { const reason = await askText({ title: 'Убрать связь', label: 'Почему связь больше не актуальна?', required: true }); if (!reason) return; await mutateDetail(`/api/records/${record.id}/links/${button.dataset.removeLink}/remove`, { method: 'POST', body: JSON.stringify({ reason }) }); }));
   $$('[data-related-record]').forEach((button) => button.addEventListener('click', () => openRecord(button.dataset.relatedRecord, { workspace: true })));
   $$('[data-open-research-option]').forEach((button) => button.addEventListener('click', async () => {
@@ -2924,6 +3496,23 @@ function bindRecordDialogEvents() {
     const saved = await mutateDetail(`/api/records/${record.id}/questions/${event.currentTarget.dataset.customDecision}/decision`, { method: 'POST', body: JSON.stringify({ mode: 'custom', content: form.get('content') }) });
     if (saved) clearWorkingDraftFor(event.currentTarget);
   }));
+	$$('[data-ai-question-draft]').forEach((button) => button.addEventListener('click', async () => {
+		const questionID = button.dataset.aiQuestionDraft;
+		state.aiQuestionDraftLoading = questionID;
+		renderRecordDialog();
+		try {
+			const draft = await api(`/api/records/${record.id}/questions/${questionID}/ai-draft`, { method: 'POST' });
+			state.aiQuestionDrafts.set(questionID, draft);
+			toast('AI подготовил редактируемый общий итог');
+		} catch (error) { toast(error.message, true); }
+		finally { state.aiQuestionDraftLoading = ''; if (state.activeDetail?.record.id === record.id) renderRecordDialog(); }
+	}));
+	$$('[data-ai-question-output-index]').forEach((button) => button.addEventListener('click', () => {
+		const question = detail.questionWorkflow.questions.find((item) => item.id === button.dataset.questionId);
+		const output = state.aiQuestionDrafts.get(button.dataset.questionId)?.suggestedOutputs?.[Number(button.dataset.aiQuestionOutputIndex)];
+		if (!question?.decision || !output) return;
+		openQuestionOutputDialog(record, question, output.kind || output.type, output.title, output);
+	}));
   $$('[data-create-output]').forEach((button) => button.addEventListener('click', () => {
     const question = detail.questionWorkflow.questions.find((item) => item.id === button.dataset.questionId);
     if (!question?.decision) return;
@@ -2956,10 +3545,21 @@ function bindRecordDialogEvents() {
     const saved = await mutateWorkflow(`/api/records/${record.id}/comments`, { method: 'POST', body: JSON.stringify({ body: form.get('body') }) });
     if (saved) clearWorkingDraftFor(event.currentTarget);
   });
-  $('#attachment-form')?.addEventListener('submit', async (event) => {
-    event.preventDefault(); const form = new FormData(event.currentTarget);
-    await mutateWorkflow(`/api/records/${record.id}/attachments`, { method: 'POST', body: form }, 'Файл загружен');
-  });
+	const attachmentForm = $('#attachment-form');
+	if (attachmentForm) {
+		const input = attachmentForm.elements.files;
+		const drop = $('[data-file-drop]', attachmentForm);
+		const showSelection = () => renderUploadQueue([...input.files]);
+		$('[data-choose-files]', attachmentForm)?.addEventListener('click', (event) => { event.preventDefault(); input.click(); });
+		input.addEventListener('change', showSelection);
+		['dragenter', 'dragover'].forEach((name) => drop.addEventListener(name, (event) => { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; drop.classList.add('drag-active'); }));
+		['dragleave', 'dragend'].forEach((name) => drop.addEventListener(name, () => drop.classList.remove('drag-active')));
+		drop.addEventListener('drop', async (event) => {
+			event.preventDefault(); drop.classList.remove('drag-active');
+			await uploadAttachmentBatch(record.id, event.dataTransfer.files);
+		});
+		attachmentForm.addEventListener('submit', async (event) => { event.preventDefault(); await uploadAttachmentBatch(record.id, input.files); });
+	}
   $('#recurrence-form')?.addEventListener('submit', async (event) => {
     event.preventDefault(); const form = new FormData(event.currentTarget);
     await mutateWorkflow(`/api/records/${record.id}/recurrence`, { method: 'PUT', body: JSON.stringify({ active: form.get('active') === 'on', interval: Number(form.get('interval') || 1), cadence: form.get('cadence') }) });
@@ -3029,15 +3629,38 @@ async function loadRecordRelations(recordID) {
 
 function askText({ title, label, defaultValue = '', required = false }) {
   const dialog = $('#reason-dialog');
-  $('#reason-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">Фиксация решения</span><h2>${escapeHTML(title)}</h2></div><button type="button" class="close-button" data-cancel-reason aria-label="Закрыть">×</button></div><form id="reason-form" class="card-form dialog-form"><label>${escapeHTML(label)}<textarea name="value" rows="4" ${required ? 'required' : ''}>${escapeHTML(defaultValue)}</textarea></label><div class="form-actions"><button type="submit" class="primary">Подтвердить</button><button type="button" class="secondary" data-cancel-reason>Отмена</button></div></form>`;
+  $('#reason-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">Фиксация решения</span><h2>${escapeHTML(title)}</h2></div><button type="button" class="close-button" data-cancel-reason aria-label="Закрыть">×</button></div><form id="reason-form" class="card-form dialog-form" novalidate><label>${escapeHTML(label)}<textarea name="value" rows="4" ${required ? 'required' : ''}>${escapeHTML(defaultValue)}</textarea></label><p class="field-error" data-reason-error hidden>Укажите причину перехода.</p><div class="form-actions"><button type="submit" class="primary" data-confirm-reason>Подтвердить</button><button type="button" class="secondary" data-cancel-reason>Отмена</button></div></form>`;
   return new Promise((resolve) => {
-    let settled = false;
-    const finish = (value) => { if (settled) return; settled = true; dialog.close(); resolve(value); };
+		let closing = false;
+		let result = null;
+		const finish = (value) => { if (closing) return; closing = true; result = value; dialog.close(); };
+		const confirm = () => {
+			const textarea = $('#reason-form textarea[name="value"]');
+			const value = String(textarea?.value || '').trim();
+			const error = $('[data-reason-error]', dialog);
+			if (required && !value) { error.hidden = false; textarea?.focus(); return; }
+			finish(value);
+		};
     $$('[data-cancel-reason]', dialog).forEach((button) => button.addEventListener('click', () => finish(null)));
-    $('#reason-form').addEventListener('submit', (event) => { event.preventDefault(); const value = new FormData(event.currentTarget).get('value').trim(); if (required && !value) return; finish(value); });
-    dialog.addEventListener('close', () => { if (!settled) { settled = true; resolve(null); } }, { once: true });
+		$('[data-confirm-reason]', dialog).addEventListener('click', (event) => { event.preventDefault(); confirm(); });
+		$('#reason-form').addEventListener('submit', (event) => { event.preventDefault(); confirm(); });
+		dialog.addEventListener('close', () => resolve(result), { once: true });
     openModal(dialog);
   });
+}
+
+function askChoice({ title, label, choices }) {
+	const dialog = $('#reason-dialog');
+	$('#reason-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">Рабочий процесс</span><h2>${escapeHTML(title)}</h2></div><button type="button" class="close-button" data-cancel-choice aria-label="Закрыть">×</button></div><div class="choice-dialog"><p>${escapeHTML(label)}</p><div>${choices.map((choice) => `<button type="button" class="choice-row" data-choice="${escapeHTML(choice.value)}"><span>${escapeHTML(choice.label)}</span>${icon('chevronRight')}</button>`).join('')}</div><button type="button" class="secondary" data-cancel-choice>Отмена</button></div>`;
+	return new Promise((resolve) => {
+		let closing = false;
+		let result = null;
+		const finish = (value) => { if (closing) return; closing = true; result = value; dialog.close(); };
+		$$('[data-choice]', dialog).forEach((button) => button.addEventListener('click', () => finish(button.dataset.choice)));
+		$$('[data-cancel-choice]', dialog).forEach((button) => button.addEventListener('click', () => finish(null)));
+		dialog.addEventListener('close', () => resolve(result), { once: true });
+		openModal(dialog);
+	});
 }
 
 async function loadRecordActivity(recordID) {
@@ -3088,11 +3711,11 @@ async function mutateWorkflow(path, options, successMessage = 'Сохранен�
   }
 }
 
-function openQuestionOutputDialog(sourceRecord, question, kind, defaultTitle) {
+function openQuestionOutputDialog(sourceRecord, question, kind, defaultTitle, preset = {}) {
   const labels = { preference: 'Критерий выбора', limitation: 'Ограничение', rule: 'Правило', insight: 'Вывод', task: 'Задача', idea: 'Идея', research: 'Исследование', goal: 'Цель' };
   const planned = ['task', 'goal', 'research'].includes(kind);
   const draftScope = `question-output:${sourceRecord.id}:${question.id}:${kind}`;
-  $('#create-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">${icon('link')} Результат совместного вывода</span><h2>${labels[kind]}</h2><p>Источник сохранится автоматически: группа вопросов → вопрос → совместный итог → новая карточка.</p></div><button type="button" class="close-button icon-button" data-close-create aria-label="Закрыть">${icon('x')}</button></div><form id="question-output-form" class="card-form dialog-form"><div class="source-context"><span>Вопрос</span><strong>${escapeHTML(question.body)}</strong>${markdownView(question.decision.content, '', 'Исходный совместный итог')}</div><label>Название<input name="title" required maxlength="240" value="${escapeHTML(defaultTitle)}"></label>${markdownEditor('description', 'Как применять', question.decision.content, 6, 'Область действия и следующий шаг', 'question-output')}${planned ? `<div class="form-grid two"><label>Ответственный<select name="ownerId">${userOptions(state.me.id)}</select></label><label>Срок<input name="dueAt" type="datetime-local"></label></div>` : `<input type="hidden" name="ownerId" value="${state.me.id}">`}<div class="form-actions"><button type="submit" class="primary">${icon('plus')} Создать и связать</button><button type="button" class="secondary" data-close-create>Отмена</button></div></form>`;
+  $('#create-dialog-content').innerHTML = `<div class="dialog-header"><div><span class="record-kind">${icon('link')} Результат совместного вывода</span><h2>${labels[kind]}</h2><p>Источник сохранится автоматически: группа вопросов → вопрос → совместный итог → новая карточка.</p></div><button type="button" class="close-button icon-button" data-close-create aria-label="Закрыть">${icon('x')}</button></div><form id="question-output-form" class="card-form dialog-form"><div class="source-context"><span>Вопрос</span><strong>${escapeHTML(question.body)}</strong>${markdownView(question.decision.content, '', 'Исходный совместный итог')}</div><label>Название<input name="title" required maxlength="240" value="${escapeHTML(preset.title || defaultTitle)}"></label>${markdownEditor('description', 'Как применять', preset.description || question.decision.content, 6, 'Область действия и следующий шаг', 'question-output')}${planned ? `<div class="form-grid two"><label>Ответственный<select name="ownerId">${userOptions(state.me.id)}</select></label><label>Срок<input name="dueAt" type="datetime-local"></label></div>` : `<input type="hidden" name="ownerId" value="${state.me.id}">`}<div class="form-actions"><button type="submit" class="primary">${icon('plus')} Создать и связать</button><button type="button" class="secondary" data-close-create>Отмена</button></div></form>`;
   $$('[data-close-create]').forEach((button) => button.addEventListener('click', () => $('#create-dialog').close()));
   $('#question-output-form').addEventListener('submit', async (event) => {
     event.preventDefault();

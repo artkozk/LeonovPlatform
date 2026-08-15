@@ -64,6 +64,84 @@ type researchOptionRequest struct {
 	ExpectedUpdatedAt string            `json:"expectedUpdatedAt"`
 }
 
+type completeResearchRequest struct {
+	Result string `json:"result"`
+	Reason string `json:"reason"`
+}
+
+func (s *Server) handleCompleteResearch(w http.ResponseWriter, r *http.Request) {
+	record, ok := s.requireResearchRecord(w, r)
+	if !ok || !s.requireRecordEdit(w, r, record) {
+		return
+	}
+	if record.Status == "completed" {
+		writeJSON(w, http.StatusOK, record)
+		return
+	}
+	var input completeResearchRequest
+	if !decodeJSON(w, r, &input) {
+		return
+	}
+	input.Result = strings.TrimSpace(input.Result)
+	input.Reason = strings.TrimSpace(input.Reason)
+	if input.Result == "" {
+		writeError(w, http.StatusBadRequest, "Перед завершением зафиксируйте вывод исследования")
+		return
+	}
+	if len([]rune(input.Result)) > 100000 {
+		writeError(w, http.StatusBadRequest, "Вывод исследования слишком длинный")
+		return
+	}
+	if input.Reason == "" {
+		writeError(w, http.StatusBadRequest, "Укажите, почему исследование готово к завершению")
+		return
+	}
+	var options, filledSections int
+	if err := s.store.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM research_options WHERE record_id = ? AND status = 'active'`, record.ID).Scan(&options); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось проверить варианты исследования")
+		return
+	}
+	if err := s.store.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM record_sections WHERE record_id = ? AND TRIM(content) <> ''`, record.ID).Scan(&filledSections); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось проверить материалы исследования")
+		return
+	}
+	if options == 0 && filledSections == 0 {
+		writeError(w, http.StatusConflict, "Добавьте хотя бы один вариант сравнения или заполненный раздел исследования")
+		return
+	}
+	now := nowText()
+	user := currentUser(r)
+	tx, err := s.store.db.BeginTx(r.Context(), nil)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось начать завершение исследования")
+		return
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(r.Context(), `UPDATE records SET result = ?, status = 'completed', progress = 100, completed_at = ?, updated_at = ? WHERE id = ?`, input.Result, now, now, record.ID); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось завершить исследование")
+		return
+	}
+	details := map[string]any{
+		"before":  map[string]any{"status": record.Status, "progress": record.Progress, "result": record.Result},
+		"after":   map[string]any{"status": "completed", "progress": 100, "result": input.Result},
+		"options": options, "filledSections": filledSections,
+	}
+	if err := writeActivity(r.Context(), tx, user.ID, record.Type, record.ID, "research_completed", input.Reason, details); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось записать историю завершения")
+		return
+	}
+	if err := s.insertPartnerNotifications(r.Context(), tx, user, record, "Исследование завершено", "В карточке «"+record.Title+"» зафиксирован итог"); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось уведомить партнёра")
+		return
+	}
+	if err := tx.Commit(); err != nil {
+		writeError(w, http.StatusInternalServerError, "Не удалось завершить исследование")
+		return
+	}
+	completed, _ := s.getRecord(r.Context(), record.ID)
+	writeJSON(w, http.StatusOK, completed)
+}
+
 func (s *Server) listResearchRelationOptions(ctx context.Context, recordID string) ([]ResearchRelationOption, error) {
 	options := make([]ResearchRelationOption, 0)
 	rows, err := s.store.db.QueryContext(ctx, `
