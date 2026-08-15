@@ -5,6 +5,9 @@ APP_ROOT="/opt/business-control"
 DATABASE="/var/lib/business-control/business-control.db"
 ENV_FILE="/etc/business-control.env"
 EXPECTED_RELEASE="${EXPECTED_RELEASE:-20260815-lifecycle-chat-b306e57}"
+INDEX_ASSET="$(mktemp /tmp/business-control-index.XXXXXX)"
+JS_ASSET="$(mktemp /tmp/business-control-app.XXXXXX)"
+trap 'rm -f "$INDEX_ASSET" "$JS_ASSET"' EXIT
 
 CURRENT_RELEASE="$(readlink -f "$APP_ROOT/current")"
 test "$CURRENT_RELEASE" = "$APP_ROOT/releases/$EXPECTED_RELEASE"
@@ -26,8 +29,10 @@ test "$(sqlite3 "$DATABASE" "SELECT COUNT(*) FROM sqlite_master WHERE type='tabl
 for name in BUSINESS_CHAT_STUN_URL BUSINESS_CHAT_TURN_URL BUSINESS_CHAT_TURN_USERNAME BUSINESS_CHAT_TURN_CREDENTIAL; do
   grep -Eq "^${name}=.+$" "$ENV_FILE"
 done
-curl -fsS https://control.e-rd.ru/ | grep -q 'BizFlow'
-if curl -fsS https://control.e-rd.ru/app.js | grep -q 'sync-state'; then
+curl -fsS https://control.e-rd.ru/ -o "$INDEX_ASSET"
+curl -fsS https://control.e-rd.ru/app.js -o "$JS_ASSET"
+grep -q 'BizFlow' "$INDEX_ASSET"
+if grep -q 'sync-state' "$JS_ASSET"; then
   echo "legacy sync-state is still present" >&2
   exit 1
 fi
