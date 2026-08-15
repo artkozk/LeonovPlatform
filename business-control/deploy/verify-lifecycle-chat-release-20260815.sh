@@ -7,7 +7,8 @@ ENV_FILE="/etc/business-control.env"
 EXPECTED_RELEASE="${EXPECTED_RELEASE:-20260815-lifecycle-chat-b306e57}"
 INDEX_ASSET="$(mktemp /tmp/business-control-index.XXXXXX)"
 JS_ASSET="$(mktemp /tmp/business-control-app.XXXXXX)"
-trap 'rm -f "$INDEX_ASSET" "$JS_ASSET"' EXIT
+TURN_LOG="$(mktemp /tmp/business-control-turn.XXXXXX)"
+trap 'rm -f "$INDEX_ASSET" "$JS_ASSET" "$TURN_LOG"' EXIT
 
 CURRENT_RELEASE="$(readlink -f "$APP_ROOT/current")"
 test "$CURRENT_RELEASE" = "$APP_ROOT/releases/$EXPECTED_RELEASE"
@@ -18,6 +19,11 @@ curl -fsS http://127.0.0.1:8522/api/health >/dev/null
 curl -fsS https://control.e-rd.ru/api/health >/dev/null
 test "$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8522/api/chat/ice-config)" = "401"
 ss -lntu | grep -Eq '[:.]3478[[:space:]]'
+TURN_USERNAME="$(sed -n 's/^BUSINESS_CHAT_TURN_USERNAME=//p' "$ENV_FILE" | tail -n 1)"
+TURN_CREDENTIAL="$(sed -n 's/^BUSINESS_CHAT_TURN_CREDENTIAL=//p' "$ENV_FILE" | tail -n 1)"
+test -n "$TURN_USERNAME"
+test -n "$TURN_CREDENTIAL"
+timeout 20 turnutils_uclient -y -n 3 -u "$TURN_USERNAME" -w "$TURN_CREDENTIAL" -p 3478 159.194.231.150 >"$TURN_LOG" 2>&1
 test "$(sqlite3 "$DATABASE" 'PRAGMA integrity_check;')" = "ok"
 test "$(sqlite3 "$DATABASE" 'SELECT COUNT(*) FROM pragma_foreign_key_check;')" = "0"
 test "$(sqlite3 "$DATABASE" "SELECT COUNT(*) FROM schema_migrations WHERE version IN ('008_decision_and_research_semantics.sql','009_team_chat.sql','010_chat_message_history.sql');")" = "3"
@@ -46,4 +52,5 @@ echo "decision_semantics=ok"
 echo "development_task=completed_with_proof"
 echo "chat_schema=ok"
 echo "turn_listener=ok"
+echo "turn_allocation=ok"
 echo "legacy_sync_state=absent"

@@ -120,3 +120,30 @@ Rollback вернул symlink на `20260815-ai-proxy-694acaa`, сервис п�
 Вторая попытка дошла до авторизованного ICE smoke и получила правильные STUN/TURN данные, включая закрытые credentials. Валидатор ошибочно ожидал строку в поле `urls`, хотя backend намеренно возвращает стандартный массив WebRTC. Проверка остановила релиз и снова вернула предыдущий symlink. Валидатор обновлён так, чтобы принимать стандартные строковое и массивное представления без ослабления требований к TURN username и credential.
 
 Независимая post-deploy проверка после успешного переключения выполняется скриптом `deploy/verify-lifecycle-chat-release-20260815.sh`. Он проверяет release symlink, сервисы, домен, БД, миграции, нормализацию решений, завершённую карточку разработки с доказательством, chat schema, TURN listener и отсутствие старого `sync-state` в production JavaScript. Секретные значения при этом не выводятся.
+
+### Успешное production-переключение
+
+Финальное переключение завершено 15 августа 2026 года:
+
+- активный release: `/opt/business-control/releases/20260815-lifecycle-chat-b306e57`;
+- предыдущая точка rollback: `/opt/business-control/releases/20260815-ai-proxy-694acaa`;
+- согласованный SQLite backup: `/var/lib/business-control/backups/business-control-20260815-003311-pre-lifecycle-chat.db`;
+- backup uploads: `/var/lib/business-control/backups/uploads-20260815-003311-pre-lifecycle-chat.tar.gz`;
+- SHA-256 SQLite backup: `0afb2c0e143eedda9b5329e4a8d218e45c3dc866e4b35d65c0abdc782229bb6e`;
+- SHA-256 production binary: `87be6fb5b3892332f5b2c9b884fd3f2dbe969ea47b56b4f358bb7e75fc95a386`;
+- `PRAGMA integrity_check`: `ok`;
+- foreign key violations: `0`;
+- `business-control`, nginx и coturn: `active`;
+- доменный health: `ok`;
+- неавторизованный ICE endpoint: `401`;
+- авторизованная ICE-конфигурация: STUN и TURN присутствуют;
+- реальная TURN allocation через `turnutils_uclient`: `ok`;
+- Gemini analysis источника production: `gemini`;
+- AI coverage существующего исследования: 5 вариантов и 5 сравнительных полей;
+- общий chat thread: создан;
+- таблица истории сообщений: создана;
+- старый `sync-state` в production JavaScript: отсутствует.
+
+От имени `artkozk` создана и завершена карточка `Production-аудит жизненных циклов, досок и командного чата`. В ней сохранены план 8 часов, факт 7 часов, результат и текстовое доказательство выполненных автотестов, production health, миграций, ICE/TURN и AI coverage. После завершения она не остаётся в активной очереди, но доступна в истории и завершённой работе.
+
+Успешный независимый прогон выполнен `deploy/verify-lifecycle-chat-release-20260815.sh`: `decision_semantics=ok`, `development_task=completed_with_proof`, `chat_schema=ok`, `turn_listener=ok`, `turn_allocation=ok`, `legacy_sync_state=absent`.
