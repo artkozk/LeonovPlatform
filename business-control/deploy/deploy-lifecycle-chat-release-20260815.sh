@@ -174,8 +174,11 @@ with open('/tmp/business-control-ice.json', encoding='utf-8') as source:
     ice = json.load(source)
 servers = ice.get('iceServers', [])
 assert len(servers) >= 2, ice
-assert any(str(item.get('urls', '')).startswith('stun:') for item in servers), ice
-assert any(str(item.get('urls', '')).startswith('turn:') and item.get('username') and item.get('credential') for item in servers), ice
+def urls(item):
+    value = item.get('urls', [])
+    return value if isinstance(value, list) else [value]
+assert any(any(str(url).startswith('stun:') for url in urls(item)) for item in servers), ice
+assert any(any(str(url).startswith('turn:') for url in urls(item)) and item.get('username') and item.get('credential') for item in servers), ice
 with open('/tmp/business-control-threads.json', encoding='utf-8') as source:
     threads = json.load(source)
 assert isinstance(threads, list) and any(item.get('kind') == 'team' for item in threads), threads
