@@ -163,7 +163,7 @@ sqlite3 "$DATABASE" "INSERT INTO sessions(user_id, token_hash, expires_at, creat
 
 curl -fsS --cookie "business_session=$SMOKE_TOKEN" http://127.0.0.1:8522/api/chat/ice-config > /tmp/business-control-ice.json
 curl -fsS --cookie "business_session=$SMOKE_TOKEN" http://127.0.0.1:8522/api/chat/threads > /tmp/business-control-threads.json
-RESEARCH_ID="$(sqlite3 "$DATABASE" "SELECT r.id FROM records r WHERE r.type='research' AND r.archived_at IS NULL ORDER BY (SELECT COUNT(*) FROM research_options ro WHERE ro.record_id=r.id AND ro.archived_at IS NULL) DESC, r.updated_at DESC LIMIT 1;")"
+RESEARCH_ID="$(sqlite3 "$DATABASE" "SELECT r.id FROM records r WHERE r.type='research' AND r.archived_at IS NULL ORDER BY (SELECT COUNT(*) FROM research_options ro WHERE ro.record_id=r.id AND ro.status='active') DESC, r.updated_at DESC LIMIT 1;")"
 if [[ -n "$RESEARCH_ID" ]]; then
   curl -fsS --cookie "business_session=$SMOKE_TOKEN" -X POST "http://127.0.0.1:8522/api/records/$RESEARCH_ID/ai-analysis" > /tmp/business-control-analysis.json
 fi
